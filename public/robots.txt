@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://nexofilm.com/sitemap.xml

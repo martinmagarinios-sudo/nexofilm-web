@@ -1,0 +1,8 @@
+{
+  "name": "NexoFilm - Productora Audiovisual",
+  "description": "Una plataforma elegante y moderna para NexoFilm, destacando su portfolio cinematográfico y herramientas creativas de IA.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
