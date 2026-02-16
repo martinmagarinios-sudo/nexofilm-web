@@ -21,7 +21,7 @@ const Portfolio: React.FC = () => {
               <span className="w-12 h-[2px] bg-nexo-lime"></span>
               <span className="text-[10px] uppercase tracking-[0.5em] text-nexo-lime font-bold">Proyectos</span>
             </div>
-            <h2 className="text-3xl md:text-7xl font-bold uppercase tracking-tighter">Seleccionados</h2>
+            <h2 className="text-4xl md:text-7xl font-bold uppercase tracking-tighter">Seleccionados</h2>
           </div>
           <p className="text-zinc-500 max-w-sm text-sm font-light leading-relaxed mb-4 text-center md:text-left">
             Cada fotograma es una conexión única. Explorá nuestra curaduría de trabajos sincronizados desde Behance.
