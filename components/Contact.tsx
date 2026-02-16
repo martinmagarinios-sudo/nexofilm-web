@@ -32,7 +32,7 @@ const Contact: React.FC = () => {
   return (
     <section id="contacto" className="py-24 bg-zinc-950 border-t border-white/5">
       <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-20">
-        <div>
+        <div className="text-center md:text-left">
           <h2 className="text-5xl md:text-7xl font-bold uppercase tracking-tighter mb-12 leading-[1] text-white">Conecta con Nexo.</h2>
           <div className="space-y-8">
             <div>
@@ -42,7 +42,7 @@ const Contact: React.FC = () => {
 
             <div className="pt-4">
               <p className="text-zinc-500 uppercase tracking-[0.4em] text-[10px] font-bold mb-6">En redes</p>
-              <div className="flex gap-6">
+              <div className="flex gap-6 justify-center md:justify-start">
                 <a
                   href={whatsappUrl}
                   target="_blank"

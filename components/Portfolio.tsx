@@ -15,15 +15,15 @@ const Portfolio: React.FC = () => {
   return (
     <section id="portfolio" className="py-20 md:py-32 bg-black border-b border-white/5 relative">
       <div className="container mx-auto px-6">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-24 gap-8">
-          <div className="space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-24 gap-8">
+          <div className="space-y-6 text-center md:text-left">
             <div className="flex items-center gap-4">
               <span className="w-12 h-[2px] bg-nexo-lime"></span>
               <span className="text-[10px] uppercase tracking-[0.5em] text-nexo-lime font-bold">Proyectos</span>
             </div>
             <h2 className="text-5xl md:text-7xl font-bold uppercase tracking-tighter">Seleccionados</h2>
           </div>
-          <p className="text-zinc-500 max-w-sm text-sm font-light leading-relaxed mb-4">
+          <p className="text-zinc-500 max-w-sm text-sm font-light leading-relaxed mb-4 text-center md:text-left">
             Cada fotograma es una conexión única. Explorá nuestra curaduría de trabajos sincronizados desde Behance.
           </p>
         </div>

@@ -105,7 +105,7 @@ const Hero: React.FC = () => {
           </div>
 
           {/* 3. CONTENIDO (Primer plano) */}
-          <div className="relative h-full container mx-auto px-6 flex flex-col justify-center items-start z-20">
+          <div className="relative h-full container mx-auto px-6 flex flex-col justify-center items-center md:items-start text-center md:text-left z-20">
             <div className="overflow-hidden mb-6">
               <p className={`text-nexo-lime uppercase tracking-[0.6em] text-[10px] font-bold transition-transform duration-1000 delay-300 ${idx === current ? 'translate-y-0' : 'translate-y-full'}`}>
                 NexoFilm • Productora Audiovisual
@@ -135,7 +135,7 @@ const Hero: React.FC = () => {
             </p>
 
             <div className={`transition-all duration-1000 delay-[2000ms] ${idx === current ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
-              <a href="#portfolio" className="group flex items-center gap-8 hover-pulse">
+              <a href="#portfolio" className="group flex items-center gap-8 hover-pulse justify-center md:justify-start">
                 <div className="relative">
                   <span className="uppercase tracking-[0.5em] text-[12px] font-black group-hover:text-nexo-lime transition-colors">Ver Portfolio</span>
                   <div className="absolute -bottom-2 left-0 w-full h-[1px] bg-white/20 group-hover:bg-nexo-lime group-hover:w-full transition-all duration-500 scale-x-50 group-hover:scale-x-100 origin-left"></div>

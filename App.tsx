@@ -70,7 +70,7 @@ const App: React.FC = () => {
                   />
                 )}
               </div>
-              <div className="w-full md:w-1/2 space-y-10">
+              <div className="w-full md:w-1/2 space-y-10 text-center md:text-left">
                 <div className="space-y-4">
                   <div className="inline-block px-3 py-1 bg-nexo-lime text-black text-[10px] font-bold uppercase tracking-[0.3em]">
                     Nuestra Esencia
@@ -82,7 +82,7 @@ const App: React.FC = () => {
                   </h2>
                 </div>
 
-                <div className="space-y-6 text-zinc-400 leading-relaxed text-lg font-light">
+                <div className="space-y-6 text-zinc-400 leading-relaxed text-lg font-light text-center md:text-left">
                   <p>
                     {CONFIG.history.description1}
                   </p>
@@ -119,15 +119,15 @@ const App: React.FC = () => {
 
       <footer className="py-20 bg-black border-t border-white/5">
         <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-start gap-12 mb-16">
-            <div className="space-y-8">
+          <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-12 mb-16">
+            <div className="space-y-8 text-center md:text-left">
               <Logo size="md" />
               <p className="text-zinc-500 max-w-sm text-sm font-light leading-relaxed">
                 {CONFIG.footer.text}
               </p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-16">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-16 text-center md:text-left">
               <div className="space-y-4">
                 <h4 className="text-[10px] uppercase tracking-[0.4em] text-white font-bold">Navegación</h4>
                 <ul className="text-zinc-500 text-xs space-y-3 font-medium">
@@ -148,7 +148,7 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between gap-4">
+          <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-zinc-600 text-[10px] uppercase tracking-widest font-bold">
               © {new Date().getFullYear()} {CONFIG.footer.copyright}
             </p>
