@@ -24,7 +24,7 @@ const Portfolio: React.FC = () => {
             <h2 className="text-4xl md:text-7xl font-bold uppercase tracking-tighter">Seleccionados</h2>
           </div>
           <p className="text-zinc-300 max-w-xl text-lg font-normal leading-relaxed mb-4 text-center md:text-left">
-            Cada fotograma es una conexión única. <strong>Transformamos tu visión en una experiencia cinematográfica de alto impacto.</strong>
+            Cada fotograma es una conexión única. <strong>Sumate a un equipo que hace que cada detalle cuente.</strong>
           </p>
         </div>
 
