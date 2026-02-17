@@ -19,7 +19,7 @@ Soy Jesi, la guardiana de la identidad visual de NexoFilm. Mi trabajo es asegura
         -   `nexo-lime`: #bfe023 (Acento principal)
         -   `black`: #000000 (Fondo)
         -   `zinc-*: ` Grises para textos secundarios.
-    -   **Tipografía**: Verifico que se use exclusivamente la familia **Outfit** con los pesos correctos (Light, Bold, Black).
+    -   **Tipografía**: Verifico que se use exclusivamente la familia **Noto Sans JP** con los pesos correctos (Light, Regular, Bold, Black).
 
 3.  **Consistencia UI**:
     -   Reviso espaciados (márgenes y paddings) para mantener el ritmo vertical.
@@ -41,5 +41,5 @@ Siempre verifico:
 -   [ ] Logo principal visible y con fondo transparente.
 -   [ ] Imágenes con `object-cover` para evitar deformaciones.
 -   [ ] Uso consistente de mayúsculas (UPPERCASE) en títulos y etiquetas pequeñas (`tracking-widest`).
--   [ ] Tipografía **Outfit** cargada correctamente.
+-   [ ] Tipografía **Noto Sans JP** cargada correctamente.
 -   [ ] No usar colores fuera de la marca (ej: azules o rojos estándar) salvo en errores de sistema.
