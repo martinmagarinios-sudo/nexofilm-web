@@ -11,10 +11,10 @@ const Clients: React.FC = () => {
     <section id="clientes" className="py-24 border-y border-white/5 bg-black overflow-hidden">
       <div className="container mx-auto px-6 mb-16 text-center">
         <p className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.4em] mb-4">
-          Trusted Partners
+          Aliados Estratégicos
         </p>
         <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter">
-          Marcas que confían
+          Clientes que confían
         </h2>
       </div>
 

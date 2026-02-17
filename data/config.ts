@@ -201,7 +201,7 @@ export const CONFIG = {
     // --- SECCIÓN HISTORIA (APP.TSX) ---
     // Podés usar imagen, video, o ambos (el video tiene prioridad, la imagen es fallback/poster)
     history: {
-        title: "Somos NexoFilm,",
+        title: "Somos", // El logo se insertará en el componente visualmente o se dejará 'Somos' y el logo al lado
         subtitle: "conectamos marcas",
         subtitle2: "con historias.",
         description1: "En NexoFilm entendemos que cada proyecto es una oportunidad para crear un vínculo visual poderoso. Utilizamos tecnología de vanguardia y ópticas de precisión para garantizar una nitidez y colorimetría que definen el estándar de la industria.",

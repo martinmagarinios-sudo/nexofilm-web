@@ -107,9 +107,14 @@ const Hero: React.FC = () => {
           {/* 3. CONTENIDO (Primer plano) */}
           <div className="relative h-full container mx-auto px-6 flex flex-col justify-center items-center md:items-start text-center md:text-left z-20">
             <div className="overflow-hidden mb-6">
-              <p className={`text-nexo-lime uppercase tracking-[0.6em] text-[10px] font-bold transition-transform duration-1000 delay-300 ${idx === current ? 'translate-y-0' : 'translate-y-full'}`}>
-                NexoFilm • Productora Audiovisual
-              </p>
+              <div className="absolute top-1/2 right-12 -translate-y-1/2 z-40 hidden lg:block rotate-90 origin-right">
+                <div className="flex items-center gap-3 opacity-30">
+                  <img src="/img/logo.png" alt="NexoFilm" className="h-6 w-auto brightness-0 invert" />
+                  <p className="text-[9px] font-bold uppercase tracking-[0.8em] text-white">
+                    • Estética Cinematográfica
+                  </p>
+                </div>
+              </div>
             </div>
 
             {idx === current ? (

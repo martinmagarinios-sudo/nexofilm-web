@@ -76,7 +76,7 @@ const App: React.FC = () => {
                     Nuestra Esencia
                   </div>
                   <h2 className="text-4xl md:text-6xl font-bold leading-[1.05] uppercase tracking-tighter">
-                    {CONFIG.history.title} <br />
+                    {CONFIG.history.title} <img src="/img/logo.png" alt="NexoFilm" className="h-10 md:h-16 inline-block align-middle ml-2 -mt-2 brightness-0 invert" /> <br />
                     <span className="text-nexo-lime italic font-light">{CONFIG.history.subtitle}</span> <br />
                     {CONFIG.history.subtitle2}
                   </h2>
@@ -111,8 +111,8 @@ const App: React.FC = () => {
         </section>
 
         <Clients />
-        <Portfolio />
         <Process />
+        <Portfolio />
         <Testimonials />
         <Contact />
       </main>

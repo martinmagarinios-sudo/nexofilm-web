@@ -35,7 +35,7 @@ const Navbar: React.FC = () => {
         }`} />
 
       <div className="container mx-auto px-6 flex justify-between items-center relative z-20">
-        <a href="#" className="hover:opacity-80 transition-all duration-500 transform active:scale-95" onClick={() => setIsMenuOpen(false)}>
+        <a href="#" className="hover:opacity-80 transition-all duration-500 transform active:scale-95" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsMenuOpen(false); }}>
           <Logo size={isScrolled ? "sm" : "md"} className="transition-all duration-500" />
         </a>
 

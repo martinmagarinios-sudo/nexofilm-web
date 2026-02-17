@@ -104,9 +104,6 @@ const Portfolio: React.FC = () => {
                   <p className="text-nexo-lime text-[9px] md:text-[10px] font-bold uppercase tracking-[0.4em] mb-3">{project.category}</p>
                   <h3 className="text-2xl md:text-3xl font-bold uppercase tracking-tight group-hover:text-nexo-lime transition-colors">{project.title}</h3>
                 </div>
-                <div className="h-10 w-10 border border-white/10 rounded-full flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all mt-2 flex-shrink-0">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z" /></svg>
-                </div>
               </div>
 
               <div className="flex items-center gap-4 pt-4 border-t border-white/5 opacity-40 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0">
