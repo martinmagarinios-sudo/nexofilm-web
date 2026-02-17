@@ -5,12 +5,12 @@
     --color-nexo-lime-dark: #9dc60e;
     --color-nexo-gray: #808080;
     --color-nexo-dark: #000000;
-    --font-sans: "Noto Sans JP", sans-serif;
+    --font-sans: "Outfit", sans-serif;
 }
 
 /* --- Estilos Globales --- */
 body {
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: 'Outfit', sans-serif;
     background-color: #000000;
     color: #ffffff;
     -webkit-font-smoothing: antialiased;
