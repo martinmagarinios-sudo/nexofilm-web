@@ -58,7 +58,7 @@ export const CONFIG = {
         {
             id: "1",
             title: "Copa Airlines",
-            category: "25 años operando en Argentina",
+            category: "Video Comercial",
             imageUrl: "",
             videoUrl: "/video/portfolio/Copa.mp4",
             description: "25 años operando en Argentina",
