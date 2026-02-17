@@ -110,8 +110,8 @@ const App: React.FC = () => {
           </div>
         </section>
 
-        <Clients />
         <Process />
+        <Clients />
         <Portfolio />
         <Testimonials />
         <Contact />

@@ -23,7 +23,7 @@ const Portfolio: React.FC = () => {
             </div>
             <h2 className="text-4xl md:text-7xl font-bold uppercase tracking-tighter">Seleccionados</h2>
           </div>
-          <p className="text-zinc-500 max-w-sm text-sm font-light leading-relaxed mb-4 text-center md:text-left">
+          <p className="text-zinc-300 max-w-lg text-lg font-normal leading-relaxed mb-4 text-center md:text-left">
             Cada fotograma es una conexión única. Explorá nuestra curaduría de trabajos sincronizados desde Behance.
           </p>
         </div>
