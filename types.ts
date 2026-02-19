@@ -3,7 +3,9 @@ export interface Project {
   id: string;
   title: string;
   category: string;
+  orientation?: 'landscape' | 'portrait'; // Para definir si mostrar 3 fotos verticales
   imageUrl: string;
+  gallery?: string[];
   videoUrl?: string;
   embedUrl?: string;
   description: string;

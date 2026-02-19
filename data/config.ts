@@ -102,6 +102,31 @@ export const CONFIG = {
         },
         {
             id: "6",
+            title: "Namida Nikkei",
+            category: "Foto Producto",
+            orientation: "portrait",
+            imageUrl: "/img/portfolio/Namida Nikkei/Namida.Nikkei-10.jpg",
+            gallery: [
+                "/img/portfolio/Namida Nikkei/Namida.Nikkei-10.jpg",
+                "/img/portfolio/Namida Nikkei/Namida.Nikkei-4.jpg",
+                "/img/portfolio/Namida Nikkei/Namida.Nikkei-7.jpg",
+                "/img/portfolio/Namida Nikkei/Namida.Nikkei-12.jpg",
+                "/img/portfolio/Namida Nikkei/Namida.Nikkei-13.jpg",
+                "/img/portfolio/Namida Nikkei/Namida.Nikkei-21.jpg",
+                "/img/portfolio/Namida Nikkei/Namida.Nikkei-26.jpg",
+                "/img/portfolio/Namida Nikkei/Namida.Nikkei-38.jpg",
+                "/img/portfolio/Namida Nikkei/Namida.Nikkei-42.jpg",
+                "/img/portfolio/Namida Nikkei/Namida.Nikkei-72.jpg",
+                "/img/portfolio/Namida Nikkei/Namida.Nikkei-78.jpg",
+                "/img/portfolio/Namida Nikkei/Namida.Nikkei-80.jpg",
+                "/img/portfolio/Namida Nikkei/Namida.Nikkei-93.jpg",
+                "/img/portfolio/Namida Nikkei/Namida.Nikkei-109.jpg"
+            ],
+            description: "Fotografía gastronómica para Namida Nikkei.",
+            behanceUrl: "https://www.behance.net/NexoFilm"
+        },
+        {
+            id: "7",
             title: "TS Tour Operador",
             category: "Video Comercial",
             imageUrl: "",
@@ -110,7 +135,7 @@ export const CONFIG = {
             behanceUrl: "https://www.behance.net/NexoFilm"
         },
         {
-            id: "7",
+            id: "8",
             title: "Vista Sol",
             category: "Video Institucional",
             imageUrl: "",
@@ -139,7 +164,8 @@ export const CONFIG = {
         { id: "c13", name: "Namida nikei", logo: "/img/clientes/namida logo.png" },
         { id: "c14", name: "Jazz operador mayorista", logo: "/img/clientes/Jazz logo.png" },
         { id: "c15", name: "Circunda Travel", logo: "/img/clientes/circunda_logo_blanco.png" },
-        { id: "c16", name: "Flight Network Aviation", logo: "/img/clientes/flight_logo.png" }
+        { id: "c16", name: "Flight Network Aviation", logo: "/img/clientes/flight_logo.png" },
+        { id: "c17", name: "Balanz", logo: "/img/clientes/Logo Balanz.png" }
     ] as Client[],
 
     // --- TESTIMONIOS (LINKEDIN) ---
