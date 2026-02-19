@@ -1,101 +1,118 @@
-# 🤖 Guía: Configurar el Chatbot WhatsApp con IA
+# 🤖 Guía Maestra: Integración WhatsApp Business + Groq AI
 
-## El chatbot ya está programado y desplegado. Solo falta conectarlo con WhatsApp.
+Esta guía contiene los **pasos detallados** para conectar el "cerebro" (Groq AI) con "la boca" (WhatsApp Business) de tu productora.
 
-Para que el bot responda mensajes de WhatsApp, **sí necesitás Meta Developer** (es gratis). Es la única forma de que WhatsApp envíe los mensajes a tu servidor.
-
----
-
-## Paso 1: Crear cuenta en Meta Developer (10 min)
-
-1. Andá a **[developers.facebook.com](https://developers.facebook.com)**
-2. Logueate con tu cuenta de Facebook
-3. Click en **"Crear app"**
-4. Seleccioná tipo **"Empresa"** (Business)
-5. Poné un nombre (ej: "NexoFilm Bot")
-6. Seleccioná tu cuenta de Meta Business (si no tenés, te pide crear una)
+> **Estado Actual**: El código del bot ya está listo en el proyecto (`api/whatsapp.js`). Ahora falta configurar los servicios externos (Meta y Vercel).
 
 ---
 
-## Paso 2: Agregar producto WhatsApp (5 min)
+## 📋 Pre-requisitos (Antes de empezar)
 
-1. En tu app, andá a **"Agregar productos"**
-2. Buscá **"WhatsApp"** y click en **"Configurar"**
-3. Te va a mostrar un **número de teléfono de prueba** y un **token temporal**
-4. Anotá estos datos:
-   - **Phone Number ID**: número tipo `1234567890` que aparece en el panel
-   - **Access Token**: click en "Generate" para obtener un token temporal
+1.  **Cuenta en Vercel**: Para alojar el bot.
+2.  **Cuenta en Facebook/Meta**: Para configurar WhatsApp.
+3.  **Cuenta en Groq**: Para la inteligencia artificial.
 
 ---
 
-## Paso 3: Configurar el Webhook (5 min)
+## 🚀 PASO 1: Obtener la API Key de Groq (La "Mente")
 
-1. En la sección WhatsApp de tu app, andá a **"Configuración"** → **"Webhooks"**
-2. Click en **"Editar"** y completá:
-   - **URL de callback**: `https://nexofilm.com/api/whatsapp`
-   - **Token de verificación**: `nexofilm_whatsapp_verify_2024` (elegí el que quieras)
-3. Click en **"Verificar y guardar"**
-4. Suscribite al campo **"messages"** (tildar la casilla)
-
----
-
-## Paso 4: Configurar variables en Vercel (2 min)
-
-Necesito que me pases estos 3 datos y yo los configuro en Vercel:
-
-1. **WHATSAPP_TOKEN** — El Access Token que generaste
-2. **WHATSAPP_VERIFY_TOKEN** — El token que elegiste en el paso 3 (ej: `nexofilm_whatsapp_verify_2024`)
-3. **WHATSAPP_PHONE_ID** — El Phone Number ID
+1.  Ingresá a **[console.groq.com](https://console.groq.com/keys)**.
+2.  Create una cuenta si no tenés.
+3.  Hacé click en **"Create API Key"**.
+4.  Ponle de nombre: `NexoFilmBot`.
+5.  **Copiá la clave** (empieza con `gsk_...`). 
+    > ⚠️ **Guardala bien**, no se vuelve a mostrar.
 
 ---
 
-## Paso 5: Probar el bot
+## ☁️ PASO 2: Desplegar en Vercel (El "Cuerpo")
 
-1. En Meta Developer, en la sección WhatsApp → "Empezar"
-2. Hay una opción **"Enviar mensaje de prueba"** con un número de prueba
-3. También podés agregar tu número personal como "número de prueba" para testear
-4. Mandá un mensaje y verificá que el bot responda
+Para que Facebook pueda "hablar" con tu bot, el bot tiene que estar en internet.
 
----
-
-## Paso 6: Conectar tu número real de WhatsApp Business
-
-Una vez que todo funcione con el número de prueba:
-
-1. En Meta Developer → WhatsApp → **"Números de teléfono"**
-2. Click en **"Agregar número de teléfono"**
-3. Seguí los pasos para verificar tu número de WhatsApp Business
-4. Meta te va a pedir verificar el negocio (puede tardar 24-48hs)
-
-> **IMPORTANTE**: Tu número actual de WhatsApp Business se va a desconectar de la app WhatsApp Business y pasará a funcionar via API. Esto significa que los mensajes los manejará el bot. Podés seguir teniendo acceso manual configurándolo desde Meta.
+1.  Subí tu proyecto a GitHub (si no lo hiciste).
+2.  Entrá a **[Vercel](https://vercel.com)** e importá el proyecto.
+3.  Vercel te dará una **URL de Dominio** (ej: `nexofilm-v3.vercel.app`).
+    - *Anotá esta URL, la usaremos en el Paso 4.*
 
 ---
 
-## ¿Qué hace el bot?
+## 💬 PASO 3: Configurar Meta Developers (El "Canal")
 
-El bot "Nexo" está programado para:
+### 3.1 Crear la App
+1.  Andá a **[developers.facebook.com](https://developers.facebook.com)** > Mis Apps.
+2.  **Crear app** > Seleccioná **"Otro"** (o "Empresa").
+3.  Tipo de app: **"Negocios"** (Business).
+4.  Nombre: `NexoFilm Bot`.
+5.  Vinculá tu cuenta comercial de Meta Business.
 
-- ✅ Saludar profesionalmente en la primera interacción
-- ✅ Recopilar datos para presupuestos de forma natural:
-  - Tipo de servicio (Video, Foto, Streaming)
-  - Descripción del proyecto
-  - Fecha y hora tentativa
-  - Duración estimada
-  - Cantidad de personas
-  - Ubicación
-- ✅ Derivar a hola@nexofilm.com para briefs detallados
-- ✅ Mencionar clientes destacados (Copa Airlines, Bahía Príncipe, etc.)
-- ✅ Derivar a un humano si el cliente lo pide
-- ❌ NUNCA da precios (siempre sugiere propuesta personalizada)
+### 3.2 Agregar WhatsApp
+1.  En el panel de la app, buscá **"WhatsApp"** (abajo) y dale a **"Configurar"**.
+2.  Quedate en la pestaña **"Inicio rápido" (Quickstart)**.
+3.  Verás:
+    - **ID del número de teléfono** (Phone Number ID).
+    - **Token de acceso temporal** (Access Token).
+    > ⚠️ El token temporal dura 24hs. Para producción necesitarás generar uno permanente (Sistema de Usuarios) luego, pero para probar usá este.
 
 ---
 
-## Arquitectura
+## 🔗 PASO 4: Conectar Todo en Vercel
 
-```
-Cliente WhatsApp → Meta Cloud API → nexofilm.com/api/whatsapp → Groq AI → Respuesta → WhatsApp
-```
+Ahora vamos a decirle a Vercel todos los secretos.
 
-- **Groq API Key**: Ya configurada ✅
-- **Endpoint Health**: https://nexofilm.com/api/health ✅
-- **Webhook**: https://nexofilm.com/api/whatsapp ✅
+1.  Andá a tu proyecto en **Vercel** > **Settings** > **Environment Variables**.
+2.  Agregá estas 4 variables (copiá y pegá los valores que obtuviste):
+
+| Nombre de Variable | Valor / De dónde sacarlo |
+| :--- | :--- |
+| `GROQ_API_KEY` | La clave que copiaste en el **Paso 1** (`gsk_...`). |
+| `WHATSAPP_TOKEN` | El "Token de acceso temporal" del **Paso 3.2**. |
+| `WHATSAPP_VERIFY_TOKEN` | Inventá una clave segura. Ej: `nexofilm_secreto_2024`. |
+| `WHATSAPP_PHONE_ID` | El "ID del número de teléfono" del **Paso 3.2**. |
+
+3.  **Redesplegá el proyecto** (Deployments > Redeploy) para que tome los cambios.
+
+---
+
+## 🪝 PASO 5: Configurar el Webhook (El "Oído")
+
+Ahora le decimos a Facebook dónde mandar los mensajes.
+
+1.  Volvé a **Meta Developers** > WhatsApp > **Configuración (Configuration)**.
+2.  Buscá "Webhook" y dale a **"Editar"**.
+3.  **URL de devolución de llamada (Callback URL)**:
+    - Escribí tu URL de Vercel + `/api/whatsapp`.
+    - Ejemplo: `https://tu-proyecto.vercel.app/api/whatsapp`
+    - (Si ya tenés dominio real: `https://nexofilm.com/api/whatsapp`)
+4.  **Token de verificación**:
+    - Escribí el mismo que pusiste en Vercel (`nexofilm_secreto_2024`).
+5.  Click en **"Verificar y guardar"**.
+    - *Si da error, revisá que hayas redesplegado Vercel en el Paso 4.*
+6.  Abajo en "Campos de Webhook", dale a **"Administrar"**.
+7.  Suscribite a **`messages`** (tildá la casilla en la columna Versión v21.0 o la que esté actual).
+
+---
+
+## 🧪 PASO 6: Probar
+
+1.  En Meta Developers > WhatsApp > **Inicio rápido**.
+2.  Bajá a "Enviar y recibir mensajes".
+3.  **Paso 1**: Seleccioná el número de prueba (ya debería estar).
+4.  **Paso 2**: En "Para", agregá **tu número real de WhatsApp** para recibir los mensajes de prueba. Te llegará un código a tu cel para confirmar.
+5.  ¡Listo! Abrí WhatsApp en tu cel, mandale un "Hola" al número de prueba.
+    - El bot debería contestar usando la IA de Groq.
+
+---
+
+## 🌍 PASO 7: Pasar a Producción (Número Real)
+
+Cuando todo funcione con el número de prueba:
+
+1.  En Meta Developers > WhatsApp > "Configuración de la API".
+2.  Hacé click en **"Agregar número de teléfono"**.
+3.  Seguí los pasos para verificar tu número de WhatsApp Business real (te llegará un SMS/Llamada).
+4.  Actualizá la variable `WHATSAPP_PHONE_ID` en Vercel con el ID del nuevo número real.
+5.  **Importante**: Para que el token no venza en 24hs, necesitás crear un "Usuario del Sistema" en el Business Manager de Meta y generar un token permanente.
+
+### ¿Problemas comunes?
+- **El bot no responde**: Revisá los logs en Vercel > Logs. Ahí verás si Groq está fallando o si el mensaje llega.
+- **Error de verificación de Webhook**: Asegurate que la URL sea pública (https) y que el token de verificación coincida exactamente.

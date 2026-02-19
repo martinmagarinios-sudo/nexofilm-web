@@ -1,54 +1,36 @@
 import Groq from 'groq-sdk';
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY?.trim() });
 
-const SYSTEM_PROMPT = `Eres "Nexo", el asistente virtual de NexoFilm, una productora audiovisual profesional con sede en Argentina. Tu rol es atender consultas de potenciales clientes de manera cálida, profesional y eficiente.
+// Número del Administrador (Tu número personal)
+const ADMIN_NUMBER = '5491151191964';
 
-PERSONALIDAD:
-- Profesional pero cercano, como un productor ejecutivo amigable
-- Usás emojis con moderación (🎬📸🎥✅)
-- Respondés siempre en español rioplatense (vos, sos, podés)
-- Respuestas concisas y claras (máximo 3-4 párrafos por mensaje de WhatsApp)
+const SYSTEM_PROMPT = `Eres el asistente virtual de NexoFilm. Tu tono es profesional, ágil y colaborador.
+Tu objetivo es **CALIFICAR** al cliente para que el productor humano pueda presupuestar rápidamente.
 
-SERVICIOS QUE OFRECÉS:
-1. 🎬 Video Corporativo / Publicitario (spots, institucionales, documentales)
-2. 📸 Fotografía Profesional (producto, eventos, retratos corporativos)
-3. 🎥 Streaming en Vivo (transmisiones HD multi-cámara)
-4. 🎞️ Cine Publicitario (alta producción cinematográfica)
+REGLAS DE ORO:
+1. **NO DES PRECIOS NUNCA**.
+2. **SOLO HABLÁ DE PRODUCCIÓN AUDIOVISUAL**. Si el usuario cambia de tema (clima, política, chistes, etc), respondé amablemente: "Perdón, estoy programado solo para asesorarte sobre nuestros servicios audiovisuales 🎬" y retomá la conversación profesional.
+3. Si preguntan por servicios: Ofrecemos Foto, Video y Streaming.
 
-OBJETIVO PRINCIPAL:
-Tu objetivo es recopilar la información necesaria para que el equipo de NexoFilm pueda armar un presupuesto. Debés obtener estos datos de forma natural (NO como formulario, sino conversando):
+DATOS A OBTENER (en orden):
+1. **Servicios**: ¿Foto, Video, Streaming o Combo?
+2. **Logística**: Fecha tentativa, horario (ej. 19 a 23hs) y lugar.
+3. **Escala**: Cantidad de asistentes (para calcular personal).
+4. **Solo si es Streaming**: ¿Hay internet? ¿Cuántas cámaras? ¿Plataforma?
 
-DATOS A RECOPILAR (en orden de prioridad):
-1. Tipo de servicio: Video, Foto, Streaming o combinación
-2. Descripción del proyecto: ¿Qué necesitan? ¿Para qué es?
-3. Fecha tentativa del evento/producción
-4. Duración estimada (horas de rodaje / cobertura)
-5. Cantidad de personas involucradas (equipo del cliente en cámara)
-6. Ubicación / Lugar donde se realiza
-7. Si necesitan edición, postproducción, gráficas animadas
-8. Presupuesto orientativo (si lo mencionan)
+CIERRE:
+Una vez tengas estos datos, despídete amablemente diciendo que "un productor analizará la info y le escribirá en breve por este mismo chat".
+Y agrega el bloque HANDOFF oculto.
 
-REGLAS ESTRICTAS:
-- NUNCA inventes precios ni des presupuestos. Siempre decí que el equipo va a preparar una propuesta personalizada.
-- Si el cliente pregunta precios, decí: "Cada proyecto es único. Con los datos que me des, nuestro equipo te prepara una propuesta a medida en 24-48hs 📋"
-- Cuando tengas suficiente información (mínimo: tipo de servicio + fecha + descripción), ofrecé agendar una reunión o videollamada.
-- Si preguntan algo NO relacionado con producción audiovisual, redirigí amablemente al tema.
-- Si piden hablar con una persona real, decí que vas a derivar al equipo y que se van a comunicar a la brevedad.
-- Mencioná el email hola@nexofilm.com si necesitan enviar documentación o briefs detallados.
-- Mencioná el portfolio en nexofilm.com para que vean trabajos anteriores.
-
-CLIENTES DESTACADOS (para dar confianza):
-Copa Airlines, Bahía Príncipe, Cerámica San Lorenzo, Droguería del Sud, GEA, Vista Sol, Iberostar, Eseade.
-
-PRIMER MENSAJE:
-Si es el primer mensaje del usuario, presentate brevemente: "¡Hola! 👋 Soy Nexo, el asistente de NexoFilm 🎬 ¿En qué puedo ayudarte? Contame qué tipo de producción audiovisual estás buscando y te asesoro."
-
-FORMATO DE RESPUESTA:
-- Usá saltos de línea para separar ideas
-- No uses markdown (WhatsApp no lo renderiza bien)
-- Usá *asteriscos* solo para negritas (WhatsApp sí soporta esto)
-- Mantené las respuestas en 2-4 párrafos máximo`;
+FORMATO HANDOFF:
+$$HANDOFF_JSON$$
+{
+  "handoff": true,
+  "summary": "Resumen (ej: Foto+Video 15/05, 200 pax, Palermo)",
+  "priority": "alta"
+}
+$$HANDOFF_JSON$$`;
 
 export default async function handler(req, res) {
     // --- VERIFICACIÓN DEL WEBHOOK (GET) ---
@@ -56,61 +38,102 @@ export default async function handler(req, res) {
         const mode = req.query['hub.mode'];
         const token = req.query['hub.verify_token'];
         const challenge = req.query['hub.challenge'];
-
-        if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
-            console.log('✅ Webhook verificado correctamente');
+        if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN?.trim()) {
             return res.status(200).send(challenge);
         }
-        return res.status(403).json({ error: 'Token de verificación inválido' });
+        return res.status(403).json({ error: 'Token inválido' });
     }
 
     // --- RECIBIR MENSAJES (POST) ---
     if (req.method === 'POST') {
         try {
             const body = req.body;
-
-            // Verificar que es un mensaje de WhatsApp válido
             const entry = body?.entry?.[0];
             const changes = entry?.changes?.[0];
             const value = changes?.value;
 
-            // Ignorar notificaciones de estado (delivered, read, etc.)
             if (!value?.messages || value.messages.length === 0) {
                 return res.status(200).json({ status: 'no_message' });
             }
 
             const message = value.messages[0];
-            const from = message.from; // Número del remitente
+            const from = message.from;
             const phoneNumberId = value.metadata?.phone_number_id;
 
-            // Solo procesar mensajes de texto
-            if (message.type !== 'text') {
-                await sendWhatsAppMessage(
-                    phoneNumberId,
-                    from,
-                    '¡Hola! 👋 Por el momento solo puedo procesar mensajes de texto. ¿Podés escribirme tu consulta? 😊'
-                );
-                return res.status(200).json({ status: 'non_text_handled' });
+            // Ignorar mensajes del Admin
+            if (from === ADMIN_NUMBER) return res.status(200).json({ status: 'admin_ignored' });
+
+            console.log(`📩 Mensaje de ${from}:`, message);
+
+            // --- LÓGICA DE MENÚ E INTERACCIÓN ---
+
+            // 1. Si es mensaje de TEXTO
+            if (message.type === 'text') {
+                const text = message.text.body.toLowerCase().trim();
+
+                // Si saluda o empieza de cero -> MENÚ PRINCIPAL
+                if (['hola', 'buen', 'info', 'empezar', 'menu'].some(w => text.includes(w))) {
+                    await sendInteractiveMenu(phoneNumberId, from);
+                    return res.status(200).json({ status: 'menu_sent' });
+                }
+
+                // Procesar con Groq
+                await handleAIConversation(phoneNumberId, from, message.text.body);
+                return res.status(200).json({ status: 'ai_reply_sent' });
             }
 
-            const userMessage = message.text.body;
-            console.log(`📩 Mensaje de ${from}: ${userMessage}`);
+            // 2. Si es respuesta a un BOTÓN (interactive)
+            if (message.type === 'interactive') {
+                const btnId = message.interactive.button_reply.id;
 
-            // Generar respuesta con Groq
-            const aiResponse = await generateAIResponse(userMessage);
-            console.log(`🤖 Respuesta IA: ${aiResponse.substring(0, 100)}...`);
+                if (btnId === 'btn_presupuesto') {
+                    await sendWhatsAppMessage(phoneNumberId, from, "¡Genial! Me encantaría ayudarte con eso. 🎬\n\nPara armar una propuesta a medida, contame primero: **¿Qué tipo de cobertura buscás?** (Foto, Video, Streaming o un combo).");
+                }
+                else if (btnId === 'btn_portfolio') {
+                    await sendWhatsAppMessage(phoneNumberId, from, "¡Claro! Mirá nuestros trabajos acá:\n\n🎬 **Web:** https://nexofilm.com\n🎥 **Vimeo:** https://vimeo.com/nexofilm\n📸 **Instagram:** https://instagram.com/nexofilm\n\n¿Te gustaría pedir un presupuesto después de verlos?");
+                }
+                else if (btnId === 'btn_humano') {
+                    await sendWhatsAppMessage(phoneNumberId, from, "Entendido. Un productor te va a contactar a la brevedad. 👤📞");
+                    await sendWhatsAppMessage(phoneNumberId, ADMIN_NUMBER, `🔔 *ALERTA:* El cliente +${from} pide hablar con un humano por el Bot.`);
+                }
 
-            // Enviar respuesta por WhatsApp
-            await sendWhatsAppMessage(phoneNumberId, from, aiResponse);
+                return res.status(200).json({ status: 'interaction_handled' });
+            }
 
-            return res.status(200).json({ status: 'message_processed' });
+            return res.status(200).json({ status: 'unknown_type' });
+
         } catch (error) {
-            console.error('❌ Error procesando mensaje:', error);
-            return res.status(200).json({ status: 'error', error: error.message });
+            console.error('❌ Error:', error);
+            return res.status(500).json({ error: error.message });
+        }
+    }
+    return res.status(405).json({ error: 'Método no permitido' });
+}
+
+// --- FUNCIONES AUXILIARES ---
+
+async function handleAIConversation(phoneNumberId, to, userMessage) {
+    const aiRawResponse = await generateAIResponse(userMessage);
+
+    let finalResponse = aiRawResponse;
+    let handoffData = null;
+    const jsonMatch = aiRawResponse.match(/\$\$HANDOFF_JSON\$\$([\s\S]*?)\$\$HANDOFF_JSON\$\$/);
+
+    if (jsonMatch && jsonMatch[1]) {
+        try {
+            handoffData = JSON.parse(jsonMatch[1]);
+            finalResponse = aiRawResponse.replace(jsonMatch[0], '').trim();
+        } catch (e) {
+            console.error('Error JSON:', e);
         }
     }
 
-    return res.status(405).json({ error: 'Método no permitido' });
+    await sendWhatsAppMessage(phoneNumberId, to, finalResponse);
+
+    if (handoffData?.handoff) {
+        const adminMsg = `🔔 *NUEVO LEAD - NEXO FILM*\n\n👤 *Cliente:* \`+${to}\`\n📝 *Resumen:* ${handoffData.summary}\n👉 https://wa.me/${to}`;
+        await sendWhatsAppMessage(phoneNumberId, ADMIN_NUMBER, adminMsg);
+    }
 }
 
 async function generateAIResponse(userMessage) {
@@ -121,41 +144,60 @@ async function generateAIResponse(userMessage) {
                 { role: 'user', content: userMessage }
             ],
             model: 'llama-3.1-70b-versatile',
-            temperature: 0.7,
-            max_tokens: 500,
-            top_p: 0.9,
+            temperature: 0.5, // Bajamos temp para que sea más obediente con las reglas de negocio
+            max_tokens: 600,
         });
-
-        return completion.choices[0]?.message?.content ||
-            '¡Hola! Disculpá, tuve un problema técnico. ¿Podés repetirme tu consulta? 😊';
+        return completion.choices[0]?.message?.content || 'Disculpá, no entendí bien.';
     } catch (error) {
-        console.error('❌ Error con Groq:', error);
-        return '¡Hola! En este momento estoy teniendo dificultades técnicas. Por favor escribí a hola@nexofilm.com o intentá de nuevo en unos minutos. 🙏';
+        console.error('Error Groq:', error);
+        return 'Tuve un error técnico. Escribinos a hola@nexofilm.com';
     }
+}
+
+async function sendInteractiveMenu(phoneNumberId, to) {
+    const url = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
+    const body = {
+        messaging_product: 'whatsapp',
+        to: to,
+        type: 'interactive',
+        interactive: {
+            type: 'button',
+            body: {
+                text: "¡Hola! Bienvenido a Nexo Film. 🎥✨\nGracias por contactarnos. ¿En qué podemos ayudarte hoy? Seleccioná una opción:"
+            },
+            action: {
+                buttons: [
+                    { type: "reply", reply: { id: "btn_presupuesto", title: "📋 Pedir Presupuesto" } },
+                    { type: "reply", reply: { id: "btn_portfolio", title: "🎬 Ver Portfolio" } },
+                    { type: "reply", reply: { id: "btn_humano", title: "👤 Hablar con Humano" } }
+                ]
+            }
+        }
+    };
+
+    await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${process.env.WHATSAPP_TOKEN?.trim()}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body)
+    });
 }
 
 async function sendWhatsAppMessage(phoneNumberId, to, message) {
     const url = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
-
-    const response = await fetch(url, {
+    await fetch(url, {
         method: 'POST',
         headers: {
-            'Authorization': `Bearer ${process.env.WHATSAPP_TOKEN}`,
+            'Authorization': `Bearer ${process.env.WHATSAPP_TOKEN?.trim()}`,
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
             messaging_product: 'whatsapp',
             to: to,
             type: 'text',
-            text: { body: message }
+            text: { body: message, preview_url: true }
         }),
     });
-
-    if (!response.ok) {
-        const errorData = await response.text();
-        console.error('❌ Error enviando WhatsApp:', errorData);
-        throw new Error(`WhatsApp API error: ${response.status}`);
-    }
-
-    return response.json();
 }

@@ -137,7 +137,8 @@ export const CONFIG = {
         { id: "c11", name: "Vista Sol", logo: "/img/clientes/Vista Sol Blanco_logo.png" },
         { id: "c12", name: "Pacific Ocean", logo: "/img/clientes/PACIFIC-OCEAN_logo.png" },
         { id: "c13", name: "Namida nikei", logo: "/img/clientes/namida logo.png" },
-        { id: "c14", name: "Jazz operador mayorista", logo: "/img/clientes/Jazz logo.png" }
+        { id: "c14", name: "Jazz operador mayorista", logo: "/img/clientes/Jazz logo.png" },
+        { id: "c15", name: "Circunda Travel", logo: "/img/clientes/Circunda_logo.png" }
     ] as Client[],
 
     // --- TESTIMONIOS (LINKEDIN) ---
