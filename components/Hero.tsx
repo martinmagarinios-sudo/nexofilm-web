@@ -24,7 +24,7 @@ const Hero: React.FC = () => {
   }, []);
 
   return (
-    <section className="relative h-screen w-full overflow-hidden bg-black">
+    <section className="relative h-dvh w-full overflow-hidden bg-black">
       {/* Etiqueta lateral decorativa */}
       <div className="absolute top-1/2 right-12 -translate-y-1/2 z-40 hidden lg:block rotate-90 origin-right">
         <p className="text-[9px] font-bold uppercase tracking-[0.8em] text-white/10">
