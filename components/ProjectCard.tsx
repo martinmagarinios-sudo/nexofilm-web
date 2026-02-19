@@ -54,7 +54,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
             onVideoClick(project.embedUrl);
         } else if (project.videoUrl) {
             onVideoClick(project.videoUrl);
-        } else {
+        } else if (project.category !== 'Foto Producto') {
             window.open(project.behanceUrl, '_blank');
         }
     };
