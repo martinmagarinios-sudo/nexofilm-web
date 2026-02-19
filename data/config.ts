@@ -138,7 +138,8 @@ export const CONFIG = {
         { id: "c12", name: "Pacific Ocean", logo: "/img/clientes/PACIFIC-OCEAN_logo.png" },
         { id: "c13", name: "Namida nikei", logo: "/img/clientes/namida logo.png" },
         { id: "c14", name: "Jazz operador mayorista", logo: "/img/clientes/Jazz logo.png" },
-        { id: "c15", name: "Circunda Travel", logo: "/img/clientes/circunda_logo_blanco.png" }
+        { id: "c15", name: "Circunda Travel", logo: "/img/clientes/circunda_logo_blanco.png" },
+        { id: "c16", name: "Flight Network Aviation", logo: "/img/clientes/flight_logo.png" }
     ] as Client[],
 
     // --- TESTIMONIOS (LINKEDIN) ---
