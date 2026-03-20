@@ -42,6 +42,7 @@ const Clients: React.FC = () => {
                 src={client.logo}
                 alt={`Logo de ${client.name}`}
                 title={client.name}
+                loading="lazy"
                 className="h-12 md:h-16 w-auto max-w-[150px] object-contain 
                            opacity-60 transition-all duration-500 ease-out
                            group-hover:opacity-100 group-hover:scale-110

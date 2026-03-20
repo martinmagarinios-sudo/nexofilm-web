@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Project } from '../types';
+import WebGLHoverImage from '../src/components/WebGLHoverImage';
 
 interface ProjectCardProps {
     project: Project;
@@ -77,10 +78,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
     return (
         <div className="group cursor-pointer">
             <div
-                className="relative aspect-[16/9] overflow-hidden mb-8 border border-white/5 group-hover:border-nexo-lime/30 transition-colors duration-700 outline-none focus-visible:ring-2 focus-visible:ring-nexo-lime"
+                className="relative aspect-[16/9] overflow-hidden mb-8 rounded-sm bg-zinc-900 group-hover:-translate-y-2 transition-all duration-700 outline-none focus-visible:ring-2 focus-visible:ring-nexo-lime group-hover:shadow-[0_20px_40px_-15px_rgba(206,255,26,0.15)] ring-1 ring-white/5 group-hover:ring-white/10"
                 role="button"
                 tabIndex={0}
                 onClick={handleClick}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } }}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
             >
@@ -103,6 +105,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
                                 <img
                                     src={imgSrc}
                                     alt={`${project.title} ${idx}`}
+                                    loading="lazy"
                                     className="w-full h-full object-cover transition-transform duration-1000 scale-105"
                                 />
                             </div>
@@ -110,11 +113,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
                     </div>
                 ) : (
                     /* --- MODO IMAGEN SIMPLE / LANDSCAPE --- */
-                    <img
-                        src={displayImage}
-                        alt={project.title}
-                        className={`w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${isHovering ? 'grayscale-0' : 'grayscale'}`}
-                    />
+                    <div className="w-full h-full absolute inset-0 transition-transform duration-1000 group-hover:scale-105">
+                        <WebGLHoverImage
+                            imageSrc={displayImage}
+                            isHovering={isHovering}
+                            alt={project.title}
+                        />
+                    </div>
                 )}
 
                 {/* Overlay */}

@@ -93,7 +93,15 @@ const Testimonials: React.FC = () => {
                   <div className="glass p-8 rounded-xl flex flex-col justify-between hover:border-white/20 transition-all duration-300 group h-full">
                     <div>
                       <div className="flex items-center gap-4 mb-6">
-                        <img src={testi.avatar} alt={testi.author} className="w-12 h-12 rounded-full border border-white/10 object-cover" loading="lazy" />
+                        <img 
+                          src={testi.avatar} 
+                          alt={testi.author} 
+                          className="w-12 h-12 rounded-full border border-white/10 object-cover" 
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(testi.author)}&background=B4E410&color=000&size=100`;
+                          }}
+                        />
                         <div>
                           <h4 className="font-black uppercase tracking-tight text-nexo-lime group-hover:text-white transition-colors">{testi.author}</h4>
                           <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">{testi.role} @ {testi.company}</p>

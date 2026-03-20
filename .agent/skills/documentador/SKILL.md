@@ -29,3 +29,13 @@ Cada vez que se complete un hito importante (ej. integración de Behance, config
 Se ha implementado una galería dinámica que carga proyectos desde la configuración central.
 - **Para añadir un video**: Edita `src/data/config.ts` y añade el ID del video de Behance en la sección `portfolio`.
 - **Archivos**: `src/components/Portfolio.tsx`, `src/data/config.ts`.
+
+### Analíticas y Base de Datos (Leads)
+Se integraron herramientas para medir el tráfico web y guardar automáticamente los contactos del bot de WhatsApp.
+- **Google Analytics**: Mide las visitas a la web. Se configuró el Measurement ID en `index.html`.
+- **Supabase (CRM de Leads)**: Cuando el bot de WhatsApp deriva un cliente a un humano, se guarda automáticamente el teléfono y el resumen de la conversación en una base de datos segura de Supabase. Se creó un panel de control para visualizar estos datos en `nexofilm.com/admin`.
+- **Panel de Control (Dashboard)**: Accesible en la ruta `/admin`. Protegido con contraseña (configurada en el código del componente).
+- **Archivos**: `index.html`, `api/whatsapp.js`, `package.json`, `src/admin/Dashboard.tsx`, `index.tsx`.
+- **Configuración (Variables de Entorno)**:
+  - `SUPABASE_URL` / `VITE_SUPABASE_URL`: La URL del proyecto en Supabase.
+  - `SUPABASE_KEY` / `VITE_SUPABASE_KEY`: La clave API (anon/public) del proyecto en Supabase.

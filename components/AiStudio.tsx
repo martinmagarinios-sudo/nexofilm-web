@@ -23,7 +23,7 @@ const AiStudio: React.FC = () => {
       setSelectedFile(file);
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
-      setResult(null); 
+      setResult(null);
     }
   };
 
@@ -132,8 +132,11 @@ const AiStudio: React.FC = () => {
             <div className="flex-1">
               <div className="space-y-8">
                 {activeTool !== 'generate' && (
-                  <div 
+                  <div
+                    role="button"
+                    tabIndex={0}
                     onClick={() => fileInputRef.current?.click()}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
                     className={`relative border-2 border-dashed rounded-sm p-12 text-center cursor-pointer transition-all ${previewUrl ? 'border-nexo-lime/50 bg-nexo-lime/5' : 'border-white/10 hover:border-nexo-lime/30'}`}
                   >
                     {previewUrl ? (
@@ -141,7 +144,7 @@ const AiStudio: React.FC = () => {
                     ) : (
                       <div className="text-zinc-500 space-y-4">
                         <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-8 h-8 text-nexo-lime" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                          <svg className="w-8 h-8 text-nexo-lime" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                         </div>
                         <p className="text-xs uppercase tracking-widest font-bold">Subir fotograma para estudio</p>
                       </div>
@@ -152,7 +155,7 @@ const AiStudio: React.FC = () => {
 
                 <div className="space-y-3">
                   <label className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-black">Instrucciones del Director</label>
-                  <textarea 
+                  <textarea
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     className="w-full bg-white/5 border border-white/10 rounded-sm p-6 focus:outline-none focus:border-nexo-lime transition-all h-28 resize-none text-zinc-200 placeholder:text-zinc-700 font-light"
@@ -160,7 +163,7 @@ const AiStudio: React.FC = () => {
                   />
                 </div>
 
-                <button 
+                <button
                   onClick={runTool}
                   disabled={loading || (activeTool !== 'generate' && !selectedFile)}
                   className={`w-full py-6 rounded-sm font-black uppercase tracking-[0.4em] text-[11px] transition-all ${loading ? 'bg-zinc-900 text-zinc-600' : 'bg-nexo-lime text-black hover:bg-white shadow-xl'}`}
@@ -174,13 +177,13 @@ const AiStudio: React.FC = () => {
             <div className="mt-16 pt-16 border-t border-white/5">
               {loading && (
                 <div className="space-y-4 text-center">
-                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-nexo-lime">
-                        <span>{progressMessage}</span>
-                        <span>{Math.round(progress)}%</span>
-                    </div>
-                    <div className="w-full h-[2px] bg-white/5 overflow-hidden">
-                        <div className="h-full bg-nexo-lime transition-all duration-500" style={{ width: `${progress}%` }}></div>
-                    </div>
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-nexo-lime">
+                    <span>{progressMessage}</span>
+                    <span>{Math.round(progress)}%</span>
+                  </div>
+                  <div className="w-full h-[2px] bg-white/5 overflow-hidden">
+                    <div className="h-full bg-nexo-lime transition-all duration-500" style={{ width: `${progress}%` }}></div>
+                  </div>
                 </div>
               )}
               {result && !loading && (

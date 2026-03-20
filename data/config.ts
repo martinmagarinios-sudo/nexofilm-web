@@ -7,8 +7,8 @@ import { Project, Client, Testimonial, HeroSlide } from '../types';
 
 export const CONFIG = {
     // --- DATOS DE CONTACTO ---
-    whatsappNumber: "5491151191964", // Número internacional sin '+' (ej: 54911...)
-    whatsappMessage: "Hola Nexo! Me gustaría consultar por un proyecto.",
+    whatsappNumber: "541158804711", // Número internacional sin '+' (ej: 5411...)
+    whatsappMessage: "Hola NexoFilm, estoy navegando en tu web y me gustaría hacerte una consulta.",
     social: {
         instagram: "https://instagram.com/nexofilm.co",
         linkedin: "https://www.linkedin.com/in/martin-magarinios/",
@@ -87,7 +87,7 @@ export const CONFIG = {
             title: "Droguería del Sud",
             category: "Video Comercial",
             imageUrl: "",
-            videoUrl: "/video/portfolio/DDS.mp4",
+            videoUrl: "/video/portfolio/dds_fiesta_2025.mp4",
             description: "Producción audiovisual para Droguería del Sud.",
             behanceUrl: "https://www.behance.net/NexoFilm"
         },
@@ -142,7 +142,16 @@ export const CONFIG = {
             videoUrl: "/video/portfolio/Vista.mp4",
             description: "Producción audiovisual para Vista Sol.",
             behanceUrl: "https://www.behance.net/NexoFilm"
-        }
+        },
+        {
+            id: "9",
+            title: "Droguería del Sud",
+            category: "Video Comercial",
+            imageUrl: "",
+            videoUrl: "/video/portfolio/DDS.mp4",
+            description: "Producción audiovisual para Droguería del Sud.",
+            behanceUrl: "https://www.behance.net/NexoFilm"
+        },
     ] as Project[],
 
     // --- CLIENTES ---
@@ -176,8 +185,8 @@ export const CONFIG = {
             role: "Director of Marketing at Bahia Principe Hotels&Resorts",
             company: "Bahia Principe",
             text: "Martin es el mejor en Latam… Su predisposición, creatividad, amabilidad y cercanía lo hacen unico en su profesión. Ha hecho numerosos trabajos con nosotros y siempre han sido de 10. Lo recomiendo totalmente y lo volveríamos a escoger 100 veces… Gracias @MartinMagariños",
-            avatar: "https://media.licdn.com/dms/image/v2/C5603AQGsSw-S_v1zKw/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1516881726365?e=1772668800&v=beta&t=8z6VI_PcA8rEpuHpXAAOYA_MG58psxlLSkozElAfkS0",
-            linkedinUrl: "https://www.linkedin.com/in/martin-magarinios/"
+            avatar: "/img/testimonios/alba-mingo.jpg",
+            linkedinUrl: "https://www.linkedin.com/services/page/680603313052a96099/"
         },
         {
             id: "t2",
@@ -185,8 +194,8 @@ export const CONFIG = {
             role: "Vice President Global Leisure Sales",
             company: "Palm Beach",
             text: "Martin Magariños es un gran profesional, tuve la fortuna de trabajar con él durante mi tiempo en Visit Lauderdale y The Palm Beaches- Organismos de Turismo, donde se creó una estrategia de contenido eficaz, con objetivos y público definido. Los tiempos y proceso de producción, fueron excelentes. Es un placer poder recomendar su gran trabajo y espero tener la oportunidad de volver a colaborar con el.",
-            avatar: "https://media.licdn.com/dms/image/v2/D4E03AQHbCk3NDkicdQ/profile-displayphoto-crop_800_800/B4EZoskAWbIwAI-/0/1761684227855?e=1772668800&v=beta&t=t1ZDj3WobAsHcl_PT_orFlXijHGAfkhYZeJQ3KVvHIo",
-            linkedinUrl: "https://www.linkedin.com/in/martin-magarinios/"
+            avatar: "/img/testimonios/erick-garnica.jpg",
+            linkedinUrl: "https://www.linkedin.com/services/page/680603313052a96099/"
         },
         {
             id: "t3",
@@ -194,8 +203,8 @@ export const CONFIG = {
             role: "Business Development Director Latam | Hospitality Strategy & Revenue Growth | Strategic Partnerships",
             company: "Iberostar Hotels & Resorts",
             text: "Excelente profesional con gran creatividad y compromiso con el cliente !",
-            avatar: "https://media.licdn.com/dms/image/v2/D4D03AQHXXEVJHr9BRQ/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1683608025727?e=1772668800&v=beta&t=fFeWYTJqGnIIdZmlSG2se2PaiszkFDQq4rZgKmusZOg",
-            linkedinUrl: "https://www.linkedin.com/in/martin-magarinios/"
+            avatar: "/img/testimonios/hector-alvarez.jpg",
+            linkedinUrl: "https://www.linkedin.com/services/page/680603313052a96099/"
         },
         {
             id: "t4",
@@ -203,8 +212,8 @@ export const CONFIG = {
             role: "Presidente en Grupo Gea Latam",
             company: "Grupo Gea Latam",
             text: "Es de los mejores profesionales para coberturas de medios audiovisuales vinculados al turismo, la cálida de sus trabajos, la velocidad en la entrega y el conocimiento del sector lo hacen único",
-            avatar: "https://media.licdn.com/dms/image/v2/D4D03AQF8H2rbLWn0qA/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1723980863038?e=1772668800&v=beta&t=WysFqXdCBFfUpIZHt7HxYMAObUHtaqSjjW4olJG6810",
-            linkedinUrl: "https://www.linkedin.com/in/martin-magarinios/"
+            avatar: "/img/testimonios/marcelo-capdevila.jpg",
+            linkedinUrl: "https://www.linkedin.com/services/page/680603313052a96099/"
         },
         {
             id: "t5",
@@ -212,8 +221,8 @@ export const CONFIG = {
             role: "Gerente Comercial - Europa",
             company: "AMV Travel DMC",
             text: "Trabaje con Martín de manera directa en eventos y algunas promociones y es además de un gusto, un profesional que sabe brindarte los consejos exactos para que las cosas salgan de manera excepcional. También he visto su trabajo de manera indirecta en reels o videos promocionales y debo de destacar la originalidad que maneja en todo lo que hace.",
-            avatar: "https://media.licdn.com/dms/image/v2/D4D03AQHcWuxOwDiNgA/profile-displayphoto-shrink_800_800/B4DZaxdo4aG4Ao-/0/1746734059523?e=1772668800&v=beta&t=ZoEDlHI9Zzud64Rn_vssbQOb_JymH3tj4K7lvaBPBWk",
-            linkedinUrl: "https://www.linkedin.com/in/martin-magarinios/"
+            avatar: "/img/testimonios/nicolas-bortagaray.jpg",
+            linkedinUrl: "https://www.linkedin.com/services/page/680603313052a96099/"
         },
         {
             id: "t6",
@@ -221,8 +230,17 @@ export const CONFIG = {
             role: "Productora Integral de Eventos",
             company: "Flor Blanco Producciones",
             text: "Hemos contratado a Martin Magariños para cubrir en foto y video diferentes proyectos como Expo Comerciales, Lanzamientos de Producto, Viajes, Inauguraciones de Plantas, etc, trabajos muy diversos en los cuales siempre aportó una mirada \u201Ccinematográfica\u201D acompañando la narrativa del evento. Comparte siempre propuestas creativas y suma con el drone un toque extra a todas las coberturas. Lo volveriamos a elegir SIEMPRE !!",
-            avatar: "https://media.licdn.com/dms/image/v2/D4D03AQG7ttRFMR_55w/profile-displayphoto-crop_800_800/B4DZxJGOuRJ8AI-/0/1770752898353?e=1772668800&v=beta&t=flT3o6MN3854R1_C5HrzOtYfGno9esPKQFel-5LXn8U",
-            linkedinUrl: "https://www.linkedin.com/in/martin-magarinios/"
+            avatar: "/img/testimonios/flor-blanco.jpg",
+            linkedinUrl: "https://www.linkedin.com/services/page/680603313052a96099/"
+        },
+        {
+            id: "t7",
+            author: "Anabella Agostina Magliocca",
+            role: "Cherry Marketing",
+            company: "Cherry Marketing",
+            text: "El mejor proveedor con el que trabaje en años Nos conocimos en 2020 y desde ese momento para cada evento que necesito cobertura audiovisual lo convoco Su equipo tambien es impecable.",
+            avatar: "/img/testimonios/anabella.jpg",
+            linkedinUrl: "https://www.linkedin.com/services/page/680603313052a96099/"
         }
     ] as Testimonial[],
 
@@ -240,7 +258,7 @@ export const CONFIG = {
 
     // --- FOOTER ---
     footer: {
-        text: "Somos NexoFilm, conectamos marcas con historias. Fotografía, Streaming y Cine para marcas que trascienden.",
+        text: "Somos NexoFilm, conectamos marcas con historias.\nVideo, fotografía y streaming para marcas que trascienden.",
         copyright: "NexoFilm. Productora Audiovisual."
     }
 };

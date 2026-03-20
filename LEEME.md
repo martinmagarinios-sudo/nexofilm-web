@@ -81,3 +81,68 @@ El usuario puede gestionar los videos desde `src/data/config.ts`.
     - Se añade un resplandor sutil (glow) detrás del logo.
 - **Integración**: El componente ahora lee directamente de `src/data/config.ts`, solucionando el error de "carpeta vacía".
 
+### Integración Chatbot WhatsApp Meta API (21/02/2026) -> Por Skill Documentador
+
+**Objetivo**: Habilitar un bot conversacional inteligente para pre-calificar clientes usando la API oficial de WhatsApp (Meta) y Groq (IA).
+
+**Configuración**: 
+Las credenciales necesarias se han configurado como Variables de Entorno en el archivo `.env.local` y deberán replicarse en Vercel al publicar:
+- `WHATSAPP_TOKEN`: Token de acceso de Meta.
+- `WHATSAPP_VERIFY_TOKEN`: Palabra clave para el Webhook (`NexoFilmBot2024`).
+- `GROQ_API_KEY`: Clave para la inteligencia artificial.
+
+**Archivos Afectados**:
+- `api/whatsapp.js` (Lógica del Webhook y Bot).
+- `.env.local` (Tokens de seguridad locales).
+
+**Instrucciones de Mantenimiento**:
+Para modificar el comportamiento del bot (ej. Prompt) o el número administrador que recibe los leads finales, editar el archivo `api/whatsapp.js`. Para actualizar los tokens de conexión, modificar `.env.local` en tu PC o las Variables de Entorno en Vercel. Finalmente, vincular el Webhook en `developers.facebook.com` apuntando a la URL de producción (`https://[TU-DOMINIO]/api/whatsapp`).
+
+### Indexación en Google Search Console (25/02/2026) -> Por Skill Documentador
+
+**Objetivo**: Asegurar que Google descubra y muestre la web completa en sus resultados de búsqueda de forma rápida.
+
+**Pasos para el Administrador (Única Vez)**:
+1. Ir a **[Google Search Console](https://search.google.com/search-console)** e iniciar sesión con la cuenta de Google de NexoFilm.
+2. Hacer clic en **"Añadir propiedad"** (Add property).
+3. Elegir la opción **"Prefijo de la URL"** (URL prefix) e ingresar la URL exacta de la web en producción: `https://nexofilm.com` (o el dominio final). Click en *Continuar*.
+4. **Verificar propiedad**: Como la web ya tiene Google Analytics (gtag) configurado, elegir el método de verificación "Google Analytics" y hacer clic en verificar (suele ser instantáneo si es la misma cuenta de Google).
+5. En el menú lateral izquierdo, ir a la sección **"Sitemaps"**.
+6. En "Añadir un sitemap nuevo", escribir `sitemap.xml` y hacer clic en **"Enviar"** (Submit).
+
+**Archivos Afectados / Relacionados**:
+- `public/sitemap.xml`: Contiene el mapa de la web para Google.
+- `public/robots.txt`: Da permiso a Google para rastrear.
+- `index.html`: Contiene la etiqueta de verificación indirecta a través de Google Analytics.
+
+### Actualización de Favicon (14/03/2026) -> Por Skill Documentador
+
+**Objetivo**: Reemplazar el favicon anterior por el nuevo diseño oficial de la marca (logo blanco).
+
+**Configuración**:
+El nuevo favicon se ha establecido reemplazando el archivo `public/favicon.png` original. El archivo fuente utilizado fue `public/Logos blanco PNG-05.png`.
+- **Ubicación**: El archivo activo que lee el navegador es `public/favicon.png`.
+- **Referencias**: Está enlazado en `index.html` mediante la etiqueta `<link rel="icon" type="image/png" href="/favicon.png" />`.
+
+**Archivos Afectados**:
+- `public/favicon.png` (reemplazado).
+- `LEEME.md` (registro de cambios).
+
+**Instrucciones de Mantenimiento**:
+Para volver a cambiar el favicon en el futuro, simplemente reemplaza el archivo `public/favicon.png` por la nueva imagen (recomendado en formato PNG o ICO cuadrado, tamaño ideal 512x512px o 192x192px). No es necesario modificar `index.html` a menos que se cambie el nombre o extensión del archivo.
+
+### Actualización de Logo Principal (14/03/2026) -> Por Skill Documentador
+
+**Objetivo**: Reemplazar el logo anterior de NexoFilm por su versión final en alta calidad ("Logos blanco PNG-03.png").
+
+**Configuración**:
+Se optó por sobreescribir los archivos físicos del logo original para evitar cambios innecesarios y redundantes de rutas dentro del código de los componentes.
+- **Archivos fuente**: El nuevo logo blanco de alta resolución se copió en dos ubicaciones donde se alojaban las referencias anteriores.
+
+**Archivos Afectados**:
+- `public/img/logo.png` (reemplazado). Usado de forma estática en la sección `Hero.tsx`.
+- `components/logo.png` (reemplazado). Importado dinámicamente en el componente `Logo.tsx` principal.
+- `LEEME.md` (registro de cambios).
+
+**Instrucciones de Mantenimiento**:
+Si necesitas actualizar el logo principal nuevamente, lo más sencillo es reemplazar directamente los archivos `public/img/logo.png` y `components/logo.png` con el nuevo diseño asegurándote de usar el mismo nombre exacto `logo.png` para mantener intactas todas sus referencias.

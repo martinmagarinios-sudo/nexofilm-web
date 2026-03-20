@@ -44,9 +44,21 @@ const Portfolio: React.FC = () => {
         {activeVideo && (
           <div
             className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 md:p-12"
-            onClick={() => setActiveVideo(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Visor de medios"
           >
-            <div className="relative w-full max-w-6xl aspect-video bg-black border border-white/10 shadow-2xl rounded-lg overflow-hidden">
+            {/* Backdrop interactivo para cerrar */}
+            <div 
+              className="absolute inset-0 cursor-pointer"
+              onClick={() => setActiveVideo(null)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') setActiveVideo(null); }}
+              role="button"
+              aria-label="Cerrar video"
+              tabIndex={0}
+            />
+            {/* Contenedor principal de video */}
+            <div className="relative z-10 w-full max-w-6xl aspect-video bg-black border border-white/10 shadow-2xl rounded-lg overflow-hidden">
               <button
                 onClick={() => setActiveVideo(null)}
                 className="absolute top-4 right-4 z-50 p-2 bg-black/50 hover:bg-nexo-lime hover:text-black rounded-full transition-colors text-white"

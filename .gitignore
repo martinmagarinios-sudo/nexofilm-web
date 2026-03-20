@@ -24,3 +24,15 @@ dist-ssr
 *.sw?
 
 .vercel
+.env*.local
+
+# Scripts de testeo y variables temporales que GitHub bloquea
+test_*.js
+set_vercel_env.*
+set_groq_env.*
+send_template.js
+check_*.js
+create_og.*
+*.txt
+!robots.txt
+*.ps1

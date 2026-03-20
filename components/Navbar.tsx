@@ -35,9 +35,13 @@ const Navbar: React.FC = () => {
         }`} />
 
       <div className="container mx-auto px-6 flex justify-between items-center relative z-20">
-        <a href="#" className="hover:opacity-80 transition-all duration-500 transform active:scale-95" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsMenuOpen(false); }}>
+        <button 
+          className="hover:opacity-80 transition-all duration-500 transform active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-nexo-lime rounded-sm" 
+          onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); setIsMenuOpen(false); }}
+          aria-label="Ir al inicio"
+        >
           <Logo size={isScrolled ? "sm" : "md"} className="transition-all duration-500" />
-        </a>
+        </button>
 
         {/* Menú de Escritorio */}
         <div className="hidden md:flex items-center space-x-10 lg:space-x-12">

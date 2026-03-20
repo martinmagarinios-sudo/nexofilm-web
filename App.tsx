@@ -12,7 +12,7 @@ import FloatingWhatsApp from './components/FloatingWhatsApp';
 import { CONFIG } from './data/config';
 
 const App: React.FC = () => {
-  const whatsappUrl = `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(CONFIG.whatsappMessage)}`;
+  const whatsappUrl = `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent("[Ref: Web] " + CONFIG.whatsappMessage)}`;
 
   useEffect(() => {
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -57,7 +57,7 @@ const App: React.FC = () => {
                     playsInline
                     poster={CONFIG.history.image}
                     aria-label="Video de presentación de NexoFilm: equipo de producción en acción"
-                    className="relative rounded-sm shadow-2xl saturate-[0.7] contrast-[1.1] brightness-90 hover:saturate-100 hover:contrast-100 hover:brightness-100 transition-all duration-1000 w-full h-auto object-cover"
+                    className="relative rounded-sm shadow-2xl saturate-75 contrast-110 brightness-90 hover:saturate-100 hover:contrast-100 hover:brightness-100 transition-all duration-1000 w-full h-auto object-cover"
                   >
                     <source src={CONFIG.history.video} type="video/mp4" />
                   </video>
@@ -65,7 +65,7 @@ const App: React.FC = () => {
                   <img
                     src={CONFIG.history.image}
                     alt="Equipo de producción NexoFilm durante un rodaje cinematográfico"
-                    className="relative rounded-sm shadow-2xl grayscale hover:grayscale-0 transition-all duration-1000 w-full h-auto object-cover"
+                    className="relative rounded-sm shadow-2xl saturate-75 contrast-110 brightness-90 hover:saturate-100 hover:contrast-100 hover:brightness-100 transition-all duration-1000 w-full h-auto object-cover"
                     loading="lazy"
                   />
                 )}
@@ -120,9 +120,9 @@ const App: React.FC = () => {
       <footer className="py-20 bg-black border-t border-white/5">
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-12 mb-16">
-            <div className="space-y-8 text-center md:text-left">
+            <div className="space-y-1 text-center md:text-left">
               <Logo size="md" />
-              <p className="text-zinc-500 max-w-sm text-sm font-light leading-relaxed">
+              <p className="text-zinc-500 max-w-sm text-sm font-light leading-relaxed whitespace-pre-line">
                 {CONFIG.footer.text}
               </p>
             </div>
@@ -143,15 +143,17 @@ const App: React.FC = () => {
                   <li><a href={CONFIG.social.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-nexo-lime hover:pl-2 transition-all duration-300 inline-block">Instagram</a></li>
                   <li><a href={CONFIG.social.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-nexo-lime hover:pl-2 transition-all duration-300 inline-block">LinkedIn</a></li>
                   <li><a href={CONFIG.social.behance} target="_blank" rel="noopener noreferrer" className="hover:text-nexo-lime hover:pl-2 transition-all duration-300 inline-block">Behance</a></li>
+                  <li><a href="/politica-de-privacidad" className="hover:text-nexo-lime hover:pl-2 transition-all duration-300 inline-block mt-4 text-white font-bold opacity-80">Política de Privacidad</a></li>
                 </ul>
               </div>
             </div>
           </div>
 
           <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-zinc-600 text-[10px] uppercase tracking-widest font-bold">
-              © {new Date().getFullYear()} {CONFIG.footer.copyright}
-            </p>
+            <div className="text-zinc-600 text-[10px] uppercase tracking-widest font-bold text-center md:text-left">
+              <p>© {new Date().getFullYear()} {CONFIG.footer.copyright}</p>
+              <p className="mt-2 text-[9px] text-zinc-700">NexoFilm es una marca propiedad de Martin Magariños.</p>
+            </div>
             <div className="flex gap-6 text-[10px] uppercase tracking-widest font-bold text-zinc-400">
               <a href="#portfolio" className="hover:text-nexo-lime transition-colors">Portfolio</a>
               <a href="#contacto" className="hover:text-nexo-lime transition-colors">Contacto</a>
