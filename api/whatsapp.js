@@ -207,14 +207,12 @@ export default async function handler(req, res) {
                                         });
                                         const newSummary = summaryUpdate.choices[0]?.message?.content?.replace(/"/g, '') || "";
                                         
-                                        // Payload seguro: solo columnas que sabemos que existen
-                                        const leadUpdate = { 
+                                        await supabase.from('whatsapp_leads').upsert({ 
                                             phone: from, 
                                             summary: newSummary, 
+                                            updated_at: new Date().toISOString(),
                                             source: chatSources.get(from) || "Activo"
-                                        };
-
-                                        await supabase.from('whatsapp_leads').upsert(leadUpdate); // Sin onConflict para evitar errores de restricción inexistente
+                                        }, { onConflict: 'phone' });
                                     } catch (e) { console.error("Error en resumen incremental:", e); }
 
                                 } catch (e) { console.error("Error guardando mensaje en silencio:", e); }
@@ -385,12 +383,12 @@ async function handleAIConversation(phoneNumberId, to, userMessage) {
         });
         const liveSummary = summaryUpdate.choices[0]?.message?.content?.replace(/"/g, '') || "";
         if (supabase) {
-            const leadUpdate = { 
+            await supabase.from('whatsapp_leads').upsert({ 
                 phone: to, 
                 summary: liveSummary, 
+                updated_at: new Date().toISOString(),
                 source: chatSources.get(to) || "Web"
-            };
-            await supabase.from('whatsapp_leads').upsert(leadUpdate); // Sin onConflict
+            }, { onConflict: 'phone' });
         }
     } catch (e) { console.error("Error en resumen vivo:", e); }
 
@@ -504,14 +502,18 @@ async function handleAIConversation(phoneNumberId, to, userMessage) {
                     source: savedSource
                 };
 
-                // Solo agregamos email si handoffData lo tiene (y avisaremos que activen la columna)
-                if (handoffData.email) leadPayload.email = handoffData.email;
-                if (handoffData.score !== undefined) leadPayload.score = parseInt(handoffData.score, 10) || null;
-                if (handoffData.is_hot !== undefined) leadPayload.is_hot = !!handoffData.is_hot;
-
                 const { error } = await supabase
                     .from('whatsapp_leads')
-                    .upsert(leadPayload); // Sin onConflict explicito por ahora
+                    .upsert({
+                        phone: to,
+                        name: handoffData.name || 'Sin nombre',
+                        email: handoffData.email || null,
+                        summary: handoffData.summary || 'Derivado sin resumen (Bypass)',
+                        score: (handoffData.score !== undefined) ? parseInt(handoffData.score, 10) || null : null,
+                        is_hot: (handoffData.is_hot !== undefined) ? !!handoffData.is_hot : null,
+                        source: savedSource,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'phone' });
 
                 if (error) {
                     console.error('❌ Error insertando lead en Supabase:', error);
