@@ -1,45 +1,55 @@
 import Groq from 'groq-sdk';
 import { createClient } from '@supabase/supabase-js';
+import { Resend } from 'resend';
 
 const groq = new Groq({ apiKey: (process.env.GROQ_API_KEY || '').trim() });
 const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim();
 const supabaseKey = (process.env.SUPABASE_KEY || process.env.VITE_SUPABASE_KEY || '').trim();
 const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
+const resend = new Resend((process.env.RESEND_API_KEY || '').trim());
 
 const ADMIN_NUMBER = '541151191964';
+const ADMIN_EMAIL = 'martinmagarinios@gmail.com';
 
-const SYSTEM_PROMPT = `Eres el asistente virtual de NexoFilm (Argentina). 
+const SYSTEM_PROMPT = `Eres el asistente virtual de NexoFilm (Argentina). Sos cálido, cercano y profesional.
 
 IDENTIDAD:
 - Usá VOSEO SIEMPRE ("me decís", "mirá", "querés"). Prohibido "tú" o "usted".
 - NUNCA uses la palabra "che".
-- Respuestas breves, cordiales y profesionales. Sin adornos innecesarios.
-- NUNCA pidas disculpas por demoras, errores técnicos ni nada similar.
+- Respuestas breves y conversacionales, una cosa a la vez.
+- NUNCA pidas disculpas por demoras ni errores técnicos.
 
-FLUJO:
+FLUJO EXACTO (seguilo al pie de la letra):
 1. Si no sabés el nombre: "¡Hola! Bienvenido a NexoFilm. ¿Me decís tu nombre por favor?"
-2. Al saber el nombre: "Un gusto, [Nombre]. Acá te dejo nuestras opciones:" + tag $$SHOW_MENU$$.
-   REGLA DE ORO: NUNCA escribas las opciones en texto. Solo usá el tag y el sistema envía los botones.
-3. Después del menú, recolectá de a una pregunta por vez:
-   - IMPORTANTE: Después de enviar $$SHOW_MENU$$, DETENTE. No hagas más preguntas. Esperá que el cliente haga clic en un botón. Recién cuando el cliente elija "Pedir Presupuesto", preguntá: "[Nombre], ¿qué tipo de servicio o cobertura estás buscando?"
-   - Servicio (Foto / Video / Streaming / Combo)
-   - Si es evento: Fecha, Lugar, Duración y Cantidad de gente
-   - Email de contacto (siempre pedilo)
 
-REGLA ANTI-PAVADAS: Si el cliente habla de temas irrelevantes para NexoFilm, respondé que un productor humano lo va a ayudar y generá el handoff con summary "Consulta fuera de tema".
+2. Al recibir el nombre: "Un gusto, [Nombre]. Acá te dejo nuestras opciones:" + $$SHOW_MENU$$
+   - Después de enviar $$SHOW_MENU$$ STOP. No hagas ninguna pregunta más. Esperá que el cliente elija un botón.
 
-Si el cliente dice "si" después de ver el portfolio, retomá la charla: "¿Buscás presupuesto para Foto, Video, o ambos?"
+3. Si el cliente eligió "Pedir Presupuesto" o quiere cotizar:
+   - Preguntá UNA SOLA COSA POR VEZ, en este orden:
+   a) "¡Qué bueno, [Nombre]! ¿Qué tipo de servicio o cobertura estás buscando? (Foto, Video, Streaming, o un combo de ellos)"
+   b) Una vez que respondió: "¿Me decís la fecha y el lugar del evento?"
+   c) Una vez que respondió: "¿Me decís la cantidad de personas esperadas y las horas de cobertura que necesitás?"
+   d) Una vez que respondió: "Perfecto. ¿Me pasás tu correo electrónico para mandarte el presupuesto?"
+   e) Al tener el email, despedite calurosamente y generá el HANDOFF:
+      "¡Bárbaro, [Nombre]! Fue un placer charlar con vos. Ya le paso todos los detalles a nuestro equipo de producción y en breve te van a estar contactando. ¡Hasta pronto! 👋"
+
+   IMPORTANTE: Si el cliente ya te dijo el tipo de servicio (ej: "video"), NO volvás a preguntarlo. Pasá directamente a la siguiente pregunta.
+
+4. Si el cliente vio el portfolio y dice "si" o quiere cotizar: comenzá desde el paso a) de arriba.
+
+REGLA ANTI-PAVADAS: Si el cliente habla de temas irrelevantes, decí que un productor humano lo ayudará y generá el handoff con summary "Consulta fuera de tema".
 
 {{VIP_RULE}}
 
-HANDOFF (cuando tenés todo, incluido el mail):
+HANDOFF: Cuando tenés nombre, servicio, fecha, lugar, personas, horas y email:
 $$HANDOFF_JSON$$
 {
   "handoff": true,
-  "name": "Nombre",
+  "name": "Nombre del cliente",
   "email": "correo@ejemplo.com",
-  "summary": "Resumen detallado del servicio solicitado.",
-  "score": 90
+  "summary": "Video corporativo. Evento en San Miguel del Monte. 31 de julio. 460 personas. 6 horas de cobertura.",
+  "score": 95
 }
 $$HANDOFF_JSON$$`;
 
@@ -64,21 +74,20 @@ export default async function handler(req, res) {
     if (from === ADMIN_NUMBER || fromRaw === ADMIN_NUMBER) return res.status(200).send('OK');
 
     try {
-        // --- Botones Interactivos (respuesta rápida, sin IA) ---
+        // --- Botones Interactivos ---
         if (message.type === 'interactive') {
             const btnId = message.interactive.button_reply.id;
             const btnTitle = message.interactive.button_reply.title || btnId;
 
             let qr = "";
-            if (btnId === 'btn_p') qr = "¡Bárbaro! Para el presupuesto, ¿me decís si buscás Foto, Video, o ambos? 📸🎥";
+            if (btnId === 'btn_p') qr = "¡Bárbaro! ¿Qué tipo de servicio o cobertura estás buscando? (Foto, Video, Streaming, o un combo de ellos) 📸🎥";
             else if (btnId === 'btn_v') qr = "🎬 Mirá algunos de nuestros trabajos en: https://nexofilm.com \n¿Te gustaría que te armemos una propuesta?";
             else if (btnId === 'btn_h') {
-                qr = "Entendido. Un productor te va a contactar. 👤📞";
+                qr = "Entendido. Un productor te va a contactar a la brevedad. 👤📞";
                 sendText(phoneNumberId, ADMIN_NUMBER, `🔔 ALERTA HUMANO: +${from}`).catch(() => {});
             }
 
             if (qr) {
-                // Guardamos el historial ANTES de responder para que el próximo mensaje tenga contexto
                 const h = await loadHistory(from);
                 h.push({ role: 'user', content: `[Seleccionó: ${btnTitle}]` });
                 h.push({ role: 'assistant', content: qr });
@@ -99,16 +108,17 @@ export default async function handler(req, res) {
             return res.status(200).send('OK');
         }
 
-        // Cargar historial + VIP check EN PARALELO para ganar tiempo
+        // Cargar historial + VIP check EN PARALELO
         const [history, leadData] = await Promise.all([
             loadHistory(from),
-            supabase ? supabase.from('whatsapp_leads').select('name, email').eq('phone', from).order('created_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data).catch(() => null) : Promise.resolve(null)
+            supabase
+                ? supabase.from('whatsapp_leads').select('name, email').eq('phone', from).order('created_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data).catch(() => null)
+                : Promise.resolve(null)
         ]);
 
         history.push({ role: 'user', content: text });
-        if (history.length > 10) history.splice(0, history.length - 10);
+        if (history.length > 14) history.splice(0, history.length - 14);
 
-        // VIP Rule
         let vipRule = "";
         if (history.length <= 1 && leadData?.name && leadData.name !== 'Sin nombre') {
             vipRule = `VIP: Es ${leadData.name}. Saludalo: "¡Hola ${leadData.name}! Qué bueno tenerte de vuelta. ¿En qué podemos ayudarte?" y mandá $$SHOW_MENU$$. No preguntes nombre. ${leadData.email ? `Verificá su mail (${leadData.email}) al final.` : ''}`;
@@ -118,13 +128,13 @@ export default async function handler(req, res) {
         const comp = await groq.chat.completions.create({
             model: 'llama-3.1-8b-instant',
             messages: [{ role: 'system', content: SYSTEM_PROMPT.replace('{{VIP_RULE}}', vipRule) }, ...history],
-            temperature: 0.5,
-            max_tokens: 450
+            temperature: 0.4,
+            max_tokens: 400
         });
         const aiRes = comp.choices[0].message.content;
         history.push({ role: 'assistant', content: aiRes });
 
-        // Guardar historial en background (no bloqueante)
+        // Guardar historial (no bloqueante)
         persistHistory(from, history).catch(() => {});
 
         // Procesar tags
@@ -141,21 +151,55 @@ export default async function handler(req, res) {
             final = final.replace('$$SHOW_MENU$$', '').trim();
         }
 
-        // ENVIAR (esto es lo más importante)
+        // ENVIAR RESPUESTA (prioridad absoluta)
         await sendText(phoneNumberId, from, final);
         if (showMenu) await sendMenu(phoneNumberId, from);
 
-        // Handoff en background
-        if (hf?.handoff && supabase) {
-            supabase.from('whatsapp_leads').upsert({ phone: from, name: hf.name, email: hf.email, summary: hf.summary, updated_at: new Date().toISOString() }, { onConflict: 'phone' }).catch(() => {});
+        // HANDOFF: Guardar Lead + Enviar Mail (en background para no bloquear)
+        if (hf?.handoff) {
+            handleHandoff(from, hf).catch(e => console.error("Handoff error:", e));
         }
 
     } catch (err) {
         console.error("BOT ERROR:", err.message);
-        // Error silencioso - no molestamos al cliente
     }
 
     return res.status(200).send('OK');
+}
+
+async function handleHandoff(phone, hf) {
+    // 1. Guardar Lead en Supabase
+    if (supabase) {
+        await supabase.from('whatsapp_leads').upsert({
+            phone,
+            name: hf.name,
+            email: hf.email,
+            summary: hf.summary,
+            score: hf.score || 90,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'phone' }).catch(() => {});
+    }
+
+    // 2. Email al Admin vía Resend
+    try {
+        await resend.emails.send({
+            from: 'NexoFilm CRM <onboarding@resend.dev>',
+            to: [ADMIN_EMAIL],
+            subject: `🔥 NUEVO LEAD: ${hf.name} (+${phone})`,
+            html: `
+                <h2>🎬 Nuevo Lead de NexoFilm</h2>
+                <p><strong>Nombre:</strong> ${hf.name}</p>
+                <p><strong>Teléfono:</strong> +${phone}</p>
+                <p><strong>Email:</strong> ${hf.email || 'No proporcionado'}</p>
+                <p><strong>Resumen:</strong> ${hf.summary}</p>
+                <p><strong>Score:</strong> ${hf.score || 90}/100</p>
+                <hr/>
+                <p><a href="https://nexofilm.com/dashboard">👉 Abrir CRM para continuar la charla</a></p>
+            `
+        });
+    } catch(e) {
+        console.error("Error Resend:", e.message);
+    }
 }
 
 // HELPERS
