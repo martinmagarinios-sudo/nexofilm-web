@@ -208,7 +208,7 @@ async function handleHandoff(phone, hf) {
                     <div style="border-left: 4px solid #10b981; padding-left: 16px; margin-bottom: 24px;">
                         <p style="font-style: italic;">${hf.summary}</p>
                     </div>
-                    <a href="https://nexofilm.com/dashboard" style="display: inline-block; background-color: #22c55e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-family: sans-serif;">💬 Abrir Chat en CRM</a>
+                    <a href="https://nexofilm.com/admin/chat?phone=${phone}" style="display: inline-block; background-color: #22c55e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-family: sans-serif;">💬 Abrir Chat en CRM</a>
                 </div>
             `
         });
