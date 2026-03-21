@@ -322,7 +322,8 @@ async function handleAIConversation(phoneNumberId, to, userMessage) {
                     { type: 'text', text: `${to}` },
                     { type: 'text', text: `${savedSource.substring(0, 30)}` },
                     { type: 'text', text: `${handoffData.score || 'N/A'}` },
-                    { type: 'text', text: `${handoffData.summary.substring(0, 800)}` }
+                    { type: 'text', text: `${handoffData.summary.substring(0, 800)}` },
+                    { type: 'text', text: `${to}` }
                 ]
             }];
             await sendTemplateMessage(phoneNumberId, ADMIN_NUMBER, 'alerta_nuevo_lead', 'es_AR', templateComponents);
