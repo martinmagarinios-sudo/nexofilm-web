@@ -315,8 +315,12 @@ async function handleAIConversation(phoneNumberId, to, userMessage) {
 
         const savedSource = chatSources.get(to) || "Orgánico / Directo";
 
-        const adminMsg = `🔔 *NUEVO LEAD - NEXO FILM*\n\n👤 *Cliente:* \`+${to}\`\n🌐 *Origen:* ${savedSource}\n📈 *Score:* ${scoreEmoji}${handoffData.score || 'N/A'}/100\n📝 *Resumen:* ${handoffData.summary}\n👉 https://wa.me/${to}`;
-        await sendWhatsAppMessage(phoneNumberId, ADMIN_NUMBER, adminMsg);
+        try {
+            const adminMsg = `🔔 *NUEVO LEAD - NEXO FILM*\n\n👤 *Cliente:* \`+${to}\`\n🌐 *Origen:* ${savedSource}\n📈 *Score:* ${scoreEmoji}${handoffData.score || 'N/A'}/100\n📝 *Resumen:* ${handoffData.summary}\n👉 https://wa.me/${to}`;
+            await sendWhatsAppMessage(phoneNumberId, ADMIN_NUMBER, adminMsg);
+        } catch (errAdmin) {
+            console.error('⚠️ No se pudo notificar al Admin por WhatsApp (probablemente fuera de ventana 24hs):', errAdmin.message);
+        }
 
         // Envío 100% gratuito e ilimitado por mail
         try {
