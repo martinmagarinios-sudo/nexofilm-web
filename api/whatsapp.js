@@ -95,7 +95,8 @@ export default async function handler(req, res) {
             }
 
             if (qr) {
-                const h = await loadHistory(from);
+                const historyData = await loadHistory(from);
+                const h = historyData.history;
                 h.push({ role: 'user', content: `[Seleccionó: ${btnTitle}]` });
                 h.push({ role: 'assistant', content: qr });
                 await persistHistory(from, h);
@@ -116,19 +117,30 @@ export default async function handler(req, res) {
         }
 
         // Cargar historial + VIP check EN PARALELO
-        const [history, leadData] = await Promise.all([
+        const [historyData, leadData] = await Promise.all([
             loadHistory(from),
             supabase
                 ? supabase.from('whatsapp_leads').select('name, email').eq('phone', from).order('created_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data, () => null)
                 : Promise.resolve(null)
         ]);
 
+        const history = historyData.history;
+        const lastInteraction = historyData.updated_at ? new Date(historyData.updated_at).getTime() : 0;
+        const now = Date.now();
+
+        // Alerta de Re-conexión (si pasaron > 10 min y hay historial previo)
+        if (lastInteraction > 0 && (now - lastInteraction) > 10 * 60 * 1000 && history.length > 0) {
+            sendReconnectAlert(from, leadData?.name || 'Cliente conocido').then(null, () => {});
+        }
+
         history.push({ role: 'user', content: text });
         if (history.length > 14) history.splice(0, history.length - 14);
 
         let vipRule = "";
         if (history.length <= 1 && leadData?.name && leadData.name !== 'Sin nombre') {
-            vipRule = `VIP: Es ${leadData.name}. Saludalo: "¡Hola ${leadData.name}! Qué bueno tenerte de vuelta. ¿En qué podemos ayudarte?" y mandá $$SHOW_MENU$$. No preguntes nombre. ${leadData.email ? `Verificá su mail (${leadData.email}) al final.` : ''}`;
+            vipRule = `VIP: El cliente se llama ${leadData.name}. 
+REGRESO: Saludalo así: "¡Hola ${leadData.name}! Qué bueno tenerte de vuelta. ¿En qué podemos ayudarte?" y mandá $$SHOW_MENU$$. NO preguntes su nombre.
+EMAIL (Paso 3e): Si ya tenemos su mail (${leadData.email || 'desconocido'}), preguntale si sigue siendo ese o si prefiere usar otro.`;
         }
 
         // Llamada a Groq
@@ -217,13 +229,34 @@ async function handleHandoff(phone, hf) {
     }
 }
 
+async function sendReconnectAlert(phone, name) {
+    try {
+        await resend.emails.send({
+            from: 'NexoFilm CRM <onboarding@resend.dev>',
+            to: [ADMIN_EMAIL],
+            subject: `🔔 RE-CONEXIÓN: ${name} (+${phone})`,
+            html: `
+                <div style="font-family: sans-serif; color: #333;">
+                    <h2>¡Charla reanudada en WhatsApp! 🔔</h2>
+                    <p>El cliente <strong>${name}</strong> (+${phone}) ha vuelto a escribir después de más de 10 minutos de inactividad.</p>
+                    <br/>
+                    <a href="https://nexofilm.com/admin/chat?phone=${phone}" style="display: inline-block; background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-family: sans-serif;">💬 Abrir Chat en CRM</a>
+                </div>
+            `
+        });
+    } catch(e) { console.error("Error Alerta Re-conexión:", e.message); }
+}
+
 // HELPERS
 async function loadHistory(phone) {
-    if (!supabase) return [];
+    if (!supabase) return { history: [], updated_at: null };
     try {
-        const { data } = await supabase.from('whatsapp_sessions').select('history').eq('phone', phone).maybeSingle();
-        return Array.isArray(data?.history) ? data.history : [];
-    } catch(e) { return []; }
+        const { data } = await supabase.from('whatsapp_sessions').select('history, updated_at').eq('phone', phone).maybeSingle();
+        return { 
+            history: Array.isArray(data?.history) ? data.history : [], 
+            updated_at: data?.updated_at 
+        };
+    } catch(e) { return { history: [], updated_at: null }; }
 }
 
 async function persistHistory(phone, history) {
