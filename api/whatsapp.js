@@ -336,11 +336,24 @@ async function handleAIConversation(phoneNumberId, to, userMessage) {
 
         // Envío Ultra-Rápido por Resend (Email)
         try {
-            const adminURL = `https://nexofilm.com/admin/chat?phone=${to}`;
-            const { data, error } = await resend.emails.send({
-                from: 'NexoFilm CRM <onboarding@resend.dev>',
-                to: ['martinmagarinios@gmail.com'],
-                subject: `🚨 NUEVO LEAD: ${handoffData.name || 'Sin nombre'} (+${to})`,
+            // CANDADO ANTI-SPAM: Si ya se notificó a este número en los últimos 10 min, no enviar mail.
+            if (supabase) {
+                const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+                const { data: recentLead } = await supabase
+                    .from('whatsapp_leads')
+                    .select('id')
+                    .eq('phone', to)
+                    .gt('created_at', tenMinutesAgo)
+                    .maybeSingle();
+
+                if (recentLead) {
+                    console.log(`🚫 Candado Anti-Spam: Omitiendo email para +${to} (notificado recientemente).`);
+                } else {
+                    const adminURL = `https://nexofilm.com/admin/chat?phone=${to}`;
+                    const { data, error } = await resend.emails.send({
+                        from: 'NexoFilm CRM <onboarding@resend.dev>',
+                        to: ['martinmagarinios@gmail.com'],
+                        subject: `🚨 NUEVO LEAD: ${handoffData.name || 'Sin nombre'} (+${to})`,
                 html: `
                     <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
                         <h2 style="color: #000;">¡Nuevo Lead Caliente en WhatsApp! 🔥</h2>
@@ -359,9 +372,11 @@ async function handleAIConversation(phoneNumberId, to, userMessage) {
                         <p style="font-size:12px; color:gray; border-top: 1px solid #eee; padding-top: 10px;">🤖 Alerta generada automáticamente por el Cerebro de NexoFilm AI.</p>
                     </div>
                 `
-            });
-            if (error) console.error("Error enviando email vía Resend (¿El mail hola@nexofilm.com no es el que registró la cuenta?):", error);
-            else console.log("📧 Email de Alerta enviado por Resend exitosamente.");
+                    });
+                    if (error) console.error("Error enviando email vía Resend (¿El mail hola@nexofilm.com no es el que registró la cuenta?):", error);
+                    else console.log("📧 Email de Alerta enviado por Resend exitosamente.");
+                }
+            }
         } catch (mailErr) {
             console.error("Error catastrófico en Resend:", mailErr);
         }
