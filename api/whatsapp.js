@@ -11,12 +11,12 @@ const ADMIN_NUMBER = '541151191964';
 const SYSTEM_PROMPT = `Eres el asistente virtual de NexoFilm (Argentina). 
 
 REGLAS DE IDENTIDAD:
-1. Usá VOSEO SIEMPRE ("decime", "mirá", "querés"). Prohibido usar "tú" o "usted".
+1. Usá VOSEO SIEMPRE ("me decís", "mirá", "querés"). Prohibido usar "tú" o "usted".
 2. PROHIBIDO usar la palabra "che". Nunca la uses.
-3. Respuestas muy breves y profesionales.
+3. Respuestas muy breves, atentas, cordiales y profesionales.
 
 FLUJO DE ATENCIÓN:
-ETAPA 1: Si no sabés el nombre, saludá y pedíselo. Ej: "¡Hola! Bienvenido a NexoFilm. ¿Decime tu nombre, por favor?"
+ETAPA 1: Si no sabés el nombre, saludá y pedíselo de forma cordial. Ej: "¡Hola! Bienvenido a NexoFilm. ¿Me decís tu nombre por favor?"
 ETAPA 2: Al saber el nombre, decí: "Un gusto, [Nombre]. Acá te dejo nuestras opciones:" seguido del tag $$SHOW_MENU$$.
    - REGLA DE ORO: NO escribas la lista de opciones (Foto, Video, etc.) en texto. El sistema las envía automáticamente por botones.
 ETAPA 3: Recolección de datos técnicos para el presupuesto (Foto/Video, Fecha, Lugar, Cantidad de gente, Duración).
@@ -70,7 +70,7 @@ export default async function handler(req, res) {
 
                 // --- RESPUESTAS RÁPIDAS (INSTANTÁNEAS) ---
                 let qr = "";
-                if (btnId === 'btn_p') qr = "¡Bárbaro! Para mandarte el presupuesto, decime: ¿Buscás servicio de Foto, de Video, o ambos? 📸🎥";
+                if (btnId === 'btn_p') qr = "¡Bárbaro! Para mandarte el presupuesto, ¿me decís si buscás servicio de Foto, de Video, o ambos? 📸🎥";
                 else if (btnId === 'btn_v') qr = "🎬 Mirá algunos de nuestros trabajos en: https://nexofilm.com \n¿Te gustaría que te armemos una propuesta ahora que los viste?";
                 else if (btnId === 'btn_h') {
                     qr = "Entendido. Un productor te va a contactar a la brevedad. 👤📞";
@@ -79,7 +79,6 @@ export default async function handler(req, res) {
 
                 if (qr) {
                     await sendText(phoneNumberId, from, qr);
-                    // Actualizamos historial y RESPONDEMOS 200 para evitar timeout en esta fase rápida
                     await saveHistory(from, `[Botón: ${btnTitle}]`, 'user');
                     await saveHistory(from, qr, 'assistant');
                     return res.status(200).send('OK');
@@ -115,7 +114,7 @@ export default async function handler(req, res) {
                 }
             }
 
-            // Llamada a Groq con Timeout
+            // Llamada IA con Timeout
             const comp = await groq.chat.completions.create({
                 model: 'llama-3.1-8b-instant',
                 messages: [{ role: 'system', content: SYSTEM_PROMPT.replace('{{VIP_RULE}}', vipRule) }, ...history],
@@ -126,7 +125,7 @@ export default async function handler(req, res) {
             history.push({ role: 'assistant', content: aiRes });
             if (supabase) await supabase.from('whatsapp_sessions').upsert({ phone: from, history, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
 
-            // Procesar tags
+            // Tags
             let final = aiRes;
             let showMenu = false;
             let hf = null;
@@ -138,11 +137,9 @@ export default async function handler(req, res) {
                 final = final.replace('$$SHOW_MENU$$', '').trim();
             }
 
-            // ENVIAR POR WHATSAPP
             await sendText(phoneNumberId, from, final);
             if (showMenu) await sendMenu(phoneNumberId, from);
 
-            // Actualizar Lead en background
             if (hf?.handoff && supabase) {
                 await supabase.from('whatsapp_leads').upsert({ phone: from, name: hf.name, email: hf.email, summary: hf.summary, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
             }
@@ -151,7 +148,7 @@ export default async function handler(req, res) {
 
         } catch (err) {
             console.error("CRITICAL ERROR:", err);
-            try { await sendText(phoneNumberId, from, "A veces mi sistema se satura por mucha demanda 🚀. ¿Me podrías repetir lo último por favor?"); } catch(smErr){}
+            try { await sendText(phoneNumberId, from, "A veces mi sistema necesita un respiro 🚀. ¿Me podrías repetir lo último por favor?"); } catch(smErr){}
             return res.status(200).send('OK');
         }
     }
