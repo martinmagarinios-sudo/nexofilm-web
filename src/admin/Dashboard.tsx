@@ -264,9 +264,7 @@ const Dashboard: React.FC = () => {
                                                     </td>
                                                     <td className="px-6 py-4 text-center">
                                                         <a
-                                                            href={`https://wa.me/${lead.phone}`}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
+                                                            href={`/admin/chat?phone=${lead.phone}`}
                                                             className="inline-block bg-white/10 text-white font-medium px-4 py-2 rounded text-xs hover:bg-nexo-lime hover:text-black transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
                                                         >
                                                             Hablar
