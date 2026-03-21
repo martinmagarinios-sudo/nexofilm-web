@@ -34,6 +34,7 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
     const [activeLead, setActiveLead] = useState<any>(null);
     
     // Referencia para mantener el scroll abajo
+    const [promoLoading, setPromoLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -100,6 +101,30 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
     }, [selectedPhone]);
 
     const activeSession = sessions.find(s => s.phone === selectedPhone);
+
+    const sendPromo = async (phone: string) => {
+        if (!confirm('¿Seguro que querés enviar la promoción de servicios a este cliente?')) return;
+        
+        setPromoLoading(true);
+        try {
+            const res = await fetch('/api/whatsapp_promo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                alert('¡Promo enviada exitosamente!');
+                fetchSessions(); // Recargar la lista de mensajes
+            } else {
+                alert('Error: ' + data.error);
+            }
+        } catch (e) {
+            alert('Error al enviar: ' + (e as any).message);
+        } finally {
+            setPromoLoading(false);
+        }
+    };
 
     const formatTime = (isoString?: string) => {
         if (!isoString) return '';
@@ -255,11 +280,20 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
                             <div className="bg-[#202c33]/80 backdrop-blur-md mx-4 mt-4 p-4 rounded-xl border border-nexo-lime/20 z-10 shadow-lg">
                                 <div className="flex items-center gap-2 mb-2 text-nexo-lime text-xs font-bold uppercase tracking-wider">
                                     <span>🧠 Resumen de NexoBot IA</span>
-                                    {activeLead.score && (
-                                        <span className="ml-auto bg-nexo-lime/20 px-2 py-0.5 rounded text-[10px]">
-                                            Calificación: {activeLead.score}/100
-                                        </span>
-                                    )}
+                                    <div className="ml-auto flex items-center gap-2">
+                                        <button 
+                                            onClick={() => sendPromo(selectedPhone)} 
+                                            disabled={promoLoading}
+                                            className="bg-[#25D366] hover:bg-[#128c7e] text-black text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-all active:scale-95 disabled:opacity-50"
+                                        >
+                                            🚀 {promoLoading ? 'Enviando...' : 'ENVIAR PROMO'}
+                                        </button>
+                                        {activeLead.score && (
+                                            <span className="bg-nexo-lime/20 px-2 py-0.5 rounded text-[10px]">
+                                                Calificación: {activeLead.score}/100
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                                 <p className="text-sm text-[#e9edef] italic leading-relaxed">
                                     "{activeLead.summary}"
