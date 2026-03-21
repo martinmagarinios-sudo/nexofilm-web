@@ -111,6 +111,18 @@ export default async function handler(req, res) {
             if (message.type === 'text') {
                 const text = message.text.body.toLowerCase().trim();
 
+                // REINICIO DE PRUEBAS (RESET)
+                if (text === 'reset') {
+                    if (supabase) {
+                        try {
+                            await supabase.from('whatsapp_sessions').delete().eq('phone', from);
+                            await supabase.from('whatsapp_leads').delete().eq('phone', from);
+                        } catch (err) { console.error("Error al hacer RESET:", err); }
+                    }
+                    await sendWhatsAppMessage(phoneNumberId, from, "🔄 Memoria 100% borrada.\nEscribí *Hola* para arrancar desde cero.");
+                    return res.status(200).json({ status: 'session_reset' });
+                }
+
                 // Para forzar el menú principal manualmente mediante un comando
                 const isMenuTrigger = /^(menu|menú)$/i.test(text);
 
