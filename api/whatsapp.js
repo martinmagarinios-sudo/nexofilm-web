@@ -364,53 +364,31 @@ async function handleAIConversation(phoneNumberId, to, userMessage) {
     // Agregar mensaje del usuario al historial
     history.push({ role: 'user', content: userMessage });
 
-    // Mantener solo los últimos 12 mensajes para no agotar la memoria de Groq pero tener buen contexto
-    if (history.length > 12) {
-        history = history.slice(-12);
-    }
+    // Mantener solo los últimos 10 mensajes para máxima velocidad
+    if (history.length > 10) history = history.slice(-10);
 
-    // --- PARALELIZACIÓN CRÍTICA ---
-    // Ejecutamos la respuesta de la IA y el resumen para el CRM al mismo tiempo
-    console.log("🤖 Generando respuesta y resumen en paralelo...");
-    
-    let aiRawResponse;
-    let liveSummaryUpdatePromise = null;
-
+    // [IMPORTANTE] Guardar sesión ANTES de la IA por si hay timeout
     if (supabase) {
-        liveSummaryUpdatePromise = groq.chat.completions.create({
-            model: "llama-3.1-8b-instant",
-            messages: [
-                { role: "system", content: "Resumí la intención actual del cliente en una frase corta y técnica. Ej: 'Busca Video para 120 personas en CABA'. Sé directo." },
-                ...history.slice(-6)
-            ],
-            max_tokens: 50
-        }).catch(e => { console.error("Error en resumen vivo parallel:", e); return null; });
-    }
-
-    try {
-        const [aiRes, summaryRes] = await Promise.all([
-            generateAIResponse(history, chatSources.get(to) || "Orgánico / Directo", to),
-            liveSummaryUpdatePromise
-        ]);
-
-        aiRawResponse = aiRes;
-
-        // Si el resumen terminó bien, lo guardamos sin esperar (Fire and forget local)
-        if (summaryRes && supabase) {
-            const liveSummary = summaryRes.choices[0]?.message?.content?.replace(/"/g, '') || "";
-            supabase.from('whatsapp_leads').upsert({ 
+        try {
+            await supabase.from('whatsapp_sessions').upsert({ 
                 phone: to, 
-                summary: liveSummary, 
-                updated_at: new Date().toISOString(),
-                source: chatSources.get(to) || "Web"
-            }, { onConflict: 'phone' }).then(({error}) => {
-                if(error) console.error("Error guardando resumen upsert:", error);
-            });
-        }
-    } catch (e) {
-        console.error("Falla en llamadas paralelas:", e);
-        aiRawResponse = "Disculpá, tuve un error técnico al procesar. Reintentá en un momento.";
+                history, 
+                updated_at: new Date().toISOString() 
+            }, { onConflict: 'phone' });
+        } catch (e) { console.error("Error persistiendo sesion pre-IA:", e); }
     }
+
+    console.log(`⏱️ Generando respuesta para ${to}...`);
+    const startTime = Date.now();
+    
+    // Llamada única a la IA (Sin resumen pesado paralelo por ahora para máxima estabilidad)
+    const aiRawResponse = await generateAIResponse(history, chatSources.get(to) || "Orgánico / Directo", to);
+    
+    console.log(`✅ Respuesta IA generada en ${Date.now() - startTime}ms`);
+
+    // Agregar la respuesta de la IA al historial
+    history.push({ role: 'assistant', content: aiRawResponse });
+
 
     let finalResponse = aiRawResponse;
     let handoffData = null;
