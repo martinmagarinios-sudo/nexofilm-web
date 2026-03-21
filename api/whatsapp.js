@@ -11,18 +11,20 @@ const ADMIN_NUMBER = '541151191964';
 const SYSTEM_PROMPT = `Eres el asistente virtual de NexoFilm (Argentina). 
 
 REGLAS DE IDENTIDAD:
-1. Usá VOSEO SIEMPRE ("contame", "mirá", "querés"). Prohibido usar "tú" o "usted".
+1. Usá VOSEO SIEMPRE ("decime", "mirá", "querés"). Prohibido usar "tú" o "usted".
 2. PROHIBIDO usar la palabra "che". Nunca la uses.
 3. Respuestas muy breves y profesionales.
 
 FLUJO DE ATENCIÓN:
-ETAPA 1: Si no sabés el nombre, saludá y pedíselo. Ej: "¡Hola! Bienvenido a NexoFilm. ¿Contame tu nombre, por favor?"
+ETAPA 1: Si no sabés el nombre, saludá y pedíselo. Ej: "¡Hola! Bienvenido a NexoFilm. ¿Decime tu nombre, por favor?"
 ETAPA 2: Al saber el nombre, decí: "Un gusto, [Nombre]. Acá te dejo nuestras opciones:" seguido del tag $$SHOW_MENU$$.
    - REGLA DE ORO: NO escribas la lista de opciones (Foto, Video, etc.) en texto. El sistema las envía automáticamente por botones.
 ETAPA 3: Recolección de datos técnicos para el presupuesto (Foto/Video, Fecha, Lugar, Cantidad de gente, Duración).
    - **Email de contacto (Fundamental).** Pedilo siempre.
 
 REGLA ANTI-PAVADAS: Si preguntan tonterías, decí que un productor humano los ayudará y cortá con $$HANDOFF_JSON$$ (summary: "Consulta fuera de tema").
+
+Si el cliente te dice "si" tras ver el portfolio, retoma la charla de inmediato preguntando: "¿Buscás presupuesto para servicio de Foto, de Video, o ambos?".
 
 {{VIP_RULE}}
 
@@ -31,8 +33,8 @@ $$HANDOFF_JSON$$
 {
   "handoff": true,
   "name": "Nombre",
-  "email": "correo",
-  "summary": "Resumen detallado de todo lo pedido para el presupuesto.",
+  "email": "correo@ejemplo.com",
+  "summary": "Resumen detallado de todo lo pedido para producción.",
   "score": 90
 }
 $$HANDOFF_JSON$$`;
@@ -45,17 +47,16 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
+        const body = req.body;
+        const message = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+        if (!message) return res.status(200).send('OK');
+
+        const phoneNumberId = body.entry[0].changes[0].value.metadata.phone_number_id;
+        const fromRaw = message.from;
+        let from = fromRaw;
+        if (from.startsWith('549') && from.length === 13) from = '54' + from.substring(3);
+
         try {
-            const body = req.body;
-            const message = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
-            if (!message) return res.status(200).send('OK');
-
-            const fromRaw = message.from;
-            const phoneNumberId = body.entry[0].changes[0].value.metadata.phone_number_id;
-            let from = fromRaw;
-
-            // Parche Argentina
-            if (from.startsWith('549') && from.length === 13) from = '54' + from.substring(3);
             if (from === ADMIN_NUMBER || fromRaw === ADMIN_NUMBER) return res.status(200).send('OK');
 
             let text = "";
@@ -67,20 +68,20 @@ export default async function handler(req, res) {
                 btnId = message.interactive.button_reply.id;
                 const btnTitle = message.interactive.button_reply.title || btnId;
 
-                // --- RESPUESTA RÁPIDA DE BOTONES (PRE-IA) ---
-                let quickReply = "";
-                if (btnId === 'btn_p') quickReply = "¡Bárbaro! Para mandarme el presupuesto, contame: ¿Buscás servicio de Foto, de Video, o ambos? 📸🎥";
-                else if (btnId === 'btn_v') quickReply = "🎬 Mirá algunos de nuestros trabajos en: https://nexofilm.com \n¿Te gustaría que te armemos una propuesta ahora que los viste?";
+                // --- RESPUESTAS RÁPIDAS (INSTANTÁNEAS) ---
+                let qr = "";
+                if (btnId === 'btn_p') qr = "¡Bárbaro! Para mandarte el presupuesto, decime: ¿Buscás servicio de Foto, de Video, o ambos? 📸🎥";
+                else if (btnId === 'btn_v') qr = "🎬 Mirá algunos de nuestros trabajos en: https://nexofilm.com \n¿Te gustaría que te armemos una propuesta ahora que los viste?";
                 else if (btnId === 'btn_h') {
-                    quickReply = "Entendido. Un productor te va a contactar a la brevedad. 👤📞";
+                    qr = "Entendido. Un productor te va a contactar a la brevedad. 👤📞";
                     await sendText(phoneNumberId, ADMIN_NUMBER, `🔔 ALERTA HUMANO: +${from}`);
                 }
 
-                if (quickReply) {
-                    await sendText(phoneNumberId, from, quickReply);
+                if (qr) {
+                    await sendText(phoneNumberId, from, qr);
                     // Actualizamos historial y RESPONDEMOS 200 para evitar timeout en esta fase rápida
                     await saveHistory(from, `[Botón: ${btnTitle}]`, 'user');
-                    await saveHistory(from, quickReply, 'assistant');
+                    await saveHistory(from, qr, 'assistant');
                     return res.status(200).send('OK');
                 }
                 text = `[Botón: ${btnTitle}]`;
@@ -105,48 +106,43 @@ export default async function handler(req, res) {
             history.push({ role: 'user', content: text });
             if (history.length > 10) history = history.slice(-10);
 
-            // VIP Recognition
+            // Reconocimiento VIP
             let vipRule = "";
             if (history.length <= 1 && supabase) {
-                const { data } = await supabase.from('whatsapp_leads').select('name, email').eq('phone', from).maybeSingle();
-                if (data?.name && data.name !== 'Sin nombre') {
-                    vipRule = `VIP: Es ${data.name}. Saludalo así: "¡Hola ${data.name}! Qué bueno tenerte de vuelta por NexoFilm. ¿En qué podemos ayudarte?" y mandá $$SHOW_MENU$$. No preguntes nombre. Si tenés su mail (${data.email || 'no'}), confirmalo al final.`;
+                const { data: ld } = await supabase.from('whatsapp_leads').select('name, email').eq('phone', from).order('created_at', {ascending:false}).limit(1).maybeSingle();
+                if (ld?.name && ld.name !== 'Sin nombre') {
+                    vipRule = `RECONOCIMIENTO VIP: Usuario ${ld.name}. Saludalo así: "¡Hola ${ld.name}! Qué bueno tenerte de vuelta por NexoFilm. ¿En qué podemos ayudarte?" y mandá $$SHOW_MENU$$. No preguntes nombre. Si tenés su mail (${ld.email || 'no'}), confirmalo al final antes del handoff.`;
                 }
             }
 
-            // IA (8s timeout)
-            const aiPromise = groq.chat.completions.create({
+            // Llamada a Groq con Timeout
+            const comp = await groq.chat.completions.create({
                 model: 'llama-3.1-8b-instant',
-                messages: [{ role: 'system', content: SYSTEM_PROMPT.replace('{{VIP_RULE}}', vipRule).replace('{{SOURCE}}', 'Web') }, ...history],
+                messages: [{ role: 'system', content: SYSTEM_PROMPT.replace('{{VIP_RULE}}', vipRule) }, ...history],
                 temperature: 0.5, max_tokens: 500
             });
-            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 8000));
-            const completion = await Promise.race([aiPromise, timeoutPromise]);
-            const aiRes = completion.choices[0].message.content;
+            const aiRes = comp.choices[0].message.content;
 
             history.push({ role: 'assistant', content: aiRes });
-
-            // Persistencia
             if (supabase) await supabase.from('whatsapp_sessions').upsert({ phone: from, history, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
 
-            // Enviar a WhatsApp
-            let cleanRes = aiRes;
+            // Procesar tags
+            let final = aiRes;
             let showMenu = false;
             let hf = null;
 
-            const hMatch = aiRes.match(/\$\$HANDOFF_JSON\$\$([\s\S]*?)\$\$HANDOFF_JSON\$\$/);
-            if (hMatch) {
-                try { hf = JSON.parse(hMatch[1]); cleanRes = aiRes.replace(hMatch[0], '').trim(); } catch(e){}
-            }
-            if (cleanRes.includes('$$SHOW_MENU$$')) {
+            const m = aiRes.match(/\$\$HANDOFF_JSON\$\$([\s\S]*?)\$\$HANDOFF_JSON\$\$/);
+            if (m) { try { hf = JSON.parse(m[1]); final = aiRes.replace(m[0], '').trim(); } catch(e){} }
+            if (final.includes('$$SHOW_MENU$$')) {
                 showMenu = true;
-                cleanRes = cleanRes.replace('$$SHOW_MENU$$', '').trim();
+                final = final.replace('$$SHOW_MENU$$', '').trim();
             }
 
-            await sendText(phoneNumberId, from, cleanRes);
+            // ENVIAR POR WHATSAPP
+            await sendText(phoneNumberId, from, final);
             if (showMenu) await sendMenu(phoneNumberId, from);
 
-            // Handoff en background
+            // Actualizar Lead en background
             if (hf?.handoff && supabase) {
                 await supabase.from('whatsapp_leads').upsert({ phone: from, name: hf.name, email: hf.email, summary: hf.summary, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
             }
@@ -154,7 +150,8 @@ export default async function handler(req, res) {
             return res.status(200).send('OK');
 
         } catch (err) {
-            console.error(err);
+            console.error("CRITICAL ERROR:", err);
+            try { await sendText(phoneNumberId, from, "A veces mi sistema se satura por mucha demanda 🚀. ¿Me podrías repetir lo último por favor?"); } catch(smErr){}
             return res.status(200).send('OK');
         }
     }
@@ -166,7 +163,7 @@ async function sendText(pid, to, msg) {
     await fetch(`https://graph.facebook.com/v21.0/${pid}/messages`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body: msg } })
+        body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body: msg, preview_url: true } })
     });
 }
 
@@ -194,8 +191,8 @@ async function saveHistory(phone, content, role) {
     if (!supabase) return;
     try {
         const { data } = await supabase.from('whatsapp_sessions').select('history').eq('phone', phone).maybeSingle();
-        let hist = data?.history || [];
-        hist.push({ role, content, timestamp: new Date().toISOString() });
-        await supabase.from('whatsapp_sessions').upsert({ phone, history: hist, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
-    } catch(e) { console.error("Error saveHistory:", e); }
+        let h = data?.history || [];
+        h.push({ role, content, timestamp: new Date().toISOString() });
+        await supabase.from('whatsapp_sessions').upsert({ phone, history: h, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
+    } catch(err){}
 }
