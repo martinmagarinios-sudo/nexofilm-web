@@ -316,8 +316,16 @@ async function handleAIConversation(phoneNumberId, to, userMessage) {
         const savedSource = chatSources.get(to) || "Orgánico / Directo";
 
         try {
-            const adminMsg = `🔔 *NUEVO LEAD - NEXO FILM*\n\n👤 *Cliente:* \`+${to}\`\n🌐 *Origen:* ${savedSource}\n📈 *Score:* ${scoreEmoji}${handoffData.score || 'N/A'}/100\n📝 *Resumen:* ${handoffData.summary}\n👉 https://wa.me/${to}`;
-            await sendWhatsAppMessage(phoneNumberId, ADMIN_NUMBER, adminMsg);
+            const templateComponents = [{
+                type: 'body',
+                parameters: [
+                    { type: 'text', text: `${to}` },
+                    { type: 'text', text: `${savedSource.substring(0, 30)}` },
+                    { type: 'text', text: `${handoffData.score || 'N/A'}` },
+                    { type: 'text', text: `${handoffData.summary.substring(0, 800)}` }
+                ]
+            }];
+            await sendTemplateMessage(phoneNumberId, ADMIN_NUMBER, 'alerta_nuevo_lead', 'es_AR', templateComponents);
         } catch (errAdmin) {
             console.error('⚠️ No se pudo notificar al Admin por WhatsApp (probablemente fuera de ventana 24hs):', errAdmin.message);
         }
@@ -481,4 +489,27 @@ async function sendWhatsAppMessage(phoneNumberId, to, message) {
 
     const result = await response.json();
     console.log("=== SEND MESSAGE RESULT ===", JSON.stringify(result));
+}
+
+async function sendTemplateMessage(phoneNumberId, to, templateName, languageCode, components) {
+    const url = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${process.env.WHATSAPP_TOKEN?.trim()}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            messaging_product: 'whatsapp',
+            to: to,
+            type: 'template',
+            template: {
+                name: templateName,
+                language: { code: languageCode },
+                components: components
+            }
+        }),
+    });
+    const result = await response.json();
+    console.log("=== SEND TEMPLATE RESULT ===", JSON.stringify(result));
 }
