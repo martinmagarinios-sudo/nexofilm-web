@@ -93,8 +93,30 @@ export default async function handler(req, res) {
             }
 
             const message = value.messages[0];
+            const messageId = message.id; // ID único de Meta para este mensaje
             let from = message.from;
             const phoneNumberId = value.metadata?.phone_number_id;
+
+            // PREVENCIÓN DE DUPLICADOS (Doble-Hélices de Meta) - Si no existe la tabla, se ignora el check para no romper.
+            if (supabase) {
+                try {
+                    const { data: alreadyProcessed } = await supabase
+                        .from('whatsapp_messages_log')
+                        .select('id')
+                        .eq('id', messageId)
+                        .maybeSingle();
+                    
+                    if (alreadyProcessed) {
+                        console.log(`♻️ Mensaje ${messageId} ya fue procesado. Omitiendo.`);
+                        return res.status(200).json({ status: 'already_processed' });
+                    }
+
+                    // Registrarlo inmediatamente (Optimistic Lock)
+                    await supabase.from('whatsapp_messages_log').insert([{ id: messageId, phone: from }]);
+                } catch (dupErr) {
+                    console.log("⚠️ Ignorando prevención de duplicados (¿Tabla missing?):", dupErr.message);
+                }
+            }
 
             // Parche específico para Argentina: Meta Cloud y WhatsApp desalinean el prefijo interno '9'
             // Los mensajes llegan con '54911...' pero la Sandbox de Facebook Cloud los cataloga como '5411...'
