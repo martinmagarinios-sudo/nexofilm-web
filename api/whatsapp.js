@@ -192,6 +192,37 @@ export default async function handler(req, res) {
                                     await supabase.from('whatsapp_sessions').upsert({ phone: from, history: hist, updated_at: new Date().toISOString() });
                                 } catch (e) { console.error("Error guardando mensaje en silencio:", e); }
 
+                                // [NUEVO] Alerta de seguimiento por Email (Resend)
+                                try {
+                                    // Candado Anti-Spam: No notificar seguimiento si ya se avisó en los últimos 10 min.
+                                    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+                                    const { data: recentLeadNotif } = await supabase
+                                        .from('whatsapp_leads')
+                                        .select('id')
+                                        .eq('phone', from)
+                                        .gt('created_at', tenMinutesAgo)
+                                        .maybeSingle();
+
+                                    if (!recentLeadNotif) {
+                                        const adminURL = `https://nexofilm.com/admin/chat?phone=${from}`;
+                                        await resend.emails.send({
+                                            from: 'NexoFilm CRM <onboarding@resend.dev>',
+                                            to: ['martinmagarinios@gmail.com'],
+                                            subject: `💬 NUEVO MENSAJE de ${recentLead.name || 'Cliente'} (+${from})`,
+                                            html: `
+                                                <div style="font-family: Arial, sans-serif; padding: 20px;">
+                                                    <h2 style="color: #00a884;">ℹ️ El cliente volvió a escribir</h2>
+                                                    <p><strong>De:</strong> ${recentLead.name || 'Sin nombre'} (+${from})</p>
+                                                    <p><strong>Mensaje:</strong> "${text}"</p>
+                                                    <br/>
+                                                    <a href="${adminURL}" style="background-color:#00a884; color:white; padding:12px 20px; text-decoration:none; border-radius:5px;">Responder en CRM</a>
+                                                </div>
+                                            `
+                                        });
+                                        console.log(`📧 Alerta de SEGUIMIENTO enviada para +${from}`);
+                                    }
+                                } catch (mailErr) { console.error("Error en alerta seguimiento:", mailErr); }
+
                                 return res.status(200).json({ status: 'bot_silenced_active_lead' });
                             }
                         }
