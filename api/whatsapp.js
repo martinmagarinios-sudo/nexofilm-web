@@ -306,8 +306,10 @@ async function generateAIResponse(historyMessages, source, phone) {
     try {
         let vip = "";
         if (historyMessages.length <= 1 && supabase) {
-            const { data } = await supabase.from('whatsapp_leads').select('name').eq('phone', phone).maybeSingle();
-            if (data?.name && data.name !== 'Sin nombre') vip = `RECONOCIMIENTO VIP: Usuario ${data.name}. Salúdalo por su nombre y enviá $$SHOW_MENU$$.`;
+            const { data } = await supabase.from('whatsapp_leads').select('name').eq('phone', phone).order('created_at', { ascending: false }).limit(1).maybeSingle();
+            if (data?.name && data.name !== 'Sin nombre') {
+                vip = `RECONOCIMIENTO VIP (USUARIO RECURRENTE):\nEl usuario ya confió en nosotros y está en nuestra base como ${data.name}.\nDado que es su PRIMER mensaje tras mucho tiempo, saludalo EXACTAMENTE así: "¡Hola ${data.name}! Qué bueno tenerte de vuelta por NexoFilm. ¿En qué podemos ayudarte hoy?" y enviá el tag $$SHOW_MENU$$. NO preguntes su nombre de nuevo NI HAGAS OTRAS PREGUNTAS iniciales.`;
+            }
         }
 
         const comp = await groq.chat.completions.create({
