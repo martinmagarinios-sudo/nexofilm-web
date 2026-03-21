@@ -192,6 +192,27 @@ export default async function handler(req, res) {
                                     let hist = sess?.history || [];
                                     hist.push({ role: 'user', content: text, timestamp: new Date().toISOString() });
                                     await supabase.from('whatsapp_sessions').upsert({ phone: from, history: hist, updated_at: new Date().toISOString() });
+
+                                    // [NUEVO] Actualizar Resumen Incremental (Sin esperar al Handoff)
+                                    // Esto hace que el CRM vea la info en tiempo real
+                                    try {
+                                        const summaryUpdate = await groq.chat.completions.create({
+                                            model: "llama-3.1-8b-instant",
+                                            messages: [
+                                                { role: "system", content: "Resumí la intención actual del cliente en una frase corta y técnica. Ej: 'Busca Video para 120 personas en CABA'. Sé directo." },
+                                                ...hist.slice(-6)
+                                            ],
+                                            max_tokens: 50
+                                        });
+                                        const newSummary = summaryUpdate.choices[0]?.message?.content?.replace(/"/g, '') || "";
+                                        await supabase.from('whatsapp_leads').upsert({ 
+                                            phone: from, 
+                                            summary: newSummary, 
+                                            updated_at: new Date().toISOString(),
+                                            source: chatSources.get(from) || "Activo"
+                                        });
+                                    } catch (e) { console.error("Error en resumen incremental:", e); }
+
                                 } catch (e) { console.error("Error guardando mensaje en silencio:", e); }
 
                                 // [NUEVO] Alerta de seguimiento por Email (Resend)
@@ -347,6 +368,27 @@ async function handleAIConversation(phoneNumberId, to, userMessage) {
 
     // Agregar la respuesta de la IA al historial
     history.push({ role: 'assistant', content: aiRawResponse });
+
+    // [NUEVO] Actualización de Resumen Incremental para el CRM (para que se vea "vivo")
+    try {
+        const summaryUpdate = await groq.chat.completions.create({
+            model: "llama-3.1-8b-instant",
+            messages: [
+                { role: "system", content: "Resumí la intención actual del cliente en una frase corta y técnica. Ej: 'Busca Video para 120 personas en CABA'. Sé directo." },
+                ...history.slice(-6)
+            ],
+            max_tokens: 50
+        });
+        const liveSummary = summaryUpdate.choices[0]?.message?.content?.replace(/"/g, '') || "";
+        if (supabase) {
+            await supabase.from('whatsapp_leads').upsert({ 
+                phone: to, 
+                summary: liveSummary, 
+                updated_at: new Date().toISOString(),
+                source: chatSources.get(to) || "Web"
+            });
+        }
+    } catch (e) { console.error("Error en resumen vivo:", e); }
 
     let finalResponse = aiRawResponse;
     let handoffData = null;
