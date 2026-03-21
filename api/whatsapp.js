@@ -1,7 +1,9 @@
 import Groq from 'groq-sdk';
 import { createClient } from '@supabase/supabase-js';
+import { Resend } from 'resend';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY?.trim() });
+const resend = new Resend(process.env.RESEND_API_KEY?.trim());
 
 // Inicializar cliente Supabase
 const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)?.trim();
@@ -331,23 +333,36 @@ async function handleAIConversation(phoneNumberId, to, userMessage) {
             console.error('⚠️ No se pudo notificar al Admin por WhatsApp (probablemente fuera de ventana 24hs):', errAdmin.message);
         }
 
-        // Envío 100% gratuito e ilimitado por mail
+        // Envío Ultra-Rápido por Resend (Email)
         try {
-            await fetch("https://formsubmit.co/ajax/hola@nexofilm.com", {
-                method: "POST",
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({
-                    _subject: "NUEVO LEAD POR WHATSAPP - NexoFilm",
-                    Cliente: "+" + to,
-                    Origen: savedSource,
-                    Calificacion: (handoffData.score || 'N/A') + "/100",
-                    Resumen: handoffData.summary,
-                    Link_WhatsApp: "https://wa.me/" + to
-                })
+            const adminURL = `https://nexofilm.com/admin/chat?phone=${to}`;
+            const { data, error } = await resend.emails.send({
+                from: 'NexoFilm CRM <onboarding@resend.dev>',
+                to: ['hola@nexofilm.com'],
+                subject: `🚨 NUEVO LEAD: ${handoffData.name || 'Sin nombre'} (+${to})`,
+                html: `
+                    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                        <h2 style="color: #000;">¡Nuevo Lead Caliente en WhatsApp! 🔥</h2>
+                        <p><strong>Número:</strong> +${to}</p>
+                        <p><strong>Nombre:</strong> ${handoffData.name || 'No especificó'}</p>
+                        <p><strong>Origen:</strong> ${savedSource}</p>
+                        <p><strong>Calificación IA:</strong> ${handoffData.score || 'N/A'}/100</p>
+                        <hr style="border:1px solid #eee; margin:20px 0;"/>
+                        <h3 style="color: #666;">Resumen del pedido:</h3>
+                        <p style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #25D366; font-style: italic;">
+                            ${handoffData.summary}
+                        </p>
+                        <br/>
+                        <a href="${adminURL}" style="display:inline-block; background-color:#25D366; color:white; padding:14px 24px; text-decoration:none; border-radius:6px; font-weight:bold; font-size:16px;">💬 Abrir Chat en CRM</a>
+                        <br/><br/>
+                        <p style="font-size:12px; color:gray; border-top: 1px solid #eee; padding-top: 10px;">🤖 Alerta generada automáticamente por el Cerebro de NexoFilm AI.</p>
+                    </div>
+                `
             });
-            console.log("📧 Email enviado por FormSubmit a hola@nexofilm.com");
+            if (error) console.error("Error enviando email vía Resend (¿El mail hola@nexofilm.com no es el que registró la cuenta?):", error);
+            else console.log("📧 Email de Alerta enviado por Resend exitosamente.");
         } catch (mailErr) {
-            console.error("Error enviando email:", mailErr);
+            console.error("Error catastrófico en Resend:", mailErr);
         }
 
         // Guardar en Supabase
