@@ -8,32 +8,31 @@ const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supaba
 
 const ADMIN_NUMBER = '541151191964';
 
-const SYSTEM_PROMPT = `Eres el asistente de NexoFilm (Argentina). Usa voseo ("contame", "mirá"). Prohibido usar "che".
-Respuestas breves y amigables. Tu meta es calificar al cliente para derivarlo a un humano.
+const SYSTEM_PROMPT = `Eres el asistente virtual de NexoFilm (Argentina). 
 
-ETAPA 1 - BIENVENIDA:
-- Pedí el nombre. Si no lo sabés, no envíes el menú.
+REGLAS DE IDENTIDAD:
+1. Usá VOSEO SIEMPRE ("contame", "mirá", "querés"). Prohibido usar "tú" o "usted".
+2. PROHIBIDO usar la palabra "che". Nunca la uses.
+3. Respuestas muy breves y profesionales.
 
-ETAPA 2 - MENÚ:
-- Al saber el nombre, saludá y enviá $$SHOW_MENU$$. No escribas las opciones en texto.
+FLUJO DE ATENCIÓN:
+ETAPA 1: Si no sabés el nombre, saludá y pedíselo. Ej: "¡Hola! Bienvenido a NexoFilm. ¿Contame tu nombre, por favor?"
+ETAPA 2: Al saber el nombre, decí: "Un gusto, [Nombre]. Acá te dejo nuestras opciones:" seguido del tag $$SHOW_MENU$$.
+   - REGLA DE ORO: NO escribas la lista de opciones (Foto, Video, etc.) en texto. El sistema las envía automáticamente por botones.
+ETAPA 3: Recolección de datos técnicos para el presupuesto (Foto/Video, Fecha, Lugar, Cantidad de gente, Duración).
+   - **Email de contacto (Fundamental).** Pedilo siempre.
 
-ETAPA 3 - DATOS (Uno por uno):
-- Servicio buscado (Foto/Video).
-- Fecha y lugar.
-- Cantidad de gente y duración (si es evento).
-- **Email de contacto.**
-
-REGLA ANTI-PAVADAS: Si el cliente habla fuera de tema, decile que preferís que un humano lo ayude y cortá con $$HANDOFF_JSON$$ (summary: "Consulta fuera de tema").
+REGLA ANTI-PAVADAS: Si preguntan tonterías, decí que un productor humano los ayudará y cortá con $$HANDOFF_JSON$$ (summary: "Consulta fuera de tema").
 
 {{VIP_RULE}}
 
-$$HANDOFF_JSON$$: Si tenés todo (incluyendo mail), generá:
+$$HANDOFF_JSON$$: Si tenés todo (con mail), generá:
 $$HANDOFF_JSON$$
 {
   "handoff": true,
   "name": "Nombre",
   "email": "correo",
-  "summary": "Resumen detallado de todo lo pedido.",
+  "summary": "Resumen detallado de todo lo pedido para el presupuesto.",
   "score": 90
 }
 $$HANDOFF_JSON$$`;
@@ -57,70 +56,83 @@ export default async function handler(req, res) {
 
             // Parche Argentina
             if (from.startsWith('549') && from.length === 13) from = '54' + from.substring(3);
-
-            // Filtro Admin
             if (from === ADMIN_NUMBER || fromRaw === ADMIN_NUMBER) return res.status(200).send('OK');
 
             // --- LÓGICA DE MENSAJE ---
             let text = "";
             let btnId = null;
 
-            if (message.type === 'text') text = message.text.body;
-            else if (message.type === 'interactive') {
+            if (message.type === 'text') {
+                text = message.text.body;
+            } else if (message.type === 'interactive') {
                 btnId = message.interactive.button_reply.id;
-                text = `[Botón: ${message.interactive.button_reply.title}]`;
+                const btnTitle = message.interactive.button_reply.title || btnId;
+
+                // --- RESPUESTA RÁPIDA DE BOTONES (PRE-IA) ---
+                let quickReply = "";
+                if (btnId === 'btn_p') quickReply = "¡Bárbaro! Para mandarme el presupuesto, contame: ¿Buscás servicio de Foto, de Video, o ambos? 📸🎥";
+                else if (btnId === 'btn_v') quickReply = "🎬 Mirá algunos de nuestros trabajos en: https://nexofilm.com \n¿Te gustaría que te armemos una propuesta después de verlos?";
+                else if (btnId === 'btn_h') {
+                    quickReply = "Entendido. Un productor te va a contactar a la brevedad. 👤📞";
+                    await sendText(phoneNumberId, ADMIN_NUMBER, `🔔 ALERTA HUMANO: +${from}`);
+                }
+
+                if (quickReply) {
+                    await sendText(phoneNumberId, from, quickReply);
+                    // Actualizamos historial y salimos sin llamar a la IA (para que sea instantáneo)
+                    await saveHistory(from, `[Seleccionó: ${btnTitle}]`, 'user');
+                    await saveHistory(from, quickReply, 'assistant');
+                    return res.status(200).send('OK');
+                }
+                text = `[Botón: ${btnTitle}]`;
             }
 
             if (!text) return res.status(200).send('OK');
 
-            // Reset manual
+            // Reset
             if (text.toLowerCase() === 'reset') {
                 if (supabase) await supabase.from('whatsapp_sessions').delete().eq('phone', from);
                 await sendText(phoneNumberId, from, "🔄 Memoria borrada.");
                 return res.status(200).send('OK');
             }
 
-            // Silencio Inteligente (Solo si hay un lead activo creado en las últimas 24hs)
+            // Silencio Inteligente (Si ya es un lead activo)
             if (supabase && text.toLowerCase() !== 'menu' && !btnId) {
                 const { data: lead } = await supabase.from('whatsapp_leads').select('created_at').eq('phone', from).order('created_at', {ascending:false}).limit(1).maybeSingle();
                 if (lead) {
                     const hrs = (new Date() - new Date(lead.created_at)) / 36e5;
                     if (hrs < 24) {
-                        // Guardamos igual para el CRM
-                        await saveHistory(from, text);
+                        await saveHistory(from, text, 'user');
                         return res.status(200).send('OK');
                     }
                 }
             }
 
-            // --- CONVERSACIÓN ---
+            // --- CHAT CON IA ---
             let history = [];
             if (supabase) {
                 const { data } = await supabase.from('whatsapp_sessions').select('history').eq('phone', from).maybeSingle();
                 if (data?.history) history = data.history;
             }
 
-            // Si es un botón, manejamos rápido fuera de la IA si queremos, o se lo pasamos
             history.push({ role: 'user', content: text });
             if (history.length > 10) history = history.slice(-10);
 
-            // VIP Check
+            // VIP Recognition
             let vipRule = "";
             if (history.length <= 1 && supabase) {
                 const { data } = await supabase.from('whatsapp_leads').select('name, email').eq('phone', from).maybeSingle();
                 if (data?.name && data.name !== 'Sin nombre') {
-                    vipRule = `VIP: Es ${data.name}. Saludalo por nombre y mandá $$SHOW_MENU$$. Si tenés su mail (${data.email || 'no'}), verificalo al final.`;
+                    vipRule = `VIP: Es ${data.name}. Saludalo así: "¡Hola ${data.name}! Qué bueno tenerte de vuelta por NexoFilm. ¿En qué podemos ayudarte?" y mandá $$SHOW_MENU$$. No preguntes nombre. Si tenés su mail (${data.email || 'no'}), confirmalo al final.`;
                 }
             }
 
-            // IA Call (HARD TIMEOUT 8 SEG)
+            // Llamada IA con Timeout de 8s
             const aiPromise = groq.chat.completions.create({
                 model: 'llama-3.1-8b-instant',
-                messages: [{ role: 'system', content: SYSTEM_PROMPT.replace('{{VIP_RULE}}', vipRule).replace('{{SOURCE}}', 'Directo') }, ...history],
-                temperature: 0.5,
-                max_tokens: 500
+                messages: [{ role: 'system', content: SYSTEM_PROMPT.replace('{{VIP_RULE}}', vipRule).replace('{{SOURCE}}', 'Web') }, ...history],
+                temperature: 0.5, max_tokens: 500
             });
-
             const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 8000));
             const completion = await Promise.race([aiPromise, timeoutPromise]);
             const aiRes = completion.choices[0].message.content;
@@ -147,32 +159,23 @@ export default async function handler(req, res) {
             await sendText(phoneNumberId, from, cleanRes);
             if (showMenu) await sendMenu(phoneNumberId, from);
 
-            // Handoff y Alertas (Background)
-            if (hf?.handoff) {
-                // ... Lead update, etc ...
-                if (supabase) {
-                    await supabase.from('whatsapp_leads').upsert({ phone: from, name: hf.name, email: hf.email, summary: hf.summary, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
-                }
-                // Alerta básica Email
-                try {
-                    const Resend = (await import('resend')).Resend;
-                    const resend = new Resend(process.env.RESEND_API_KEY);
-                    await resend.emails.send({ from: 'NexoFilm <onboarding@resend.dev>', to: ['martinmagarinios@gmail.com'], subject: `LEAD: ${hf.name}`, html: `<p>${hf.summary}</p>` });
-                } catch(e){}
+            // Alerta Lead
+            if (hf?.handoff && supabase) {
+                await supabase.from('whatsapp_leads').upsert({ phone: from, name: hf.name, email: hf.email, summary: hf.summary, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
             }
 
             return res.status(200).send('OK');
 
         } catch (err) {
             console.error(err);
-            // Mensaje de rescate si podemos
             return res.status(200).send('OK');
         }
     }
 }
 
-// HELPERS (fetch global en Node 18+)
+// HELPERS
 async function sendText(pid, to, msg) {
+    if (!msg) return;
     await fetch(`https://graph.facebook.com/v21.0/${pid}/messages`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' },
@@ -187,11 +190,11 @@ async function sendMenu(pid, to) {
         body: JSON.stringify({
             messaging_product: 'whatsapp', to, type: 'interactive',
             interactive: {
-                type: 'button', body: { text: "¿Qué buscás?" },
+                type: 'button', body: { text: "¿En qué podemos ayudarte hoy? Seleccioná una opción:" },
                 action: {
                     buttons: [
-                        { type: 'reply', reply: { id: 'btn_p', title: '📋 Presupuesto' } },
-                        { type: 'reply', reply: { id: 'btn_v', title: '🎬 Portfolio' } },
+                        { type: 'reply', reply: { id: 'btn_p', title: '📋 Pedir Presupuesto' } },
+                        { type: 'reply', reply: { id: 'btn_v', title: '🎬 Ver Portfolio' } },
                         { type: 'reply', reply: { id: 'btn_h', title: '👤 Hablar con Humano' } }
                     ]
                 }
@@ -200,10 +203,10 @@ async function sendMenu(pid, to) {
     });
 }
 
-async function saveHistory(phone, text) {
+async function saveHistory(phone, content, role) {
     if (!supabase) return;
     const { data } = await supabase.from('whatsapp_sessions').select('history').eq('phone', phone).maybeSingle();
     let hist = data?.history || [];
-    hist.push({ role: 'user', content: text, timestamp: new Date().toISOString() });
+    hist.push({ role, content, timestamp: new Date().toISOString() });
     await supabase.from('whatsapp_sessions').upsert({ phone, history: hist, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
 }
