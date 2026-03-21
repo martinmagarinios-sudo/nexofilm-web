@@ -54,7 +54,7 @@ $$HANDOFF_JSON$$
 {
   "handoff": true,
   "name": "Nombre de la persona",
-  "summary": "Resumen rápido (ej: Streaming evento, 10 de Mayo, CABA)",
+  "summary": "Resumen DETALLADO. Incluye: Tipo de servicio, Para qué tipo de evento, Fecha EXACTA, Locación específica, Cantidad de gente y Duración estimada. No seas escueto. Ejemplo: 'Video y Streaming para ExpoAgro, San Nicolás. Fecha: 15 de Octubre. 2000 personas. Duración: 6 horas.'",
   "score": 90,
   "is_hot": true
 }
