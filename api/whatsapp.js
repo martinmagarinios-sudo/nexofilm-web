@@ -63,7 +63,7 @@ export default async function handler(req, res) {
     if (from === ADMIN_NUMBER || fromRaw === ADMIN_NUMBER) return res.status(200).send('OK');
 
     try {
-        // --- Botones Interactivos ---
+        // --- Botones Interactivos (respuesta rápida, sin IA) ---
         if (message.type === 'interactive') {
             const btnId = message.interactive.button_reply.id;
             const btnTitle = message.interactive.button_reply.title || btnId;
@@ -72,14 +72,14 @@ export default async function handler(req, res) {
             if (btnId === 'btn_p') qr = "¡Bárbaro! Para el presupuesto, ¿me decís si buscás Foto, Video, o ambos? 📸🎥";
             else if (btnId === 'btn_v') qr = "🎬 Mirá algunos de nuestros trabajos en: https://nexofilm.com \n¿Te gustaría que te armemos una propuesta?";
             else if (btnId === 'btn_h') {
-                qr = "Entendido. Un productor te va a contactar a la brevedad. 👤📞";
-                await sendText(phoneNumberId, ADMIN_NUMBER, `🔔 ALERTA HUMANO: +${from}`);
+                qr = "Entendido. Un productor te va a contactar. 👤📞";
+                sendText(phoneNumberId, ADMIN_NUMBER, `🔔 ALERTA HUMANO: +${from}`).catch(() => {});
             }
 
             if (qr) {
-                // Primero cargamos historial, lo actualizamos y LUEGO respondemos
+                // Guardamos el historial ANTES de responder para que el próximo mensaje tenga contexto
                 const h = await loadHistory(from);
-                h.push({ role: 'user', content: `[Botón: ${btnTitle}]` });
+                h.push({ role: 'user', content: `[Seleccionó: ${btnTitle}]` });
                 h.push({ role: 'assistant', content: qr });
                 await persistHistory(from, h);
                 await sendText(phoneNumberId, from, qr);
@@ -87,42 +87,44 @@ export default async function handler(req, res) {
             return res.status(200).send('OK');
         }
 
-        // --- Mensajes de Texto ---
         if (message.type !== 'text') return res.status(200).send('OK');
 
         const text = message.text.body;
 
         // Reset manual
         if (text.toLowerCase() === 'reset') {
-            if (supabase) await supabase.from('whatsapp_sessions').delete().eq('phone', from).catch(()=>{});
+            if (supabase) supabase.from('whatsapp_sessions').delete().eq('phone', from).catch(() => {});
             await sendText(phoneNumberId, from, "🔄 Memoria borrada.");
             return res.status(200).send('OK');
         }
 
-        // Cargar historial
-        const history = await loadHistory(from);
+        // Cargar historial + VIP check EN PARALELO para ganar tiempo
+        const [history, leadData] = await Promise.all([
+            loadHistory(from),
+            supabase ? supabase.from('whatsapp_leads').select('name, email').eq('phone', from).order('created_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data).catch(() => null) : Promise.resolve(null)
+        ]);
+
         history.push({ role: 'user', content: text });
         if (history.length > 10) history.splice(0, history.length - 10);
 
-        // VIP Recognition
+        // VIP Rule
         let vipRule = "";
-        if (history.length <= 1 && supabase) {
-            const { data: ld } = await supabase.from('whatsapp_leads').select('name, email').eq('phone', from).order('created_at', {ascending:false}).limit(1).maybeSingle().catch(()=>({ data: null }));
-            if (ld?.name && ld.name !== 'Sin nombre') {
-                vipRule = `VIP: Es ${ld.name}. Saludalo: "¡Hola ${ld.name}! Qué bueno tenerte de vuelta. ¿En qué podemos ayudarte?" y mandá $$SHOW_MENU$$. No preguntes nombre. ${ld.email ? `Confirmá su mail (${ld.email}) al final.` : ''}`;
-            }
+        if (history.length <= 1 && leadData?.name && leadData.name !== 'Sin nombre') {
+            vipRule = `VIP: Es ${leadData.name}. Saludalo: "¡Hola ${leadData.name}! Qué bueno tenerte de vuelta. ¿En qué podemos ayudarte?" y mandá $$SHOW_MENU$$. No preguntes nombre. ${leadData.email ? `Verificá su mail (${leadData.email}) al final.` : ''}`;
         }
 
         // Llamada a Groq
         const comp = await groq.chat.completions.create({
             model: 'llama-3.1-8b-instant',
             messages: [{ role: 'system', content: SYSTEM_PROMPT.replace('{{VIP_RULE}}', vipRule) }, ...history],
-            temperature: 0.5, max_tokens: 500
+            temperature: 0.5,
+            max_tokens: 450
         });
         const aiRes = comp.choices[0].message.content;
-
         history.push({ role: 'assistant', content: aiRes });
-        await persistHistory(from, history);
+
+        // Guardar historial en background (no bloqueante)
+        persistHistory(from, history).catch(() => {});
 
         // Procesar tags
         let final = aiRes;
@@ -131,23 +133,25 @@ export default async function handler(req, res) {
 
         const m = aiRes.match(/\$\$HANDOFF_JSON\$\$([\s\S]*?)\$\$HANDOFF_JSON\$\$/);
         if (m) {
-            try { hf = JSON.parse(m[1]); final = aiRes.replace(m[0], '').trim(); } catch(e){}
+            try { hf = JSON.parse(m[1]); final = aiRes.replace(m[0], '').trim(); } catch(e) {}
         }
         if (final.includes('$$SHOW_MENU$$')) {
             showMenu = true;
             final = final.replace('$$SHOW_MENU$$', '').trim();
         }
 
+        // ENVIAR (esto es lo más importante)
         await sendText(phoneNumberId, from, final);
         if (showMenu) await sendMenu(phoneNumberId, from);
 
+        // Handoff en background
         if (hf?.handoff && supabase) {
-            supabase.from('whatsapp_leads').upsert({ phone: from, name: hf.name, email: hf.email, summary: hf.summary, updated_at: new Date().toISOString() }, { onConflict: 'phone' }).catch(()=>{});
+            supabase.from('whatsapp_leads').upsert({ phone: from, name: hf.name, email: hf.email, summary: hf.summary, updated_at: new Date().toISOString() }, { onConflict: 'phone' }).catch(() => {});
         }
 
     } catch (err) {
         console.error("BOT ERROR:", err.message);
-        // NO mandamos mensaje al usuario para no interrumpir la experiencia
+        // Error silencioso - no molestamos al cliente
     }
 
     return res.status(200).send('OK');
@@ -164,14 +168,12 @@ async function loadHistory(phone) {
 
 async function persistHistory(phone, history) {
     if (!supabase) return;
-    try {
-        await supabase.from('whatsapp_sessions').upsert({ phone, history, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
-    } catch(e) {}
+    await supabase.from('whatsapp_sessions').upsert({ phone, history, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
 }
 
 async function sendText(pid, to, msg) {
     if (!msg) return;
-    await fetch(`https://graph.facebook.com/v21.0/${pid}/messages`, {
+    return fetch(`https://graph.facebook.com/v21.0/${pid}/messages`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body: msg, preview_url: true } })
@@ -179,7 +181,7 @@ async function sendText(pid, to, msg) {
 }
 
 async function sendMenu(pid, to) {
-    await fetch(`https://graph.facebook.com/v21.0/${pid}/messages`, {
+    return fetch(`https://graph.facebook.com/v21.0/${pid}/messages`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
