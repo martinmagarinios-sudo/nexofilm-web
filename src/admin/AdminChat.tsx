@@ -264,7 +264,8 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
                                 <p className="text-sm text-[#e9edef] italic leading-relaxed">
                                     "{activeLead.summary}"
                                 </p>
-                                <div className="mt-2 flex gap-3 text-[10px] text-[#8696a0]">
+                                <div className="mt-2 flex flex-wrap gap-3 text-[10px] text-[#8696a0]">
+                                    {activeLead.email && <span>📧 Email: <b className="text-[#e9edef]">{activeLead.email}</b></span>}
                                     {activeLead.source && <span>📍 Origen: <b className="text-[#e9edef]">{activeLead.source}</b></span>}
                                     {activeLead.created_at && <span>📅 Captado: <b className="text-[#e9edef]">{new Date(activeLead.created_at).toLocaleDateString()}</b></span>}
                                 </div>

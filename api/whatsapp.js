@@ -35,26 +35,28 @@ ETAPA 2 - MENÚ DE OPCIONES:
 ETAPA 3 - RECOLECCIÓN DE DATOS:
 - Luego del menú, hace preguntas de a UNA por vez:
   1. Preguntá qué tipo de servicio audiovisual busca (Foto, Video, Streaming, o combos).
-  2. Si es un TRABAJO DE COBERTURA (feria, casamiento, evento, recital, congreso) o STREAMING, DEBES hacer 3 preguntas clave para el presupuesto:
+  2. Si es un TRABAJO DE COBERTURA (feria, casamiento, evento, recital, congreso) o STREAMING, DEBES hacer preguntas clave para el presupuesto:
      - ¿Qué fecha y locación/lugar es?
-     - ¿Qué cantidad aproximada de invitados o asistentes esperan? (vital para calcular tamaño del equipo).
-     - ¿Cuántas horas de duración estiman que tendrá la cobertura o la transmisión?
-  3. Secuenciá estas preguntas de forma natural y amigable (una por vez).
-  4. Cuando tengas toda esa info técnica principal, generá la derivación (HANDOFF).
-  5. A partir de que generás el HANDOFF, NO agregues preguntas adicionales de seguimiento.
+     - ¿Qué cantidad aproximada de invitados o asistentes esperan?
+     - ¿Cuántas horas de duración estiman?
+  3. [NUEVO] ¡IMPORTANTE! Pedí siempre un **correo electrónico** de contacto para mandarle el presupuesto formal.
+  4. Secuenciá estas preguntas de forma natural y amigable (una por vez).
+  5. Cuando tengas toda esa info técnica Y EL MAIL, generá la derivación (HANDOFF).
+  6. A partir de que generás el HANDOFF, NO agregues preguntas adicionales de seguimiento.
 - PREGUNTA CORTA: Tus respuestas deben terminar en una pregunta sencilla para guiar la charla, excepto en el mensaje final.
 
 {{VIP_RULE}}
 
 PROTOCOLO DE CIERRE (HANDOFF):
-Si ya tenés todos los datos O el cliente pide un humano explícitamente, terminá la charla acá.
+Si ya tenés todos los datos (incluyendo el mail) O el cliente pide un humano explícitamente, terminá la charla acá.
 NO HAGAS MÁS PREGUNTAS EN EL MENSAJE DE CIERRE. Despedite de forma conclusiva.
 Debes incluir EXACTAMENTE este JSON oculto al principio del mensaje:
 $$HANDOFF_JSON$$
 {
   "handoff": true,
   "name": "Nombre de la persona",
-  "summary": "Resumen DETALLADO. Incluye: Tipo de servicio, Para qué tipo de evento, Fecha EXACTA, Locación específica, Cantidad de gente y Duración estimada. No seas escueto. Ejemplo: 'Video y Streaming para ExpoAgro, San Nicolás. Fecha: 15 de Octubre. 2000 personas. Duración: 6 horas.'",
+  "email": "correo@ejemplo.com",
+  "summary": "Resumen DETALLADO. Incluye: Tipo de servicio, Para qué tipo de evento, Fecha EXACTA, Locación específica, Cantidad de gente y Duración estimada. No seas escueto.",
   "score": 90,
   "is_hot": true
 }
@@ -421,6 +423,7 @@ async function handleAIConversation(phoneNumberId, to, userMessage) {
                         <h2 style="color: #000;">¡Nuevo Lead Caliente en WhatsApp! 🔥</h2>
                         <p><strong>Número:</strong> +${to}</p>
                         <p><strong>Nombre:</strong> ${handoffData.name || 'No especificó'}</p>
+                        <p><strong>Email:</strong> ${handoffData.email || 'No especificó'}</p>
                         <p><strong>Origen:</strong> ${savedSource}</p>
                         <p><strong>Calificación IA:</strong> ${handoffData.score || 'N/A'}/100</p>
                         <hr style="border:1px solid #eee; margin:20px 0;"/>
@@ -447,19 +450,18 @@ async function handleAIConversation(phoneNumberId, to, userMessage) {
         if (supabase) {
             try {
                 // Preparamos el payload validando que existan los datos para no romper insert viejo si Groq se olvida
-                const leadPayload = {
-                    phone: to,
-                    name: handoffData.name || 'Sin nombre',
-                    summary: handoffData.summary || 'Derivado sin resumen (Bypass)',
-                    source: savedSource
-                };
-
-                if (handoffData.score !== undefined) leadPayload.score = parseInt(handoffData.score, 10) || null;
-                if (handoffData.is_hot !== undefined) leadPayload.is_hot = !!handoffData.is_hot;
-
                 const { error } = await supabase
                     .from('whatsapp_leads')
-                    .insert([leadPayload]);
+                    .upsert({
+                        phone: to,
+                        name: handoffData.name || 'Sin nombre',
+                        email: handoffData.email || null, // Add email, default to null if not provided
+                        summary: handoffData.summary || 'Derivado sin resumen (Bypass)',
+                        score: (handoffData.score !== undefined) ? parseInt(handoffData.score, 10) || null : null,
+                        is_hot: (handoffData.is_hot !== undefined) ? !!handoffData.is_hot : null,
+                        source: savedSource,
+                        updated_at: new Date().toISOString()
+                    });
 
                 if (error) {
                     console.error('❌ Error insertando lead en Supabase:', error);
