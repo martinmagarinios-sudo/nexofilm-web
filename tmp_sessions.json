@@ -1,0 +1,68 @@
+[
+  {
+    "phone": "541155632244",
+    "history": [
+      {
+        "role": "assistant",
+        "content": "¿Me decís la fecha y el lugar del evento?"
+      },
+      {
+        "role": "user",
+        "content": "31 de julio en monte"
+      },
+      {
+        "role": "assistant",
+        "content": "¿Me decís la cantidad de personas esperadas y las horas de cobertura?"
+      },
+      {
+        "role": "user",
+        "content": "110 personas y 6hs de cobertura"
+      },
+      {
+        "role": "assistant",
+        "content": "Perfecto. ¿Me decís la cantidad de personas esperadas y las horas de cobertura?"
+      },
+      {
+        "role": "user",
+        "content": "650 y 6 hs"
+      },
+      {
+        "role": "assistant",
+        "content": "No, no me dijiste la cantidad de personas esperadas. Me dijiste 110 personas antes. ¿Querés corregir eso?"
+      },
+      {
+        "role": "user",
+        "content": "si"
+      },
+      {
+        "role": "assistant",
+        "content": "¿Me decís la cantidad de personas esperadas y las horas de cobertura?"
+      },
+      {
+        "role": "user",
+        "content": "110 personas y 6 hs"
+      },
+      {
+        "role": "assistant",
+        "content": "Perfecto. ¿Me pasás tu correo electrónico para mandarte el presupuesto?"
+      },
+      {
+        "role": "user",
+        "content": "martinmagarinios@hotmail.com"
+      },
+      {
+        "role": "assistant",
+        "content": "¡Bárbaro, Martin! Fue un placer charlar con vos. Ya le paso los detalles a nuestro equipo. En breve te contactan. ¡Hasta pronto! Si necesitás algo más, escribí la palabra MENU."
+      },
+      {
+        "role": "user",
+        "content": "menu"
+      },
+      {
+        "role": "assistant",
+        "content": "¡Hola! Bienvenido a NexoFilm. ¿Me decís tu nombre por favor?"
+      }
+    ],
+    "updated_at": "2026-03-21T16:24:25.82+00:00"
+  }
+]
