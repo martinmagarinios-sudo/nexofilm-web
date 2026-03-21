@@ -133,6 +133,19 @@ export default async function handler(req, res) {
             sendReconnectAlert(from, leadData?.name || 'Cliente conocido').then(null, () => {});
         }
 
+        // --- DETECTAR SI UN HUMANO ESTÁ HABLANDO ---
+        const lastAdminMsg = [...history].reverse().find(m => m.role === 'admin');
+        const isHumanActive = lastAdminMsg && (now - new Date(lastAdminMsg.timestamp || 0).getTime()) < 60 * 60 * 1000;
+
+        // Comando MENU (con check de humano)
+        if ((text.toLowerCase() === 'menu' || text.toLowerCase() === 'menú') && !isHumanActive) {
+            await sendMenu(phoneNumberId, from);
+            history.push({ role: 'user', content: text });
+            history.push({ role: 'assistant', content: "[Se mostró el menú principal]" });
+            await persistHistory(from, history);
+            return res.status(200).send('OK');
+        }
+
         history.push({ role: 'user', content: text });
         if (history.length > 14) history.splice(0, history.length - 14);
 
@@ -143,10 +156,16 @@ REGRESO: Saludalo así: "¡Hola ${leadData.name}! Qué bueno tenerte de vuelta. 
 EMAIL (Paso 3e): Si ya tenemos su mail (${leadData.email || 'desconocido'}), preguntale si sigue siendo ese o si prefiere usar otro.`;
         }
 
+        // Mapeo de roles para Groq (unificar admin y assistant)
+        const groqHistory = history.map(m => ({
+            role: (m.role === 'admin' || m.role === 'assistant') ? 'assistant' : m.role,
+            content: m.content
+        }));
+
         // Llamada a Groq
         const comp = await groq.chat.completions.create({
             model: 'llama-3.1-8b-instant',
-            messages: [{ role: 'system', content: SYSTEM_PROMPT.replace('{{VIP_RULE}}', vipRule) }, ...history],
+            messages: [{ role: 'system', content: SYSTEM_PROMPT.replace('{{VIP_RULE}}', vipRule) }, ...groqHistory],
             temperature: 0.4,
             max_tokens: 400
         });
