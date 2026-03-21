@@ -162,9 +162,10 @@ export default async function handler(req, res) {
         await sendText(phoneNumberId, from, final);
         if (showMenu) await sendMenu(phoneNumberId, from);
 
-        // HANDOFF: Guardar Lead + Enviar Mail (en background para no bloquear)
+        // HANDOFF: Guardar Lead + Enviar Mail (SÍNCRONO: debe completarse antes del 200)
         if (hf?.handoff) {
-            handleHandoff(from, hf).then(null, e => console.error("Handoff error:", e.message));
+            console.log('HANDOFF detectado:', JSON.stringify(hf));
+            await handleHandoff(from, hf);
         }
 
     } catch (err) {
