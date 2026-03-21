@@ -161,7 +161,7 @@ export default async function handler(req, res) {
                 }
 
                 // BYPASS INMEDIATO PARA HABLAR CON HUMANO (Para no dar mil vueltas en la IA)
-                if (['humano', 'asesor', 'persona', 'hablar con', 'put', 'mierd', 'contact'].some(w => text.includes(w))) {
+                if (['humano', 'asesor', 'hablar con', 'quiero hablar', 'atencion al cliente'].some(w => text.includes(w))) {
                     await sendWhatsAppMessage(phoneNumberId, from, "Entendido. Un productor humano te va a contactar a la brevedad por este medio. 👤📞");
                     await sendWhatsAppMessage(phoneNumberId, ADMIN_NUMBER, `🔔 *ALERTA URGENTE:* El cliente +${from} pide hablar con un humano por mensaje (Bypass AI).`);
                     return res.status(200).json({ status: 'human_bypassed' });
