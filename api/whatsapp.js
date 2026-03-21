@@ -128,10 +128,13 @@ export default async function handler(req, res) {
                 console.log("🐛 Parcheando número ARG para Sandbox de Meta:", from);
             }
 
-            // Ignorar mensajes del Admin (usando el formato crudo que ingresa de WhatsApp)
-            if (message.from === ADMIN_NUMBER) return res.status(200).json({ status: 'admin_ignored' });
+            // Ignorar mensajes del Admin (Aceptamos 54 y 549 por las dudas de Meta)
+            if (message.from === ADMIN_NUMBER || from === ADMIN_NUMBER) {
+                console.log("🚫 Mensaje ignorado: Es el número del ADMINISTRADOR.");
+                return res.status(200).json({ status: 'admin_ignored' });
+            }
 
-            console.log(`📩 Mensaje de ${from}:`, message);
+            console.log(`📩 PROCESANDO mensaje de ${from}:`, message);
 
             // --- LÓGICA DE MENÚ E INTERACCIÓN ---
 
@@ -366,31 +369,48 @@ async function handleAIConversation(phoneNumberId, to, userMessage) {
         history = history.slice(-12);
     }
 
-    const aiRawResponse = await generateAIResponse(history, chatSources.get(to) || "Orgánico / Directo", to);
+    // --- PARALELIZACIÓN CRÍTICA ---
+    // Ejecutamos la respuesta de la IA y el resumen para el CRM al mismo tiempo
+    console.log("🤖 Generando respuesta y resumen en paralelo...");
+    
+    let aiRawResponse;
+    let liveSummaryUpdatePromise = null;
 
-    // Agregar la respuesta de la IA al historial
-    history.push({ role: 'assistant', content: aiRawResponse });
-
-    // [NUEVO] Actualización de Resumen Incremental para el CRM (para que se vea "vivo")
-    try {
-        const summaryUpdate = await groq.chat.completions.create({
+    if (supabase) {
+        liveSummaryUpdatePromise = groq.chat.completions.create({
             model: "llama-3.1-8b-instant",
             messages: [
                 { role: "system", content: "Resumí la intención actual del cliente en una frase corta y técnica. Ej: 'Busca Video para 120 personas en CABA'. Sé directo." },
                 ...history.slice(-6)
             ],
             max_tokens: 50
-        });
-        const liveSummary = summaryUpdate.choices[0]?.message?.content?.replace(/"/g, '') || "";
-        if (supabase) {
-            await supabase.from('whatsapp_leads').upsert({ 
+        }).catch(e => { console.error("Error en resumen vivo parallel:", e); return null; });
+    }
+
+    try {
+        const [aiRes, summaryRes] = await Promise.all([
+            generateAIResponse(history, chatSources.get(to) || "Orgánico / Directo", to),
+            liveSummaryUpdatePromise
+        ]);
+
+        aiRawResponse = aiRes;
+
+        // Si el resumen terminó bien, lo guardamos sin esperar (Fire and forget local)
+        if (summaryRes && supabase) {
+            const liveSummary = summaryRes.choices[0]?.message?.content?.replace(/"/g, '') || "";
+            supabase.from('whatsapp_leads').upsert({ 
                 phone: to, 
                 summary: liveSummary, 
                 updated_at: new Date().toISOString(),
                 source: chatSources.get(to) || "Web"
-            }, { onConflict: 'phone' });
+            }, { onConflict: 'phone' }).then(({error}) => {
+                if(error) console.error("Error guardando resumen upsert:", error);
+            });
         }
-    } catch (e) { console.error("Error en resumen vivo:", e); }
+    } catch (e) {
+        console.error("Falla en llamadas paralelas:", e);
+        aiRawResponse = "Disculpá, tuve un error técnico al procesar. Reintentá en un momento.";
+    }
 
     let finalResponse = aiRawResponse;
     let handoffData = null;
