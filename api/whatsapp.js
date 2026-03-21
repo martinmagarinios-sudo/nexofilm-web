@@ -55,7 +55,7 @@ $$HANDOFF_JSON$$
   "handoff": true,
   "name": "Nombre del cliente",
   "email": "correo@ejemplo.com",
-  "summary": "Video corporativo. Evento en San Miguel del Monte. 31 de julio. 460 personas. 6 horas de cobertura.",
+  "summary": "Redactá un resumen MUY DETALLADO en forma de párrafo. Explicá qué necesita el cliente, fecha, lugar, tipo de evento, cantidad de invitados, horas de cobertura y cualquier otro dato de interés.",
   "score": 95
 }
 $$HANDOFF_JSON$$`;
@@ -194,16 +194,22 @@ async function handleHandoff(phone, hf) {
         await resend.emails.send({
             from: 'NexoFilm CRM <onboarding@resend.dev>',
             to: [ADMIN_EMAIL],
-            subject: `🔥 NUEVO LEAD: ${hf.name} (+${phone})`,
+            subject: `🚨 NUEVO LEAD: ${hf.name} (+${phone})`,
             html: `
-                <h2>🎬 Nuevo Lead de NexoFilm</h2>
-                <p><strong>Nombre:</strong> ${hf.name}</p>
-                <p><strong>Teléfono:</strong> +${phone}</p>
-                <p><strong>Email:</strong> ${hf.email || 'No proporcionado'}</p>
-                <p><strong>Resumen:</strong> ${hf.summary}</p>
-                <p><strong>Score:</strong> ${hf.score || 90}/100</p>
-                <hr/>
-                <p><a href="https://nexofilm.com/dashboard">👉 Abrir CRM para continuar la charla</a></p>
+                <div style="font-family: sans-serif; color: #333;">
+                    <h2>¡Nuevo Lead Caliente en WhatsApp! 🔥</h2>
+                    <p><strong>Número:</strong> +${phone}</p>
+                    <p><strong>Nombre:</strong> ${hf.name}</p>
+                    <p><strong>Email:</strong> ${hf.email || 'No especificó'}</p>
+                    <p><strong>Origen:</strong> WhatsApp / Bot</p>
+                    <p><strong>Calificación IA:</strong> ${hf.score || 'N/A'}/100</p>
+                    <br/>
+                    <p><strong>Resumen del pedido:</strong></p>
+                    <div style="border-left: 4px solid #10b981; padding-left: 16px; margin-bottom: 24px;">
+                        <p style="font-style: italic;">${hf.summary}</p>
+                    </div>
+                    <a href="https://nexofilm.com/dashboard" style="display: inline-block; background-color: #22c55e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-family: sans-serif;">💬 Abrir Chat en CRM</a>
+                </div>
             `
         });
     } catch(e) {
