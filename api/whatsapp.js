@@ -58,7 +58,6 @@ export default async function handler(req, res) {
             if (from.startsWith('549') && from.length === 13) from = '54' + from.substring(3);
             if (from === ADMIN_NUMBER || fromRaw === ADMIN_NUMBER) return res.status(200).send('OK');
 
-            // --- LÓGICA DE MENSAJE ---
             let text = "";
             let btnId = null;
 
@@ -71,7 +70,7 @@ export default async function handler(req, res) {
                 // --- RESPUESTA RÁPIDA DE BOTONES (PRE-IA) ---
                 let quickReply = "";
                 if (btnId === 'btn_p') quickReply = "¡Bárbaro! Para mandarme el presupuesto, contame: ¿Buscás servicio de Foto, de Video, o ambos? 📸🎥";
-                else if (btnId === 'btn_v') quickReply = "🎬 Mirá algunos de nuestros trabajos en: https://nexofilm.com \n¿Te gustaría que te armemos una propuesta después de verlos?";
+                else if (btnId === 'btn_v') quickReply = "🎬 Mirá algunos de nuestros trabajos en: https://nexofilm.com \n¿Te gustaría que te armemos una propuesta ahora que los viste?";
                 else if (btnId === 'btn_h') {
                     quickReply = "Entendido. Un productor te va a contactar a la brevedad. 👤📞";
                     await sendText(phoneNumberId, ADMIN_NUMBER, `🔔 ALERTA HUMANO: +${from}`);
@@ -79,8 +78,8 @@ export default async function handler(req, res) {
 
                 if (quickReply) {
                     await sendText(phoneNumberId, from, quickReply);
-                    // Actualizamos historial y salimos sin llamar a la IA (para que sea instantáneo)
-                    await saveHistory(from, `[Seleccionó: ${btnTitle}]`, 'user');
+                    // Actualizamos historial y RESPONDEMOS 200 para evitar timeout en esta fase rápida
+                    await saveHistory(from, `[Botón: ${btnTitle}]`, 'user');
                     await saveHistory(from, quickReply, 'assistant');
                     return res.status(200).send('OK');
                 }
@@ -89,23 +88,11 @@ export default async function handler(req, res) {
 
             if (!text) return res.status(200).send('OK');
 
-            // Reset
+            // Reset manual
             if (text.toLowerCase() === 'reset') {
                 if (supabase) await supabase.from('whatsapp_sessions').delete().eq('phone', from);
                 await sendText(phoneNumberId, from, "🔄 Memoria borrada.");
                 return res.status(200).send('OK');
-            }
-
-            // Silencio Inteligente (Si ya es un lead activo)
-            if (supabase && text.toLowerCase() !== 'menu' && !btnId) {
-                const { data: lead } = await supabase.from('whatsapp_leads').select('created_at').eq('phone', from).order('created_at', {ascending:false}).limit(1).maybeSingle();
-                if (lead) {
-                    const hrs = (new Date() - new Date(lead.created_at)) / 36e5;
-                    if (hrs < 24) {
-                        await saveHistory(from, text, 'user');
-                        return res.status(200).send('OK');
-                    }
-                }
             }
 
             // --- CHAT CON IA ---
@@ -127,7 +114,7 @@ export default async function handler(req, res) {
                 }
             }
 
-            // Llamada IA con Timeout de 8s
+            // IA (8s timeout)
             const aiPromise = groq.chat.completions.create({
                 model: 'llama-3.1-8b-instant',
                 messages: [{ role: 'system', content: SYSTEM_PROMPT.replace('{{VIP_RULE}}', vipRule).replace('{{SOURCE}}', 'Web') }, ...history],
@@ -159,7 +146,7 @@ export default async function handler(req, res) {
             await sendText(phoneNumberId, from, cleanRes);
             if (showMenu) await sendMenu(phoneNumberId, from);
 
-            // Alerta Lead
+            // Handoff en background
             if (hf?.handoff && supabase) {
                 await supabase.from('whatsapp_leads').upsert({ phone: from, name: hf.name, email: hf.email, summary: hf.summary, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
             }
@@ -205,8 +192,10 @@ async function sendMenu(pid, to) {
 
 async function saveHistory(phone, content, role) {
     if (!supabase) return;
-    const { data } = await supabase.from('whatsapp_sessions').select('history').eq('phone', phone).maybeSingle();
-    let hist = data?.history || [];
-    hist.push({ role, content, timestamp: new Date().toISOString() });
-    await supabase.from('whatsapp_sessions').upsert({ phone, history: hist, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
+    try {
+        const { data } = await supabase.from('whatsapp_sessions').select('history').eq('phone', phone).maybeSingle();
+        let hist = data?.history || [];
+        hist.push({ role, content, timestamp: new Date().toISOString() });
+        await supabase.from('whatsapp_sessions').upsert({ phone, history: hist, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
+    } catch(e) { console.error("Error saveHistory:", e); }
 }
