@@ -213,7 +213,7 @@ export default async function handler(req, res) {
                                             source: chatSources.get(from) || "Activo"
                                         };
 
-                                        await supabase.from('whatsapp_leads').upsert(leadUpdate, { onConflict: 'phone' });
+                                        await supabase.from('whatsapp_leads').upsert(leadUpdate); // Sin onConflict para evitar errores de restricción inexistente
                                     } catch (e) { console.error("Error en resumen incremental:", e); }
 
                                 } catch (e) { console.error("Error guardando mensaje en silencio:", e); }
@@ -389,7 +389,7 @@ async function handleAIConversation(phoneNumberId, to, userMessage) {
                 summary: liveSummary, 
                 source: chatSources.get(to) || "Web"
             };
-            await supabase.from('whatsapp_leads').upsert(leadUpdate, { onConflict: 'phone' });
+            await supabase.from('whatsapp_leads').upsert(leadUpdate); // Sin onConflict
         }
     } catch (e) { console.error("Error en resumen vivo:", e); }
 
@@ -510,7 +510,7 @@ async function handleAIConversation(phoneNumberId, to, userMessage) {
 
                 const { error } = await supabase
                     .from('whatsapp_leads')
-                    .upsert(leadPayload, { onConflict: 'phone' });
+                    .upsert(leadPayload); // Sin onConflict explicito por ahora
 
                 if (error) {
                     console.error('❌ Error insertando lead en Supabase:', error);
@@ -572,7 +572,7 @@ async function generateAIResponse(historyMessages, currentSource, phone) {
                 { role: 'system', content: dynamicPrompt },
                 ...historyMessages
             ],
-            model: 'llama-3.3-70b-versatile',
+            model: 'llama-3.1-8b-instant', // Más rápido y evita timeouts en Vercel Hobby
             temperature: 0.5, // Bajamos temp para que sea más obediente con las reglas de negocio
             max_tokens: 600,
         });
