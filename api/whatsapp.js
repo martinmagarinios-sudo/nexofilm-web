@@ -88,7 +88,7 @@ export default async function handler(req, res) {
 
             let qr = "";
             if (btnId === 'btn_p') qr = "¡Bárbaro! ¿Qué tipo de servicio o cobertura estás buscando? (Foto, Video, Streaming, o un combo de ellos) 📸🎥";
-            else if (btnId === 'btn_v') qr = "🎬 Mirá algunos de nuestros trabajos en: https://nexofilm.com \n¿Te gustaría que te armemos una propuesta?";
+            else if (btnId === 'btn_v') qr = "🎬 Mirá algunos de nuestros trabajos en: https://nexofilm.com \n¿Te gustaría consultar por un presupuesto?";
             else if (btnId === 'btn_h') {
                 qr = "Entendido. Un productor te va a contactar a la brevedad. 👤📞";
                 sendText(phoneNumberId, ADMIN_NUMBER, `🔔 ALERTA HUMANO: +${from}`).then(null, () => {});
