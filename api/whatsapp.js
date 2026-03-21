@@ -10,31 +10,34 @@ const ADMIN_NUMBER = '541151191964';
 
 const SYSTEM_PROMPT = `Eres el asistente virtual de NexoFilm (Argentina). 
 
-REGLAS DE IDENTIDAD:
-1. Usá VOSEO SIEMPRE ("me decís", "mirá", "querés"). Prohibido usar "tú" o "usted".
-2. PROHIBIDO usar la palabra "che". Nunca la uses.
-3. Respuestas muy breves, atentas, cordiales y profesionales.
+IDENTIDAD:
+- Usá VOSEO SIEMPRE ("me decís", "mirá", "querés"). Prohibido "tú" o "usted".
+- NUNCA uses la palabra "che".
+- Respuestas breves, cordiales y profesionales. Sin adornos innecesarios.
+- NUNCA pidas disculpas por demoras, errores técnicos ni nada similar.
 
-FLUJO DE ATENCIÓN:
-ETAPA 1: Si no sabés el nombre, saludá y pedíselo de forma cordial. Ej: "¡Hola! Bienvenido a NexoFilm. ¿Me decís tu nombre por favor?"
-ETAPA 2: Al saber el nombre, decí: "Un gusto, [Nombre]. Acá te dejo nuestras opciones:" seguido del tag $$SHOW_MENU$$.
-   - REGLA DE ORO: NO escribas la lista de opciones (Foto, Video, etc.) en texto. El sistema las envía automáticamente por botones.
-ETAPA 3: Recolección de datos técnicos para el presupuesto (Foto/Video, Fecha, Lugar, Cantidad de gente, Duración).
-   - **Email de contacto (Fundamental).** Pedilo siempre.
+FLUJO:
+1. Si no sabés el nombre: "¡Hola! Bienvenido a NexoFilm. ¿Me decís tu nombre por favor?"
+2. Al saber el nombre: "Un gusto, [Nombre]. Acá te dejo nuestras opciones:" + tag $$SHOW_MENU$$.
+   REGLA DE ORO: NUNCA escribas las opciones en texto. Solo usá el tag y el sistema envía los botones.
+3. Después del menú, recolectá de a una pregunta por vez:
+   - Servicio (Foto / Video / Streaming / Combo)
+   - Si es evento: Fecha, Lugar, Duración y Cantidad de gente
+   - Email de contacto (siempre pedilo)
 
-REGLA ANTI-PAVADAS: Si preguntan tonterías, decí que un productor humano los ayudará y cortá con $$HANDOFF_JSON$$ (summary: "Consulta fuera de tema").
+REGLA ANTI-PAVADAS: Si el cliente habla de temas irrelevantes para NexoFilm, respondé que un productor humano lo va a ayudar y generá el handoff con summary "Consulta fuera de tema".
 
-Si el cliente te dice "si" tras ver el portfolio, retoma la charla de inmediato preguntando: "¿Buscás presupuesto para servicio de Foto, de Video, o ambos?".
+Si el cliente dice "si" después de ver el portfolio, retomá la charla: "¿Buscás presupuesto para Foto, Video, o ambos?"
 
 {{VIP_RULE}}
 
-$$HANDOFF_JSON$$: Si tenés todo (con mail), generá:
+HANDOFF (cuando tenés todo, incluido el mail):
 $$HANDOFF_JSON$$
 {
   "handoff": true,
   "name": "Nombre",
   "email": "correo@ejemplo.com",
-  "summary": "Resumen detallado de todo lo pedido para producción.",
+  "summary": "Resumen detallado del servicio solicitado.",
   "score": 90
 }
 $$HANDOFF_JSON$$`;
@@ -46,115 +49,126 @@ export default async function handler(req, res) {
         return res.status(403).send('Error');
     }
 
-    if (req.method === 'POST') {
-        const body = req.body;
-        const message = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
-        if (!message) return res.status(200).send('OK');
+    if (req.method !== 'POST') return res.status(405).send('Method not allowed');
 
-        const phoneNumberId = body.entry[0].changes[0].value.metadata.phone_number_id;
-        const fromRaw = message.from;
-        let from = fromRaw;
-        if (from.startsWith('549') && from.length === 13) from = '54' + from.substring(3);
+    const body = req.body;
+    const message = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
+    if (!message) return res.status(200).send('OK');
 
-        try {
-            if (from === ADMIN_NUMBER || fromRaw === ADMIN_NUMBER) return res.status(200).send('OK');
+    const phoneNumberId = body.entry[0].changes[0].value.metadata.phone_number_id;
+    const fromRaw = message.from;
+    let from = fromRaw;
+    if (from.startsWith('549') && from.length === 13) from = '54' + from.substring(3);
 
-            let text = "";
-            let btnId = null;
+    if (from === ADMIN_NUMBER || fromRaw === ADMIN_NUMBER) return res.status(200).send('OK');
 
-            if (message.type === 'text') {
-                text = message.text.body;
-            } else if (message.type === 'interactive') {
-                btnId = message.interactive.button_reply.id;
-                const btnTitle = message.interactive.button_reply.title || btnId;
+    try {
+        // --- Botones Interactivos ---
+        if (message.type === 'interactive') {
+            const btnId = message.interactive.button_reply.id;
+            const btnTitle = message.interactive.button_reply.title || btnId;
 
-                // --- RESPUESTAS RÁPIDAS (INSTANTÁNEAS) ---
-                let qr = "";
-                if (btnId === 'btn_p') qr = "¡Bárbaro! Para mandarte el presupuesto, ¿me decís si buscás servicio de Foto, de Video, o ambos? 📸🎥";
-                else if (btnId === 'btn_v') qr = "🎬 Mirá algunos de nuestros trabajos en: https://nexofilm.com \n¿Te gustaría que te armemos una propuesta ahora que los viste?";
-                else if (btnId === 'btn_h') {
-                    qr = "Entendido. Un productor te va a contactar a la brevedad. 👤📞";
-                    await sendText(phoneNumberId, ADMIN_NUMBER, `🔔 ALERTA HUMANO: +${from}`);
-                }
-
-                if (qr) {
-                    await sendText(phoneNumberId, from, qr);
-                    await saveHistory(from, `[Botón: ${btnTitle}]`, 'user');
-                    await saveHistory(from, qr, 'assistant');
-                    return res.status(200).send('OK');
-                }
-                text = `[Botón: ${btnTitle}]`;
+            let qr = "";
+            if (btnId === 'btn_p') qr = "¡Bárbaro! Para el presupuesto, ¿me decís si buscás Foto, Video, o ambos? 📸🎥";
+            else if (btnId === 'btn_v') qr = "🎬 Mirá algunos de nuestros trabajos en: https://nexofilm.com \n¿Te gustaría que te armemos una propuesta?";
+            else if (btnId === 'btn_h') {
+                qr = "Entendido. Un productor te va a contactar a la brevedad. 👤📞";
+                await sendText(phoneNumberId, ADMIN_NUMBER, `🔔 ALERTA HUMANO: +${from}`);
             }
 
-            if (!text) return res.status(200).send('OK');
-
-            // Reset manual
-            if (text.toLowerCase() === 'reset') {
-                if (supabase) await supabase.from('whatsapp_sessions').delete().eq('phone', from);
-                await sendText(phoneNumberId, from, "🔄 Memoria borrada.");
-                return res.status(200).send('OK');
+            if (qr) {
+                // Primero cargamos historial, lo actualizamos y LUEGO respondemos
+                const h = await loadHistory(from);
+                h.push({ role: 'user', content: `[Botón: ${btnTitle}]` });
+                h.push({ role: 'assistant', content: qr });
+                await persistHistory(from, h);
+                await sendText(phoneNumberId, from, qr);
             }
-
-            // --- CHAT CON IA ---
-            let history = [];
-            if (supabase) {
-                const { data } = await supabase.from('whatsapp_sessions').select('history').eq('phone', from).maybeSingle();
-                if (data?.history) history = data.history;
-            }
-
-            history.push({ role: 'user', content: text });
-            if (history.length > 10) history = history.slice(-10);
-
-            // Reconocimiento VIP
-            let vipRule = "";
-            if (history.length <= 1 && supabase) {
-                const { data: ld } = await supabase.from('whatsapp_leads').select('name, email').eq('phone', from).order('created_at', {ascending:false}).limit(1).maybeSingle();
-                if (ld?.name && ld.name !== 'Sin nombre') {
-                    vipRule = `RECONOCIMIENTO VIP: Usuario ${ld.name}. Saludalo así: "¡Hola ${ld.name}! Qué bueno tenerte de vuelta por NexoFilm. ¿En qué podemos ayudarte?" y mandá $$SHOW_MENU$$. No preguntes nombre. Si tenés su mail (${ld.email || 'no'}), confirmalo al final antes del handoff.`;
-                }
-            }
-
-            // Llamada IA con Timeout
-            const comp = await groq.chat.completions.create({
-                model: 'llama-3.1-8b-instant',
-                messages: [{ role: 'system', content: SYSTEM_PROMPT.replace('{{VIP_RULE}}', vipRule) }, ...history],
-                temperature: 0.5, max_tokens: 500
-            });
-            const aiRes = comp.choices[0].message.content;
-
-            history.push({ role: 'assistant', content: aiRes });
-            if (supabase) await supabase.from('whatsapp_sessions').upsert({ phone: from, history, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
-
-            // Tags
-            let final = aiRes;
-            let showMenu = false;
-            let hf = null;
-
-            const m = aiRes.match(/\$\$HANDOFF_JSON\$\$([\s\S]*?)\$\$HANDOFF_JSON\$\$/);
-            if (m) { try { hf = JSON.parse(m[1]); final = aiRes.replace(m[0], '').trim(); } catch(e){} }
-            if (final.includes('$$SHOW_MENU$$')) {
-                showMenu = true;
-                final = final.replace('$$SHOW_MENU$$', '').trim();
-            }
-
-            await sendText(phoneNumberId, from, final);
-            if (showMenu) await sendMenu(phoneNumberId, from);
-
-            if (hf?.handoff && supabase) {
-                await supabase.from('whatsapp_leads').upsert({ phone: from, name: hf.name, email: hf.email, summary: hf.summary, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
-            }
-
-            return res.status(200).send('OK');
-
-        } catch (err) {
-            console.error("CRITICAL ERROR:", err);
-            try { await sendText(phoneNumberId, from, "A veces mi sistema necesita un respiro 🚀. ¿Me podrías repetir lo último por favor?"); } catch(smErr){}
             return res.status(200).send('OK');
         }
+
+        // --- Mensajes de Texto ---
+        if (message.type !== 'text') return res.status(200).send('OK');
+
+        const text = message.text.body;
+
+        // Reset manual
+        if (text.toLowerCase() === 'reset') {
+            if (supabase) await supabase.from('whatsapp_sessions').delete().eq('phone', from).catch(()=>{});
+            await sendText(phoneNumberId, from, "🔄 Memoria borrada.");
+            return res.status(200).send('OK');
+        }
+
+        // Cargar historial
+        const history = await loadHistory(from);
+        history.push({ role: 'user', content: text });
+        if (history.length > 10) history.splice(0, history.length - 10);
+
+        // VIP Recognition
+        let vipRule = "";
+        if (history.length <= 1 && supabase) {
+            const { data: ld } = await supabase.from('whatsapp_leads').select('name, email').eq('phone', from).order('created_at', {ascending:false}).limit(1).maybeSingle().catch(()=>({ data: null }));
+            if (ld?.name && ld.name !== 'Sin nombre') {
+                vipRule = `VIP: Es ${ld.name}. Saludalo: "¡Hola ${ld.name}! Qué bueno tenerte de vuelta. ¿En qué podemos ayudarte?" y mandá $$SHOW_MENU$$. No preguntes nombre. ${ld.email ? `Confirmá su mail (${ld.email}) al final.` : ''}`;
+            }
+        }
+
+        // Llamada a Groq
+        const comp = await groq.chat.completions.create({
+            model: 'llama-3.1-8b-instant',
+            messages: [{ role: 'system', content: SYSTEM_PROMPT.replace('{{VIP_RULE}}', vipRule) }, ...history],
+            temperature: 0.5, max_tokens: 500
+        });
+        const aiRes = comp.choices[0].message.content;
+
+        history.push({ role: 'assistant', content: aiRes });
+        await persistHistory(from, history);
+
+        // Procesar tags
+        let final = aiRes;
+        let showMenu = false;
+        let hf = null;
+
+        const m = aiRes.match(/\$\$HANDOFF_JSON\$\$([\s\S]*?)\$\$HANDOFF_JSON\$\$/);
+        if (m) {
+            try { hf = JSON.parse(m[1]); final = aiRes.replace(m[0], '').trim(); } catch(e){}
+        }
+        if (final.includes('$$SHOW_MENU$$')) {
+            showMenu = true;
+            final = final.replace('$$SHOW_MENU$$', '').trim();
+        }
+
+        await sendText(phoneNumberId, from, final);
+        if (showMenu) await sendMenu(phoneNumberId, from);
+
+        if (hf?.handoff && supabase) {
+            supabase.from('whatsapp_leads').upsert({ phone: from, name: hf.name, email: hf.email, summary: hf.summary, updated_at: new Date().toISOString() }, { onConflict: 'phone' }).catch(()=>{});
+        }
+
+    } catch (err) {
+        console.error("BOT ERROR:", err.message);
+        // NO mandamos mensaje al usuario para no interrumpir la experiencia
     }
+
+    return res.status(200).send('OK');
 }
 
 // HELPERS
+async function loadHistory(phone) {
+    if (!supabase) return [];
+    try {
+        const { data } = await supabase.from('whatsapp_sessions').select('history').eq('phone', phone).maybeSingle();
+        return Array.isArray(data?.history) ? data.history : [];
+    } catch(e) { return []; }
+}
+
+async function persistHistory(phone, history) {
+    if (!supabase) return;
+    try {
+        await supabase.from('whatsapp_sessions').upsert({ phone, history, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
+    } catch(e) {}
+}
+
 async function sendText(pid, to, msg) {
     if (!msg) return;
     await fetch(`https://graph.facebook.com/v21.0/${pid}/messages`, {
@@ -182,14 +196,4 @@ async function sendMenu(pid, to) {
             }
         })
     });
-}
-
-async function saveHistory(phone, content, role) {
-    if (!supabase) return;
-    try {
-        const { data } = await supabase.from('whatsapp_sessions').select('history').eq('phone', phone).maybeSingle();
-        let h = data?.history || [];
-        h.push({ role, content, timestamp: new Date().toISOString() });
-        await supabase.from('whatsapp_sessions').upsert({ phone, history: h, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
-    } catch(err){}
 }
