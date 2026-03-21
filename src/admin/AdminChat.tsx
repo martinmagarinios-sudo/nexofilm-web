@@ -31,6 +31,7 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
     const [loading, setLoading] = useState(false);
     const [messageInput, setMessageInput] = useState('');
     const [sending, setSending] = useState(false);
+    const [activeLead, setActiveLead] = useState<any>(null);
     
     // Referencia para mantener el scroll abajo
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -80,6 +81,23 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
     useEffect(() => {
         scrollToBottom();
     }, [selectedPhone, sessions]);
+
+    // Buscar datos del lead (Resumen IA)
+    useEffect(() => {
+        if (!selectedPhone || !supabase) {
+            setActiveLead(null);
+            return;
+        }
+        const fetchLeadData = async () => {
+            const { data } = await supabase
+                .from('whatsapp_leads')
+                .select('*')
+                .eq('phone', selectedPhone)
+                .maybeSingle();
+            setActiveLead(data);
+        };
+        fetchLeadData();
+    }, [selectedPhone]);
 
     const activeSession = sessions.find(s => s.phone === selectedPhone);
 
@@ -218,14 +236,40 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
                 {selectedPhone ? (
                     <>
                         {/* Header Chat Activo */}
-                        <div className="bg-[#202c33] h-16 flex items-center px-4 shrink-0 z-10">
+                        <div className="bg-[#202c33] h-16 flex items-center px-4 shrink-0 z-10 border-b border-white/5">
                             <button onClick={() => setSelectedPhone(null)} className="md:hidden mr-4 text-[#8696a0] text-2xl">←</button>
-                            <div className="w-10 h-10 rounded-full bg-zinc-700 flex items-center justify-center shrink-0">👤</div>
-                            <div className="ml-4">
-                                <div className="font-medium text-base">+{selectedPhone}</div>
-                                <div className="text-xs text-[#8696a0] mt-0.5">Respondiendo como Cuenta Oficial NexoFilm</div>
+                            <div className="w-10 h-10 rounded-full bg-nexo-lime flex items-center justify-center shrink-0 text-white font-bold">
+                                {activeLead?.name?.[0] || '👤'}
+                            </div>
+                            <div className="ml-4 flex-1">
+                                <div className="font-medium text-base">{activeLead?.name || `+${selectedPhone}`}</div>
+                                <div className="text-[11px] text-[#8696a0] flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-[#25D366] animate-pulse"></span>
+                                    Canal de Atención Directa
+                                </div>
                             </div>
                         </div>
+
+                        {/* PANEL DE RESUMEN IA (Anti-Desparramo) */}
+                        {activeLead?.summary && (
+                            <div className="bg-[#202c33]/80 backdrop-blur-md mx-4 mt-4 p-4 rounded-xl border border-nexo-lime/20 z-10 shadow-lg">
+                                <div className="flex items-center gap-2 mb-2 text-nexo-lime text-xs font-bold uppercase tracking-wider">
+                                    <span>🧠 Resumen de NexoBot IA</span>
+                                    {activeLead.score && (
+                                        <span className="ml-auto bg-nexo-lime/20 px-2 py-0.5 rounded text-[10px]">
+                                            Calificación: {activeLead.score}/100
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-sm text-[#e9edef] italic leading-relaxed">
+                                    "{activeLead.summary}"
+                                </p>
+                                <div className="mt-2 flex gap-3 text-[10px] text-[#8696a0]">
+                                    {activeLead.source && <span>📍 Origen: <b className="text-[#e9edef]">{activeLead.source}</b></span>}
+                                    {activeLead.created_at && <span>📅 Captado: <b className="text-[#e9edef]">{new Date(activeLead.created_at).toLocaleDateString()}</b></span>}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Globos de Mensajes */}
                         <div className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col gap-2 z-10 min-h-0">

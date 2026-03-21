@@ -183,6 +183,15 @@ export default async function handler(req, res) {
 
                             if (diffHours < 24) {
                                 console.log(`🤫 Bot silenciado para ${from} (Lead activo hace ${diffHours.toFixed(1)}h)`);
+                                
+                                // [NUEVO] Guardamos igual el mensaje en el historial para que el Humano lo vea en el CRM
+                                try {
+                                    const { data: sess } = await supabase.from('whatsapp_sessions').select('history').eq('phone', from).maybeSingle();
+                                    let hist = sess?.history || [];
+                                    hist.push({ role: 'user', content: text, timestamp: new Date().toISOString() });
+                                    await supabase.from('whatsapp_sessions').upsert({ phone: from, history: hist, updated_at: new Date().toISOString() });
+                                } catch (e) { console.error("Error guardando mensaje en silencio:", e); }
+
                                 return res.status(200).json({ status: 'bot_silenced_active_lead' });
                             }
                         }
