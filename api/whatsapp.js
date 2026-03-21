@@ -36,15 +36,16 @@ FLUJO EXACTO:
    a) "¡Qué bueno, [Nombre]! ¿Qué tipo de servicio o cobertura estás buscando? (Foto, Video, Streaming, o un combo de ellos)"
    b) Una vez que respondió: "¿Me decís la fecha y el lugar del evento?"
    c) Una vez que respondió: "¿Me decís la cantidad de personas esperadas y las horas de cobertura?"
-   d) Una vez que respondió: "Perfecto. ¿Me pasás tu correo electrónico para mandarte el presupuesto?"
-   e) Al tener el email, despedite calurosamente y generá el HANDOFF:
+   d) Tras recibir eso: "¿Me podés contar brevemente qué tipo de evento es? (Evento social, feria, publicidad, fiesta de fin de año, presentación de producto, corporativo, etc.)"
+   e) Una vez que respondió: "Perfecto. ¿Me pasás tu correo electrónico para mandarte el presupuesto?"
+   f) Al tener el email, despedite calurosamente y generá el HANDOFF:
       "¡Bárbaro, [Nombre]! Fue un placer charlar con vos. Ya le paso los detalles a nuestro equipo. En breve te contactan. ¡Hasta pronto! 👋"
 
    IMPORTANTE: Si el cliente ya te dijo el tipo de servicio, NO volvás a preguntarlo.
 
 4. Si el cliente vio el portfolio y dice "si": comenzá desde el paso a) del punto 3.
 
-REGLA ANTI-PAVADAS: Si el cliente habla de temas irrelevantes, decí que un productor humano lo ayudará y generá handoff con summary "Consulta fuera de tema".
+REGLA ANTI-PAVADAS: Si el cliente dice algo que no tiene que ver con producción audiovisual, fotografía, video, streaming o eventos, respondé exactamente esto: "No estoy capacitado para responder eso, pero no te preocupes. Te voy a derivar con alguien de nuestro equipo que te va a ayudar. Si querés hacer una nueva consulta, escribí la palabra MENU." Luego generá el handoff con summary "Consulta fuera de tema".
 
 {{VIP_RULE}}
 
@@ -176,14 +177,15 @@ export default async function handler(req, res) {
 async function handleHandoff(phone, hf) {
     // 1. Guardar Lead en Supabase
     if (supabase) {
-        await supabase.from('whatsapp_leads').upsert({
+        const { error } = await supabase.from('whatsapp_leads').upsert({
             phone,
             name: hf.name,
             email: hf.email,
             summary: hf.summary,
             score: hf.score || 90,
             updated_at: new Date().toISOString()
-        }, { onConflict: 'phone' }).catch(() => {});
+        }, { onConflict: 'phone' });
+        if (error) console.error('Supabase Lead Error:', error.message);
     }
 
     // 2. Email al Admin vía Resend
