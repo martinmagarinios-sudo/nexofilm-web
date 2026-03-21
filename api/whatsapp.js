@@ -116,6 +116,8 @@ export default async function handler(req, res) {
                     if (supabase) {
                         try {
                             await supabase.from('whatsapp_sessions').delete().eq('phone', from);
+                            // RLS Hack: Borramos, pero si falla el permiso de borrado, la mandamos al pasado para evadir el Silencio Inteligente de 24hs.
+                            await supabase.from('whatsapp_leads').update({ created_at: '2020-01-01T00:00:00.000+00:00' }).eq('phone', from);
                             await supabase.from('whatsapp_leads').delete().eq('phone', from);
                         } catch (err) { console.error("Error al hacer RESET:", err); }
                     }
@@ -315,6 +317,25 @@ async function handleAIConversation(phoneNumberId, to, userMessage) {
 
         const adminMsg = `🔔 *NUEVO LEAD - NEXO FILM*\n\n👤 *Cliente:* \`+${to}\`\n🌐 *Origen:* ${savedSource}\n📈 *Score:* ${scoreEmoji}${handoffData.score || 'N/A'}/100\n📝 *Resumen:* ${handoffData.summary}\n👉 https://wa.me/${to}`;
         await sendWhatsAppMessage(phoneNumberId, ADMIN_NUMBER, adminMsg);
+
+        // Envío 100% gratuito e ilimitado por mail
+        try {
+            await fetch("https://formsubmit.co/ajax/hola@nexofilm.com", {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    _subject: "NUEVO LEAD POR WHATSAPP - NexoFilm",
+                    Cliente: "+" + to,
+                    Origen: savedSource,
+                    Calificacion: (handoffData.score || 'N/A') + "/100",
+                    Resumen: handoffData.summary,
+                    Link_WhatsApp: "https://wa.me/" + to
+                })
+            });
+            console.log("📧 Email enviado por FormSubmit a hola@nexofilm.com");
+        } catch (mailErr) {
+            console.error("Error enviando email:", mailErr);
+        }
 
         // Guardar en Supabase
         if (supabase) {
