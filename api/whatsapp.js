@@ -84,7 +84,7 @@ export default async function handler(req, res) {
             else if (btnId === 'btn_v') qr = "🎬 Mirá algunos de nuestros trabajos en: https://nexofilm.com \n¿Te gustaría que te armemos una propuesta?";
             else if (btnId === 'btn_h') {
                 qr = "Entendido. Un productor te va a contactar a la brevedad. 👤📞";
-                sendText(phoneNumberId, ADMIN_NUMBER, `🔔 ALERTA HUMANO: +${from}`).catch(() => {});
+                sendText(phoneNumberId, ADMIN_NUMBER, `🔔 ALERTA HUMANO: +${from}`).then(null, () => {});
             }
 
             if (qr) {
@@ -103,7 +103,7 @@ export default async function handler(req, res) {
 
         // Reset manual
         if (text.toLowerCase() === 'reset') {
-            if (supabase) supabase.from('whatsapp_sessions').delete().eq('phone', from).catch(() => {});
+            if (supabase) { (async () => { try { await supabase.from('whatsapp_sessions').delete().eq('phone', from); } catch(e){} })(); }
             await sendText(phoneNumberId, from, "🔄 Memoria borrada.");
             return res.status(200).send('OK');
         }
@@ -112,7 +112,7 @@ export default async function handler(req, res) {
         const [history, leadData] = await Promise.all([
             loadHistory(from),
             supabase
-                ? supabase.from('whatsapp_leads').select('name, email').eq('phone', from).order('created_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data).catch(() => null)
+                ? supabase.from('whatsapp_leads').select('name, email').eq('phone', from).order('created_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data, () => null)
                 : Promise.resolve(null)
         ]);
 
@@ -135,7 +135,7 @@ export default async function handler(req, res) {
         history.push({ role: 'assistant', content: aiRes });
 
         // Guardar historial (no bloqueante)
-        persistHistory(from, history).catch(() => {});
+        persistHistory(from, history).then(null, () => {});
 
         // Procesar tags
         let final = aiRes;
@@ -157,7 +157,7 @@ export default async function handler(req, res) {
 
         // HANDOFF: Guardar Lead + Enviar Mail (en background para no bloquear)
         if (hf?.handoff) {
-            handleHandoff(from, hf).catch(e => console.error("Handoff error:", e));
+            handleHandoff(from, hf).then(null, e => console.error("Handoff error:", e.message));
         }
 
     } catch (err) {
