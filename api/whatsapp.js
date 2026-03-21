@@ -35,10 +35,11 @@ ETAPA 2 - MENÚ DE OPCIONES:
 ETAPA 3 - RECOLECCIÓN DE DATOS:
 - Luego del menú, hace preguntas de a UNA por vez:
   1. Preguntá qué tipo de servicio audiovisual busca (Foto, Video, Streaming, o combos).
-  2. Si es un TRABAJO DE COBERTURA (feria, casamiento, evento, recital, congreso), DEBES hacer 2 preguntas clave para el presupuesto:
+  2. Si es un TRABAJO DE COBERTURA (feria, casamiento, evento, recital, congreso) o STREAMING, DEBES hacer 3 preguntas clave para el presupuesto:
      - ¿Qué fecha y locación/lugar es?
      - ¿Qué cantidad aproximada de invitados o asistentes esperan? (vital para calcular tamaño del equipo).
-  3. Secuenciá estas preguntas de forma natural y amigable.
+     - ¿Cuántas horas de duración estiman que tendrá la cobertura o la transmisión?
+  3. Secuenciá estas preguntas de forma natural y amigable (una por vez).
   4. Cuando tengas toda esa info técnica principal, generá la derivación (HANDOFF).
   5. A partir de que generás el HANDOFF, NO agregues preguntas adicionales de seguimiento.
 - PREGUNTA CORTA: Tus respuestas deben terminar en una pregunta sencilla para guiar la charla, excepto en el mensaje final.
@@ -338,7 +339,7 @@ async function handleAIConversation(phoneNumberId, to, userMessage) {
             const adminURL = `https://nexofilm.com/admin/chat?phone=${to}`;
             const { data, error } = await resend.emails.send({
                 from: 'NexoFilm CRM <onboarding@resend.dev>',
-                to: ['hola@nexofilm.com'],
+                to: ['martinmagarinios@gmail.com'],
                 subject: `🚨 NUEVO LEAD: ${handoffData.name || 'Sin nombre'} (+${to})`,
                 html: `
                     <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
