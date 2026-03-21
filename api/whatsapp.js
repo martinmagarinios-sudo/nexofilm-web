@@ -361,8 +361,8 @@ async function handleAIConversation(phoneNumberId, to, userMessage) {
                     source: savedSource
                 };
 
-                if (handoffData.score !== undefined) leadPayload.score = handoffData.score;
-                if (handoffData.is_hot !== undefined) leadPayload.is_hot = handoffData.is_hot;
+                if (handoffData.score !== undefined) leadPayload.score = parseInt(handoffData.score, 10) || null;
+                if (handoffData.is_hot !== undefined) leadPayload.is_hot = !!handoffData.is_hot;
 
                 const { error } = await supabase
                     .from('whatsapp_leads')
