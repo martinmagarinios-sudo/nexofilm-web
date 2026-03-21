@@ -423,7 +423,8 @@ async function handleAIConversation(phoneNumberId, to, userMessage) {
         }
 
         // Limpiamos el historial si ya se derivó a un humano (Cerrar sesión)
-        if (supabase) await supabase.from('whatsapp_sessions').delete().eq('phone', to);
+        // [MOD] No borramos más para que el Admin pueda ver el historial en el CRM
+        // if (supabase) await supabase.from('whatsapp_sessions').delete().eq('phone', to);
         chatSources.delete(to);
     } else {
         // Si NO hubo handoff, guardamos el historial normalmente para la próxima vez

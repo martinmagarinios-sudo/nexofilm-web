@@ -80,14 +80,14 @@ export default async function handler(req, res) {
                     timestamp: new Date().toISOString()
                 });
 
-                // 3. Sobrescribir en base de datos
+                // 3. Guardar (Upsert) en la base de datos
                 await supabase
                     .from('whatsapp_sessions')
-                    .update({ 
+                    .upsert({ 
+                        phone: phone,
                         history: currentHistory,
                         updated_at: new Date().toISOString() 
-                    })
-                    .eq('phone', phone);
+                    });
             } catch (dbErr) {
                 console.error("Mensaje enviado, pero error al guardar historial en BD:", dbErr.message);
             }
