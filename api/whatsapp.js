@@ -326,7 +326,7 @@ async function handleAIConversation(phoneNumberId, to, userMessage) {
                     { type: 'text', text: `${to}` }
                 ]
             }];
-            await sendTemplateMessage(phoneNumberId, ADMIN_NUMBER, 'alerta_nuevo_lead', 'es_AR', templateComponents);
+            await sendTemplateMessage(phoneNumberId, ADMIN_NUMBER, 'aletra_de_lead', 'es', templateComponents);
         } catch (errAdmin) {
             console.error('⚠️ No se pudo notificar al Admin por WhatsApp (probablemente fuera de ventana 24hs):', errAdmin.message);
         }
