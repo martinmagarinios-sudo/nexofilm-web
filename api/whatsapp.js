@@ -288,9 +288,9 @@ async function sendMenu(pid, to) {
             body: { text: "¿En qué te puedo ayudar?" },
             action: {
                 buttons: [
-                    { type: 'reply', reply: { id: 'btn_p', title: '📋 Pedir Presupuesto' } },
-                    { type: 'reply', reply: { id: 'btn_v', title: '🎬 Ver Portfolio' } },
-                    { type: 'reply', reply: { id: 'btn_h', title: '👤 Hablar con Productor' } }
+                    { type: 'reply', reply: { id: 'btn_p', title: 'Pedir Presupuesto' } },
+                    { type: 'reply', reply: { id: 'btn_v', title: 'Ver Portfolio' } },
+                    { type: 'reply', reply: { id: 'btn_h', title: 'Hablar con Productor' } }
                 ]
             }
         }
