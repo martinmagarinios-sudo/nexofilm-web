@@ -16,6 +16,7 @@ interface WhatsAppSession {
     phone: string;
     history: ChatMessage[];
     updated_at: string;
+    name?: string; // Nombre opcional traído de whatsapp_leads
 }
 
 interface AdminChatProps {
@@ -55,13 +56,26 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
         if (!supabase) return;
         setLoading(true);
         try {
-            const { data, error } = await supabase
+            // 1. Traer sesiones
+            const { data: sessData, error: sessErr } = await supabase
                 .from('whatsapp_sessions')
                 .select('*')
                 .order('updated_at', { ascending: false });
 
-            if (error) throw error;
-            if (data) setSessions(data as WhatsAppSession[]);
+            if (sessErr) throw sessErr;
+
+            // 2. Traer nombres de leads para agendar en la vista
+            const { data: leadData } = await supabase
+                .from('whatsapp_leads')
+                .select('phone, name');
+
+            // 3. Cruzar datos
+            const enrichedSessions = (sessData || []).map((s: any) => {
+                const lead = leadData?.find(l => l.phone === s.phone);
+                return { ...s, name: lead?.name };
+            });
+
+            setSessions(enrichedSessions as WhatsAppSession[]);
         } catch (error) {
             console.error('Error fetching sessions:', error);
         } finally {
@@ -237,7 +251,9 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
                                 </div>
                                 <div className="ml-4 flex-1 overflow-hidden">
                                     <div className="flex justify-between items-baseline mb-0.5">
-                                        <div className="font-normal text-[#e9edef] truncate text-base">+{session.phone}</div>
+                                        <div className="font-semibold text-[#e9edef] truncate text-base">
+                                            {session.name || `+${session.phone}`}
+                                        </div>
                                         <div className="text-xs text-[#8696a0] shrink-0">{formatTime(session.updated_at)}</div>
                                     </div>
                                     <div className="text-sm text-[#8696a0] truncate">
