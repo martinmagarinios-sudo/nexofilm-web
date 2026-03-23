@@ -74,13 +74,15 @@ export default async function handler(req, res) {
         const text = message.text?.body?.toLowerCase() || "";
         const isInteractive = message.type === 'interactive';
 
-        // --- RESET / MENU MANUAL ---
-        if (text === 'menu' || text === 'menú' || text === 'reset') {
+        // --- RESET / MENU / WEB START MANUAL ---
+        const isWebStart = text.includes("estoy navegando en tu web") && text.includes("consulta");
+        
+        if (text === 'menu' || text === 'menú' || text === 'reset' || isWebStart) {
             if (supabase) {
                 // Resetear el silencio para que la IA/Menu retome el control
+                console.log(`[WAKE UP] Reactivando bot por comando: ${text}`);
                 await supabase.from('whatsapp_leads').update({ updated_at: '1970-01-01T00:00:00Z' }).eq('phone', from).then(null, () => {});
             }
-            // Si es reset, damos feedback extra. Si es menu, solo mandamos los botones.
             if (text === 'reset') await sendText(phoneNumberId, from, "🔄 Memoria de este chat reiniciada.");
             
             await sendMenu(phoneNumberId, from);
