@@ -97,7 +97,25 @@ export default async function handler(req, res) {
         const isRecentlyHandoff = lastHandoffDate > (now - thirtyDaysMs);
 
         if (isRecentlyHandoff && text !== 'menu' && text !== 'menú' && !isInteractive) {
-            console.log(`[SILENCIO] El cliente +${from} está en manos del CRM (último handoff: ${leadData.updated_at}).`);
+            console.log(`[SILENCIO] Registrando mensaje de +${from} para el CRM.`);
+            
+            // 1. Guardar de todos modos en el historial para que el humano lo vea en el CRM
+            const newHistory = [...history, { 
+                role: 'user', 
+                content: message.text?.body || "[Envió un archivo o medio]",
+                timestamp: new Date().toISOString()
+            }];
+            await persistHistory(from, newHistory);
+
+            // 2. Notificación al admin si pasaron > 10 min desde el último mensaje (para no dejar al cliente esperando)
+            const lastInteraction = historyData.updated_at ? new Date(historyData.updated_at).getTime() : 0;
+            const tenMinsMs = 10 * 60 * 1000;
+            
+            if (now - lastInteraction > tenMinsMs) {
+                console.log(`[ALERTA] Enviando mail de inactividad para +${from} (>10 min sin respuesta).`);
+                await notifyAdminOfNewMessage(from, leadData?.name || "Cliente", message.text?.body);
+            }
+
             return res.status(200).send('OK');
         }
 
@@ -265,4 +283,31 @@ async function sendMenu(pid, to) {
             }
         })
     });
+}
+
+async function notifyAdminOfNewMessage(phone, name, content) {
+    try {
+        await resend.emails.send({
+            from: 'NexoBot Alerta <onboarding@resend.dev>',
+            to: [ADMIN_EMAIL],
+            subject: `🔔 Mensaje nuevo de ${name} (+${phone})`,
+            html: `
+                <div style="font-family: sans-serif; padding: 20px; border-left: 4px solid #ccff00;">
+                    <h2 style="color: #1a1a1a;">📩 Tu cliente está esperando...</h2>
+                    <p><strong>De:</strong> ${name} (+${phone})</p>
+                    <p><strong>Mensaje:</strong> "${content || "[Archivo o Multimedia]"}"</p>
+                    <br/>
+                    <a href="https://nexofilm.com/admin/chat?phone=${phone}" 
+                       style="background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Ir a contestarle ahora
+                    </a>
+                    <p style="font-size: 11px; color: #888; margin-top: 20px;">
+                        Esta alerta se disparó porque pasaron más de 10 minutos desde que el cliente escribió y la IA está en silencio.
+                    </p>
+                </div>
+            `
+        });
+    } catch (e) {
+        console.error("Error enviando notificación Resend:", e.message);
+    }
 }
