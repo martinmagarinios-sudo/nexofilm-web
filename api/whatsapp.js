@@ -281,23 +281,37 @@ async function sendText(pid, to, msg) {
 }
 
 async function sendMenu(pid, to) {
-    return fetch(`https://graph.facebook.com/v21.0/${pid}/messages`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            messaging_product: 'whatsapp', to, type: 'interactive',
-            interactive: {
-                type: 'button', body: { text: "¿En qué podemos ayudarte hoy?" },
-                action: {
-                    buttons: [
-                        { type: 'reply', reply: { id: 'btn_p', title: '📋 Pedir Presupuesto' } },
-                        { type: 'reply', reply: { id: 'btn_v', title: '🎬 Ver Portfolio' } },
-                        { type: 'reply', reply: { id: 'btn_h', title: '👤 Hablar con Productor' } }
-                    ]
-                }
+    const payload = {
+        messaging_product: 'whatsapp', to, type: 'interactive',
+        interactive: {
+            type: 'button',
+            body: { text: "¿En qué te puedo ayudar?" },
+            action: {
+                buttons: [
+                    { type: 'reply', reply: { id: 'btn_p', title: 'Pedir Presupuesto' } },
+                    { type: 'reply', reply: { id: 'btn_v', title: 'Ver Portfolio' } },
+                    { type: 'reply', reply: { id: 'btn_h', title: 'Hablar con Productor' } }
+                ]
             }
-        })
+        }
+    };
+    
+    const resp = await fetch(`https://graph.facebook.com/v21.0/${pid}/messages`, {
+        method: 'POST',
+        headers: { 
+            Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, 
+            'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify(payload)
     });
+    
+    const respData = await resp.json();
+    if (!resp.ok || respData.error) {
+        console.error(`[MENU ERROR] Status ${resp.status}:`, JSON.stringify(respData));
+    } else {
+        console.log(`[MENU OK] Menú enviado a +${to}`);
+    }
+    return respData;
 }
 
 async function notifyAdminOfNewMessage(phone, name, content) {
