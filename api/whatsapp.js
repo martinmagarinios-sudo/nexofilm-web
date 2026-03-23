@@ -74,30 +74,38 @@ export default async function handler(req, res) {
         const text = message.text?.body?.toLowerCase() || "";
         const isInteractive = message.type === 'interactive';
 
+        // 2. Cargar historial + Info del Lead (CRM) en PARALELO (Búsqueda Flexible)
+        const [historyData, leadData] = await Promise.all([
+            loadHistory(from),
+            supabase ? (async () => {
+                const searchStr = from.slice(-10); 
+                const { data } = await supabase
+                    .from('whatsapp_leads')
+                    .select('*')
+                    .ilike('phone', `%${searchStr}`)
+                    .maybeSingle();
+                return data;
+            })() : Promise.resolve(null)
+        ]);
+
+        const history = historyData.history;
+        const targetPhone = leadData?.phone || from; // Usamos el del CRM si existe, sino el de WhatsApp
+        const now = Date.now();
+        const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+
         // --- RESET / MENU / WEB START MANUAL ---
         const isWebStart = text.includes("estoy navegando en tu web") && text.includes("consulta");
         
         if (text === 'menu' || text === 'menú' || text === 'reset' || isWebStart) {
             if (supabase) {
-                // Resetear el silencio para que la IA/Menu retome el control
-                console.log(`[WAKE UP] Reactivando bot por comando: ${text}`);
-                await supabase.from('whatsapp_leads').update({ updated_at: '1970-01-01T00:00:00Z' }).eq('phone', from).then(null, () => {});
+                console.log(`[WAKE UP] Reactivando bot para ${targetPhone} por comando: ${text}`);
+                await supabase.from('whatsapp_leads').update({ updated_at: '1970-01-01T00:00:00Z' }).eq('phone', targetPhone).then(null, () => {});
             }
             if (text === 'reset') await sendText(phoneNumberId, from, "🔄 Memoria de este chat reiniciada.");
             
             await sendMenu(phoneNumberId, from);
             return res.status(200).send('OK');
         }
-
-        // 2. Cargar historial + Info del Lead (CRM) en PARALELO
-        const [historyData, leadData] = await Promise.all([
-            loadHistory(from),
-            supabase ? supabase.from('whatsapp_leads').select('*').eq('phone', from).maybeSingle().then(r => r.data, () => null) : Promise.resolve(null)
-        ]);
-
-        const history = historyData.history;
-        const now = Date.now();
-        const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
 
         // --- SILENCIO INTELIGENTE (30 DÍAS) ---
         // Si el lead está en el CRM y se actualizó hace < 30 días, el bot se calla (a menos que digan MENU)
@@ -242,7 +250,7 @@ VIP RECOGNITION:
         }
 
         if (hf?.handoff) {
-            await handleHandoff(from, hf);
+            await handleHandoff(targetPhone, hf);
         }
 
     } catch (err) {
