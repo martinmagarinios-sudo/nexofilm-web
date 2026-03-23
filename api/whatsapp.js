@@ -147,6 +147,9 @@ VIP RECOGNITION:
 `;
         }
 
+        // 3. El mensaje actual del usuario DEBE entrar al historial ANTES de llamar a Groq
+        history.push({ role: 'user', content: message.text.body || "[Mensaje sin texto]" });
+
         // Llamada a Groq (Modelo 70B para máxima inteligencia)
         const comp = await groq.chat.completions.create({
             model: 'llama-3.3-70b-versatile',
@@ -156,7 +159,6 @@ VIP RECOGNITION:
         });
 
         const aiRes = comp.choices[0].message.content;
-        history.push({ role: 'user', content: message.text.body }); // Guardar mensaje del usuario
         history.push({ role: 'assistant', content: aiRes });
         
         if (history.length > 20) history.splice(0, history.length - 20);
