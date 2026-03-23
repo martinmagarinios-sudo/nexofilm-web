@@ -11,54 +11,44 @@ const resend = new Resend((process.env.RESEND_API_KEY || '').trim());
 const ADMIN_NUMBER = '541151191964';
 const ADMIN_EMAIL = 'martinmagarinios@gmail.com';
 
-const SYSTEM_PROMPT = `Eres el asistente virtual de NexoFilm (Argentina). Sos cálido, cercano y profesional.
+const SYSTEM_PROMPT = `Eres el asistente virtual de élite de NexoFilm (Argentina). Sos cálido, extremadamente inteligente, cercano y profesional. 
 
-IDENTIDAD:
+IDENTIDAD Y TONO:
 - Usá VOSEO SIEMPRE ("me decís", "mirá", "querés"). Prohibido "tú" o "usted".
 - NUNCA uses la palabra "che".
-- Respuestas breves y conversacionales, una cosa a la vez.
-- NUNCA pidas disculpas por demoras ni errores técnicos.
+- Sos un productor experto. Si el cliente tiene dudas técnicas sobre Foto/Video/Streaming, asesoralo con criterio.
+- Respuestas breves, una cosa a la vez.
 
-FLUJO EXACTO:
-1. Si no sabés el nombre: "¡Hola! Bienvenido a NexoFilm. ¿Me decís tu nombre por favor?"
+FLUJO DE CONVERSACIÓN:
+1. Si no sabés el nombre (y no está en VIP): "¡Hola! Bienvenido a NexoFilm. ¿Me decís tu nombre por favor?"
 
-2. Al recibir el nombre, respondé EXACTAMENTE así (copiá el formato):
-   "Un gusto, [Nombre]. Acá te dejo nuestras opciones: $$SHOW_MENU$$"
+2. Al saber el nombre: "Un gusto, [Nombre]. Acá te dejo nuestras opciones: $$SHOW_MENU$$"
+   (REGLA CRÍTICA: NUNCA escribas las opciones en texto. Solo el tag $$SHOW_MENU$$. No escribas nada después del tag).
 
-   ⚠️ PROHIBICIÓN ABSOLUTA: NUNCA escribas las opciones como lista de texto. NUNCA escribas palabras como "Presupuesto", "Portfolio", "Contacto", "Video" como opciones. El tag $$SHOW_MENU$$ es lo ÚNICO que se necesita. El sistema envía los botones automáticamente.
-   ❌ MAL: "Un gusto, Martín.\n- Presupuesto\n- Portfolio\n- Contacto"
-   ✅ BIEN: "Un gusto, Martín. Acá te dejo nuestras opciones: $$SHOW_MENU$$"
+3. Al elegir "Pedir Presupuesto":
+   a) "¡Qué bueno, [Nombre]! ¿Qué tipo de servicio o cobertura estás buscando? (Foto, Video, Streaming, o un combo)"
+   b) Una vez respondió: "¿Me contás qué tipo de evento es? (Social, corporativo, feria, comercial, etc.)"
+   c) "¿Me decís la fecha y el lugar estimado?"
+   d) "¿Cantidad de personas y horas de cobertura?"
+   e) VERIFICACIÓN DE EMAIL:
+      - Si ya conocemos su mail (VIP): "[Nombre], ¿tu mail sigue siendo [email] o preferís que usemos otro?"
+      - Si NO lo conocemos: "Perfecto. ¿Me pasás tu correo electrónico para mandarte la propuesta?"
+   f) DESPEDIDA: "¡Bárbaro, [Nombre]! Fue un placer. Ya le paso los detalles a producción y en breve te contactan. 👋 Si necesitás algo más, escribí MENU."
 
-   Después del tag, NO escribas nada más. STOP total. Esperá que el cliente haga clic.
-
-3. Si el cliente eligió "Pedir Presupuesto" o quiere cotizar:
-   - Preguntá UNA SOLA COSA POR VEZ, en este orden:
-   a) "¡Qué bueno, [Nombre]! ¿Qué tipo de servicio o cobertura estás buscando? (Foto, Video, Streaming, o un combo de ellos)"
-   b) Una vez que respondió el servicio: "¿Me podés contar qué tipo de evento es? (Evento social, feria, publicidad, fiesta de fin de año, presentación de producto, corporativo, etc.)"
-   c) Una vez que respondió el tipo de evento: "¿Me decís la fecha y el lugar del evento?"
-   d) Una vez que respondió: "¿Me decís la cantidad de personas esperadas y las horas de cobertura?"
-   e) Una vez que respondió: "Perfecto. ¿Me pasás tu correo electrónico para mandarte el presupuesto?"
-   f) Al tener el email, despedite con ESTE mensaje exactamente: "¡Bárbaro, [Nombre]! Fue un placer charlar con vos. Ya le paso los detalles a nuestro equipo. En breve te contactan. ¡Hasta pronto! 👋 Si necesitás algo más, escribí la palabra MENU."
-   Y ADEMÁS, inmediatamente después de ese mensaje, insertá OBLIGATORIAMENTE el bloque $$HANDOFF_JSON$$ con todos los datos recogidos, para que el sistema interno guarde el lead. No omitas el $$HANDOFF_JSON$$.
-
-   IMPORTANTE: Si el cliente ya te dijo el tipo de servicio, NO volvás a preguntarlo.
-
-4. Si el cliente vio el portfolio y dice "si": comenzá desde el paso a) del punto 3.
-
-REGLA ANTI-PAVADAS: Si el cliente dice algo que no tiene nada que ver con producción audiovisual, fotografía, video, streaming o eventos, respondé muy amablemente así: "Mirá, sobre ese tema no estoy capacitado para asesorarte, pero no te preocupes. Te voy a derivar con alguien de nuestro equipo. Si preferís hacer una nueva consulta, escribí la palabra MENU." Luego generá el handoff con el summary "Consulta fuera de tema".
-
-{{VIP_RULE}}
-
-HANDOFF: Cuando tenés nombre, servicio, fecha, lugar, personas, horas y email:
+HANDOFF JSON:
 $$HANDOFF_JSON$$
 {
   "handoff": true,
-  "name": "Nombre del cliente",
+  "name": "Nombre",
   "email": "correo@ejemplo.com",
-  "summary": "Redactá un resumen MUY DETALLADO en forma de párrafo. Explicá qué necesita el cliente, fecha, lugar, tipo de evento, cantidad de invitados, horas de cobertura y cualquier otro dato de interés.",
+  "summary": "Resumen extremadamente detallado de lo que necesita el cliente.",
   "score": 95
 }
-$$HANDOFF_JSON$$`;
+$$HANDOFF_JSON$$
+
+{{VIP_RULE}}
+
+REGLA ANTI-PAVADAS: Si el cliente habla de temas ajenos a la producción, respondé: "Mirá, sobre ese tema no estoy capacitado para asesorarte, pero te voy a derivar con alguien de nuestro equipo. Si querés hacer una nueva consulta técnica, escribí MENU." Generá handoff con summary "Consulta fuera de tema".`;
 
 export default async function handler(req, res) {
     if (req.method === 'GET') {
@@ -81,13 +71,43 @@ export default async function handler(req, res) {
     if (from === ADMIN_NUMBER || fromRaw === ADMIN_NUMBER) return res.status(200).send('OK');
 
     try {
-        // --- Botones Interactivos ---
-        if (message.type === 'interactive') {
+        const text = message.text?.body?.toLowerCase() || "";
+        const isInteractive = message.type === 'interactive';
+
+        // 1. Reset manual
+        if (text === 'reset') {
+            if (supabase) { (async () => { try { await supabase.from('whatsapp_sessions').delete().eq('phone', from); } catch(e){} })(); }
+            await sendText(phoneNumberId, from, "🔄 Memoria borrada.");
+            return res.status(200).send('OK');
+        }
+
+        // 2. Cargar historial + Info del Lead (CRM) en PARALELO
+        const [historyData, leadData] = await Promise.all([
+            loadHistory(from),
+            supabase ? supabase.from('whatsapp_leads').select('*').eq('phone', from).maybeSingle().then(r => r.data, () => null) : Promise.resolve(null)
+        ]);
+
+        const history = historyData.history;
+        const now = Date.now();
+        const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+
+        // --- SILENCIO INTELIGENTE (30 DÍAS) ---
+        // Si el lead está en el CRM y se actualizó hace < 30 días, el bot se calla (a menos que digan MENU)
+        const lastHandoffDate = leadData?.updated_at ? new Date(leadData.updated_at).getTime() : 0;
+        const isRecentlyHandoff = lastHandoffDate > (now - thirtyDaysMs);
+
+        if (isRecentlyHandoff && text !== 'menu' && text !== 'menú' && !isInteractive) {
+            console.log(`[SILENCIO] El cliente +${from} está en manos del CRM (último handoff: ${leadData.updated_at}).`);
+            return res.status(200).send('OK');
+        }
+
+        // --- MANEJO DE MENÚ/IA ---
+        if (isInteractive) {
             const btnId = message.interactive.button_reply.id;
             const btnTitle = message.interactive.button_reply.title || btnId;
 
             let qr = "";
-            if (btnId === 'btn_p') qr = "¡Bárbaro! ¿Qué tipo de servicio o cobertura estás buscando? (Foto, Video, Streaming, o un combo de ellos) 📸🎥";
+            if (btnId === 'btn_p') qr = "¡Bárbaro! ¿Qué tipo de servicio o cobertura estás buscando? (Foto, Video, Streaming, o un combo) 📸🎥";
             else if (btnId === 'btn_v') qr = "🎬 Mirá algunos de nuestros trabajos en: https://nexofilm.com \n¿Te gustaría consultar por un presupuesto?";
             else if (btnId === 'btn_h') {
                 qr = "Entendido. Un productor te va a contactar a la brevedad. 👤📞";
@@ -95,84 +115,49 @@ export default async function handler(req, res) {
             }
 
             if (qr) {
-                const historyData = await loadHistory(from);
-                const h = historyData.history;
-                h.push({ role: 'user', content: `[Seleccionó: ${btnTitle}]` });
-                h.push({ role: 'assistant', content: qr });
-                await persistHistory(from, h);
+                history.push({ role: 'user', content: `[Seleccionó: ${btnTitle}]` });
+                history.push({ role: 'assistant', content: qr });
+                await persistHistory(from, history);
                 await sendText(phoneNumberId, from, qr);
             }
             return res.status(200).send('OK');
         }
 
-        if (message.type !== 'text') return res.status(200).send('OK');
-
-        const text = message.text.body;
-
-        // Reset manual
-        if (text.toLowerCase() === 'reset') {
-            if (supabase) { (async () => { try { await supabase.from('whatsapp_sessions').delete().eq('phone', from); } catch(e){} })(); }
-            await sendText(phoneNumberId, from, "🔄 Memoria borrada.");
-            return res.status(200).send('OK');
-        }
-
-        // Cargar historial + VIP check EN PARALELO
-        const [historyData, leadData] = await Promise.all([
-            loadHistory(from),
-            supabase
-                ? supabase.from('whatsapp_leads').select('name, email').eq('phone', from).order('created_at', { ascending: false }).limit(1).maybeSingle().then(r => r.data, () => null)
-                : Promise.resolve(null)
-        ]);
-
-        const history = historyData.history;
-        const lastInteraction = historyData.updated_at ? new Date(historyData.updated_at).getTime() : 0;
-        const now = Date.now();
-
-        // Alerta de Re-conexión (si pasaron > 10 min y hay historial previo)
-        if (lastInteraction > 0 && (now - lastInteraction) > 10 * 60 * 1000 && history.length > 0) {
-            sendReconnectAlert(from, leadData?.name || 'Cliente conocido').then(null, () => {});
-        }
-
-        // --- DETECTAR SI UN HUMANO ESTÁ HABLANDO ---
-        const lastAdminMsg = [...history].reverse().find(m => m.role === 'admin');
-        const isHumanActive = lastAdminMsg && (now - new Date(lastAdminMsg.timestamp || 0).getTime()) < 60 * 60 * 1000;
-
-        // Comando MENU (con check de humano)
-        if ((text.toLowerCase() === 'menu' || text.toLowerCase() === 'menú') && !isHumanActive) {
+        // COMANDO MENU (rompe el silencio)
+        if (text === 'menu' || text === 'menú') {
             await sendMenu(phoneNumberId, from);
-            history.push({ role: 'user', content: text });
-            history.push({ role: 'assistant', content: "[Se mostró el menú principal]" });
+            history.push({ role: 'user', content: message.text.body });
+            history.push({ role: 'assistant', content: "[Se mostró el menú mediante comando MENU]" });
             await persistHistory(from, history);
             return res.status(200).send('OK');
         }
 
-        history.push({ role: 'user', content: text });
-        if (history.length > 14) history.splice(0, history.length - 14);
-
+        // --- LÓGICA VIP (Reconocimiento del CRM) ---
         let vipRule = "";
-        if (history.length <= 1 && leadData?.name && leadData.name !== 'Sin nombre') {
-            vipRule = `VIP: El cliente se llama ${leadData.name}. 
-REGRESO: Saludalo así: "¡Hola ${leadData.name}! Qué bueno tenerte de vuelta. ¿En qué podemos ayudarte?" y mandá $$SHOW_MENU$$. NO preguntes su nombre.
-EMAIL (Paso 3e): Si ya tenemos su mail (${leadData.email || 'desconocido'}), preguntale si sigue siendo ese o si prefiere usar otro.`;
+        if (leadData?.name && leadData.name !== 'Sin nombre') {
+            const firstName = leadData.name.split(' ')[0]; // Extraer nombre de pila
+            vipRule = `
+VIP RECOGNITION:
+- El cliente ya es conocido: se llama ${firstName}.
+- SALUDALOS SIEMPRE por su nombre de pila: ${firstName}.
+- SI ES EL PRIMER MENSAJE: "¡Hola ${firstName}! Qué bueno tenerte de vuelta por acá. ¿En qué podemos ayudarte hoy?" y mandá $$SHOW_MENU$$.
+- EMAIL: Ya tenemos registrado su mail (${leadData.email || 'desconocido'}). Cuando llegues al paso del mail, PREGUNTALE si sigue siendo ese o si cambió.
+`;
         }
 
-        // Mapeo de roles para Groq (unificar admin y assistant)
-        const groqHistory = history.map(m => ({
-            role: (m.role === 'admin' || m.role === 'assistant') ? 'assistant' : m.role,
-            content: m.content
-        }));
-
-        // Llamada a Groq
+        // Llamada a Groq (Modelo 70B para máxima inteligencia)
         const comp = await groq.chat.completions.create({
-            model: 'llama-3.1-8b-instant',
-            messages: [{ role: 'system', content: SYSTEM_PROMPT.replace('{{VIP_RULE}}', vipRule) }, ...groqHistory],
-            temperature: 0.4,
-            max_tokens: 400
+            model: 'llama-3.3-70b-versatile',
+            messages: [{ role: 'system', content: SYSTEM_PROMPT.replace('{{VIP_RULE}}', vipRule) }, ...history],
+            temperature: 0.5,
+            max_tokens: 500
         });
-        const aiRes = comp.choices[0].message.content;
-        history.push({ role: 'assistant', content: aiRes });
 
-        // Guardar historial (no bloqueante)
+        const aiRes = comp.choices[0].message.content;
+        history.push({ role: 'user', content: message.text.body }); // Guardar mensaje del usuario
+        history.push({ role: 'assistant', content: aiRes });
+        
+        if (history.length > 20) history.splice(0, history.length - 20);
         persistHistory(from, history).then(null, () => {});
 
         // Procesar tags
@@ -189,13 +174,10 @@ EMAIL (Paso 3e): Si ya tenemos su mail (${leadData.email || 'desconocido'}), pre
             final = final.replace('$$SHOW_MENU$$', '').trim();
         }
 
-        // ENVIAR RESPUESTA (prioridad absoluta)
         await sendText(phoneNumberId, from, final);
         if (showMenu) await sendMenu(phoneNumberId, from);
 
-        // HANDOFF: Guardar Lead + Enviar Mail (SÍNCRONO: debe completarse antes del 200)
         if (hf?.handoff) {
-            console.log('HANDOFF detectado:', JSON.stringify(hf));
             await handleHandoff(from, hf);
         }
 
@@ -207,75 +189,44 @@ EMAIL (Paso 3e): Si ya tenemos su mail (${leadData.email || 'desconocido'}), pre
 }
 
 async function handleHandoff(phone, hf) {
-    // 1. Guardar Lead en Supabase
     if (supabase) {
-        const { error } = await supabase.from('whatsapp_leads').upsert({
+        await supabase.from('whatsapp_leads').upsert({
             phone,
             name: hf.name,
             email: hf.email,
             summary: hf.summary,
-            score: hf.score || 90,
             updated_at: new Date().toISOString()
         }, { onConflict: 'phone' });
-        if (error) console.error('Supabase Lead Error:', error.message);
     }
 
-    // 2. Email al Admin vía Resend
     try {
         await resend.emails.send({
             from: 'NexoFilm CRM <onboarding@resend.dev>',
             to: [ADMIN_EMAIL],
-            subject: `🚨 NUEVO LEAD: ${hf.name} (+${phone})`,
+            subject: `🔥 DERIVACIÓN CRM: ${hf.name} (+${phone})`,
             html: `
-                <div style="font-family: sans-serif; color: #333;">
-                    <h2>¡Nuevo Lead Caliente en WhatsApp! 🔥</h2>
-                    <p><strong>Número:</strong> +${phone}</p>
-                    <p><strong>Nombre:</strong> ${hf.name}</p>
-                    <p><strong>Email:</strong> ${hf.email || 'No especificó'}</p>
-                    <p><strong>Origen:</strong> WhatsApp / Bot</p>
-                    <p><strong>Calificación IA:</strong> ${hf.score || 'N/A'}/100</p>
+                <div style="font-family: sans-serif; padding: 20px;">
+                    <h2 style="color: #1a1a1a;">🚀 Nuevo Lead para NexoFilm</h2>
+                    <p><strong>Cliente:</strong> ${hf.name}</p>
+                    <p><strong>Teléfono:</strong> +${phone}</p>
+                    <p><strong>Email:</strong> ${hf.email}</p>
+                    <p><strong>Resumen IA:</strong> ${hf.summary}</p>
                     <br/>
-                    <p><strong>Resumen del pedido:</strong></p>
-                    <div style="border-left: 4px solid #10b981; padding-left: 16px; margin-bottom: 24px;">
-                        <p style="font-style: italic;">${hf.summary}</p>
-                    </div>
-                    <a href="https://nexofilm.com/admin/chat?phone=${phone}" style="display: inline-block; background-color: #22c55e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-family: sans-serif;">💬 Abrir Chat en CRM</a>
+                    <a href="https://nexofilm.com/admin/chat?phone=${phone}" style="background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 5px;">Abri el Chat en el CRM</a>
                 </div>
             `
         });
-    } catch(e) {
-        console.error("Error Resend:", e.message);
-    }
-}
-
-async function sendReconnectAlert(phone, name) {
-    try {
-        await resend.emails.send({
-            from: 'NexoFilm CRM <onboarding@resend.dev>',
-            to: [ADMIN_EMAIL],
-            subject: `🔔 RE-CONEXIÓN: ${name} (+${phone})`,
-            html: `
-                <div style="font-family: sans-serif; color: #333;">
-                    <h2>¡Charla reanudada en WhatsApp! 🔔</h2>
-                    <p>El cliente <strong>${name}</strong> (+${phone}) ha vuelto a escribir después de más de 10 minutos de inactividad.</p>
-                    <br/>
-                    <a href="https://nexofilm.com/admin/chat?phone=${phone}" style="display: inline-block; background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-family: sans-serif;">💬 Abrir Chat en CRM</a>
-                </div>
-            `
-        });
-    } catch(e) { console.error("Error Alerta Re-conexión:", e.message); }
+    } catch(e) { console.error("Resend Error:", e); }
 }
 
 // HELPERS
 async function loadHistory(phone) {
     if (!supabase) return { history: [], updated_at: null };
-    try {
-        const { data } = await supabase.from('whatsapp_sessions').select('history, updated_at').eq('phone', phone).maybeSingle();
-        return { 
-            history: Array.isArray(data?.history) ? data.history : [], 
-            updated_at: data?.updated_at 
-        };
-    } catch(e) { return { history: [], updated_at: null }; }
+    const { data } = await supabase.from('whatsapp_sessions').select('history, updated_at').eq('phone', phone).maybeSingle();
+    return { 
+        history: Array.isArray(data?.history) ? data.history : [], 
+        updated_at: data?.updated_at 
+    };
 }
 
 async function persistHistory(phone, history) {
@@ -299,7 +250,7 @@ async function sendMenu(pid, to) {
         body: JSON.stringify({
             messaging_product: 'whatsapp', to, type: 'interactive',
             interactive: {
-                type: 'button', body: { text: "¿En qué podemos ayudarte hoy? Seleccioná una opción:" },
+                type: 'button', body: { text: "¿En qué podemos ayudarte hoy?" },
                 action: {
                     buttons: [
                         { type: 'reply', reply: { id: 'btn_p', title: '📋 Pedir Presupuesto' } },
