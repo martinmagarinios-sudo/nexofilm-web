@@ -21,6 +21,7 @@ const Dashboard: React.FC = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [leads, setLeads] = useState<WhatsAppLead[]>([]);
+    const [totalCount, setTotalCount] = useState<number>(0);
     const [loading, setLoading] = useState(false);
 
     const handleLogin = (e: React.FormEvent) => {
@@ -41,6 +42,7 @@ const Dashboard: React.FC = () => {
         }
         setLoading(true);
         try {
+            // 1. Obtener los leads recientes (últimos 1000)
             const { data, error } = await supabase
                 .from('whatsapp_leads')
                 .select('*')
@@ -48,6 +50,13 @@ const Dashboard: React.FC = () => {
 
             if (error) throw error;
             if (data) setLeads(data as WhatsAppLead[]);
+
+            // 2. Obtener el conteo REAL (sin límite de 1000)
+            const { count, error: countErr } = await supabase
+                .from('whatsapp_leads')
+                .select('*', { count: 'exact', head: true });
+            
+            if (!countErr && count !== null) setTotalCount(count);
         } catch (error) {
             console.error('Error fetching leads:', error);
         } finally {
@@ -133,7 +142,7 @@ const Dashboard: React.FC = () => {
                             <div className="bg-zinc-900/40 border border-white/5 rounded-xl p-6 shadow-2xl flex flex-col justify-center">
                                 <h3 className="text-zinc-500 text-[10px] uppercase tracking-widest font-black mb-2">Total Contactos (Leads)</h3>
                                 <div className="text-5xl font-black tracking-tighter text-nexo-lime">
-                                    {loading ? '...' : leads.length}
+                                    {loading ? '...' : totalCount || leads.length}
                                 </div>
                             </div>
 
