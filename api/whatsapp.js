@@ -135,10 +135,12 @@ export default async function handler(req, res) {
         // --- LÓGICA VIP (Reconocimiento del CRM) ---
         let vipRule = "";
         if (leadData?.name && leadData.name !== 'Sin nombre') {
-            const firstName = leadData.name.split(' ')[0]; // Extraer nombre de pila
+            // Limpieza profunda: Solo la primera palabra, sin comas ni puntos (ej: "Martin Magarinios" -> "Martin")
+            const firstName = leadData.name.trim().split(/[\s,.-]+/)[0]; 
             vipRule = `
 VIP RECOGNITION:
 - El cliente ya es conocido: se llama ${firstName}.
+- NUNCA uses su apellido ni nombre de empresa (ej: si es "Juan Perez", decí solo "Juan").
 - SALUDALOS SIEMPRE por su nombre de pila: ${firstName}.
 - SI ES EL PRIMER MENSAJE: "¡Hola ${firstName}! Qué bueno tenerte de vuelta por acá. ¿En qué podemos ayudarte hoy?" y mandá $$SHOW_MENU$$.
 - EMAIL: Ya tenemos registrado su mail (${leadData.email || 'desconocido'}). Cuando llegues al paso del mail, PREGUNTALE si sigue siendo ese o si cambió.
