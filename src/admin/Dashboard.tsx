@@ -9,6 +9,7 @@ const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supaba
 interface WhatsAppLead {
     id: string;
     phone: string;
+    name?: string;
     summary: string;
     created_at: string;
     score?: number;
@@ -218,6 +219,7 @@ const Dashboard: React.FC = () => {
                                     <thead>
                                         <tr className="bg-zinc-800/50 border-b border-white/10 text-zinc-400 text-sm tracking-wider uppercase">
                                             <th className="px-6 py-4 font-medium w-48">Fecha y Hora</th>
+                                            <th className="px-6 py-4 font-medium w-48">Nombre</th>
                                             <th className="px-6 py-4 font-medium w-48">Teléfono</th>
                                             <th className="px-6 py-4 font-medium w-32 text-center">Interés</th>
                                             <th className="px-6 py-4 font-medium w-48">Origen</th>
@@ -228,17 +230,18 @@ const Dashboard: React.FC = () => {
                                     <tbody className="divide-y divide-white/5 text-zinc-300 text-sm">
                                         {loading ? (
                                             <tr>
-                                                <td colSpan={4} className="px-6 py-12 text-center text-zinc-500">Cargando leads...</td>
-                                            </tr>
-                                        ) : leads.length === 0 ? (
-                                            <tr>
-                                                <td colSpan={4} className="px-6 py-12 text-center text-zinc-500">No hay contactos registrados todavía.</td>
+                                                <td colSpan={7} className="px-6 py-12 text-center text-zinc-500">Cargando leads...</td>
                                             </tr>
                                         ) : (
-                                            leads.map((lead) => (
+                                            leads
+                                                .filter(lead => lead.summary !== "Contacto importado masivamente")
+                                                .map((lead) => (
                                                 <tr key={lead.id} className="hover:bg-white/[0.02] transition-colors group">
                                                     <td className="px-6 py-4 whitespace-nowrap text-zinc-400">
                                                         {formatDate(lead.created_at)}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap font-bold text-white uppercase">
+                                                        {lead.name || '-'}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap font-medium text-nexo-lime">
                                                         +{lead.phone}
