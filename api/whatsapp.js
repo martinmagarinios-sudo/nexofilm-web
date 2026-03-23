@@ -149,14 +149,7 @@ export default async function handler(req, res) {
             return res.status(200).send('OK');
         }
 
-        // COMANDO MENU (rompe el silencio)
-        if (text === 'menu' || text === 'menú') {
-            await sendMenu(phoneNumberId, from);
-            history.push({ role: 'user', content: message.text.body });
-            history.push({ role: 'assistant', content: "[Se mostró el menú mediante comando MENU]" });
-            await persistHistory(from, history);
-            return res.status(200).send('OK');
-        }
+        // (El comando MENU ya fue manejado al inicio del handler - no duplicar)
 
         // --- LÓGICA VIP (Reconocimiento del CRM) ---
         let vipRule = "";
@@ -212,8 +205,14 @@ VIP RECOGNITION:
             console.log("[FAIL-SAFE] Menú activado por palabras clave en el texto.");
         }
 
-        await sendText(phoneNumberId, from, final);
-        if (showMenu) await sendMenu(phoneNumberId, from);
+        // Solo enviar texto si hay contenido (WhatsApp rechaza mensajes vacios silenciosamente)
+        if (final && final.trim().length > 0) {
+            await sendText(phoneNumberId, from, final);
+        }
+        // El menu siempre despues del texto
+        if (showMenu) {
+            await sendMenu(phoneNumberId, from);
+        }
 
         if (hf?.handoff) {
             await handleHandoff(from, hf);
