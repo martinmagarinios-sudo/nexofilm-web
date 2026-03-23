@@ -199,9 +199,17 @@ VIP RECOGNITION:
         if (m) {
             try { hf = JSON.parse(m[1]); final = aiRes.replace(m[0], '').trim(); } catch(e) {}
         }
-        if (final.includes('$$SHOW_MENU$$')) {
+        // Detección robusta de tags (insensible a mayúsculas/minúsculas)
+        if (/\$\$SHOW_MENU\$\$/i.test(final)) {
             showMenu = true;
-            final = final.replace('$$SHOW_MENU$$', '').trim();
+            final = final.replace(/\$\$SHOW_MENU\$\$/gi, '').trim();
+        }
+
+        // Fail-safe: Si el bot menciona opciones pero olvidó el tag (o usó una variante)
+        const keywords = ["opciones", "acá te dejo", "nuestras alternativas", "menú"];
+        if (!showMenu && keywords.some(k => final.toLowerCase().includes(k))) {
+            showMenu = true;
+            console.log("[FAIL-SAFE] Menú activado por palabras clave en el texto.");
         }
 
         await sendText(phoneNumberId, from, final);
