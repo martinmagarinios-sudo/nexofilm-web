@@ -69,9 +69,10 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
                 .from('whatsapp_leads')
                 .select('phone, name');
 
-            // 3. Cruzar datos
+            // 3. Cruzar datos (Normalizando para ignorar símbolos como + o espacios)
+            const normalize = (p: string) => (p || '').replace(/\D/g, '');
             const enrichedSessions = (sessData || []).map((s: any) => {
-                const lead = leadData?.find(l => l.phone === s.phone);
+                const lead = leadData?.find(l => normalize(l.phone) === normalize(s.phone));
                 return { ...s, name: lead?.name };
             });
 
@@ -107,7 +108,8 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
             const { data } = await supabase
                 .from('whatsapp_leads')
                 .select('*')
-                .eq('phone', selectedPhone)
+                // Buscamos con y sin + por las dudas
+                .or(`phone.eq.${selectedPhone},phone.eq.${selectedPhone.replace('+', '')},phone.eq.+${selectedPhone}`)
                 .maybeSingle();
             setActiveLead(data);
         };

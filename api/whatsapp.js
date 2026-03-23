@@ -74,10 +74,16 @@ export default async function handler(req, res) {
         const text = message.text?.body?.toLowerCase() || "";
         const isInteractive = message.type === 'interactive';
 
-        // 1. Reset manual
-        if (text === 'reset') {
-            if (supabase) { (async () => { try { await supabase.from('whatsapp_sessions').delete().eq('phone', from); } catch(e){} })(); }
-            await sendText(phoneNumberId, from, "🔄 Memoria borrada.");
+        // --- RESET / MENU MANUAL ---
+        if (text === 'menu' || text === 'menú' || text === 'reset') {
+            if (supabase) {
+                // Resetear el silencio para que la IA/Menu retome el control
+                await supabase.from('whatsapp_leads').update({ updated_at: '1970-01-01T00:00:00Z' }).eq('phone', from).then(null, () => {});
+            }
+            // Si es reset, damos feedback extra. Si es menu, solo mandamos los botones.
+            if (text === 'reset') await sendText(phoneNumberId, from, "🔄 Memoria de este chat reiniciada.");
+            
+            await sendMenu(phoneNumberId, from);
             return res.status(200).send('OK');
         }
 
@@ -277,7 +283,7 @@ async function sendMenu(pid, to) {
                     buttons: [
                         { type: 'reply', reply: { id: 'btn_p', title: '📋 Pedir Presupuesto' } },
                         { type: 'reply', reply: { id: 'btn_v', title: '🎬 Ver Portfolio' } },
-                        { type: 'reply', reply: { id: 'btn_h', title: '👤 Hablar con Humano' } }
+                        { type: 'reply', reply: { id: 'btn_h', title: '👤 Hablar con Productor' } }
                     ]
                 }
             }
