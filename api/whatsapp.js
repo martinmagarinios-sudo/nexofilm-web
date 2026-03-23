@@ -137,7 +137,26 @@ export default async function handler(req, res) {
             else if (btnId === 'btn_v') qr = "🎬 Mirá algunos de nuestros trabajos en: https://nexofilm.com \n¿Te gustaría consultar por un presupuesto?";
             else if (btnId === 'btn_h') {
                 qr = "Entendido. Un productor te va a contactar a la brevedad. 👤📞";
+                // WhatsApp al admin
                 sendText(phoneNumberId, ADMIN_NUMBER, `🔔 ALERTA HUMANO: +${from}`).then(null, () => {});
+                // Mail al admin via Resend
+                const contactName = leadData?.name || `+${from}`;
+                resend.emails.send({
+                    from: 'NexoBot Alerta <onboarding@resend.dev>',
+                    to: [ADMIN_EMAIL],
+                    subject: `👤 Hablar con Productor: ${contactName}`,
+                    html: `
+                        <div style="font-family:sans-serif;padding:20px;border-left:4px solid #ccff00;">
+                            <h2>👤 ${contactName} quiere hablar con un productor</h2>
+                            <p><strong>Teléfono:</strong> +${from}</p>
+                            <br/>
+                            <a href="https://nexofilm.com/admin/chat?phone=${from}" 
+                               style="background:#000;color:#fff;padding:12px 24px;text-decoration:none;border-radius:5px;font-weight:bold;">
+                               Ir al Chat del CRM
+                            </a>
+                        </div>
+                    `
+                }).catch(e => console.error("Resend btn_h error:", e.message));
             }
 
             if (qr) {
