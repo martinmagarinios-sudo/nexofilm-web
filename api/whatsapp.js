@@ -157,6 +157,14 @@ export default async function handler(req, res) {
                         </div>
                     `
                 }).catch(e => console.error("Resend btn_h error:", e.message));
+                // Mini-handoff: guardar en Supabase para que aparezca el panel de resumen en el CRM
+                handleHandoff(from, {
+                    handoff: true,
+                    name: leadData?.name || from,
+                    email: leadData?.email || null,
+                    summary: `Solicitó hablar con un productor directamente (sin completar el flujo de presupuesto).`,
+                    score: 70
+                }).catch(() => {});
             }
 
             if (qr) {

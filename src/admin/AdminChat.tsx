@@ -327,7 +327,15 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
                         {/* Globos de Mensajes */}
                         <div className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col gap-2 z-10 min-h-0">
                             {activeSession?.history?.map((msg, idx) => {
-                                if (msg.role === 'system') return null; // No mostramos los prompts del sistema
+                                if (msg.role === 'system') return null;
+                                
+                                // Limpiar el bloque HANDOFF_JSON del contenido visible
+                                const cleanContent = (msg.content || '')
+                                    .replace(/\$\$HANDOFF_JSON\$\$[\s\S]*?\$\$HANDOFF_JSON\$\$/gi, '')
+                                    .replace(/\$\$SHOW_MENU\$\$/gi, '[Menú enviado]')
+                                    .trim();
+                                
+                                if (!cleanContent) return null; // No mostrar burbujas vacías
 
                                 const isNexoFilm = msg.role === 'assistant' || msg.role === 'admin';
                                 return (
@@ -341,7 +349,7 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
                                             {msg.role === 'assistant' && (
                                                 <div className="text-[10px] uppercase font-bold text-nexo-lime mb-1">🤖 NexoBot IA</div>
                                             )}
-                                            {msg.content}
+                                            {cleanContent}
                                             <div className="text-[11px] text-white/50 text-right mt-1 ml-4 float-right pt-2.5">
                                                 {formatTime(msg.timestamp)}
                                             </div>
