@@ -1,9 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Logo from './Logo';
+import LanguageSwitcher from './LanguageSwitcher';
 import { CONFIG } from '../data/config';
 
 const Navbar: React.FC = () => {
+  const { t } = useTranslation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -38,7 +41,7 @@ const Navbar: React.FC = () => {
         <button 
           className="hover:opacity-80 transition-all duration-500 transform active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-nexo-lime rounded-sm" 
           onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); setIsMenuOpen(false); }}
-          aria-label="Ir al inicio"
+          aria-label={t('navbar.about')}
         >
           <Logo size={isScrolled ? "sm" : "md"} className="transition-all duration-500" />
         </button>
@@ -46,10 +49,10 @@ const Navbar: React.FC = () => {
         {/* Menú de Escritorio */}
         <div className="hidden md:flex items-center space-x-10 lg:space-x-12">
           {[
-            { name: 'Nosotros', href: '#historia' },
-            { name: 'Portfolio', href: '#portfolio' },
-            { name: 'Clientes', href: '#clientes' },
-            { name: 'Opiniones', href: '#reviews' },
+            { name: t('navbar.about'), href: '#historia' },
+            { name: t('navbar.portfolio'), href: '#portfolio' },
+            { name: t('navbar.clients'), href: '#clientes' },
+            { name: t('navbar.reviews'), href: '#reviews' },
           ].map((item) => (
             <a
               key={item.name}
@@ -61,22 +64,25 @@ const Navbar: React.FC = () => {
             </a>
           ))}
 
-          <a
-            href="#contacto"
-            className={`px-8 py-2.5 text-[10px] font-black tracking-[0.4em] uppercase transition-all duration-500 rounded-sm border ${isScrolled
-              ? 'bg-nexo-lime text-black border-nexo-lime hover:bg-white hover:border-white shadow-[0_0_20px_rgba(191,224,35,0.2)]'
-              : 'border-white/20 text-white hover:border-nexo-lime hover:text-nexo-lime'
-              }`}
-          >
-            Contacto
-          </a>
+          <div className="flex items-center gap-2">
+            <a
+              href="#contacto"
+              className={`px-8 py-2.5 text-[10px] font-black tracking-[0.4em] uppercase transition-all duration-500 rounded-sm border ${isScrolled
+                ? 'bg-nexo-lime text-black border-nexo-lime hover:bg-white hover:border-white shadow-[0_0_20px_rgba(191,224,35,0.2)]'
+                : 'border-white/20 text-white hover:border-nexo-lime hover:text-nexo-lime'
+                }`}
+            >
+              {t('navbar.contact')}
+            </a>
+            <LanguageSwitcher />
+          </div>
         </div>
 
         {/* Botón de menú móvil estilizado */}
         <button
           className="md:hidden flex flex-col space-y-1.5 cursor-pointer p-2 group z-50 focus:outline-none"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          aria-label="Menú"
+          aria-label={t('navbar.contact')}
         >
           <span className={`h-[1px] bg-white group-hover:bg-nexo-lime transition-all duration-300 ${isMenuOpen ? 'w-6 rotate-45 translate-y-1.5' : (isScrolled ? 'w-6' : 'w-8')}`}></span>
           <span className={`h-[1px] bg-white group-hover:bg-nexo-lime transition-all duration-300 ${isMenuOpen ? 'opacity-0' : (isScrolled ? 'w-4' : 'w-6')}`}></span>
@@ -88,11 +94,11 @@ const Navbar: React.FC = () => {
       <div className={`fixed inset-0 bg-black/95 backdrop-blur-3xl z-10 flex flex-col items-center justify-center transition-all duration-500 ${isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
         <div className="flex flex-col space-y-8 text-center">
           {[
-            { name: 'Nosotros', href: '#historia' },
-            { name: 'Portfolio', href: '#portfolio' },
-            { name: 'Clientes', href: '#clientes' },
-            { name: 'Opiniones', href: '#reviews' },
-            { name: 'Contacto', href: '#contacto' },
+            { name: t('navbar.about'), href: '#historia' },
+            { name: t('navbar.portfolio'), href: '#portfolio' },
+            { name: t('navbar.clients'), href: '#clientes' },
+            { name: t('navbar.reviews'), href: '#reviews' },
+            { name: t('navbar.contact'), href: '#contacto' },
           ].map((item, idx) => (
             <a
               key={item.name}
@@ -104,6 +110,9 @@ const Navbar: React.FC = () => {
               {item.name}
             </a>
           ))}
+          <div className="pt-8 border-t border-white/10 w-full flex justify-center">
+            <LanguageSwitcher />
+          </div>
         </div>
 
         <div className="absolute bottom-12 text-center">

@@ -1,10 +1,12 @@
 
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { WHATSAPP_NUMBER, WHATSAPP_MESSAGE } from '../constants';
 import { CONFIG } from '../data/config';
 
 const Contact: React.FC = () => {
-  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
+  const { t } = useTranslation();
+  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("[Ref: Web] " + t('whatsapp.prefilled'))}`;
   const [formStatus, setFormStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -33,15 +35,15 @@ const Contact: React.FC = () => {
     <section id="contacto" className="py-24 bg-zinc-950 border-t border-white/5">
       <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-20">
         <div className="text-center md:text-left">
-          <h2 className="text-5xl md:text-7xl font-bold uppercase tracking-tighter mb-12 leading-[1] text-white">Conecta con Nexo.</h2>
+          <h2 className="text-5xl md:text-7xl font-bold uppercase tracking-tighter mb-12 leading-[1] text-white">{t('contact.title')}</h2>
           <div className="space-y-8">
             <div>
-              <p className="text-zinc-500 uppercase tracking-[0.4em] text-[10px] font-bold mb-2">Escríbenos</p>
+              <p className="text-zinc-500 uppercase tracking-[0.4em] text-[10px] font-bold mb-2">{t('contact.email_label')}</p>
               <a href="mailto:hola@nexofilm.com" className="text-2xl font-light hover:text-nexo-lime transition-colors">hola@nexofilm.com</a>
             </div>
 
             <div className="pt-4">
-              <p className="text-zinc-500 uppercase tracking-[0.4em] text-[10px] font-bold mb-6">En redes</p>
+              <p className="text-zinc-500 uppercase tracking-[0.4em] text-[10px] font-bold mb-6">{t('contact.social_label')}</p>
               <div className="flex gap-6 justify-center md:justify-start">
                 <a
                   href={whatsappUrl}
@@ -64,26 +66,26 @@ const Contact: React.FC = () => {
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label htmlFor="contact-name" className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">Nombre</label>
-                <input id="contact-name" name="name" type="text" required className="w-full bg-white/5 border border-white/10 rounded-lg p-4 focus:outline-none focus:border-nexo-lime transition-all font-light" placeholder="Escribe tu nombre..." />
+                <label htmlFor="contact-name" className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">{t('contact.form.name')}</label>
+                <input id="contact-name" name="name" type="text" required className="w-full bg-white/5 border border-white/10 rounded-lg p-4 focus:outline-none focus:border-nexo-lime transition-all font-light" placeholder={t('contact.form.name_placeholder')} />
               </div>
               <div className="space-y-2">
-                <label htmlFor="contact-email" className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">Email</label>
-                <input id="contact-email" name="email" type="email" required className="w-full bg-white/5 border border-white/10 rounded-lg p-4 focus:outline-none focus:border-nexo-lime transition-all font-light" placeholder="tu@email.com" />
+                <label htmlFor="contact-email" className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">{t('contact.form.email')}</label>
+                <input id="contact-email" name="email" type="email" required className="w-full bg-white/5 border border-white/10 rounded-lg p-4 focus:outline-none focus:border-nexo-lime transition-all font-light" placeholder={t('contact.form.email_placeholder')} />
               </div>
             </div>
             <div className="space-y-2">
-              <label htmlFor="contact-project" className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">Tipo de Proyecto</label>
+              <label htmlFor="contact-project" className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">{t('contact.form.project_type')}</label>
               <select id="contact-project" name="project_type" className="w-full bg-white/5 border border-white/10 rounded-lg p-4 focus:outline-none focus:border-nexo-lime transition-all appearance-none text-zinc-300 font-light">
-                <option>Video Comercial / Publicidad</option>
-                <option>Streaming</option>
-                <option>Fotografía de Producto/Moda</option>
-                <option>Contenido para Redes</option>
+                <option value="commercial">{t('contact.form.options.commercial')}</option>
+                <option value="streaming">{t('contact.form.options.streaming')}</option>
+                <option value="photography">{t('contact.form.options.photography')}</option>
+                <option value="social">{t('contact.form.options.social')}</option>
               </select>
             </div>
             <div className="space-y-2">
-              <label htmlFor="contact-message" className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">Tu Mensaje</label>
-              <textarea id="contact-message" name="message" required className="w-full bg-white/5 border border-white/10 rounded-lg p-4 focus:outline-none focus:border-nexo-lime transition-all h-32 resize-none text-zinc-200 placeholder:text-zinc-700 font-light" placeholder="Cuéntanos un poco sobre tu idea..."></textarea>
+              <label htmlFor="contact-message" className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">{t('contact.form.message')}</label>
+              <textarea id="contact-message" name="message" required className="w-full bg-white/5 border border-white/10 rounded-lg p-4 focus:outline-none focus:border-nexo-lime transition-all h-32 resize-none text-zinc-200 placeholder:text-zinc-700 font-light" placeholder={t('contact.form.message_placeholder')}></textarea>
             </div>
             <button
               type="submit"
@@ -93,10 +95,10 @@ const Contact: React.FC = () => {
                 : 'bg-nexo-lime text-zinc-950 hover:bg-white hover:shadow-nexo-lime/20'
                 }`}
             >
-              {formStatus === 'idle' && 'Iniciar el Nexo'}
-              {formStatus === 'sending' && 'Enviando...'}
-              {formStatus === 'sent' && '¡Mensaje Enviado! ✓'}
-              {formStatus === 'error' && 'Error — Intenta de nuevo'}
+              {formStatus === 'idle' && t('contact.form.submit_idle')}
+              {formStatus === 'sending' && t('contact.form.submit_sending')}
+              {formStatus === 'sent' && t('contact.form.submit_sent')}
+              {formStatus === 'error' && t('contact.form.submit_error')}
             </button>
           </form>
         </div>

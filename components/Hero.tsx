@@ -1,8 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { HERO_SLIDES } from '../constants';
 
 const Hero: React.FC = () => {
+  const { t } = useTranslation();
   const [current, setCurrent] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
 
@@ -28,7 +30,7 @@ const Hero: React.FC = () => {
       {/* Etiqueta lateral decorativa */}
       <div className="absolute top-1/2 right-12 -translate-y-1/2 z-40 hidden lg:block rotate-90 origin-right">
         <p className="text-[9px] font-bold uppercase tracking-[0.8em] text-white/10">
-          NexoFilm • Estética Cinematográfica
+          NexoFilm • {t('hero.visual_tag')}
         </p>
       </div>
 
@@ -51,7 +53,7 @@ const Hero: React.FC = () => {
                 loop
                 playsInline
                 poster={slide.image}
-                aria-label={`Video de fondo: ${slide.title}`}
+                aria-label={`Video de fondo: ${t(`hero.slides.${idx}.title`)}`}
                 className="absolute inset-0 w-full h-full object-cover grayscale brightness-[0.25]"
                 style={{
                   transform: `scale(${idx === current ? 1.1 : 1.2})`,
@@ -94,7 +96,7 @@ const Hero: React.FC = () => {
                   <img
                     src={img}
                     className="w-full h-full object-cover grayscale brightness-75"
-                    alt={`${slide.title} - imagen ${i + 1} de galería NexoFilm`}
+                    alt={`${t(`hero.slides.${idx}.title`)} - imagen ${i + 1} de galería NexoFilm`}
                     loading="lazy"
                   />
                   {/* Overlay de color sutil */}
@@ -111,24 +113,24 @@ const Hero: React.FC = () => {
                 <div className="flex items-center gap-3 opacity-30">
                   <img src="/img/logo.png" alt="NexoFilm" className="h-6 w-auto brightness-0 invert" />
                   <p className="text-[9px] font-bold uppercase tracking-[0.8em] text-white">
-                    • Estética Cinematográfica
+                    • {t('hero.visual_tag')}
                   </p>
                 </div>
               </div>
             </div>
 
             {idx === current ? (
-              <h1 className="text-4xl md:text-[8rem] lg:text-[10rem] font-black mb-6 md:mb-8 leading-[0.9] md:leading-[0.85] max-w-5xl uppercase tracking-tighter mix-blend-lighten break-words">
-                {slide.title.split(' ').map((word, i) => (
-                  <span key={i} className={`inline-block mr-3 md:mr-6 transition-all duration-[1200ms] opacity-100 translate-y-0`} style={{ transitionDelay: `${500 + i * 150}ms` }}>
+              <h1 className="flex flex-wrap text-center md:text-left justify-center md:justify-start gap-x-4 md:gap-x-8 text-4xl md:text-[8rem] lg:text-[10rem] font-black mb-6 md:mb-8 leading-[0.9] md:leading-[0.85] max-w-5xl uppercase tracking-tighter mix-blend-lighten break-words pl-1 md:pl-2">
+                {t(`hero.slides.${idx}.title`).trim().split(/\s+/).map((word, i) => (
+                  <span key={i} className="inline-block transition-all duration-[1200ms] opacity-100 translate-y-0" style={{ transitionDelay: `${500 + i * 150}ms` }}>
                     {word}
                   </span>
                 ))}
               </h1>
             ) : (
-              <div aria-hidden="true" className="text-4xl md:text-[8rem] lg:text-[10rem] font-black mb-6 md:mb-8 leading-[0.9] md:leading-[0.85] max-w-5xl uppercase tracking-tighter mix-blend-lighten break-words">
-                {slide.title.split(' ').map((word, i) => (
-                  <span key={i} className={`inline-block mr-3 md:mr-6 transition-all duration-[1200ms] opacity-0 translate-y-16 md:translate-y-32`} style={{ transitionDelay: `${500 + i * 150}ms` }}>
+              <div aria-hidden="true" className="flex flex-wrap text-center md:text-left justify-center md:justify-start gap-x-4 md:gap-x-8 text-4xl md:text-[8rem] lg:text-[10rem] font-black mb-6 md:mb-8 leading-[0.9] md:leading-[0.85] max-w-5xl uppercase tracking-tighter mix-blend-lighten break-words pl-1 md:pl-2">
+                {t(`hero.slides.${idx}.title`).trim().split(/\s+/).map((word, i) => (
+                  <span key={i} className="inline-block transition-all duration-[1200ms] opacity-0 translate-y-16 md:translate-y-32" style={{ transitionDelay: `${500 + i * 150}ms` }}>
                     {word}
                   </span>
                 ))}
@@ -136,13 +138,13 @@ const Hero: React.FC = () => {
             )}
 
             <p className={`text-lg md:text-2xl text-white/60 max-w-2xl mb-12 font-light leading-relaxed transition-all duration-1000 delay-[1200ms] ${idx === current ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'}`}>
-              {slide.subtitle}
+              {t(`hero.slides.${idx}.subtitle`)}
             </p>
 
             <div className={`transition-all duration-1000 delay-[2000ms] ${idx === current ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
               <a href="#portfolio" className="group flex items-center gap-8 hover-pulse justify-center md:justify-start">
                 <div className="relative">
-                  <span className="uppercase tracking-[0.5em] text-[12px] font-black group-hover:text-nexo-lime transition-colors">Ver Portfolio</span>
+                  <span className="uppercase tracking-[0.5em] text-[12px] font-black group-hover:text-nexo-lime transition-colors">{t('hero.view_portfolio')}</span>
                   <div className="absolute -bottom-2 left-0 w-full h-[1px] bg-white/20 group-hover:bg-nexo-lime group-hover:w-full transition-all duration-500 scale-x-50 group-hover:scale-x-100 origin-left"></div>
                 </div>
                 <div className="w-12 h-12 border border-white/10 rounded-full flex items-center justify-center group-hover:border-nexo-lime group-hover:bg-nexo-lime group-hover:text-black transition-all">
@@ -162,7 +164,7 @@ const Hero: React.FC = () => {
               key={idx}
               onClick={() => setCurrent(idx)}
               className={`h-1 transition-all duration-700 rounded-full ${idx === current ? 'w-12 bg-nexo-lime' : 'w-2 bg-white/10'}`}
-              aria-label={`Ir a slide ${idx + 1}: ${HERO_SLIDES[idx].title}`}
+              aria-label={`Ir a slide ${idx + 1}: ${t(`hero.slides.${idx}.title`)}`}
             />
           ))}
         </div>

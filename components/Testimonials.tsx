@@ -1,8 +1,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CONFIG } from '../data/config';
 
 const Testimonials: React.FC = () => {
+  const { t } = useTranslation();
   const testimonials = CONFIG.testimonials;
   const totalSlides = testimonials.length;
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -49,9 +51,9 @@ const Testimonials: React.FC = () => {
         <div className="flex flex-col items-center mb-16">
           <div className="flex items-center gap-2 mb-4">
             <svg className="w-6 h-6 text-white fill-current" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg>
-            <span className="text-zinc-500 uppercase tracking-[0.4em] text-[10px] font-black">Feedback Profesional</span>
+            <span className="text-zinc-500 uppercase tracking-[0.4em] text-[10px] font-black">{t('testimonials.subtitle')}</span>
           </div>
-          <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-center max-w-3xl leading-[1.1]">Lo que dicen nuestros clientes</h2>
+          <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-center max-w-3xl leading-[1.1]">{t('testimonials.title')}</h2>
         </div>
 
         {/* Carousel Container */}
@@ -107,7 +109,7 @@ const Testimonials: React.FC = () => {
                           <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">{testi.role} @ {testi.company}</p>
                         </div>
                       </div>
-                      <p className="text-zinc-300 font-light italic mb-8 leading-relaxed text-lg">"{testi.text}"</p>
+                      <p className="text-zinc-300 font-light italic mb-8 leading-relaxed text-lg">"{t(`testimonials.items.${testi.id}`)}"</p>
                     </div>
                     <a
                       href={testi.linkedinUrl}
@@ -115,7 +117,7 @@ const Testimonials: React.FC = () => {
                       rel="noopener noreferrer"
                       className="text-[9px] font-black text-zinc-500 hover:text-white uppercase tracking-[0.3em] flex items-center gap-2 group/link border-t border-white/5 pt-4"
                     >
-                      Ver Recomendación en LinkedIn
+                      {t('testimonials.linkedin_label')}
                       <svg className="w-3 h-3 group-hover/link:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                     </a>
                   </div>

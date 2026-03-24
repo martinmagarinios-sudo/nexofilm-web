@@ -4,6 +4,7 @@ import App from './App';
 import Dashboard from './src/admin/Dashboard';
 import AdminChat from './src/admin/AdminChat';
 import PrivacyPolicy from './PrivacyPolicy';
+import './src/i18n/i18n';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

@@ -1,9 +1,10 @@
 
-import React from 'react';
-import { WHATSAPP_NUMBER, WHATSAPP_MESSAGE } from '../constants';
+import { useTranslation } from 'react-i18next';
+import { CONFIG } from '../data/config';
 
 const FloatingWhatsApp: React.FC = () => {
-  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
+  const { t } = useTranslation();
+  const whatsappUrl = `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(t('whatsapp.prefilled'))}`;
 
   return (
     <a
@@ -14,7 +15,7 @@ const FloatingWhatsApp: React.FC = () => {
       aria-label="Contactar por WhatsApp"
     >
       <div className="mr-4 px-4 py-2 bg-black/80 backdrop-blur-md border border-white/10 rounded-full opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 pointer-events-none">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Chatea con nosotros</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white">{t('whatsapp.floating_label')}</p>
       </div>
       <div className="relative w-16 h-16 bg-nexo-lime text-black rounded-full flex items-center justify-center shadow-2xl hover-pulse transition-transform hover:scale-110 active:scale-95 duration-300 overflow-hidden">
         <svg

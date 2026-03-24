@@ -13,8 +13,9 @@ const ADMIN_EMAIL = 'martinmagarinios@gmail.com';
 
 const SYSTEM_PROMPT = `Eres el asistente virtual de élite de NexoFilm (Argentina). Sos cálido, extremadamente inteligente, cercano y profesional. 
 
-IDENTIDAD Y TONO:
-- Usá VOSEO SIEMPRE ("me decís", "mirá", "querés"). Prohibido "tú" o "usted".
+IDIOMA Y TONO:
+- Respondé SIEMPRE en el mismo idioma que te hable el usuario (Español, Inglés o Portugués).
+- Si hablás en Español, usá VOSEO SIEMPRE ("me decís", "mirá", "querés"). Prohibido "tú" o "usted".
 - NUNCA uses la palabra "che".
 - Sos un productor experto. Si el cliente tiene dudas técnicas sobre Foto/Video/Streaming, asesoralo con criterio.
 - Respuestas breves, una cosa a la vez.
@@ -95,6 +96,8 @@ export default async function handler(req, res) {
         const isWebStart = text.includes("estoy navegando en tu web") && text.includes("consulta");
         const isMenuCommand = text === 'menu' || text === 'menú' || text.startsWith('ver menu') || text.startsWith('ver menú');
         
+        const lang = detectLanguage(text, history);
+
         if (isMenuCommand || text === 'reset' || isWebStart) {
             if (supabase) {
                 console.log(`[WAKE UP] Reactivando bot para ${targetPhone} por comando: ${text}`);
@@ -103,7 +106,7 @@ export default async function handler(req, res) {
             }
             if (text === 'reset') await sendText(phoneNumberId, from, "🔄 Memoria de este chat reiniciada.");
             
-            await sendMenu(phoneNumberId, from);
+            await sendMenu(phoneNumberId, from, lang);
             return res.status(200).send('OK');
         }
 
@@ -187,24 +190,37 @@ export default async function handler(req, res) {
 
         // (El comando MENU ya fue manejado al inicio del handler - no duplicar)
 
-        // --- LÓGICA VIP (Reconocimiento del CRM) ---
-        let vipRule = "";
-        const isFirstMessage = history.length === 0;
+    // --- LÓGICA VIP (Reconocimiento del CRM) ---
+    let vipRule = "";
+    const isFirstMessage = history.length === 0;
 
-        if (leadData?.name && leadData.name !== 'Sin nombre') {
-            const firstName = leadData.name.trim().split(/[\s,.-]+/)[0]; 
-            vipRule = `
+    if (leadData?.name && leadData.name !== 'Sin nombre') {
+        const firstName = leadData.name.trim().split(/[\s,.-]+/)[0];
+        
+        const greetings = {
+            es: `¡Hola ${firstName}! Qué bueno tenerte de vuelta. ¿En qué podemos ayudarte hoy?`,
+            en: `Hi ${firstName}! Great to have you back. How can we help you today?`,
+            pt: `Olá ${firstName}! Que bom ter você de volta. Como podemos ajudar hoje?`
+        };
+        const currentGreeting = greetings[lang] || greetings.es;
+
+        vipRule = `
 VIP RECOGNITION (ACTIVATE NOW):
 - Es un cliente que vuelve: se llama ${firstName}.
-- SALUDALO así: "¡Hola ${firstName}! Qué bueno tenerte de vuelta. ¿En qué podemos ayudarte hoy?"
+- SALUDALO así (en su idioma): "${currentGreeting}"
 - MOSTRÁ EL MENÚ: Agregá obligatoriamente el tag $$SHOW_MENU$$ al final de tu saludo inicial.
 - RECOGNITION STATUS: ${isFirstMessage ? 'ES EL PRIMER MENSAJE DE LA SESIÓN' : 'SESIÓN EN CURSO'}.
 `;
-            
-            if (leadData.email && leadData.email.includes('@')) {
-                vipRule += `- EMAIL: Su mail registrado es ${leadData.email}. Cuando llegues al paso 3e, PREGUNTALE: "${firstName}, ¿tu mail sigue siendo ${leadData.email} o preferís que usemos otro?".\n`;
-            }
+        
+        if (leadData.email && leadData.email.includes('@')) {
+            const emailQs = {
+                es: `${firstName}, ¿tu mail sigue siendo ${leadData.email} o preferís que usemos otro?`,
+                en: `${firstName}, is your email still ${leadData.email} or would you prefer we use another one?`,
+                pt: `${firstName}, seu e-mail ainda é ${leadData.email} ou prefere que usemos outro?`
+            };
+            vipRule += `- EMAIL: Su mail registrado es ${leadData.email}. Cuando llegues al paso 3e, PREGUNTALE (en su idioma): "${emailQs[lang] || emailQs.es}".\n`;
         }
+    }
 
         // 3. El mensaje actual del usuario DEBE entrar al historial ANTES de llamar a Groq
         history.push({ role: 'user', content: message.text.body || "[Mensaje sin texto]" });
@@ -251,7 +267,7 @@ VIP RECOGNITION (ACTIVATE NOW):
         }
         // El menu siempre despues del texto
         if (showMenu) {
-            await sendMenu(phoneNumberId, from);
+            await sendMenu(phoneNumberId, from, lang);
         }
 
         if (hf?.handoff) {
@@ -320,17 +336,34 @@ async function sendText(pid, to, msg) {
     });
 }
 
-async function sendMenu(pid, to) {
+async function sendMenu(pid, to, lang = 'es') {
+    const translations = {
+        es: {
+            body: "¿En qué te puedo ayudar?",
+            btns: ["Pedir Presupuesto", "Ver Portfolio", "Hablar con Productor"]
+        },
+        en: {
+            body: "How can I help you?",
+            btns: ["Request Quote", "See Portfolio", "Talk to Producer"]
+        },
+        pt: {
+            body: "Como posso ajudar?",
+            btns: ["Pedir Orçamento", "Ver Portfólio", "Falar com Produtor"]
+        }
+    };
+
+    const t = translations[lang] || translations.es;
+
     const payload = {
         messaging_product: 'whatsapp', to, type: 'interactive',
         interactive: {
             type: 'button',
-            body: { text: "¿En qué te puedo ayudar?" },
+            body: { text: t.body },
             action: {
                 buttons: [
-                    { type: 'reply', reply: { id: 'btn_p', title: 'Pedir Presupuesto' } },
-                    { type: 'reply', reply: { id: 'btn_v', title: 'Ver Portfolio' } },
-                    { type: 'reply', reply: { id: 'btn_h', title: 'Hablar con Productor' } }
+                    { type: 'reply', reply: { id: 'btn_p', title: t.btns[0] } },
+                    { type: 'reply', reply: { id: 'btn_v', title: t.btns[1] } },
+                    { type: 'reply', reply: { id: 'btn_h', title: t.btns[2] } }
                 ]
             }
         }
@@ -349,9 +382,34 @@ async function sendMenu(pid, to) {
     if (!resp.ok || respData.error) {
         console.error(`[MENU ERROR] Status ${resp.status}:`, JSON.stringify(respData));
     } else {
-        console.log(`[MENU OK] Menú enviado a +${to}`);
+        console.log(`[MENU OK] Menú (${lang}) enviado a +${to}`);
     }
     return respData;
+}
+
+function detectLanguage(text, history) {
+    const t = text.toLowerCase();
+    
+    // 1. Prefilled messages de la web
+    if (t.includes("budget for my next") || t.includes("i'm browsing your web")) return 'en';
+    if (t.includes("solicitar um orçamento") || t.includes("estou navegando")) return 'pt';
+    if (t.includes("presupuesto para mi próximo") || t.includes("estoy navegando")) return 'es';
+
+    // 2. Palabras clave comunes
+    const enWords = ["hello", "hi", "price", "budget", "quote", "work"];
+    const ptWords = ["olá", "oi", "preço", "orçamento", "trabalho"];
+    
+    if (enWords.some(w => t.includes(w))) return 'en';
+    if (ptWords.some(w => t.includes(w))) return 'pt';
+
+    // 3. Fallback al historial si existe
+    const lastAssistantMsg = [...history].reverse().find(m => m.role === 'assistant');
+    if (lastAssistantMsg) {
+        if (lastAssistantMsg.content.includes("How can I")) return 'en';
+        if (lastAssistantMsg.content.includes("Como posso")) return 'pt';
+    }
+
+    return 'es'; // Default
 }
 
 async function notifyAdminOfNewMessage(phone, name, content) {

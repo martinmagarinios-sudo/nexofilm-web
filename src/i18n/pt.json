@@ -1,0 +1,119 @@
+{
+  "seo": {
+    "title": "NexoFilm | Produtora Audiovisual & Fotografia Cinematográfica",
+    "description": "Produtora audiovisual em Buenos Aires especializada em vídeo comercial, streaming e fotografia com estética cinematográfica de alto impacto."
+  },
+  "navbar": {
+    "about": "Sobre Nós",
+    "portfolio": "Portfólio",
+    "clients": "Clientes",
+    "reviews": "Depoimentos",
+    "contact": "Contato"
+  },
+  "hero": {
+    "visual_tag": "Estética Cinematográfica",
+    "view_portfolio": "Ver Portfólio",
+    "slides": [
+      {
+        "title": "Excelência Cinematográfica",
+        "subtitle": "Elevamos sua marca com narrativas visuais de alto impacto."
+      },
+      {
+        "title": "Produção Integral",
+        "subtitle": "Do conceito à entrega. Comercial, Streaming e Fotografia de Produto."
+      },
+      {
+        "title": "Visão Global",
+        "subtitle": "Conteúdo premium feito em Buenos Aires para o mundo."
+      }
+    ]
+  },
+  "history": {
+    "background_text": "CONECTAMOS HISTÓRIAS",
+    "badge": "Nossa Essência",
+    "title_span": "Somos",
+    "subtitle_italic": "conectamos marcas",
+    "subtitle2": "com histórias.",
+    "description1": "Na NexoFilm, entendemos que cada projeto é uma oportunidade de criar um vínculo visual poderoso. Utilizamos tecnologia de ponta e óticas de precisão para garantir nitidez e colorimetria que definem o padrão da indústria.",
+    "description2": "Nossa missão transcende o técnico: somos a ponte criativa que une a identidade da sua empresa a narrativas que emocionam e perduram. Cada quadro, cada streaming e cada captura fixa é um elo nessa conexão vital.",
+    "video_badge": "VÍDEO 4K",
+    "video_sub": "Cinema Look",
+    "photo_badge": "ALTA RES",
+    "photo_sub": "Fotografia",
+    "stream_badge": "LIVE HD",
+    "stream_sub": "Streaming"
+  },
+  "projects": {
+    "title": "Projetos",
+    "subtitle": "Selecionados",
+    "intro_text": "Cada quadro é uma conexão única.",
+    "intro_strong": "Junte-se a uma equipe que faz cada detalhe contar.",
+    "share": "Compartilhar:",
+    "copy": "Copiado",
+    "categories": {
+      "commercial": "Vídeo Comercial",
+      "institutional": "Vídeo Institucional",
+      "food": "Foto Produto"
+    },
+    "items": {
+      "1": "25 anos operando na Argentina",
+      "2": "Vídeo institucional para Bahia Principe.",
+      "3": "Produção audiovisual para Cerámica San Lorenzo.",
+      "4": "Produção audiovisual para Droguería del Sud.",
+      "5": "Produção audiovisual para GEA.",
+      "6": "Fotografia gastronômica para Namida Nikkei.",
+      "7": "Produção audiovisual para TS Tour Operador.",
+      "8": "Produção audiovisual para Vista Sol.",
+      "9": "Produção audiovisual para Droguería del Sud."
+    }
+  },
+  "testimonials": {
+    "title": "O que nossos clientes dizem",
+    "subtitle": "Feedback Profissional",
+    "linkedin_label": "Ver Recomendação no LinkedIn",
+    "items": {
+      "alba": "Martin é o melhor na Latam… Sua predisposição, criatividade, amabilidade e proximidade o tornam único em sua profissão. Ele fez inúmeros trabalhos conosco e sempre foram nota 10. Recomendo totalmente e o escolheríamos 100 vezes de novo… Obrigado @MartinMagariños",
+      "erick": "Martin Magariños é um grande profissional, tive a sorte de trabalhar com ele durante meu tempo na Visit Lauderdale e The Palm Beaches - Organismos de Turismo, onde foi criada uma estratégia de conteúdo eficaz. Os tempos e o processo de produção foram excelentes. É um prazer recomendar seu grande trabalho.",
+      "hector": "Excelente profissional com grande criatividade e compromisso com o cliente!",
+      "marcelo": "É um dos melhores profissionais para cobertura de mídia audiovisual vinculada ao turismo; a qualidade de seus trabalhos, a velocidade na entrega e seu conhecimento do setor o tornam único.",
+      "nicolas": "Trabalhei com Martín diretamente em eventos e algumas promoções e é, além de um prazer, um profissional que sabe dar os conselhos exatos para que as coisas saiam de forma excepcional.",
+      "flor": "Contratamos Martin Magariños para cobrir em foto e vídeo diferentes projetos... trabalhos muito diversos nos quais ele sempre trouxe um olhar 'cinematográfico' acompanhando a narrativa do evento. Nós o escolheríamos SEMPRE!!",
+      "anabella": "O melhor fornecedor com quem trabalhei em anos. Nos conhecemos em 2020 e desde então, para cada evento que preciso de cobertura audiovisual, eu o convoco."
+    }
+  },
+  "contact": {
+    "title": "Conecte com o Nexo.",
+    "email_label": "Escreva para nós",
+    "social_label": "Nas redes",
+    "form": {
+      "name": "Nome",
+      "name_placeholder": "Escreva seu nome...",
+      "email": "Email",
+      "email_placeholder": "seu@email.com",
+      "project_type": "Tipo de Projeto",
+      "options": {
+        "commercial": "Vídeo Comercial / Publicidade",
+        "streaming": "Streaming",
+        "photography": "Fotografia de Produto/Moda",
+        "social": "Conteúdo para Redes"
+      },
+      "message": "Sua Mensagem",
+      "message_placeholder": "Conte-nos um pouco sobre sua ideia...",
+      "submit_idle": "Iniciar o Nexo",
+      "submit_sending": "Enviando...",
+      "submit_sent": "Mensagem Enviada! ✓",
+      "submit_error": "Erro — Tente novamente"
+    }
+  },
+  "footer": {
+    "navigation": "Navegação",
+    "social": "Social",
+    "privacy": "Política de Privacidade",
+    "copyright_note": "NexoFilm é uma marca de propriedade de Martin Magariños."
+  },
+  "whatsapp": {
+    "prefilled": "Olá NexoFilm, estou navegando no seu site e gostaria de fazer uma consulta.",
+    "floating_label": "Fale conosco",
+    "share_project": "Veja este projeto da NexoFilm: "
+  }
+}

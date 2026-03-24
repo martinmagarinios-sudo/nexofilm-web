@@ -1,5 +1,6 @@
 
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Portfolio from './components/Portfolio';
@@ -12,9 +13,61 @@ import FloatingWhatsApp from './components/FloatingWhatsApp';
 import { CONFIG } from './data/config';
 
 const App: React.FC = () => {
-  const whatsappUrl = `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent("[Ref: Web] " + CONFIG.whatsappMessage)}`;
+  const { t, i18n } = useTranslation();
+  const whatsappUrl = `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent("[Ref: Web] " + t('whatsapp.prefilled'))}`;
 
   useEffect(() => {
+    // 1. Actualizar SEO básico
+    document.title = t('seo.title');
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', t('seo.description'));
+    }
+
+    // 2. Inyectar etiquetas Hreflang y Canonical (Fase 3 SEO)
+    const baseUrl = "https://nexofilm.com";
+    const head = document.head;
+
+    // Limpiar etiquetas previas del mismo tipo para evitar duplicación al cambiar idioma
+    const cleanup = () => {
+      document.querySelectorAll('link[rel="alternate"], link[rel="canonical"], meta[property^="og:"]').forEach(el => {
+        if (!el.getAttribute('data-static')) el.remove();
+      });
+    };
+    cleanup();
+
+    const currentLang = i18n.language;
+    const locales = ['es', 'en', 'pt'];
+
+    // Hreflang
+    locales.forEach(lang => {
+      const link = document.createElement('link');
+      link.rel = 'alternate';
+      link.hreflang = lang;
+      link.href = baseUrl; // Como es SPA sin subcarpetas, apuntamos a la base
+      head.appendChild(link);
+    });
+
+    const xDefault = document.createElement('link');
+    xDefault.rel = 'alternate';
+    xDefault.hreflang = 'x-default';
+    xDefault.href = baseUrl;
+    head.appendChild(xDefault);
+
+    // Canonical
+    const canonical = document.createElement('link');
+    canonical.rel = 'canonical';
+    canonical.href = baseUrl;
+    head.appendChild(canonical);
+
+    // Open Graph Dinámico
+    const ogLocaleMap: { [key: string]: string } = { es: 'es_AR', en: 'en_US', pt: 'pt_BR' };
+    const metaOgLocale = document.createElement('meta');
+    metaOgLocale.setAttribute('property', 'og:locale');
+    metaOgLocale.content = ogLocaleMap[currentLang] || 'es_AR';
+    head.appendChild(metaOgLocale);
+
+    // 3. Scroll suave
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function (e) {
         e.preventDefault();
@@ -28,7 +81,7 @@ const App: React.FC = () => {
         }
       });
     });
-  }, []);
+  }, [t, i18n.language]);
 
   return (
     <div className="min-h-screen bg-black selection:bg-nexo-lime selection:text-black font-sans">
@@ -41,7 +94,7 @@ const App: React.FC = () => {
         <section id="historia" className="py-20 md:py-32 bg-black overflow-hidden border-b border-white/5 relative">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full text-center pointer-events-none opacity-[0.02] select-none">
             <span className="text-[15vw] font-extrabold uppercase tracking-tighter leading-none whitespace-nowrap">
-              CONECTAMOS HISTORIAS
+              {t('history.background_text')}
             </span>
           </div>
 
@@ -73,36 +126,36 @@ const App: React.FC = () => {
               <div className="w-full md:w-1/2 space-y-10 text-center md:text-left">
                 <div className="space-y-4">
                   <div className="inline-block px-3 py-1 bg-nexo-lime text-black text-[10px] font-bold uppercase tracking-[0.3em]">
-                    Nuestra Esencia
+                    {t('history.badge')}
                   </div>
                   <h2 className="text-4xl md:text-6xl font-bold leading-[1.05] uppercase tracking-tighter">
-                    {CONFIG.history.title} <img src="/img/logo.png" alt="NexoFilm" className="h-10 md:h-16 inline-block align-middle ml-2 -mt-2 brightness-0 invert" /> <br />
-                    <span className="text-nexo-lime italic font-light">{CONFIG.history.subtitle}</span> <br />
-                    {CONFIG.history.subtitle2}
+                    {t('history.title_span')} <img src="/img/logo.png" alt="NexoFilm" className="h-10 md:h-16 inline-block align-middle ml-2 -mt-2 brightness-0 invert" /> <br />
+                    <span className="text-nexo-lime italic font-light">{t('history.subtitle_italic')}</span> <br />
+                    {t('history.subtitle2')}
                   </h2>
                 </div>
 
                 <div className="space-y-6 text-zinc-400 leading-relaxed text-lg font-light text-center md:text-left">
                   <p>
-                    {CONFIG.history.description1}
+                    {t('history.description1')}
                   </p>
                   <p>
-                    {CONFIG.history.description2}
+                    {t('history.description2')}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/10">
                   <div className="text-center">
-                    <div className="text-nexo-lime font-bold text-xl uppercase tracking-tighter">VIDEO 4K</div>
-                    <div className="text-[10px] text-zinc-500 tracking-widest uppercase font-bold">Cinema Look</div>
+                    <div className="text-nexo-lime font-bold text-xl uppercase tracking-tighter">{t('history.video_badge')}</div>
+                    <div className="text-[10px] text-zinc-500 tracking-widest uppercase font-bold">{t('history.video_sub')}</div>
                   </div>
                   <div className="text-center border-x border-white/10">
-                    <div className="text-nexo-lime font-bold text-xl uppercase tracking-tighter">HIGH RES</div>
-                    <div className="text-[10px] text-zinc-500 tracking-widest uppercase font-bold">Fotografía</div>
+                    <div className="text-nexo-lime font-bold text-xl uppercase tracking-tighter">{t('history.photo_badge')}</div>
+                    <div className="text-[10px] text-zinc-500 tracking-widest uppercase font-bold">{t('history.photo_sub')}</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-nexo-lime font-bold text-xl uppercase tracking-tighter">LIVE HD</div>
-                    <div className="text-[10px] text-zinc-500 tracking-widest uppercase font-bold">Streaming</div>
+                    <div className="text-nexo-lime font-bold text-xl uppercase tracking-tighter">{t('history.stream_badge')}</div>
+                    <div className="text-[10px] text-zinc-500 tracking-widest uppercase font-bold">{t('history.stream_sub')}</div>
                   </div>
                 </div>
               </div>
@@ -123,27 +176,27 @@ const App: React.FC = () => {
             <div className="space-y-1 text-center md:text-left">
               <Logo size="md" />
               <p className="text-zinc-500 max-w-sm text-sm font-light leading-relaxed whitespace-pre-line">
-                {CONFIG.footer.text}
+                {t('footer.text')}
               </p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-16 text-center md:text-left">
               <div className="space-y-4">
-                <h4 className="text-[10px] uppercase tracking-[0.4em] text-white font-bold">Navegación</h4>
+                <h4 className="text-[10px] uppercase tracking-[0.4em] text-white font-bold">{t('footer.navigation')}</h4>
                 <ul className="text-zinc-500 text-xs space-y-3 font-medium">
-                  <li><a href="#historia" className="hover:text-nexo-lime hover:pl-2 transition-all duration-300 inline-block">Nosotros</a></li>
-                  <li><a href="#portfolio" className="hover:text-nexo-lime hover:pl-2 transition-all duration-300 inline-block">Trabajos</a></li>
-                  <li><a href="#clientes" className="hover:text-nexo-lime hover:pl-2 transition-all duration-300 inline-block">Clientes</a></li>
+                  <li><a href="#historia" className="hover:text-nexo-lime hover:pl-2 transition-all duration-300 inline-block">{t('navbar.about')}</a></li>
+                  <li><a href="#portfolio" className="hover:text-nexo-lime hover:pl-2 transition-all duration-300 inline-block">{t('navbar.portfolio')}</a></li>
+                  <li><a href="#clientes" className="hover:text-nexo-lime hover:pl-2 transition-all duration-300 inline-block">{t('navbar.clients')}</a></li>
                 </ul>
               </div>
               <div className="space-y-4">
-                <h4 className="text-[10px] uppercase tracking-[0.4em] text-white font-bold">Social</h4>
+                <h4 className="text-[10px] uppercase tracking-[0.4em] text-white font-bold">{t('footer.social')}</h4>
                 <ul className="text-zinc-500 text-xs space-y-3 font-medium">
                   <li><a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="hover:text-nexo-lime hover:pl-2 transition-all duration-300 inline-block">WhatsApp</a></li>
                   <li><a href={CONFIG.social.instagram} target="_blank" rel="noopener noreferrer" className="hover:text-nexo-lime hover:pl-2 transition-all duration-300 inline-block">Instagram</a></li>
                   <li><a href={CONFIG.social.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-nexo-lime hover:pl-2 transition-all duration-300 inline-block">LinkedIn</a></li>
                   <li><a href={CONFIG.social.behance} target="_blank" rel="noopener noreferrer" className="hover:text-nexo-lime hover:pl-2 transition-all duration-300 inline-block">Behance</a></li>
-                  <li><a href="/politica-de-privacidad" className="hover:text-nexo-lime hover:pl-2 transition-all duration-300 inline-block mt-4 text-white font-bold opacity-80">Política de Privacidad</a></li>
+                  <li><a href="/politica-de-privacidad" className="hover:text-nexo-lime hover:pl-2 transition-all duration-300 inline-block mt-4 text-white font-bold opacity-80">{t('footer.privacy')}</a></li>
                 </ul>
               </div>
             </div>
@@ -152,11 +205,11 @@ const App: React.FC = () => {
           <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-zinc-600 text-[10px] uppercase tracking-widest font-bold text-center md:text-left">
               <p>© {new Date().getFullYear()} {CONFIG.footer.copyright}</p>
-              <p className="mt-2 text-[9px] text-zinc-700">NexoFilm es una marca propiedad de Martin Magariños.</p>
+              <p className="mt-2 text-[9px] text-zinc-700">{t('footer.copyright_note')}</p>
             </div>
             <div className="flex gap-6 text-[10px] uppercase tracking-widest font-bold text-zinc-400">
-              <a href="#portfolio" className="hover:text-nexo-lime transition-colors">Portfolio</a>
-              <a href="#contacto" className="hover:text-nexo-lime transition-colors">Contacto</a>
+              <a href="#portfolio" className="hover:text-nexo-lime transition-colors">{t('navbar.portfolio')}</a>
+              <a href="#contacto" className="hover:text-nexo-lime transition-colors">{t('navbar.contact')}</a>
             </div>
           </div>
         </div>
