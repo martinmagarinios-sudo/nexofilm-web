@@ -30,9 +30,8 @@ FLUJO DE CONVERSACIÓN:
    b) Una vez respondió: "¿Me contás qué tipo de evento es? (Social, corporativo, feria, comercial, etc.)"
    c) "¿Me decís la fecha y el lugar estimado?"
    d) "¿Cantidad de personas y horas de cobertura?"
-   e) VERIFICACIÓN DE EMAIL:
-      - Si ya conocemos su mail (VIP): "[Nombre], ¿tu mail sigue siendo [email] o preferís que usemos otro?"
-      - Si NO lo conocemos: "Perfecto. ¿Me pasás tu correo electrónico para mandarte la propuesta?"
+   e) "Perfecto. ¿Me pasás tu correo electrónico para mandarte la propuesta?"
+      (Nota: Si ya conocemos su mail por VIP_RULE, preguntá si sigue siendo el mismo o si cambió).
    f) DESPEDIDA: "¡Bárbaro, [Nombre]! Fue un placer. Ya le paso los detalles a producción y en breve te contactan. 👋 Si necesitás algo más, escribí MENU."
 
 HANDOFF JSON:
@@ -198,10 +197,13 @@ export default async function handler(req, res) {
 VIP RECOGNITION (ACTIVATE NOW):
 - Es un cliente que vuelve: se llama ${firstName}.
 - SALUDALO así: "¡Hola ${firstName}! Qué bueno tenerte de vuelta. ¿En qué podemos ayudarte hoy?"
-- MOSTRÁ EL MENÚ: Agregá obligatoriamente el tag $$SHOW_MENU$$ al final de tu saludo.
+- MOSTRÁ EL MENÚ: Agregá obligatoriamente el tag $$SHOW_MENU$$ al final de tu saludo inicial.
 - RECOGNITION STATUS: ${isFirstMessage ? 'ES EL PRIMER MENSAJE DE LA SESIÓN' : 'SESIÓN EN CURSO'}.
-- EMAIL: Su mail registrado es ${leadData.email || 'desconocido'}. Verificalo al pedir presupuesto.
 `;
+            
+            if (leadData.email && leadData.email.includes('@')) {
+                vipRule += `- EMAIL: Su mail registrado es ${leadData.email}. Cuando llegues al paso 3e, PREGUNTALE: "${firstName}, ¿tu mail sigue siendo ${leadData.email} o preferís que usemos otro?".\n`;
+            }
         }
 
         // 3. El mensaje actual del usuario DEBE entrar al historial ANTES de llamar a Groq
