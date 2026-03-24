@@ -91,14 +91,15 @@ export default async function handler(req, res) {
         const history = historyData.history;
         const targetPhone = leadData?.phone || from; // Usamos el del CRM si existe, sino el de WhatsApp
         const now = Date.now();
-        const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
 
         // --- RESET / MENU / WEB START MANUAL ---
         const isWebStart = text.includes("estoy navegando en tu web") && text.includes("consulta");
+        const isMenuCommand = text === 'menu' || text === 'menú' || text.startsWith('ver menu') || text.startsWith('ver menú');
         
-        if (text === 'menu' || text === 'menú' || text === 'reset' || isWebStart) {
+        if (isMenuCommand || text === 'reset' || isWebStart) {
             if (supabase) {
                 console.log(`[WAKE UP] Reactivando bot para ${targetPhone} por comando: ${text}`);
+                // Reseteamos el updated_at para que la lógica de silencio no lo bloquee
                 await supabase.from('whatsapp_leads').update({ updated_at: '1970-01-01T00:00:00Z' }).eq('phone', targetPhone).then(null, () => {});
             }
             if (text === 'reset') await sendText(phoneNumberId, from, "🔄 Memoria de este chat reiniciada.");
@@ -107,15 +108,20 @@ export default async function handler(req, res) {
             return res.status(200).send('OK');
         }
 
-        // --- SILENCIO INTELIGENTE (30 DÍAS) ---
-        // Si el lead está en el CRM y se actualizó hace < 30 días, el bot se calla (a menos que digan MENU)
+        // --- SILENCIO INTELIGENTE (RESPECTO AL HUMANO) ---
+        // El bot se calla SOLO si:
+        // 1. Hay un mensaje de 'admin' (humano) en los últimos 30 minutos.
+        const lastAdminMsg = [...history].reverse().find(m => m.role === 'admin');
+        const isHumanActive = lastAdminMsg && (now - new Date(lastAdminMsg.timestamp || 0).getTime()) < 30 * 60 * 1000;
+        
+        // 2. O si el lead se marcó como completado (handoff) hace MUY poco (ej: 5 min) 
+        // para evitar que el bot siga preguntando cosas justo después de que el cliente terminó.
         const lastHandoffDate = leadData?.updated_at ? new Date(leadData.updated_at).getTime() : 0;
-        const isRecentlyHandoff = lastHandoffDate > (now - thirtyDaysMs);
+        const isVeryRecentHandoff = lastHandoffDate > (now - 5 * 60 * 1000);
 
-        if (isRecentlyHandoff && text !== 'menu' && text !== 'menú' && !isInteractive) {
-            console.log(`[SILENCIO] Registrando mensaje de +${from} para el CRM.`);
+        if ((isHumanActive || isVeryRecentHandoff) && !isMenuCommand && !isInteractive) {
+            console.log(`[SILENCIO] Registrando mensaje de +${from} para el CRM (Humano activo o Handoff reciente).`);
             
-            // 1. Guardar de todos modos en el historial para que el humano lo vea en el CRM
             const newHistory = [...history, { 
                 role: 'user', 
                 content: message.text?.body || "[Envió un archivo o medio]",
@@ -123,15 +129,11 @@ export default async function handler(req, res) {
             }];
             await persistHistory(from, newHistory);
 
-            // 2. Notificación al admin si pasaron > 10 min desde el último mensaje (para no dejar al cliente esperando)
+            // Alerta al admin si pasaron > 10 min de silencio total (cliente esperando)
             const lastInteraction = historyData.updated_at ? new Date(historyData.updated_at).getTime() : 0;
-            const tenMinsMs = 10 * 60 * 1000;
-            
-            if (now - lastInteraction > tenMinsMs) {
-                console.log(`[ALERTA] Enviando mail de inactividad para +${from} (>10 min sin respuesta).`);
+            if (now - lastInteraction > 10 * 60 * 1000) {
                 await notifyAdminOfNewMessage(from, leadData?.name || "Cliente", message.text?.body);
             }
-
             return res.status(200).send('OK');
         }
 
@@ -188,16 +190,17 @@ export default async function handler(req, res) {
 
         // --- LÓGICA VIP (Reconocimiento del CRM) ---
         let vipRule = "";
+        const isFirstMessage = history.length === 0;
+
         if (leadData?.name && leadData.name !== 'Sin nombre') {
-            // Limpieza profunda: Solo la primera palabra, sin comas ni puntos (ej: "Martin Magarinios" -> "Martin")
             const firstName = leadData.name.trim().split(/[\s,.-]+/)[0]; 
             vipRule = `
-VIP RECOGNITION:
-- El cliente ya es conocido: se llama ${firstName}.
-- NUNCA uses su apellido ni nombre de empresa (ej: si es "Juan Perez", decí solo "Juan").
-- SALUDALOS SIEMPRE por su nombre de pila: ${firstName}.
-- SI ES EL PRIMER MENSAJE: "¡Hola ${firstName}! Qué bueno tenerte de vuelta por acá. ¿En qué podemos ayudarte hoy?" y mandá $$SHOW_MENU$$.
-- EMAIL: Ya tenemos registrado su mail (${leadData.email || 'desconocido'}). Cuando llegues al paso del mail, PREGUNTALE si sigue siendo ese o si cambió.
+VIP RECOGNITION (ACTIVATE NOW):
+- Es un cliente que vuelve: se llama ${firstName}.
+- SALUDALO así: "¡Hola ${firstName}! Qué bueno tenerte de vuelta. ¿En qué podemos ayudarte hoy?"
+- MOSTRÁ EL MENÚ: Agregá obligatoriamente el tag $$SHOW_MENU$$ al final de tu saludo.
+- RECOGNITION STATUS: ${isFirstMessage ? 'ES EL PRIMER MENSAJE DE LA SESIÓN' : 'SESIÓN EN CURSO'}.
+- EMAIL: Su mail registrado es ${leadData.email || 'desconocido'}. Verificalo al pedir presupuesto.
 `;
         }
 
