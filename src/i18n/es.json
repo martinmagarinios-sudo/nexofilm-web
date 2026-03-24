@@ -67,6 +67,21 @@
       "9": "Producción audiovisual para Droguería del Sud."
     }
   },
+  "clients": {
+    "badge": "Aliados Estratégicos",
+    "title": "Clientes que confían",
+    "logo_alt": "Logo de {{name}}"
+  },
+  "process": {
+    "badge": "Metodología",
+    "title": "Cómo creamos el nexo",
+    "steps": {
+      "01": { "title": "Planificación", "desc": "Conceptualización de narrativa, guión o plan técnico de conectividad y luces." },
+      "02": { "title": "Captura", "desc": "Producción en set, sesión fotográfica o despliegue de señales para vivo." },
+      "03": { "title": "Optimización", "desc": "Post-producción, retoque digital de imagen o monitoreo de bitrate en tiempo real." },
+      "04": { "title": "Nexo Final", "desc": "Entrega de una pieza de impacto o una transmisión impecable para tu audiencia." }
+    }
+  },
   "testimonials": {
     "title": "Lo que dicen nuestros clientes",
     "subtitle": "Feedback Profesional",

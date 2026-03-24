@@ -54,6 +54,7 @@ const Hero: React.FC = () => {
                 playsInline
                 poster={slide.image}
                 aria-label={`Video de fondo: ${t(`hero.slides.${idx}.title`)}`}
+                {...({ fetchPriority: idx === 0 ? "high" : "auto" } as any)}
                 className="absolute inset-0 w-full h-full object-cover grayscale brightness-[0.25]"
                 style={{
                   transform: `scale(${idx === current ? 1.1 : 1.2})`,

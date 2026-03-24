@@ -16,7 +16,7 @@
     "slides": [
       {
         "title": "Excelência Cinematográfica",
-        "subtitle": "Elevamos sua marca com narrativas visuais de alto impacto."
+        "subtitle": "Elevamos sua marca con narrativas visuais de alto impacto."
       },
       {
         "title": "Produção Integral",
@@ -67,17 +67,32 @@
       "9": "Produção audiovisual para Droguería del Sud."
     }
   },
+  "clients": {
+    "badge": "Aliados Estratégicos",
+    "title": "Clientes que confiam",
+    "logo_alt": "Logotipo de {{name}}"
+  },
+  "process": {
+    "badge": "Metodologia",
+    "title": "Como criamos o nexo",
+    "steps": {
+      "01": { "title": "Planejamento", "desc": "Conceituação de narrativa, roteiro ou plano técnico de conectividade e luzes." },
+      "02": { "title": "Captura", "desc": "Produção no set, sessão fotográfica ou implantação de sinais ao vivo." },
+      "03": { "title": "Otimização", "desc": "Pós-produção, retoque digital de imagem ou monitoramento de bitrate em tempo real." },
+      "04": { "title": "Nexo Final", "desc": "Entrega de uma peça de impacto ou uma transmissão impecável para o seu público." }
+    }
+  },
   "testimonials": {
     "title": "O que nossos clientes dizem",
     "subtitle": "Feedback Profissional",
     "linkedin_label": "Ver Recomendação no LinkedIn",
     "items": {
-      "t1": "Martin é o melhor na Latam… Sua predisposição, criatividade, amabilidade e proximidade o tornam único em sua profissão. Ele fez inúmeros trabalhos conosco e sempre foram nota 10. Recomendo totalmente e o escolheríamos 100 vezes de novo… Obrigado @MartinMagariños",
-      "t2": "Martin Magariños é um grande profissional, tive a sorte de trabalhar com ele durante meu tempo na Visit Lauderdale e The Palm Beaches - Organismos de Turismo, onde foi criada uma estratégia de conteúdo eficaz. Os tempos e o proceso de produção foram excelentes. É um prazer recomendar seu grande trabalho.",
-      "t5": "Trabalhei com Martín diretamente em eventos e algumas promoções e é, además de um prazer, um profissional que sabe dar os conselhos exatos para que as coisas saiam de forma excepcional.",
-      "t3": "Excelente profissional com grande criatividade e compromisso com o cliente!",
-      "t4": "É um dos melhores profissionais para cobertura de mídia audiovisual vinculada ao turismo; a calidad de seus trabalhos, a velocidade na entrega e seu conocimiento do setor o tornam único.",
-      "t6": "Contratamos Martin Magariños para cobrir em foto e vídeo diferentes projetos... trabalhos muito diversos nos quais ele sempre trouxe um olhar 'cinematográfico' acompanhando a narrativa do evento. Nós o escolheríamos SEMPRE!!",
+      "t1": "Martin é o melhor na Latam… Sua predisposição, criatividade, amabilidade e proximidade o tornam único em sua profissão. Ele fez inúmeros trabalhos conosco e sempre foram nota 10. Recomendo totalmente e o escolheríamos 100 vezes de nuevo… Obrigado @MartinMagariños",
+      "t2": "Martin Magariños é um grande profissional, tive a sorte de trabalhar com ele durante meu tempo na Visit Lauderdale e The Palm Beaches - Organismos de Turismo, onde foi criada uma estrategia de contenido eficaz. Os tiempos e o proceso de produção foram excelentes. Es um placer recomendar seu grande trabajo.",
+      "t5": "Trabalhei com Martín diretamente em eventos e algumas promoções e é, además de um prazer, um profissional que sabe dar os conselhos exatos para que as cosas saiam de forma excepcional.",
+      "t3": "Excelente profissional con gran creatividad y compromiso con el cliente!",
+      "t4": "É um dos melhores profissionais para cobertura de mídia audiovisual vinculada ao turismo; a calidad de seus trabalhos, a velocidad na entrega e seu conocimiento del sector o tornam único.",
+      "t6": "Contratamos Martin Magariños para cobrir em foto e vídeo diferentes projetos... trabajos muy diversos nos quais ele siempre trouxe um olhar 'cinematográfico' acompañando a narrativa do evento. Nós o escolheríamos SIEMPRE!!",
       "t7": "O melhor fornecedor com quem trabalhei em anos. Nos conhecemos em 2020 e desde então, para cada evento que preciso de cobertura audiovisual, eu o convoco."
     }
   },

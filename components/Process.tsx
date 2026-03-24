@@ -1,20 +1,22 @@
-
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 const Process: React.FC = () => {
+  const { t } = useTranslation();
+
   const steps = [
-    { num: '01', title: 'Planificación', desc: 'Conceptualización de narrativa, guión o plan técnico de conectividad y luces.' },
-    { num: '02', title: 'Captura', desc: 'Producción en set, sesión fotográfica o despliegue de señales para vivo.' },
-    { num: '03', title: 'Optimización', desc: 'Post-producción, retoque digital de imagen o monitoreo de bitrate en tiempo real.' },
-    { num: '04', title: 'Nexo Final', desc: 'Entrega de una pieza de impacto o una transmisión impecable para tu audiencia.' }
+    { num: '01', title: t('process.steps.01.title'), desc: t('process.steps.01.desc') },
+    { num: '02', title: t('process.steps.02.title'), desc: t('process.steps.02.desc') },
+    { num: '03', title: t('process.steps.03.title'), desc: t('process.steps.03.desc') },
+    { num: '04', title: t('process.steps.04.title'), desc: t('process.steps.04.desc') }
   ];
 
   return (
     <section id="proceso" className="py-24 bg-zinc-950 overflow-hidden border-b border-white/5">
       <div className="container mx-auto px-6">
         <div className="text-center mb-20 space-y-4">
-          <p className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.4em]">Metodología</p>
-          <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter">Cómo creamos el nexo</h2>
+          <p className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.4em]">{t('process.badge')}</p>
+          <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter">{t('process.title')}</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 relative">

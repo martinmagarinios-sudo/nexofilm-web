@@ -67,6 +67,21 @@
       "9": "Audiovisual production for Droguería del Sud."
     }
   },
+  "clients": {
+    "badge": "Strategic Partners",
+    "title": "Clients who trust us",
+    "logo_alt": "{{name}} Logo"
+  },
+  "process": {
+    "badge": "Methodology",
+    "title": "How we create the connection",
+    "steps": {
+      "01": { "title": "Planning", "desc": "Storytelling concept, script or technical lighting and connectivity plan." },
+      "02": { "title": "Capture", "desc": "On-set production, photo session or live signal deployment." },
+      "03": { "title": "Optimization", "desc": "Post-production, digital image retouching or real-time bitrate monitoring." },
+      "04": { "title": "Final Nexus", "desc": "Delivery of a high-impact piece or a seamless broadcast for your audience." }
+    }
+  },
   "testimonials": {
     "title": "What industry leaders say",
     "subtitle": "Client Testimonials",

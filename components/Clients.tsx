@@ -1,7 +1,9 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { CONFIG } from '../data/config';
 
 const Clients: React.FC = () => {
+  const { t } = useTranslation();
   const clients = CONFIG.clients;
 
   // Si no hay clientes, no renderizamos nada
@@ -11,10 +13,10 @@ const Clients: React.FC = () => {
     <section id="clientes" className="py-24 border-y border-white/5 bg-black overflow-hidden">
       <div className="container mx-auto px-6 mb-16 text-center">
         <p className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.4em] mb-4">
-          Aliados Estratégicos
+          {t('clients.badge')}
         </p>
         <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter">
-          Clientes que confían
+          {t('clients.title')}
         </h2>
       </div>
 
@@ -40,7 +42,7 @@ const Clients: React.FC = () => {
 
               <img
                 src={client.logo}
-                alt={`Logo de ${client.name}`}
+                alt={t('clients.logo_alt', { name: client.name })}
                 title={client.name}
                 loading="lazy"
                 className="h-12 md:h-16 w-auto max-w-[150px] object-contain 

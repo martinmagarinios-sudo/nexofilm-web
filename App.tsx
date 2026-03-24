@@ -23,14 +23,54 @@ const App: React.FC = () => {
     if (metaDescription) {
       metaDescription.setAttribute('content', t('seo.description'));
     }
+    const ogDescription = document.querySelector('meta[property="og:description"]');
+    if (ogDescription) {
+      ogDescription.setAttribute('content', t('seo.description'));
+    }
+    const twitterDescription = document.querySelector('meta[name="twitter:description"]');
+    if (twitterDescription) {
+      twitterDescription.setAttribute('content', t('seo.description'));
+    }
 
-    // 2. Inyectar etiquetas Hreflang y Canonical (Fase 3 SEO)
+    // 2. Actualizar atributo lang del html
+    document.documentElement.lang = i18n.language;
+
+    // 3. Inyectar Schema.org Dinámico (Fase 4)
+    const existingSchema = document.getElementById('dynamic-schema');
+    if (existingSchema) existingSchema.remove();
+
+    const schemaData = {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "NexoFilm",
+      "alternateName": "NexoFilm Productora Audiovisual",
+      "url": "https://nexofilm.com",
+      "logo": "https://nexofilm.com/favicon.png",
+      "description": t('seo.description'),
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "AR"
+      },
+      "knowsAbout": [
+        t('history.video_badge'),
+        t('history.photo_badge'),
+        t('history.stream_badge')
+      ]
+    };
+
+    const script = document.createElement('script');
+    script.id = 'dynamic-schema';
+    script.type = 'application/ld+json';
+    script.text = JSON.stringify(schemaData);
+    document.head.appendChild(script);
+
+    // 4. Inyectar etiquetas Hreflang y Canonical (Fase 3 & 4 SEO)
     const baseUrl = "https://nexofilm.com";
     const head = document.head;
 
-    // Limpiar etiquetas previas del mismo tipo para evitar duplicación al cambiar idioma
+    // Limpiar etiquetas previas para evitar duplicación
     const cleanup = () => {
-      document.querySelectorAll('link[rel="alternate"], link[rel="canonical"], meta[property^="og:"]').forEach(el => {
+      document.querySelectorAll('link[rel="alternate"], link[rel="canonical"], meta[property="og:locale"]').forEach(el => {
         if (!el.getAttribute('data-static')) el.remove();
       });
     };
@@ -39,49 +79,54 @@ const App: React.FC = () => {
     const currentLang = i18n.language;
     const locales = ['es', 'en', 'pt'];
 
-    // Hreflang
+    // Hreflang específicos por idioma
     locales.forEach(lang => {
       const link = document.createElement('link');
       link.rel = 'alternate';
       link.hreflang = lang;
-      link.href = baseUrl; // Como es SPA sin subcarpetas, apuntamos a la base
+      link.href = `${baseUrl}/?lng=${lang}`;
       head.appendChild(link);
     });
 
+    // x-default
     const xDefault = document.createElement('link');
     xDefault.rel = 'alternate';
     xDefault.hreflang = 'x-default';
     xDefault.href = baseUrl;
     head.appendChild(xDefault);
 
-    // Canonical
+    // Canonical dinámico
     const canonical = document.createElement('link');
     canonical.rel = 'canonical';
-    canonical.href = baseUrl;
+    canonical.href = currentLang === 'es' ? baseUrl : `${baseUrl}/?lng=${currentLang}`;
     head.appendChild(canonical);
 
-    // Open Graph Dinámico
+    // Open Graph Locale Dinámico
     const ogLocaleMap: { [key: string]: string } = { es: 'es_AR', en: 'en_US', pt: 'pt_BR' };
     const metaOgLocale = document.createElement('meta');
     metaOgLocale.setAttribute('property', 'og:locale');
     metaOgLocale.content = ogLocaleMap[currentLang] || 'es_AR';
     head.appendChild(metaOgLocale);
 
-    // 3. Scroll suave
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-      anchor.addEventListener('click', function (e) {
+    // 5. Scroll suave (Anchor links)
+    const handleAnchorClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const anchor = target.closest('a');
+      if (anchor && anchor.hash && anchor.hash.startsWith('#')) {
         e.preventDefault();
-        const targetId = this.getAttribute('href')?.substring(1);
-        const targetElement = document.getElementById(targetId || '');
+        const targetElement = document.getElementById(anchor.hash.substring(1));
         if (targetElement) {
           window.scrollTo({
             top: targetElement.offsetTop - 80,
             behavior: 'smooth'
           });
         }
-      });
-    });
-  }, [t, i18n.language]);
+      }
+    };
+
+    document.addEventListener('click', handleAnchorClick);
+    return () => document.removeEventListener('click', handleAnchorClick);
+  }, [t, i18n.language, i18n]);
 
   return (
     <div className="min-h-screen bg-black selection:bg-nexo-lime selection:text-black font-sans">

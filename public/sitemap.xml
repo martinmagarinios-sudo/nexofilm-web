@@ -1,9 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://nexofilm.com/</loc>
-    <lastmod>2026-02-14</lastmod>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nexofilm.com/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://nexofilm.com/?lng=es"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nexofilm.com/?lng=en"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://nexofilm.com/?lng=pt"/>
+    <lastmod>2024-03-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://nexofilm.com/?lng=es</loc>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nexofilm.com/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://nexofilm.com/?lng=es"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nexofilm.com/?lng=en"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://nexofilm.com/?lng=pt"/>
+    <lastmod>2024-03-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nexofilm.com/?lng=en</loc>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nexofilm.com/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://nexofilm.com/?lng=es"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nexofilm.com/?lng=en"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://nexofilm.com/?lng=pt"/>
+    <lastmod>2024-03-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nexofilm.com/?lng=pt</loc>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://nexofilm.com/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://nexofilm.com/?lng=es"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://nexofilm.com/?lng=en"/>
+    <xhtml:link rel="alternate" hreflang="pt" href="https://nexofilm.com/?lng=pt"/>
+    <lastmod>2024-03-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
 </urlset>

@@ -74,7 +74,7 @@ const ShaderPlane = ({ imageSrc, isHovering }: { imageSrc: string, isHovering: b
     useFrame((state, delta) => {
         if (materialRef.current) {
             // Actualizar el tiempo para la animación fluida
-            materialRef.current.uniforms.uTime.value = state.clock.elapsedTime;
+            materialRef.current.uniforms.uTime.value = state.clock.getElapsedTime();
 
             // Interpolar suavemente el estado de hover (Easing)
             const targetHover = isHovering ? 1.0 : 0.0;
