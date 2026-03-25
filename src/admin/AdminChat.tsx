@@ -29,6 +29,7 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
     const [messageInput, setMessageInput] = useState('');
     const [sending, setSending] = useState(false);
     const [activeLead, setActiveLead] = useState<any>(null);
+    const [searchTerm, setSearchTerm] = useState('');
     
     // Referencia para mantener el scroll abajo
     const [promoLoading, setPromoLoading] = useState(false);
@@ -227,10 +228,19 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
                     <a href="/admin" className="text-xs text-[#00a884] font-medium hover:underline">Volver a Leads</a>
                 </div>
                 
-                {/* Buscador ficticio */}
+                {/* Buscador de Chats */}
                 <div className="bg-[#111b21] p-2 border-b border-[#222d34]">
-                    <div className="bg-[#202c33] flex items-center px-4 py-1.5 rounded-lg">
-                        <span className="text-[#8696a0] text-sm">Chats Activos</span>
+                    <div className="bg-[#202c33] flex items-center px-4 py-1 rounded-lg group focus-within:ring-1 focus-within:ring-[#00a884]/30 transition-all">
+                        <svg className="w-4 h-4 text-[#8696a0] mr-3 group-focus-within:text-[#00a884]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <input
+                            type="text"
+                            placeholder="Buscar contacto o mensaje..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full bg-transparent border-none text-[14px] text-[#e9edef] placeholder-[#8696a0] py-1.5 focus:outline-none focus:ring-0"
+                        />
                     </div>
                 </div>
 
@@ -239,7 +249,13 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
                     {loading && sessions.length === 0 ? (
                         <div className="text-center p-4 text-[#8696a0]">Sincronizando con Meta...</div>
                     ) : (
-                        sessions.map(session => (
+                        sessions
+                            .filter(s => 
+                                (s.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                s.phone.includes(searchTerm) ||
+                                s.history.some(m => m.content.toLowerCase().includes(searchTerm.toLowerCase()))
+                            )
+                            .map(session => (
                             <div 
                                 key={session.phone}
                                 onClick={() => setSelectedPhone(session.phone)}

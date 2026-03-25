@@ -20,7 +20,7 @@ IDIOMA Y TONO:
 - Sos un productor experto. Si el cliente tiene dudas técnicas sobre Foto/Video/Streaming, asesoralo con criterio.
 - Respuestas breves, una cosa a la vez.
 
-FLUJO DE CONVERSACIÓN:
+FLUJO DE CONVERSACIÓN (IMPORTANTE: SEGUÍ ESTE ORDEN):
 1. Si no sabés el nombre (y no está en VIP): "¡Hola! Bienvenido a NexoFilm. ¿Me decís tu nombre por favor?"
 
 2. Al saber el nombre: "Un gusto, [Nombre]. Acá te dejo nuestras opciones: $$SHOW_MENU$$"
@@ -31,16 +31,22 @@ FLUJO DE CONVERSACIÓN:
    b) Una vez respondió: "¿Me contás qué tipo de evento es? (Social, corporativo, feria, comercial, etc.)"
    c) "¿Me decís la fecha y el lugar estimado?"
    d) "¿Cantidad de personas y horas de cobertura?"
-   e) "Perfecto. ¿Me pasás tu correo electrónico para mandarte la propuesta?"
-      (Nota: Si ya conocemos su mail por VIP_RULE, preguntá si sigue siendo el mismo o si cambió).
-   f) DESPEDIDA: "¡Bárbaro, [Nombre]! Fue un placer. Ya le paso los detalles a producción y en breve te contactan. 👋 Si necesitás algo más, escribí MENU."
+   e) SOLICITUD DE EMAIL (PASO CRÍTICO):
+      - Si ya conocemos su mail por VIP_RULE, preguntá: "¿[Nombre], tu mail sigue siendo [email], cambió o querés que usemos otro para la propuesta?".
+      - Si NO lo conocemos, pedilo amablemente.
+      - REGLA DE ORO: NO generes el bloque $$HANDOFF_JSON$$ en este mensaje. Primero debés recibir la confirmación o el nuevo mail.
+   f) DESPEDIDA Y HANDOFF:
+      - Una vez que el usuario te dio o confirmó el mail, despedite calurosamente Y RECIÉN AHÍ incluí el bloque $$HANDOFF_JSON$$ con toda la información recolectada.
+      - "¡Bárbaro, [Nombre]! Fue un placer. Ya le paso los detalles a producción y en breve te contactan. 👋 Si necesitás algo más, escribí MENU."
+
+REGLA DE INTEGRIDAD: NUNCA inventes correos electrónicos. Si no tienes un correo en VIP_RULE, simplemente di que no lo tienes y pídelo.
 
 HANDOFF JSON:
 $$HANDOFF_JSON$$
 {
   "handoff": true,
-  "name": "Nombre",
-  "email": "correo@ejemplo.com",
+  "name": "Nombre Real",
+  "email": "correo_real@ejemplo.com",
   "summary": "Resumen extremadamente detallado de lo que necesita el cliente.",
   "score": 95
 }
@@ -78,7 +84,7 @@ export default async function handler(req, res) {
         const [historyData, leadData] = await Promise.all([
             loadHistory(from),
             supabase ? (async () => {
-                const searchStr = from.slice(-10); 
+                const searchStr = from.slice(-8); 
                 const { data } = await supabase
                     .from('whatsapp_leads')
                     .select('*')
@@ -214,9 +220,9 @@ VIP RECOGNITION (ACTIVATE NOW):
         
         if (leadData.email && leadData.email.includes('@')) {
             const emailQs = {
-                es: `${firstName}, ¿tu mail sigue siendo ${leadData.email} o preferís que usemos otro?`,
-                en: `${firstName}, is your email still ${leadData.email} or would you prefer we use another one?`,
-                pt: `${firstName}, seu e-mail ainda é ${leadData.email} ou prefere que usemos outro?`
+                es: `${firstName}, ¿tu mail sigue siendo ${leadData.email}, cambió o prefieres que usemos otro para enviarte la propuesta?`,
+                en: `${firstName}, is your email still ${leadData.email}, has it changed, or would you prefer we use another one for the proposal?`,
+                pt: `${firstName}, seu e-mail ainda é ${leadData.email}, mudou ou prefere que usemos outro para enviar a proposta?`
             };
             vipRule += `- EMAIL: Su mail registrado es ${leadData.email}. Cuando llegues al paso 3e, PREGUNTALE (en su idioma): "${emailQs[lang] || emailQs.es}".\n`;
         }

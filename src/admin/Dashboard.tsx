@@ -18,6 +18,7 @@ const Dashboard: React.FC = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [leads, setLeads] = useState<WhatsAppLead[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
     const [totalCount, setTotalCount] = useState<number>(0);
     const [loading, setLoading] = useState(false);
 
@@ -202,6 +203,25 @@ const Dashboard: React.FC = () => {
 
                         {/* --- TABLA DE LEADS --- */}
                         <div className="bg-zinc-900/40 border border-white/5 rounded-xl overflow-hidden shadow-2xl">
+                            {/* Buscador de Leads */}
+                            <div className="p-6 border-b border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-zinc-800/20">
+                                <h2 className="text-xl font-bold text-white tracking-tight">Listado de Conversaciones</h2>
+                                <div className="relative group max-w-md w-full">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <svg className="h-4 w-4 text-zinc-500 group-focus-within:text-nexo-lime transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                        </svg>
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar por nombre o teléfono..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="block w-full bg-black border border-white/10 rounded-lg py-2 pl-10 pr-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-nexo-lime/50 focus:ring-1 focus:ring-nexo-lime/20 transition-all"
+                                    />
+                                </div>
+                            </div>
+
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left border-collapse">
                                     <thead>
@@ -222,7 +242,13 @@ const Dashboard: React.FC = () => {
                                             </tr>
                                         ) : (
                                             leads
-                                                .filter(lead => lead.summary !== "Contacto importado masivamente")
+                                                .filter(lead => 
+                                                    lead.summary !== "Contacto importado masivamente" &&
+                                                    (
+                                                        lead.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                                        lead.phone.includes(searchTerm)
+                                                    )
+                                                )
                                                 .map((lead) => (
                                                 <tr key={lead.id} className="hover:bg-white/[0.02] transition-colors group">
                                                     <td className="px-6 py-4 whitespace-nowrap text-zinc-400">
