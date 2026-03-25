@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+// import { supabase } from '../lib/supabase'; // Eliminado para seguridad
+
 
 interface WhatsAppLead {
     id: string;
@@ -32,29 +33,21 @@ const Dashboard: React.FC = () => {
     };
 
     const fetchLeads = async () => {
-        if (!supabase) {
-            console.error('Supabase no está configurado');
-            return;
-        }
         setLoading(true);
         try {
-            // 1. Obtener los leads recientes (últimos 1000)
-            const { data, error } = await supabase
-                .from('whatsapp_leads')
-                .select('*')
-                .order('created_at', { ascending: false });
+            const res = await fetch('/api/admin-api', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'getLeads', password })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al conectar con la API');
 
-            if (error) throw error;
-            if (data) setLeads(data as WhatsAppLead[]);
-
-            // 2. Obtener el conteo REAL (sin límite de 1000)
-            const { count, error: countErr } = await supabase
-                .from('whatsapp_leads')
-                .select('*', { count: 'exact', head: true });
-            
-            if (!countErr && count !== null) setTotalCount(count);
-        } catch (error) {
+            if (data.leads) setLeads(data.leads as WhatsAppLead[]);
+            if (data.totalCount !== undefined) setTotalCount(data.totalCount);
+        } catch (error: any) {
             console.error('Error fetching leads:', error);
+            setError('Falla de seguridad o conexión: ' + error.message);
         } finally {
             setLoading(false);
         }
@@ -125,9 +118,9 @@ const Dashboard: React.FC = () => {
 
             {/* Content */}
             <main className="container mx-auto px-6 py-12">
-                {!supabase ? (
+                {error.includes('Falla') ? (
                     <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-lg mb-8">
-                        Error: Las credenciales de Supabase no están configuradas en el entorno frontend.
+                        {error}
                     </div>
                 ) : (
                     <div className="space-y-8">

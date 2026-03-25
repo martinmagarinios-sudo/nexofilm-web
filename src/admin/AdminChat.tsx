@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+// import { supabase } from '../lib/supabase'; // Eliminado para seguridad
+
 
 interface ChatMessage {
     role: 'system' | 'user' | 'assistant' | 'admin';
@@ -48,32 +49,27 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
     };
 
     const fetchSessions = async () => {
-        if (!supabase) return;
         setLoading(true);
         try {
-            // 1. Traer sesiones
-            const { data: sessData, error: sessErr } = await supabase
-                .from('whatsapp_sessions')
-                .select('*')
-                .order('updated_at', { ascending: false });
+            const res = await fetch('/api/admin-api', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'getSessions', password })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al conectar con la API');
 
-            if (sessErr) throw sessErr;
-
-            // 2. Traer nombres de leads para agendar en la vista
-            const { data: leadData } = await supabase
-                .from('whatsapp_leads')
-                .select('phone, name');
-
-            // 3. Cruzar datos (Normalizando para ignorar símbolos como + o espacios)
+            // Cruzar datos (Normalizando para ignorar símbolos como + o espacios)
             const normalize = (p: string) => (p || '').replace(/\D/g, '');
-            const enrichedSessions = (sessData || []).map((s: any) => {
-                const lead = leadData?.find(l => normalize(l.phone) === normalize(s.phone));
+            const enrichedSessions = (data.sessions || []).map((s: any) => {
+                const lead = data.leadNames?.find((l: any) => normalize(l.phone) === normalize(s.phone));
                 return { ...s, name: lead?.name };
             });
 
             setSessions(enrichedSessions as WhatsAppSession[]);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching sessions:', error);
+            setError('Falla de seguridad o conexión: ' + error.message);
         } finally {
             setLoading(false);
         }
@@ -95,21 +91,27 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
 
     // Buscar datos del lead (Resumen IA)
     useEffect(() => {
-        if (!selectedPhone || !supabase) {
+        if (!selectedPhone || !isAuthenticated) {
             setActiveLead(null);
             return;
         }
         const fetchLeadData = async () => {
-            const { data } = await supabase
-                .from('whatsapp_leads')
-                .select('*')
-                // Buscamos con y sin + por las dudas
-                .or(`phone.eq.${selectedPhone},phone.eq.${selectedPhone.replace('+', '')},phone.eq.+${selectedPhone}`)
-                .maybeSingle();
-            setActiveLead(data);
+            try {
+                const res = await fetch('/api/admin-api', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'getLeadDetail', password, phone: selectedPhone })
+                });
+                const data = await res.json();
+                if (res.ok && data.lead) {
+                    setActiveLead(data.lead);
+                }
+            } catch (e) {
+                console.error("Error fetching lead detail:", e);
+            }
         };
         fetchLeadData();
-    }, [selectedPhone]);
+    }, [selectedPhone, isAuthenticated]);
 
     const activeSession = sessions.find(s => s.phone === selectedPhone);
 
