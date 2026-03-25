@@ -2,9 +2,15 @@
 import { useTranslation } from 'react-i18next';
 import { CONFIG } from '../data/config';
 
-const FloatingWhatsApp: React.FC = () => {
+interface FloatingWhatsAppProps {
+  isHidden?: boolean;
+}
+
+const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ isHidden }) => {
   const { t } = useTranslation();
   const whatsappUrl = `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(t('whatsapp.prefilled'))}`;
+
+  if (isHidden) return null;
 
   return (
     <a

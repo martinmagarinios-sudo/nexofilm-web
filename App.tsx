@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -14,6 +14,7 @@ import { CONFIG } from './data/config';
 
 const App: React.FC = () => {
   const { t, i18n } = useTranslation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const whatsappUrl = `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent("[Ref: Web] " + t('whatsapp.prefilled'))}`;
 
   useEffect(() => {
@@ -130,8 +131,8 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black selection:bg-nexo-lime selection:text-black font-sans">
-      <Navbar />
-      <FloatingWhatsApp />
+      <Navbar isMenuOpen={isMobileMenuOpen} setIsMenuOpen={setIsMobileMenuOpen} />
+      <FloatingWhatsApp isHidden={isMobileMenuOpen} />
 
       <main>
         <Hero />

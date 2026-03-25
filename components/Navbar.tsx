@@ -5,10 +5,14 @@ import Logo from './Logo';
 import LanguageSwitcher from './LanguageSwitcher';
 import { CONFIG } from '../data/config';
 
-const Navbar: React.FC = () => {
-  const { t } = useTranslation();
+interface NavbarProps {
+  isMenuOpen: boolean;
+  setIsMenuOpen: (isOpen: boolean) => void;
+}
+
+const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
+  const { t, i18n } = useTranslation();
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -90,9 +94,9 @@ const Navbar: React.FC = () => {
         </button>
       </div>
 
-      {/* Menú Móvil Overlay */}
-      <div className={`fixed inset-0 bg-black/95 backdrop-blur-3xl z-[1001] flex flex-col items-center justify-center transition-all duration-500 ${isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-        <div className="flex flex-col space-y-8 text-center">
+      {/* Menú Móvil Overlay - Fondo negro sólido para que sea la PANTALLA PRINCIPAL al abrirse */}
+      <div className={`fixed inset-0 bg-black z-[110] flex flex-col items-center justify-start pt-32 transition-all duration-200 ${isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+        <div className="flex flex-col space-y-8 text-center w-full px-6">
           {[
             { name: t('navbar.about'), href: '#historia' },
             { name: t('navbar.portfolio'), href: '#portfolio' },
@@ -103,15 +107,39 @@ const Navbar: React.FC = () => {
             <a
               key={item.name}
               href={item.href}
-              className="text-2xl font-black tracking-[0.2em] uppercase text-white hover:text-nexo-lime transition-all duration-300 transform hover:scale-105"
-              style={{ transitionDelay: `${idx * 100}ms` }}
+              className="text-xl font-bold tracking-[0.3em] uppercase text-zinc-400 hover:text-white transition-all duration-300"
+              style={{ transitionDelay: `${idx * 50}ms` }}
               onClick={() => setIsMenuOpen(false)}
             >
               {item.name}
             </a>
           ))}
-          <div className="pt-8 border-t border-white/10 w-full flex justify-center">
-            <LanguageSwitcher />
+          
+          {/* Selector de Idioma Simple para Móvil (botones directos) */}
+          <div className="pt-10 border-t border-white/5 w-full flex flex-col items-center gap-6">
+            <div className="flex gap-4 justify-center items-center">
+              {[
+                { code: 'es', label: 'ES' },
+                { code: 'en', label: 'EN' },
+                { code: 'pt', label: 'PT' }
+              ].map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => { 
+                    i18n.changeLanguage(lang.code); 
+                    // Salida inmediata
+                    setIsMenuOpen(false); 
+                  }}
+                  className={`text-[10px] font-black tracking-widest px-4 py-2 transition-all duration-300 rounded-sm border ${
+                    i18n.language === lang.code 
+                      ? 'text-nexo-lime border-nexo-lime/40 bg-nexo-lime/5' 
+                      : 'text-zinc-500 border-white/5 hover:border-white/20'
+                  }`}
+                >
+                  {lang.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
