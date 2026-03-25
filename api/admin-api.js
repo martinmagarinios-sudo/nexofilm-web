@@ -24,17 +24,33 @@ export default async function handler(req, res) {
     try {
         switch (action) {
             case 'getLeads':
-                // 1. Obtener leads
+                // 1. Obtener teléfonos con sesión activa para filtrar la lista
+                const { data: activeSessions } = await supabase
+                    .from('whatsapp_sessions')
+                    .select('phone');
+                
+                const activePhones = (activeSessions || []).map(s => s.phone);
+                // Incluir variaciones con y sin '+' para mayor robustez
+                const phonesToFilter = [...new Set([
+                    ...activePhones,
+                    ...activePhones.map(p => p.startsWith('+') ? p.slice(1) : `+${p}`),
+                    ...activePhones.map(p => p.startsWith('+') ? p.slice(1) : p)
+                ])];
+
+                // 2. Obtener los leads detallados solo para esos teléfonos
                 const { data: leads, error: leadsErr } = await supabase
                     .from('whatsapp_leads')
                     .select('*')
+                    .in('phone', phonesToFilter)
                     .order('created_at', { ascending: false });
+                
                 if (leadsErr) throw leadsErr;
 
-                // 2. Obtener conteo exacto
+                // 3. Obtener conteo total (todos los contactos de la base)
                 const { count, error: countErr } = await supabase
                     .from('whatsapp_leads')
                     .select('*', { count: 'exact', head: true });
+                
                 if (countErr) throw countErr;
 
                 return res.status(200).json({ leads, totalCount: count });
