@@ -29,7 +29,7 @@ const Navbar: React.FC = () => {
   }, [isMenuOpen]);
 
   return (
-    <nav className={`fixed top-0 left-0 w-full z-[100] transition-all duration-700 ease-in-out ${isScrolled
+    <nav className={`fixed top-0 left-0 w-full z-[1000] transition-all duration-700 ease-in-out ${isScrolled
       ? 'bg-black/70 backdrop-blur-xl py-3 border-b border-white/5 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.7)]'
       : 'bg-transparent py-9 border-b border-transparent'
       }`}>
@@ -91,7 +91,7 @@ const Navbar: React.FC = () => {
       </div>
 
       {/* Menú Móvil Overlay */}
-      <div className={`fixed inset-0 bg-black/95 backdrop-blur-3xl z-10 flex flex-col items-center justify-center transition-all duration-500 ${isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+      <div className={`fixed inset-0 bg-black/95 backdrop-blur-3xl z-[1001] flex flex-col items-center justify-center transition-all duration-500 ${isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
         <div className="flex flex-col space-y-8 text-center">
           {[
             { name: t('navbar.about'), href: '#historia' },
