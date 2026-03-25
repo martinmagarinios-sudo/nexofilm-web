@@ -23,39 +23,41 @@ export default async function handler(req, res) {
 
     try {
         switch (action) {
-            case 'getLeads':
-                // 1. Obtener teléfonos con sesión activa para filtrar la lista
-                const { data: activeSessions } = await supabase
-                    .from('whatsapp_sessions')
-                    .select('phone');
-                
-                const activePhones = (activeSessions || []).map(s => s.phone);
-                // Incluir variaciones con y sin '+' para mayor robustez
-                const phonesToFilter = [...new Set([
-                    ...activePhones,
-                    ...activePhones.map(p => p.startsWith('+') ? p.slice(1) : `+${p}`),
-                    ...activePhones.map(p => p.startsWith('+') ? p.slice(1) : p)
-                ])];
-
-                // 2. Obtener los leads detallados solo para esos teléfonos
-                const { data: leads, error: leadsErr } = await supabase
-                    .from('whatsapp_leads')
-                    .select('*')
-                    .in('phone', phonesToFilter)
-                    .order('created_at', { ascending: false });
+            case 'getLeads': {
+                // 1. Obtener todos los contactos y todas las sesiones para cruzar datos
+                const [{ data: allLeads, error: leadsErr }, { data: allSessions, error: sErr }] = await Promise.all([
+                    supabase.from('whatsapp_leads').select('*').order('created_at', { ascending: false }),
+                    supabase.from('whatsapp_sessions').select('phone')
+                ]);
                 
                 if (leadsErr) throw leadsErr;
+                if (sErr) throw sErr;
 
-                // 3. Obtener conteo total (todos los contactos de la base)
+                // 2. Normalización robusta para cruzar teléfonos (ignora +, espacios y el 9 de Argentina)
+                const normalize = (p) => {
+                    let d = (p || '').replace(/\D/g, '');
+                    // Si es Argentina (54) y tiene el 9, se lo quitamos para comparar
+                    if (d.startsWith('549') && d.length > 10) return '54' + d.slice(3);
+                    return d;
+                };
+
+                const sessionPhones = new Set((allSessions || []).map(s => normalize(s.phone)));
+                
+                const filteredLeads = (allLeads || []).filter(lead => 
+                    sessionPhones.has(normalize(lead.phone))
+                );
+
+                // 3. Obtener conteo total para la tarjeta superior
                 const { count, error: countErr } = await supabase
                     .from('whatsapp_leads')
                     .select('*', { count: 'exact', head: true });
                 
                 if (countErr) throw countErr;
 
-                return res.status(200).json({ leads, totalCount: count });
+                return res.status(200).json({ leads: filteredLeads, totalCount: count });
+            }
 
-            case 'getSessions':
+            case 'getSessions': {
                 // 1. Traer sesiones
                 const { data: sessData, error: sessErr } = await supabase
                     .from('whatsapp_sessions')
@@ -70,18 +72,20 @@ export default async function handler(req, res) {
                 if (leadNamesErr) throw leadNamesErr;
 
                 return res.status(200).json({ sessions: sessData, leadNames });
+            }
 
-            case 'getLeadDetail':
+            case 'getLeadDetail': {
                 if (!phone) return res.status(400).json({ error: 'Falta el teléfono' });
                 
-                const { data: lead, error: leadErr } = await supabase
+                const { data: leadDetail, error: leadDetailErr } = await supabase
                     .from('whatsapp_leads')
                     .select('*')
                     .or(`phone.eq.${phone},phone.eq.${phone.replace('+', '')},phone.eq.+${phone}`)
                     .maybeSingle();
                 
-                if (leadErr) throw leadErr;
-                return res.status(200).json({ lead });
+                if (leadDetailErr) throw leadDetailErr;
+                return res.status(200).json({ lead: leadDetail });
+            }
 
             default:
                 return res.status(400).json({ error: 'Acción no válida' });
