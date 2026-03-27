@@ -33,12 +33,16 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
   }, [isMenuOpen]);
 
   return (
-    <nav className={`fixed top-0 left-0 w-full z-[1000] transition-all duration-700 ease-in-out ${isScrolled
-      ? 'bg-black/70 backdrop-blur-xl py-3 border-b border-white/5 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.7)]'
-      : 'bg-transparent py-9 border-b border-transparent'
+    <nav className={`fixed top-0 left-0 w-full z-[1000] transition-all duration-700 ease-in-out ${
+      isScrolled && !isMenuOpen
+        ? 'bg-black/70 backdrop-blur-xl py-3 border-b border-white/5 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.7)]'
+        : isMenuOpen 
+          ? 'bg-black py-3 border-b border-white/5'
+          : 'bg-transparent py-9 border-b border-transparent'
       }`}>
-      {/* Línea decorativa inferior que se expande al hacer scroll */}
-      <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-[1px] bg-gradient-to-r from-transparent via-nexo-lime to-transparent transition-all duration-1000 ease-out ${isScrolled ? 'w-full opacity-40' : 'w-0 opacity-0'
+      {/* Línea decorativa inferior que se expande al hacer scroll (oculta si el menú está abierto) */}
+      <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-[1px] bg-gradient-to-r from-transparent via-nexo-lime to-transparent transition-all duration-1000 ease-out ${
+        isScrolled && !isMenuOpen ? 'w-full opacity-40' : 'w-0 opacity-0'
         }`} />
 
       <div className="container mx-auto px-6 flex justify-between items-center relative z-20">
@@ -94,9 +98,14 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
         </button>
       </div>
 
-      {/* Menú Móvil Overlay - Fondo negro sólido para que sea la PANTALLA PRINCIPAL al abrirse */}
-      <div className={`fixed inset-0 bg-black z-[110] flex flex-col items-center justify-start pt-32 transition-all duration-200 ${isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-        <div className="flex flex-col space-y-8 text-center w-full px-6">
+      {/* 
+        Menú Móvil Overlay - Fondo negro sólido para que sea la PANTALLA PRINCIPAL al abrirse.
+        Lo movemos fuera del contenedor relativo para evitar problemas de stacking context con backdrop-blur.
+      */}
+      <div className={`fixed inset-0 bg-black z-[1100] flex flex-col items-center justify-start pt-32 transition-all duration-300 overflow-y-auto ${
+        isMenuOpen ? 'opacity-100 pointer-events-auto visible' : 'opacity-0 pointer-events-none invisible'
+      }`}>
+        <div className="flex flex-col space-y-8 text-center w-full px-6 pb-20">
           {[
             { name: t('navbar.about'), href: '#historia' },
             { name: t('navbar.portfolio'), href: '#portfolio' },
@@ -108,7 +117,7 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
               key={item.name}
               href={item.href}
               className="text-xl font-bold tracking-[0.3em] uppercase text-zinc-400 hover:text-white transition-all duration-300"
-              style={{ transitionDelay: `${idx * 50}ms` }}
+              style={{ transitionDelay: `${isMenuOpen ? idx * 50 : 0}ms` }}
               onClick={() => setIsMenuOpen(false)}
             >
               {item.name}
@@ -141,13 +150,13 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
               ))}
             </div>
           </div>
-        </div>
 
-        <div className="absolute bottom-12 text-center">
-          <p className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-2">Social</p>
-          <div className="flex gap-6 justify-center">
-            <a href={CONFIG.social.instagram} target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-nexo-lime">Instagram</a>
-            <a href={CONFIG.social.linkedin} target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-nexo-lime">LinkedIn</a>
+          <div className="pt-12 text-center">
+            <p className="text-[10px] uppercase tracking-widest text-zinc-600 font-bold mb-4 whitespace-nowrap">Social</p>
+            <div className="flex gap-8 justify-center">
+              <a href={CONFIG.social.instagram} target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-nexo-lime uppercase text-[10px] tracking-widest font-black">Instagram</a>
+              <a href={CONFIG.social.linkedin} target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-nexo-lime uppercase text-[10px] tracking-widest font-black">LinkedIn</a>
+            </div>
           </div>
         </div>
       </div>
