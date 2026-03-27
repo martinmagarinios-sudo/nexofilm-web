@@ -221,9 +221,6 @@ const App: React.FC = () => {
           <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-12 mb-16">
             <div className="space-y-1 text-center md:text-left">
               <Logo size="md" />
-              <p className="text-zinc-500 max-w-sm text-sm font-light leading-relaxed whitespace-pre-line">
-                {t('footer.text')}
-              </p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-16 text-center md:text-left">
