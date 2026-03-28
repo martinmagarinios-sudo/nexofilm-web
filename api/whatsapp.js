@@ -210,7 +210,7 @@ export default async function handler(req, res) {
             else if (btnId === 'btn_h') {
                 qr = "Entendido. Un productor te va a contactar a la brevedad. 👤📞";
                 // WhatsApp al admin
-                sendText(phoneNumberId, ADMIN_NUMBER, `🔔 ALERTA HUMANO: +${from}`).then(null, () => {});
+                await sendText(phoneNumberId, ADMIN_NUMBER, `🔔 ALERTA HUMANO: +${from}`).then(null, () => {});
                 // Mail al admin via Resend (awaited para que no muera en Vercel)
                 const contactName = leadData?.name || `+${from}`;
                 try {
@@ -232,13 +232,13 @@ export default async function handler(req, res) {
                     });
                 } catch(e) { console.error("Resend btn_h error:", e.message); }
                 // Mini-handoff: guardar en Supabase para que aparezca el panel de resumen en el CRM
-                handleHandoff(from, {
+                await handleHandoff(from, {
                     handoff: true,
                     name: leadData?.name || from,
                     email: leadData?.email || null,
                     summary: `Solicitó hablar con un productor directamente (sin completar el flujo de presupuesto).`,
                     score: 70
-                }).catch(() => {});
+                });
             }
 
             if (qr) {
@@ -345,13 +345,28 @@ export default async function handler(req, res) {
 
 async function handleHandoff(phone, hf) {
     if (supabase) {
-        await supabase.from('whatsapp_leads').upsert({
-            phone,
-            name: hf.name,
-            email: hf.email,
-            summary: hf.summary,
-            updated_at: new Date().toISOString()
-        }, { onConflict: 'phone' });
+        const { data: existingLead } = await supabase
+            .from('whatsapp_leads')
+            .select('id')
+            .or(`phone.eq.${phone},phone.eq.+${phone},phone.eq.${phone.replace('+', '')}`)
+            .maybeSingle();
+
+        if (existingLead) {
+            await supabase.from('whatsapp_leads').update({
+                name: hf.name,
+                email: hf.email,
+                summary: hf.summary,
+                updated_at: new Date().toISOString()
+            }).eq('id', existingLead.id).then(null, () => {});
+        } else {
+            await supabase.from('whatsapp_leads').insert({
+                phone,
+                name: hf.name,
+                email: hf.email,
+                summary: hf.summary,
+                updated_at: new Date().toISOString()
+            }).then(null, () => {});
+        }
     }
 
     try {
