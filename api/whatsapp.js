@@ -21,22 +21,17 @@ IDIOMA Y TONO:
 - Respuestas breves, una cosa a la vez.
 
 FLUJO DE CONVERSACIÓN (IMPORTANTE: SEGUÍ ESTE ORDEN PASO A PASO):
-1. **NUEVO CONTACTO**: Si no te pasaron un VIP_RULE con el nombre, lo primero que haces es saludar: "¡Hola! Bienvenido a NexoFilm. ¿Me decís tu nombre por favor?"
-
-2. **PRESENTACIÓN**: Una vez que sepas el nombre (o si lo traes por VIP_RULE): "Un gusto, [Nombre]. Acá te dejo nuestras opciones: $$SHOW_MENU$$"
-   (REGLA CRÍTICA: NUNCA escribas las opciones en texto. Solo debes incluir el tag $$SHOW_MENU$$. No escribas nada después del tag).
+{{INSTRUCCION_DE_SALUDO}}
 
 3. Al elegir "Pedir Presupuesto", hace las preguntas UNA por UNA (no avances sin que contesten la anterior).
-   a) "¡Qué bueno, [Nombre]! ¿Qué tipo de servicio o cobertura estás buscando? (Foto, Video, Streaming, o un combo)"
+   a) "¡Qué bueno! ¿Qué tipo de servicio o cobertura estás buscando? (Foto, Video, Streaming, o un combo)"
    b) "¿Me contás qué tipo de evento es? (Social, corporativo, feria, comercial, etc.)"
    c) "¿Me decís la fecha y el lugar estimado?"
    d) "¿Cantidad de personas y horas de cobertura?"
    e) SOLICITUD DE EMAIL (CRÍTICO):
-      - Si en VIP_RULE ya te viene un email del CRM, preguntá explícitamente: "Chequeando mis registros, [Nombre], veo que tu correo es [email]. ¿Sigue siendo ese o querés que te envíe la propuesta a otro distinto?"
-      - Si no tienes email, pídeselo de cero: "¿Me podrías pasar tu correo electrónico para enviarte la propuesta formal?"
-      - *NO CUMPLES ESTE PASO HASTA RECIBIR UN EMAIL VÁLIDO O UNA CONFIRMACIÓN CLARA.*
+{{CONFIRMACION_EMAIL}}
    f) DESPEDIDA Y HANDOFF FINAL (ÚLTIMO PASO, EL MÁS IMPORTANTE):
-      - Despídete cálidamente: "¡Bárbaro [Nombre]! Tomé nota de todo. Ya le paso los detalles a producción y en breve te contactan. 👋 Si necesitás algo más, escribí MENU."
+      - Despídete cálidamente: "¡Bárbaro! Tomé nota de todo. Ya le paso los detalles a producción y en breve te contactan. 👋 Si necesitás algo más, escribí MENU."
       - **Y OBLIGATORIAMENTE EN ESE MISMO MENSAJE (AL FINAL) HAS EL BLOQUE $$HANDOFF_JSON$$ CON UN RESUMEN DETALLADO:**
 
 $$HANDOFF_JSON$$
@@ -48,8 +43,6 @@ $$HANDOFF_JSON$$
   "score": 90
 }
 $$HANDOFF_JSON$$
-
-{{VIP_RULE}}
 
 REGLA ANTI-PAVADAS: Si el cliente habla de temas ajenos a la producción, respondé: "Mirá, sobre ese tema no estoy capacitado para asesorarte, pero te voy a derivar con alguien de nuestro equipo. Si querés hacer una nueva consulta técnica, escribí MENU." Generá handoff con summary "Consulta fuera de tema".`;
 
@@ -210,37 +203,37 @@ export default async function handler(req, res) {
 
         // (El comando MENU ya fue manejado al inicio del handler - no duplicar)
 
-    // --- LÓGICA VIP (Reconocimiento del CRM) ---
-    let vipRule = "";
+    // --- LÓGICA VIP (Reconocimiento del CRM) DADA 100% DIGERIDA POR JS ---
     const isFirstMessage = history.length === 0;
+    
+    let instruccionSaludo = `1. **NUEVO CONTACTO**: Como no sabes su nombre, en el primer mensaje saludá amablemente y preguntale cómo se llama.\n2. **PRESENTACIÓN**: Una vez te diga su nombre, decile: "Un gusto, [Su Nombre]. Acá te dejo nuestras opciones:" y agregá el tag $$SHOW_MENU$$ inmediatamente después.`;
+    
+    let confirmacionEmail = `      - Pedile el correo de cero: "¿Me podrías pasar tu correo electrónico para enviarte la propuesta formal?".\n      - NO AVANCES HASTA RECIBIR EL CORREO.`;
 
     if (leadData?.name && leadData.name !== 'Sin nombre') {
         const firstName = leadData.name.trim().split(/[\s,.-]+/)[0];
-        
         const greetings = {
             es: `¡Hola ${firstName}! Qué bueno tenerte de vuelta. ¿En qué podemos ayudarte hoy?`,
             en: `Hi ${firstName}! Great to have you back. How can we help you today?`,
             pt: `Olá ${firstName}! Que bom ter você de volta. Como podemos ajudar hoje?`
         };
         const currentGreeting = greetings[lang] || greetings.es;
-
-        vipRule = `
-VIP RECOGNITION (ACTIVATE NOW) - LEY DE CUMPLIMIENTO OBLIGATORIO:
-- Es un cliente de nuestro CRM. Su nombre es: ${firstName}.
-- NUNCA LE PREGUNTES EL NOMBRE. YA LO SABES.
-- SALUDALO ASÍ EN EL PRIMER MENSAJE: "${currentGreeting}" \n\n Y LUEGO INCLUYE EL TAG $$SHOW_MENU$$.
-- RECOGNITION STATUS: ${isFirstMessage ? 'PRIMER MENSAJE. OBLIGATORIO SALUDAR Y MOSTRAR MENU.' : 'SESIÓN EN CURSO. CONTINÚA.'}.
-`;
         
+        instruccionSaludo = `1. **CLIENTE VIP RECONOCIDO**: Es un cliente habitual llamado ${firstName}.\n2. **PRESENTACIÓN**: NO le preguntes su nombre. Saludalo EXACTAMENTE con esta frase: "${currentGreeting}" e incluye inmediatamente el tag $$SHOW_MENU$$. NUNCA LE PIDAS EL NOMBRE. ¡YA LO SABES!`;
+
         if (leadData.email && leadData.email.includes('@')) {
             const emailQs = {
                 es: `${firstName}, chequeando mis registros veo este mail: ${leadData.email}. ¿Sigue siendo ese o querés que te envíe la propuesta a otro?`,
                 en: `${firstName}, checking my records I see this email: ${leadData.email}. Is it still the same or do you want me to send the proposal to another one?`,
                 pt: `${firstName}, verificando meus registros, vejo este e-mail: ${leadData.email}. Continua sendo esse ou quer que eu envie a proposta para outro?`
             };
-            vipRule += `- CONFIRMACIÓN DE EMAIL: El cliente tiene registrado este mail en la base de datos: ${leadData.email}. Cuando llegues al paso 3e (Solicitud de Email), DEBES preguntarle esta frase exacta: "${emailQs[lang] || emailQs.es}".\n`;
+            confirmacionEmail = `      - YA TIENES SU MAIL: Está en base de datos. Debés preguntarle EXACTAMENTE esto: "${emailQs[lang] || emailQs.es}".\n      - NO AVANCES HASTA QUE LO CONFIRME O TE DÉ OTRO.`;
         }
     }
+
+    const finalSystemPrompt = SYSTEM_PROMPT
+        .replace('{{INSTRUCCION_DE_SALUDO}}', instruccionSaludo)
+        .replace('{{CONFIRMACION_EMAIL}}', confirmacionEmail);
 
         // 3. El mensaje actual del usuario DEBE entrar al historial ANTES de llamar a Groq
         history.push({ role: 'user', content: message.text.body || "[Mensaje sin texto]" });
@@ -248,7 +241,7 @@ VIP RECOGNITION (ACTIVATE NOW) - LEY DE CUMPLIMIENTO OBLIGATORIO:
         // Llamada a Groq (Modelo 70B para máxima inteligencia)
         const comp = await groq.chat.completions.create({
             model: 'llama-3.3-70b-versatile',
-            messages: [{ role: 'system', content: SYSTEM_PROMPT.replace('{{VIP_RULE}}', vipRule) }, ...history],
+            messages: [{ role: 'system', content: finalSystemPrompt }, ...history],
             temperature: 0.5,
             max_tokens: 500
         });
