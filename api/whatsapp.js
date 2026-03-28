@@ -102,6 +102,25 @@ export default async function handler(req, res) {
                 updated_at: new Date().toISOString()
             }, { onConflict: 'phone' }).then(null, () => {});
             console.log(`[EARLY UPSERT] Cliente nuevo ingresado al CRM temporalmente: +${from}`);
+
+            // Enviar mail alertando que alguien inició chat inmediatamente (por si abandona a la mitad)
+            try {
+                resend.emails.send({
+                    from: 'NexoBot <onboarding@resend.dev>',
+                    to: [ADMIN_EMAIL],
+                    subject: `👀 Nuevo contacto iniciando charla: +${from}`,
+                    html: `
+                        <div style="font-family: sans-serif; padding: 20px; border-top: 4px solid #ccff00;">
+                            <h2 style="color: #1a1a1a;">🤖 NexoBot está atendiendo a un nuevo interesado</h2>
+                            <p><strong>Número:</strong> +${from}</p>
+                            <p>El botón de WhatsApp de la web acaba de recibir un nuevo mensaje. El bot ya lo está atendiendo.</p>
+                            <p>Recibís este aviso inmediato por si el cliente deja de contestar a la mitad del flujo. Podés monitorear la conversación en tiempo real acá:</p>
+                            <br/>
+                            <a href="https://nexofilm.com/admin/chat?phone=${from}" style="background: #000; color: #ccff00; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ver Chat en Vivo</a>
+                        </div>
+                    `
+                });
+            } catch(e) { console.error("Mail early upsert error:", e); }
         }
 
         // --- SESIONES ANTIGUAS (Auto-Reset) ---
