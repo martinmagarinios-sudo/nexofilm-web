@@ -107,8 +107,12 @@ export default async function handler(req, res) {
                 console.log(`[WAKE UP] Reactivando bot para ${targetPhone} por comando: ${text}`);
                 // Reseteamos el updated_at para que la lógica de silencio no lo bloquee
                 await supabase.from('whatsapp_leads').update({ updated_at: '1970-01-01T00:00:00Z' }).eq('phone', targetPhone).then(null, () => {});
+                
+                if (text === 'reset') {
+                    await supabase.from('whatsapp_sessions').update({ history: [] }).eq('phone', from).then(null, () => {});
+                }
             }
-            if (text === 'reset') await sendText(phoneNumberId, from, "🔄 Memoria de este chat reiniciada.");
+            if (text === 'reset') await sendText(phoneNumberId, from, "🔄 Memoria de este chat reiniciada. Historial borrado.");
             
             await sendMenu(phoneNumberId, from, lang);
             return res.status(200).send('OK');
