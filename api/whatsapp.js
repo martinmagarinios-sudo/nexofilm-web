@@ -232,11 +232,13 @@ export default async function handler(req, res) {
                     });
                 } catch(e) { console.error("Resend btn_h error:", e.message); }
                 // Mini-handoff: guardar en Supabase para que aparezca el panel de resumen en el CRM
-                await handleHandoff(from, {
+                await handleHandoff(targetPhone, leadData?.id, {
                     handoff: true,
                     name: leadData?.name || from,
                     email: leadData?.email || null,
-                    summary: `Solicitó hablar con un productor directamente (sin completar el flujo de presupuesto).`,
+                    summary: "Solicitó hablar con productor directo.",
+                    is_hot: false,
+                    source: 'Atención Directa', // Opcional, para saber que vino directamente (sin completar el flujo de presupuesto).
                     score: 70
                 });
             }
@@ -306,9 +308,15 @@ export default async function handler(req, res) {
         let showMenu = false;
         let hf = null;
 
-        const m = aiRes.match(/\$\$HANDOFF_JSON\$\$([\s\S]*?)\$\$HANDOFF_JSON\$\$/);
+        const m = aiRes.match(/\${1,2}HANDOFF_JSON\${1,2}([\s\S]*?)\${1,2}HANDOFF_JSON\${1,2}/i);
         if (m) {
-            try { hf = JSON.parse(m[1]); final = aiRes.replace(m[0], '').trim(); } catch(e) {}
+            let jsonRaw = m[1].replace(/```json/gi, '').replace(/```/g, '').trim();
+            try { 
+                hf = JSON.parse(jsonRaw); 
+                final = aiRes.replace(m[0], '').trim(); 
+            } catch(e) {
+                console.error("[HANDOFF PARSE ERROR] Falla al parsear JSON:", jsonRaw, e.message);
+            }
         }
         // Detección robusta de tags (insensible a mayúsculas/minúsculas y tolerante a 1 o 2 signos $)
         if (/\${1,2}SHOW_MENU\${1,2}/i.test(final)) {
@@ -333,7 +341,7 @@ export default async function handler(req, res) {
         }
 
         if (hf?.handoff) {
-            await handleHandoff(targetPhone, hf);
+            await handleHandoff(targetPhone, leadData?.id, hf);
         }
 
     } catch (err) {
@@ -343,27 +351,40 @@ export default async function handler(req, res) {
     return res.status(200).send('OK');
 }
 
-async function handleHandoff(phone, hf) {
+async function handleHandoff(phone, leadId, hf) {
     if (supabase) {
-        const { data: existingLead } = await supabase
-            .from('whatsapp_leads')
-            .select('id')
-            .or(`phone.eq.${phone},phone.eq.+${phone},phone.eq.${phone.replace('+', '')}`)
-            .maybeSingle();
+        let finalLeadId = leadId;
 
-        if (existingLead) {
+        // Si no pasaron leadId, buscamos por ultimos 8 digitos por si acaso
+        if (!finalLeadId) {
+            const searchStr = (phone || '').replace(/\D/g, '').slice(-8);
+            if (searchStr.length >= 8) {
+                const { data: existingLead } = await supabase
+                    .from('whatsapp_leads')
+                    .select('id')
+                    .like('phone', `%${searchStr}%`)
+                    .maybeSingle();
+                if (existingLead) finalLeadId = existingLead.id;
+            }
+        }
+
+        if (finalLeadId) {
             await supabase.from('whatsapp_leads').update({
                 name: hf.name,
                 email: hf.email,
                 summary: hf.summary,
+                is_hot: hf.is_hot !== undefined ? hf.is_hot : true,
+                score: hf.score || 90,
                 updated_at: new Date().toISOString()
-            }).eq('id', existingLead.id).then(null, () => {});
+            }).eq('id', finalLeadId).then(null, () => {});
         } else {
             await supabase.from('whatsapp_leads').insert({
                 phone,
                 name: hf.name,
                 email: hf.email,
                 summary: hf.summary,
+                is_hot: hf.is_hot !== undefined ? hf.is_hot : true,
+                score: hf.score || 90,
                 updated_at: new Date().toISOString()
             }).then(null, () => {});
         }
