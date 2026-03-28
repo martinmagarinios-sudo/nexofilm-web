@@ -250,13 +250,13 @@ export default async function handler(req, res) {
     if (leadData?.name && leadData.name !== 'Sin nombre') {
         const firstName = leadData.name.trim().split(/[\s,.-]+/)[0];
         const greetings = {
-            es: `¡Hola ${firstName}! Qué bueno tenerte de vuelta. ¿En qué podemos ayudarte hoy?`,
-            en: `Hi ${firstName}! Great to have you back. How can we help you today?`,
-            pt: `Olá ${firstName}! Que bom ter você de volta. Como podemos ajudar hoje?`
+            es: `¡Hola ${firstName}! Bienvenido a NexoFilm. ¿En qué podemos ayudarte hoy?`,
+            en: `Hi ${firstName}! Welcome to NexoFilm. How can we help you today?`,
+            pt: `Olá ${firstName}! Bem-vindo à NexoFilm. Como podemos ajudá-lo hoje?`
         };
         const currentGreeting = greetings[lang] || greetings.es;
         
-        instruccionSaludo = `1. **CLIENTE VIP RECONOCIDO**: Es un cliente habitual llamado ${firstName}.\n2. **PRESENTACIÓN**: NO le preguntes su nombre. Saludalo EXACTAMENTE con esta frase: "${currentGreeting}" e incluye inmediatamente el tag $$SHOW_MENU$$. NUNCA LE PIDAS EL NOMBRE. ¡YA LO SABES!`;
+        instruccionSaludo = `1. **CLIENTE RECONOCIDO**: Es un contacto conocido llamado ${firstName}.\n2. **PRESENTACIÓN**: NO le preguntes su nombre. Saludalo EXACTAMENTE con esta frase: "${currentGreeting}" e incluye inmediatamente el tag $$SHOW_MENU$$. NUNCA LE PIDAS EL NOMBRE. ¡YA LO SABES!`;
 
         if (leadData.email && leadData.email.includes('@')) {
             const emailQs = {
