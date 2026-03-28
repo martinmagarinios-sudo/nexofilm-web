@@ -140,7 +140,7 @@ export default async function handler(req, res) {
         
         const lang = detectLanguage(text, history);
 
-        if (isMenuCommand || text === 'reset' || text === 'hard reset' || isWebStart) {
+        if (isMenuCommand || text === 'reset' || isWebStart) {
             if (supabase) {
                 console.log(`[WAKE UP] Reactivando bot para ${targetPhone} por comando: ${text}`);
                 // Reseteamos el updated_at para que la lógica de silencio no lo bloquee
@@ -149,19 +149,8 @@ export default async function handler(req, res) {
                 if (text === 'reset') {
                     await supabase.from('whatsapp_sessions').update({ history: [] }).eq('phone', from).then(null, () => {});
                 }
-
-                if (text === 'hard reset') {
-                    // Borrado total de la faz de la base de datos para pruebas QA absolutas
-                    await supabase.from('whatsapp_sessions').delete().eq('phone', from).then(null, () => {});
-                    await supabase.from('whatsapp_leads').delete().eq('phone', targetPhone).then(null, () => {});
-                }
             }
 
-            if (text === 'hard reset') {
-                await sendText(phoneNumberId, from, "🧨 HARD RESET EJECUTADO: Memoria borrada. Fila del CRM eliminada. Ya no sé quién sos ni tengo tu número agendado.");
-                return res.status(200).send('OK');
-            }
-            
             if (text === 'reset') {
                 await sendText(phoneNumberId, from, "🔄 Memoria de este chat reiniciada. Historial borrado.");
                 return res.status(200).send('OK'); // No enviamos menú, solo confirmamos el reset.
