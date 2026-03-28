@@ -275,10 +275,10 @@ export default async function handler(req, res) {
         if (m) {
             try { hf = JSON.parse(m[1]); final = aiRes.replace(m[0], '').trim(); } catch(e) {}
         }
-        // Detección robusta de tags (insensible a mayúsculas/minúsculas)
-        if (/\$\$SHOW_MENU\$\$/i.test(final)) {
+        // Detección robusta de tags (insensible a mayúsculas/minúsculas y tolerante a 1 o 2 signos $)
+        if (/\${1,2}SHOW_MENU\${1,2}/i.test(final)) {
             showMenu = true;
-            final = final.replace(/\$\$SHOW_MENU\$\$/gi, '').trim();
+            final = final.replace(/\${1,2}SHOW_MENU\${1,2}/gi, '').trim();
         }
 
         // Fail-safe: Si el bot menciona opciones pero olvidó el tag (o usó una variante)
