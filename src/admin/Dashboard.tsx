@@ -243,11 +243,8 @@ const Dashboard: React.FC = () => {
                                         ) : (
                                             leads
                                                 .filter(lead => 
-                                                    lead.summary !== "Contacto importado masivamente" &&
-                                                    (
-                                                        (lead.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                                        lead.phone.includes(searchTerm)
-                                                    )
+                                                    (lead.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                                    lead.phone.includes(searchTerm)
                                                 )
                                                 .map((lead) => (
                                                 <tr key={lead.id} className="hover:bg-white/[0.02] transition-colors group">

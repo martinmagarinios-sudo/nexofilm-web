@@ -72,10 +72,12 @@ export default async function handler(req, res) {
             case 'getLeadDetail': {
                 if (!phone) return res.status(400).json({ error: 'Falta el teléfono' });
                 
+                const searchStr = phone.replace(/\D/g, '').slice(-8);
+
                 const { data: leadDetail, error: leadDetailErr } = await supabase
                     .from('whatsapp_leads')
                     .select('*')
-                    .or(`phone.eq.${phone},phone.eq.${phone.replace('+', '')},phone.eq.+${phone}`)
+                    .like('phone', `%${searchStr}%`)
                     .maybeSingle();
                 
                 if (leadDetailErr) throw leadDetailErr;
