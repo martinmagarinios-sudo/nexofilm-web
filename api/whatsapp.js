@@ -90,6 +90,20 @@ export default async function handler(req, res) {
         const now = Date.now();
         const lastInteraction = historyData.updated_at ? new Date(historyData.updated_at).getTime() : 0;
 
+        // --- CREACIÓN TEMPRANA DEL LEAD (EARLY UPSERT) ---
+        // Si la persona nunca ingresó al CRM, la metemos YA MISMO (como "Conversación en curso")
+        // Así el dueño de NexoFilm puede ver interactuar al cliente en el Dashboard sin tener que
+        // esperar a que envíe su mail o que LLaMa dispare el Handoff final.
+        if (supabase && !leadData) {
+            await supabase.from('whatsapp_leads').upsert({
+                phone: from,
+                name: 'Sin nombre', // Mantenemos "Sin nombre" para no activar la VIP_RULE por accidente
+                summary: 'Conversación inicial en curso con NexoBot IA...',
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'phone' }).then(null, () => {});
+            console.log(`[EARLY UPSERT] Cliente nuevo ingresado al CRM temporalmente: +${from}`);
+        }
+
         // --- SESIONES ANTIGUAS (Auto-Reset) ---
         // Si pasaron más de 4 días (4 * 24 * 60 * 60 * 1000 ms) sin interactuar, vaciamos su memoria
         // para que lo trate como un VIP que vuelve a saludar y comience el flujo fresco.
