@@ -95,6 +95,18 @@ export default async function handler(req, res) {
         const history = historyData.history;
         const targetPhone = leadData?.phone || from; // Usamos el del CRM si existe, sino el de WhatsApp
         const now = Date.now();
+        const lastInteraction = historyData.updated_at ? new Date(historyData.updated_at).getTime() : 0;
+
+        // --- SESIONES ANTIGUAS (Auto-Reset) ---
+        // Si pasaron más de 4 días (4 * 24 * 60 * 60 * 1000 ms) sin interactuar, vaciamos su memoria
+        // para que lo trate como un VIP que vuelve a saludar y comience el flujo fresco.
+        if (lastInteraction > 0 && (now - lastInteraction) > 4 * 24 * 60 * 60 * 1000) {
+            console.log(`[AUTO-RESET] Sesión inactiva de +4 días borrada para ${from}`);
+            history.length = 0;
+            if (supabase) {
+                supabase.from('whatsapp_sessions').update({ history: [] }).eq('phone', from).then(null, () => {});
+            }
+        }
 
         // --- RESET / MENU / WEB START MANUAL ---
         const isWebStart = text.includes("estoy navegando en tu web") && text.includes("consulta");
