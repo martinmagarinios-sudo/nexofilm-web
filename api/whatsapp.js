@@ -98,12 +98,19 @@ export default async function handler(req, res) {
             console.log(`[ALERTA TEMPRANA] Cliente ${contactNameForEmail} inició chat.`);
 
             if (supabase) {
-                await supabase.from('whatsapp_leads').upsert({
-                    phone: targetPhone,
-                    name: leadData?.name || 'Sin nombre', // Si ya existe su nombre VIP se guarda, si no "Sin nombre".
-                    summary: 'Conversación inicial en curso con NexoBot IA...',
-                    updated_at: new Date().toISOString()
-                }, { onConflict: 'phone' }).then(null, () => {});
+                if (!leadData) {
+                    await supabase.from('whatsapp_leads').insert({
+                        phone: targetPhone,
+                        name: 'Sin nombre',
+                        summary: 'Conversación en curso con NexoBot IA...',
+                        updated_at: new Date().toISOString()
+                    }).then(null, () => {}); // Ignoramos si choca
+                } else {
+                    await supabase.from('whatsapp_leads').update({
+                        summary: 'Conversación en curso con NexoBot IA...',
+                        updated_at: new Date().toISOString()
+                    }).eq('id', leadData.id).then(null, () => {}); // Update seguro por ID
+                }
             }
 
             try {
