@@ -24,23 +24,24 @@ export default async function handler(req, res) {
     try {
         switch (action) {
             case 'getLeads': {
-                // 1. Obtener todos los contactos y todas las sesiones para cruzar datos
-                const [{ data: allLeads, error: leadsErr }, { data: allSessions, error: sErr }] = await Promise.all([
-                    supabase.from('whatsapp_leads').select('*').order('created_at', { ascending: false }),
-                    supabase.from('whatsapp_sessions').select('phone')
-                ]);
-                
-                if (leadsErr) throw leadsErr;
+                // 1. Obtener todas las sesiones activas
+                const { data: allSessions, error: sErr } = await supabase.from('whatsapp_sessions').select('phone');
                 if (sErr) throw sErr;
 
-                // 2. Normalización basada en últimos 8 dígitos para compatibilidad total AR/Internacional
-                const getLast8 = (p) => (p || '').replace(/\D/g, '').slice(-8);
-
-                const sessionPhones = new Set((allSessions || []).map(s => getLast8(s.phone)));
+                // 2. Por cada sesión, traer su registro de CRM (evitando el límite de 1000 rows de Supabase)
+                const leadsPromises = (allSessions || []).map(async (session) => {
+                    const searchStr = (session.phone || '').replace(/\D/g, '').slice(-8);
+                    if (!searchStr) return null;
+                    const { data } = await supabase
+                        .from('whatsapp_leads')
+                        .select('*')
+                        .like('phone', `%${searchStr}%`)
+                        .maybeSingle();
+                    return data;
+                });
                 
-                const filteredLeads = (allLeads || []).filter(lead => 
-                    sessionPhones.has(getLast8(lead.phone))
-                );
+                const leadsData = await Promise.all(leadsPromises);
+                const filteredLeads = leadsData.filter(lead => lead !== null);
 
                 // 3. Obtener conteo total para la tarjeta superior
                 const { count, error: countErr } = await supabase
