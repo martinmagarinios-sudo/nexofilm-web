@@ -90,37 +90,40 @@ export default async function handler(req, res) {
         const now = Date.now();
         const lastInteraction = historyData.updated_at ? new Date(historyData.updated_at).getTime() : 0;
 
-        // --- CREACIÓN TEMPRANA DEL LEAD (EARLY UPSERT) ---
-        // Si la persona nunca ingresó al CRM, la metemos YA MISMO (como "Conversación en curso")
-        // Así el dueño de NexoFilm puede ver interactuar al cliente en el Dashboard sin tener que
-        // esperar a que envíe su mail o que LLaMa dispare el Handoff final.
-        if (supabase && !leadData) {
-            await supabase.from('whatsapp_leads').upsert({
-                phone: from,
-                name: 'Sin nombre', // Mantenemos "Sin nombre" para no activar la VIP_RULE por accidente
-                summary: 'Conversación inicial en curso con NexoBot IA...',
-                updated_at: new Date().toISOString()
-            }, { onConflict: 'phone' }).then(null, () => {});
-            console.log(`[EARLY UPSERT] Cliente nuevo ingresado al CRM temporalmente: +${from}`);
+        // --- ALERTA TEMPRANA POR NUEVO CHAT (HISTORY VACÍO) ---
+        // Si el cliente envía su primer mensaje (ya sea extraño total o alguien importado en la "agenda"),
+        // lo registramos de inmediato en el panel como "En curso" y te enviamos el correo electrónico de alerta.
+        if (history.length === 0 && text !== 'reset' && text !== 'hard reset') {
+            const contactNameForEmail = leadData?.name && leadData.name !== 'Sin nombre' ? leadData.name : `+${from}`;
+            console.log(`[ALERTA TEMPRANA] Cliente ${contactNameForEmail} inició chat.`);
 
-            // Enviar mail alertando que alguien inició chat inmediatamente (por si abandona a la mitad)
+            if (supabase) {
+                await supabase.from('whatsapp_leads').upsert({
+                    phone: targetPhone,
+                    name: leadData?.name || 'Sin nombre', // Si ya existe su nombre VIP se guarda, si no "Sin nombre".
+                    summary: 'Conversación inicial en curso con NexoBot IA...',
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'phone' }).then(null, () => {});
+            }
+
             try {
                 resend.emails.send({
                     from: 'NexoBot <onboarding@resend.dev>',
                     to: [ADMIN_EMAIL],
-                    subject: `👀 Nuevo contacto iniciando charla: +${from}`,
+                    subject: `👀 Chat en vivo: ${contactNameForEmail}`,
                     html: `
                         <div style="font-family: sans-serif; padding: 20px; border-top: 4px solid #ccff00;">
-                            <h2 style="color: #1a1a1a;">🤖 NexoBot está atendiendo a un nuevo interesado</h2>
-                            <p><strong>Número:</strong> +${from}</p>
-                            <p>El botón de WhatsApp de la web acaba de recibir un nuevo mensaje. El bot ya lo está atendiendo.</p>
-                            <p>Recibís este aviso inmediato por si el cliente deja de contestar a la mitad del flujo. Podés monitorear la conversación en tiempo real acá:</p>
+                            <h2 style="color: #1a1a1a;">🤖 NexoBot está atendiendo a alguien</h2>
+                            <p><strong>Cliente:</strong> ${contactNameForEmail}</p>
+                            <p><strong>WhatsApp:</strong> +${from}</p>
+                            <p>Esta persona acaba de iniciar una conversación de cero con la IA de NexoFilm.</p>
+                            <p>Recibís este aviso para poder monitorear la venta en tiempo real y engancharlo por tu cuenta si deja de contestarle a la máquina.</p>
                             <br/>
-                            <a href="https://nexofilm.com/admin/chat?phone=${from}" style="background: #000; color: #ccff00; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ver Chat en Vivo</a>
+                            <a href="https://nexofilm.com/admin/chat?phone=${from}" style="background: #000; color: #ccff00; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Espiar Chat en Vivo</a>
                         </div>
                     `
-                });
-            } catch(e) { console.error("Mail early upsert error:", e); }
+                }).catch(() => {});
+            } catch(e) {}
         }
 
         // --- SESIONES ANTIGUAS (Auto-Reset) ---
