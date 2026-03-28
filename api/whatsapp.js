@@ -20,35 +20,32 @@ IDIOMA Y TONO:
 - Sos un productor experto. Si el cliente tiene dudas técnicas sobre Foto/Video/Streaming, asesoralo con criterio.
 - Respuestas breves, una cosa a la vez.
 
-FLUJO DE CONVERSACIÓN (IMPORTANTE: SEGUÍ ESTE ORDEN):
-1. Si no sabés el nombre (y no está en VIP): "¡Hola! Bienvenido a NexoFilm. ¿Me decís tu nombre por favor?"
+FLUJO DE CONVERSACIÓN (IMPORTANTE: SEGUÍ ESTE ORDEN PASO A PASO):
+1. **NUEVO CONTACTO**: Si no te pasaron un VIP_RULE con el nombre, lo primero que haces es saludar: "¡Hola! Bienvenido a NexoFilm. ¿Me decís tu nombre por favor?"
 
-2. Al saber el nombre: "Un gusto, [Nombre]. Acá te dejo nuestras opciones: $$SHOW_MENU$$"
-   (REGLA CRÍTICA: NUNCA escribas las opciones en texto. Solo el tag $$SHOW_MENU$$. No escribas nada después del tag).
+2. **PRESENTACIÓN**: Una vez que sepas el nombre (o si lo traes por VIP_RULE): "Un gusto, [Nombre]. Acá te dejo nuestras opciones: $$SHOW_MENU$$"
+   (REGLA CRÍTICA: NUNCA escribas las opciones en texto. Solo debes incluir el tag $$SHOW_MENU$$. No escribas nada después del tag).
 
-3. Al elegir "Pedir Presupuesto":
+3. Al elegir "Pedir Presupuesto", hace las preguntas UNA por UNA (no avances sin que contesten la anterior).
    a) "¡Qué bueno, [Nombre]! ¿Qué tipo de servicio o cobertura estás buscando? (Foto, Video, Streaming, o un combo)"
-   b) Una vez respondió: "¿Me contás qué tipo de evento es? (Social, corporativo, feria, comercial, etc.)"
+   b) "¿Me contás qué tipo de evento es? (Social, corporativo, feria, comercial, etc.)"
    c) "¿Me decís la fecha y el lugar estimado?"
    d) "¿Cantidad de personas y horas de cobertura?"
-   e) SOLICITUD DE EMAIL (PASO CRÍTICO):
-      - Si ya conocemos su mail por VIP_RULE, preguntá: "¿[Nombre], tu mail sigue siendo [email], cambió o querés que usemos otro para la propuesta?".
-      - Si NO lo conocemos, pedilo amablemente.
-      - REGLA DE ORO: NO generes el bloque $$HANDOFF_JSON$$ en este mensaje. Primero debés recibir la confirmación o el nuevo mail.
-   f) DESPEDIDA Y HANDOFF:
-      - Una vez que el usuario te dio o confirmó el mail, despedite calurosamente Y RECIÉN AHÍ incluí el bloque $$HANDOFF_JSON$$ con toda la información recolectada.
-      - "¡Bárbaro, [Nombre]! Fue un placer. Ya le paso los detalles a producción y en breve te contactan. 👋 Si necesitás algo más, escribí MENU."
+   e) SOLICITUD DE EMAIL (CRÍTICO):
+      - Si en VIP_RULE ya te viene un email del CRM, preguntá explícitamente: "Chequeando mis registros, [Nombre], veo que tu correo es [email]. ¿Sigue siendo ese o querés que te envíe la propuesta a otro distinto?"
+      - Si no tienes email, pídeselo de cero: "¿Me podrías pasar tu correo electrónico para enviarte la propuesta formal?"
+      - *NO CUMPLES ESTE PASO HASTA RECIBIR UN EMAIL VÁLIDO O UNA CONFIRMACIÓN CLARA.*
+   f) DESPEDIDA Y HANDOFF FINAL (ÚLTIMO PASO, EL MÁS IMPORTANTE):
+      - Despídete cálidamente: "¡Bárbaro [Nombre]! Tomé nota de todo. Ya le paso los detalles a producción y en breve te contactan. 👋 Si necesitás algo más, escribí MENU."
+      - **Y OBLIGATORIAMENTE EN ESE MISMO MENSAJE (AL FINAL) HAS EL BLOQUE $$HANDOFF_JSON$$ CON UN RESUMEN DETALLADO:**
 
-REGLA DE INTEGRIDAD: NUNCA inventes correos electrónicos. Si no tienes un correo en VIP_RULE, simplemente di que no lo tienes y pídelo.
-
-HANDOFF JSON:
 $$HANDOFF_JSON$$
 {
   "handoff": true,
-  "name": "Nombre Real",
-  "email": "correo_real@ejemplo.com",
-  "summary": "Resumen extremadamente detallado de lo que necesita el cliente.",
-  "score": 95
+  "name": "Nombre Real del Cliente",
+  "email": "correo@oficial.com",
+  "summary": "Resumen detalladísimo: Necesita video y streaming para un evento corporativo de 150 personas, fecha estimada X, pide 3 cámaras. Cliente muy interesado.",
+  "score": 90
 }
 $$HANDOFF_JSON$$
 
@@ -80,7 +77,7 @@ export default async function handler(req, res) {
         const text = message.text?.body?.toLowerCase() || "";
         const isInteractive = message.type === 'interactive';
 
-        // 2. Cargar historial + Info del Lead (CRM) en PARALELO (Búsqueda Flexible)
+        // 2. Cargar historial + Info del Lead (CRM) en PARALELO (Búsqueda Exacta y Segura por Últimos 8 dígitos)
         const [historyData, leadData] = await Promise.all([
             loadHistory(from),
             supabase ? (async () => {
@@ -88,9 +85,10 @@ export default async function handler(req, res) {
                 const { data } = await supabase
                     .from('whatsapp_leads')
                     .select('*')
-                    .ilike('phone', `%${searchStr}`)
-                    .maybeSingle();
-                return data;
+                    .like('phone', `%${searchStr}%`)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+                return data?.[0] || null;
             })() : Promise.resolve(null)
         ]);
 
@@ -137,9 +135,9 @@ export default async function handler(req, res) {
             }];
             await persistHistory(from, newHistory);
 
-            // Alerta al admin si pasaron > 10 min de silencio total (cliente esperando)
+            // Alerta al admin si pasaron > 5 min de silencio total (cliente esperando a un humano libre)
             const lastInteraction = historyData.updated_at ? new Date(historyData.updated_at).getTime() : 0;
-            if (now - lastInteraction > 10 * 60 * 1000) {
+            if (now - lastInteraction > 5 * 60 * 1000) {
                 await notifyAdminOfNewMessage(from, leadData?.name || "Cliente", message.text?.body);
             }
             return res.status(200).send('OK');
@@ -211,20 +209,20 @@ export default async function handler(req, res) {
         const currentGreeting = greetings[lang] || greetings.es;
 
         vipRule = `
-VIP RECOGNITION (ACTIVATE NOW):
-- Es un cliente que vuelve: se llama ${firstName}.
-- SALUDALO así (en su idioma): "${currentGreeting}"
-- MOSTRÁ EL MENÚ: Agregá obligatoriamente el tag $$SHOW_MENU$$ al final de tu saludo inicial.
-- RECOGNITION STATUS: ${isFirstMessage ? 'ES EL PRIMER MENSAJE DE LA SESIÓN' : 'SESIÓN EN CURSO'}.
+VIP RECOGNITION (ACTIVATE NOW) - LEY DE CUMPLIMIENTO OBLIGATORIO:
+- Es un cliente de nuestro CRM. Su nombre es: ${firstName}.
+- NUNCA LE PREGUNTES EL NOMBRE. YA LO SABES.
+- SALUDALO ASÍ EN EL PRIMER MENSAJE: "${currentGreeting}" \n\n Y LUEGO INCLUYE EL TAG $$SHOW_MENU$$.
+- RECOGNITION STATUS: ${isFirstMessage ? 'PRIMER MENSAJE. OBLIGATORIO SALUDAR Y MOSTRAR MENU.' : 'SESIÓN EN CURSO. CONTINÚA.'}.
 `;
         
         if (leadData.email && leadData.email.includes('@')) {
             const emailQs = {
-                es: `${firstName}, ¿tu mail sigue siendo ${leadData.email}, cambió o prefieres que usemos otro para enviarte la propuesta?`,
-                en: `${firstName}, is your email still ${leadData.email}, has it changed, or would you prefer we use another one for the proposal?`,
-                pt: `${firstName}, seu e-mail ainda é ${leadData.email}, mudou ou prefere que usemos outro para enviar a proposta?`
+                es: `${firstName}, chequeando mis registros veo este mail: ${leadData.email}. ¿Sigue siendo ese o querés que te envíe la propuesta a otro?`,
+                en: `${firstName}, checking my records I see this email: ${leadData.email}. Is it still the same or do you want me to send the proposal to another one?`,
+                pt: `${firstName}, verificando meus registros, vejo este e-mail: ${leadData.email}. Continua sendo esse ou quer que eu envie a proposta para outro?`
             };
-            vipRule += `- EMAIL: Su mail registrado es ${leadData.email}. Cuando llegues al paso 3e, PREGUNTALE (en su idioma): "${emailQs[lang] || emailQs.es}".\n`;
+            vipRule += `- CONFIRMACIÓN DE EMAIL: El cliente tiene registrado este mail en la base de datos: ${leadData.email}. Cuando llegues al paso 3e (Solicitud de Email), DEBES preguntarle esta frase exacta: "${emailQs[lang] || emailQs.es}".\n`;
         }
     }
 

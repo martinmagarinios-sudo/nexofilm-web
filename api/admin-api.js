@@ -33,18 +33,13 @@ export default async function handler(req, res) {
                 if (leadsErr) throw leadsErr;
                 if (sErr) throw sErr;
 
-                // 2. Normalización robusta para cruzar teléfonos (ignora +, espacios y el 9 de Argentina)
-                const normalize = (p) => {
-                    let d = (p || '').replace(/\D/g, '');
-                    // Si es Argentina (54) y tiene el 9, se lo quitamos para comparar
-                    if (d.startsWith('549') && d.length > 10) return '54' + d.slice(3);
-                    return d;
-                };
+                // 2. Normalización basada en últimos 8 dígitos para compatibilidad total AR/Internacional
+                const getLast8 = (p) => (p || '').replace(/\D/g, '').slice(-8);
 
-                const sessionPhones = new Set((allSessions || []).map(s => normalize(s.phone)));
+                const sessionPhones = new Set((allSessions || []).map(s => getLast8(s.phone)));
                 
                 const filteredLeads = (allLeads || []).filter(lead => 
-                    sessionPhones.has(normalize(lead.phone))
+                    sessionPhones.has(getLast8(lead.phone))
                 );
 
                 // 3. Obtener conteo total para la tarjeta superior

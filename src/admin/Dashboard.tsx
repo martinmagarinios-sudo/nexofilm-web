@@ -245,7 +245,7 @@ const Dashboard: React.FC = () => {
                                                 .filter(lead => 
                                                     lead.summary !== "Contacto importado masivamente" &&
                                                     (
-                                                        lead.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                                        (lead.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
                                                         lead.phone.includes(searchTerm)
                                                     )
                                                 )

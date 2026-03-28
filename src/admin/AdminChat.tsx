@@ -60,10 +60,10 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error al conectar con la API');
 
-            // Cruzar datos (Normalizando para ignorar símbolos como + o espacios)
-            const normalize = (p: string) => (p || '').replace(/\D/g, '');
+            // Cruzar datos (Usar últimos 8 dígitos para evitar problemas de +54 vs +549)
+            const getLast8 = (p: string) => (p || '').replace(/\D/g, '').slice(-8);
             const enrichedSessions = (data.sessions || []).map((s: any) => {
-                const lead = data.leadNames?.find((l: any) => normalize(l.phone) === normalize(s.phone));
+                const lead = data.leadNames?.find((l: any) => getLast8(l.phone) === getLast8(s.phone));
                 return { ...s, name: lead?.name };
             });
 
