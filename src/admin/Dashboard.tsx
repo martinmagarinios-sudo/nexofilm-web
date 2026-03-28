@@ -279,7 +279,9 @@ const Dashboard: React.FC = () => {
                                                                 {lead.source.toLowerCase().includes('web') ? '🌐' : lead.source.toLowerCase().includes('ig') || lead.source.toLowerCase().includes('instagram') ? '📱' : lead.source.toLowerCase().includes('linkedin') ? '💼' : '📝'} {lead.source}
                                                             </span>
                                                         ) : (
-                                                            <span className="text-zinc-600 text-xs">Orgánico</span>
+                                                            <span className="inline-flex items-center gap-1 bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-1 rounded text-xs" title="Proviene de tu base de datos importada o histórica">
+                                                                ⭐ Histórico VIP
+                                                            </span>
                                                         )}
                                                     </td>
                                                     <td className="px-6 py-4 leading-relaxed">

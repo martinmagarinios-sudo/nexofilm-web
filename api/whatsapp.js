@@ -40,11 +40,12 @@ $$HANDOFF_JSON$$
   "name": "Nombre Real del Cliente",
   "email": "correo@oficial.com",
   "summary": "Resumen detalladísimo: Necesita video y streaming para un evento corporativo de 150 personas, fecha estimada X, pide 3 cámaras. Cliente muy interesado.",
-  "score": 90
+  "score": 85
 }
 $$HANDOFF_JSON$$
+EL SCORE (1 a 100) lo debes calcular objetivamente sumando puntos así: base 20, +40 si es evento Comercial/Corporativo/Stream, +20 si es más de 100 personas, +10 si pide un Combo (Foto+Video), +10 si te percibe muy decidido y responde rápido, -30 si es algo social diminuto o evento muy amateur.
 
-REGLA ANTI-PAVADAS: Si el cliente habla de temas ajenos a la producción, respondé: "Mirá, sobre ese tema no estoy capacitado para asesorarte, pero te voy a derivar con alguien de nuestro equipo. Si querés hacer una nueva consulta técnica, escribí MENU." Generá handoff con summary "Consulta fuera de tema".`;
+REGLA ANTI-PAVADAS: Si el cliente habla de temas ajenos a la producción, respondé: "Mirá, sobre ese tema no estoy capacitado para asesorarte, pero te voy a derivar con alguien de nuestro equipo. Si querés hacer una nueva consulta técnica, escribí MENU." Generá handoff con summary "Consulta fuera de tema" y score 10.`;
 
 export default async function handler(req, res) {
     if (req.method === 'GET') {
@@ -90,6 +91,8 @@ export default async function handler(req, res) {
         const now = Date.now();
         const lastInteraction = historyData.updated_at ? new Date(historyData.updated_at).getTime() : 0;
 
+        const isWebStart = text.includes("estoy navegando en tu web") && text.includes("consulta");
+
         // --- ALERTA TEMPRANA POR NUEVO CHAT (HISTORY VACÍO) ---
         // Si el cliente envía su primer mensaje (ya sea extraño total o alguien importado en la "agenda"),
         // lo registramos de inmediato en el panel como "En curso" y te enviamos el correo electrónico de alerta.
@@ -97,11 +100,18 @@ export default async function handler(req, res) {
             const contactNameForEmail = leadData?.name && leadData.name !== 'Sin nombre' ? leadData.name : `+${from}`;
             console.log(`[ALERTA TEMPRANA] Cliente ${contactNameForEmail} inició chat.`);
 
+            let detectedSource = 'Bot Nuevo';
+            if (text.includes("instagram") || text.includes("ig")) detectedSource = '📱 Instagram';
+            else if (text.includes("linkedin")) detectedSource = '💼 LinkedIn';
+            else if (isWebStart) detectedSource = '🌐 Web';
+
             if (supabase) {
                 if (!leadData) {
                     await supabase.from('whatsapp_leads').insert({
                         phone: targetPhone,
                         name: 'Sin nombre',
+                        source: detectedSource,
+                        score: 40,
                         summary: 'Conversación en curso con NexoBot IA...',
                         updated_at: new Date().toISOString()
                     }).then(null, () => {}); // Ignoramos si choca
@@ -145,7 +155,6 @@ export default async function handler(req, res) {
         }
 
         // --- RESET / MENU / WEB START MANUAL ---
-        const isWebStart = text.includes("estoy navegando en tu web") && text.includes("consulta");
         const isMenuCommand = text === 'menu' || text === 'menú' || text.startsWith('ver menu') || text.startsWith('ver menú');
         
         const lang = detectLanguage(text, history);
@@ -206,7 +215,17 @@ export default async function handler(req, res) {
 
             let qr = "";
             if (btnId === 'btn_p') qr = "¡Bárbaro! ¿Qué tipo de servicio o cobertura estás buscando? (Foto, Video, Streaming, o un combo) 📸🎥";
-            else if (btnId === 'btn_v') qr = "🎬 Mirá algunos de nuestros trabajos en: https://nexofilm.com \n¿Te gustaría consultar por un presupuesto?";
+            else if (btnId === 'btn_v') {
+                qr = "🎬 Mirá algunos de nuestros trabajos en: https://nexofilm.com \n¿Te gustaría consultar por un presupuesto?";
+                // Mini-handoff silencioso para registrar que está mirando el portfolio
+                await handleHandoff(targetPhone, leadData?.id, {
+                    name: leadData?.name || from,
+                    email: leadData?.email || null,
+                    summary: '👀 Explorando Portfolio...',
+                    is_hot: false,
+                    score: Math.max(leadData?.score || 0, 30)
+                });
+            }
             else if (btnId === 'btn_h') {
                 qr = "Entendido. Un productor te va a contactar a la brevedad. 👤📞";
                 // WhatsApp al admin
