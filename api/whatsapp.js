@@ -107,7 +107,7 @@ export default async function handler(req, res) {
             }
 
             try {
-                resend.emails.send({
+                await resend.emails.send({
                     from: 'NexoBot <onboarding@resend.dev>',
                     to: [ADMIN_EMAIL],
                     subject: `👀 Chat en vivo: ${contactNameForEmail}`,
@@ -122,8 +122,8 @@ export default async function handler(req, res) {
                             <a href="https://nexofilm.com/admin/chat?phone=${from}" style="background: #000; color: #ccff00; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Espiar Chat en Vivo</a>
                         </div>
                     `
-                }).catch(() => {});
-            } catch(e) {}
+                });
+            } catch(e) { console.error("Mail early alert error:", e); }
         }
 
         // --- SESIONES ANTIGUAS (Auto-Reset) ---
@@ -204,24 +204,26 @@ export default async function handler(req, res) {
                 qr = "Entendido. Un productor te va a contactar a la brevedad. 👤📞";
                 // WhatsApp al admin
                 sendText(phoneNumberId, ADMIN_NUMBER, `🔔 ALERTA HUMANO: +${from}`).then(null, () => {});
-                // Mail al admin via Resend
+                // Mail al admin via Resend (awaited para que no muera en Vercel)
                 const contactName = leadData?.name || `+${from}`;
-                resend.emails.send({
-                    from: 'NexoBot Alerta <onboarding@resend.dev>',
-                    to: [ADMIN_EMAIL],
-                    subject: `👤 Hablar con Productor: ${contactName}`,
-                    html: `
-                        <div style="font-family:sans-serif;padding:20px;border-left:4px solid #ccff00;">
-                            <h2>👤 ${contactName} quiere hablar con un productor</h2>
-                            <p><strong>Teléfono:</strong> +${from}</p>
-                            <br/>
-                            <a href="https://nexofilm.com/admin/chat?phone=${from}" 
-                               style="background:#000;color:#fff;padding:12px 24px;text-decoration:none;border-radius:5px;font-weight:bold;">
-                               Ir al Chat del CRM
-                            </a>
-                        </div>
-                    `
-                }).catch(e => console.error("Resend btn_h error:", e.message));
+                try {
+                    await resend.emails.send({
+                        from: 'NexoBot Alerta <onboarding@resend.dev>',
+                        to: [ADMIN_EMAIL],
+                        subject: `👤 Hablar con Productor: ${contactName}`,
+                        html: `
+                            <div style="font-family:sans-serif;padding:20px;border-left:4px solid #ccff00;">
+                                <h2>👤 ${contactName} quiere hablar con un productor</h2>
+                                <p><strong>Teléfono:</strong> +${from}</p>
+                                <br/>
+                                <a href="https://nexofilm.com/admin/chat?phone=${from}" 
+                                   style="background:#000;color:#fff;padding:12px 24px;text-decoration:none;border-radius:5px;font-weight:bold;">
+                                   Ir al Chat del CRM
+                                </a>
+                            </div>
+                        `
+                    });
+                } catch(e) { console.error("Resend btn_h error:", e.message); }
                 // Mini-handoff: guardar en Supabase para que aparezca el panel de resumen en el CRM
                 handleHandoff(from, {
                     handoff: true,
