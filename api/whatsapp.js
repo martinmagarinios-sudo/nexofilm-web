@@ -103,7 +103,10 @@ export default async function handler(req, res) {
             let detectedSource = 'Bot Nuevo';
             if (text.includes("instagram") || text.includes("ig")) detectedSource = '📱 Instagram';
             else if (text.includes("linkedin")) detectedSource = '💼 LinkedIn';
-            else if (isWebStart) detectedSource = '🌐 Web';
+            else if (text.includes("youtube")) detectedSource = '▶️ YouTube';
+            else if (text.includes("portfolio") || text.includes("behance")) detectedSource = '🎨 Portfolio';
+            else if (text.includes("qr") || text.includes("escaneé")) detectedSource = '🔲 Código QR';
+            else if (isWebStart || text.includes("vengo de la web")) detectedSource = '🌐 Web';
 
             if (supabase) {
                 if (!leadData) {
@@ -275,21 +278,29 @@ export default async function handler(req, res) {
 
     // --- LÓGICA VIP (Reconocimiento del CRM) DADA 100% DIGERIDA POR JS ---
     const isFirstMessage = history.length === 0;
-    
-    let instruccionSaludo = `1. **NUEVO CONTACTO**: Como no sabes su nombre, en el primer mensaje saludá amablemente y preguntale cómo se llama.\n2. **PRESENTACIÓN**: Una vez te diga su nombre, decile: "Un gusto, [Su Nombre]. Acá te dejo nuestras opciones:" y agregá el tag $$SHOW_MENU$$ inmediatamente después.`;
-    
+    let instruccionSaludo = "";
+    if (isFirstMessage) {
+        if (leadData?.name && leadData.name !== 'Sin nombre') {
+            const firstName = leadData.name.trim().split(/[\s,.-]+/)[0];
+            const greetings = {
+                es: `¡Hola ${firstName}! Bienvenido a NexoFilm. ¿En qué podemos ayudarte hoy?`,
+                en: `Hi ${firstName}! Welcome to NexoFilm. How can we help you today?`,
+                pt: `Olá ${firstName}! Bem-vindo à NexoFilm. Como podemos ajudá-lo hoje?`
+            };
+            const currentGreeting = greetings[lang] || greetings.es;
+            instruccionSaludo = `1. **CLIENTE RECONOCIDO**: Es un contacto conocido llamado ${firstName}.\n2. **PRESENTACIÓN**: NO le preguntes su nombre. Saludalo EXACTAMENTE con esta frase: "${currentGreeting}" e incluye inmediatamente el tag $$SHOW_MENU$$. NUNCA LE PIDAS EL NOMBRE. ¡YA LO SABES!`;
+        } else {
+            instruccionSaludo = `1. **NUEVO CONTACTO**: Como no sabes su nombre, en el primer mensaje saludá amablemente y preguntale cómo se llama.\n2. **PRESENTACIÓN**: Una vez te diga su nombre, decile: "Un gusto, [Su Nombre]. Acá te dejo nuestras opciones:" y agregá el tag $$SHOW_MENU$$ inmediatamente después.`;
+        }
+    } else {
+        const knownName = (leadData?.name && leadData.name !== 'Sin nombre') ? leadData.name.trim().split(/[\s,.-]+/)[0] : "el cliente";
+        instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName}. Respondé de forma natural a lo último que dijo. NO saludes de cero, y NO pongas el tag $$SHOW_MENU$$ a menos que te pidan explícitamente ver las opciones de nuevo.`;
+    }
+
     let confirmacionEmail = `      - Pedile el correo de cero: "¿Me podrías pasar tu correo electrónico para enviarte la propuesta formal?".\n      - NO AVANCES HASTA RECIBIR EL CORREO.`;
 
     if (leadData?.name && leadData.name !== 'Sin nombre') {
         const firstName = leadData.name.trim().split(/[\s,.-]+/)[0];
-        const greetings = {
-            es: `¡Hola ${firstName}! Bienvenido a NexoFilm. ¿En qué podemos ayudarte hoy?`,
-            en: `Hi ${firstName}! Welcome to NexoFilm. How can we help you today?`,
-            pt: `Olá ${firstName}! Bem-vindo à NexoFilm. Como podemos ajudá-lo hoje?`
-        };
-        const currentGreeting = greetings[lang] || greetings.es;
-        
-        instruccionSaludo = `1. **CLIENTE RECONOCIDO**: Es un contacto conocido llamado ${firstName}.\n2. **PRESENTACIÓN**: NO le preguntes su nombre. Saludalo EXACTAMENTE con esta frase: "${currentGreeting}" e incluye inmediatamente el tag $$SHOW_MENU$$. NUNCA LE PIDAS EL NOMBRE. ¡YA LO SABES!`;
 
         if (leadData.email && leadData.email.includes('@')) {
             const emailQs = {
