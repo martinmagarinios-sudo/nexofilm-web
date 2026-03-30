@@ -15,7 +15,10 @@ i18n
       en: { translation: en },
       pt: { translation: pt }
     },
+    fallbackLng: 'es',
+    supportedLngs: ['es', 'en', 'pt'],
     load: 'languageOnly', // es-AR -> es
+    nonExplicitSupportedLngs: true,
     detection: {
       order: ['querystring', 'localStorage', 'navigator'],
       lookupQuerystring: 'lng',
