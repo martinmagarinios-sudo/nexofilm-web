@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-    --color-nexo-lime: #bfe023;
-    --color-nexo-lime-dark: #9dc60e;
+    --color-nexo-lime: #e1f937;
+    --color-nexo-lime-dark: #ccdf2d;
     --color-nexo-gray: #808080;
     --color-nexo-dark: #000000;
     --font-sans: "Noto Sans JP", sans-serif;
