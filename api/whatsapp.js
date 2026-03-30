@@ -45,7 +45,10 @@ $$HANDOFF_JSON$$
 $$HANDOFF_JSON$$
 EL SCORE (1 a 100) lo debes calcular objetivamente sumando puntos así: base 20, +40 si es evento Comercial/Corporativo/Stream, +20 si es más de 100 personas, +10 si pide un Combo (Foto+Video), +10 si te percibe muy decidido y responde rápido, -30 si es algo social diminuto o evento muy amateur.
 
-REGLA ANTI-PAVADAS: Si el cliente habla de temas ajenos a la producción, respondé: "Mirá, sobre ese tema no estoy capacitado para asesorarte, pero te voy a derivar con alguien de nuestro equipo. Si querés hacer una nueva consulta técnica, escribí MENU." Generá handoff con summary "Consulta fuera de tema" y score 10.`;
+REGLA ANTI-PAVADAS: Si el cliente habla de temas ajenos a la producción, respondé: "Mirá, sobre ese tema no estoy capacitado para asesorarte, pero te voy a derivar con alguien de nuestro equipo. Si querés hacer una nueva consulta técnica, escribí MENU." Generá handoff con summary "Consulta fuera de tema" y score 10.
+REGLA DE REINICIO: Si en el historial ves el mensaje "[SISTEMA: REINICIAR FLUJO]", ignorá todo lo hablado sobre presupuesto anteriormente y comenzá de cero con la pregunta 3.a).
+REGLA DE SILENCIO: Siempre, antes de despedirte en un handoff, recordá: "Cualquier cosa que necesites, escribí la palabra MENU para volver a hablar conmigo."`;
+
 
 export default async function handler(req, res) {
     if (req.method === 'GET') {
@@ -71,18 +74,26 @@ export default async function handler(req, res) {
         const text = message.text?.body?.toLowerCase() || "";
         const isInteractive = message.type === 'interactive';
 
-        // 2. Cargar historial + Info del Lead (CRM) en PARALELO (Búsqueda Exacta y Segura por Últimos 8 dígitos)
+        // 2. Cargar historial + Info del Lead (CRM) en PARALELO (Búsqueda Robusta)
+        const normalizePhone = (p) => {
+            let d = (p || '').replace(/\D/g, '');
+            if (d.startsWith('549') && d.length > 10) d = '54' + d.slice(3); // Normalizar Argentina
+            return d;
+        };
+
         const [historyData, leadData] = await Promise.all([
             loadHistory(from),
             supabase ? (async () => {
-                const searchStr = from.slice(-8); 
+                const searchStr = from.slice(-8); // Buscamos por los últimos 8 por si el prefijo varía
                 const { data } = await supabase
                     .from('whatsapp_leads')
                     .select('*')
                     .like('phone', `%${searchStr}%`)
-                    .order('created_at', { ascending: false })
-                    .limit(1);
-                return data?.[0] || null;
+                    .order('created_at', { ascending: false });
+                
+                // Si hay varios, intentamos el match más cercano por normalización
+                const bestMatch = data?.find(l => normalizePhone(l.phone) === normalizePhone(from));
+                return bestMatch || data?.[0] || null;
             })() : Promise.resolve(null)
         ]);
 
@@ -216,8 +227,10 @@ export default async function handler(req, res) {
             const btnId = message.interactive.button_reply.id;
             const btnTitle = message.interactive.button_reply.title || btnId;
 
-            let qr = "";
-            if (btnId === 'btn_p') qr = "¡Bárbaro! ¿Qué tipo de servicio o cobertura estás buscando? (Foto, Video, Streaming, o un combo) 📸🎥";
+            if (btnId === 'btn_p') {
+                qr = "¡Bárbaro! ¿Qué tipo de servicio o cobertura estás buscando? (Foto, Video, Streaming, o un combo) 📸🎥";
+                history.push({ role: 'user', content: "[SISTEMA: REINICIAR FLUJO]" }); // Forzar a la IA a reiniciar las preguntas
+            }
             else if (btnId === 'btn_v') {
                 qr = "🎬 Mirá algunos de nuestros trabajos en: https://nexofilm.com \n¿Te gustaría consultar por un presupuesto?";
                 // Mini-handoff silencioso para registrar que está mirando el portfolio
@@ -230,7 +243,7 @@ export default async function handler(req, res) {
                 });
             }
             else if (btnId === 'btn_h') {
-                qr = "Entendido. Un productor te va a contactar a la brevedad. 👤📞";
+                qr = "Entendido. Un productor te va a contactar a la brevedad. 👤📞 Cualquier cosa que necesites, escribí la palabra MENU.";
                 // WhatsApp al admin
                 await sendText(phoneNumberId, ADMIN_NUMBER, `🔔 ALERTA HUMANO: +${from}`).then(null, () => {});
                 // Mail al admin via Resend (awaited para que no muera en Vercel)

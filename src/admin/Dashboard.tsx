@@ -5,12 +5,14 @@ import React, { useState, useEffect } from 'react';
 interface WhatsAppLead {
     id: string;
     phone: string;
-    name?: string;
-    summary: string;
+    name: string | null;
+    email: string | null;
+    summary: string | null;
+    is_hot: boolean;
+    score: number;
+    source: string | null;
     created_at: string;
-    score?: number;
-    is_hot?: boolean;
-    source?: string;
+    updated_at?: string;
 }
 
 const Dashboard: React.FC = () => {
@@ -249,7 +251,7 @@ const Dashboard: React.FC = () => {
                                                 .map((lead) => (
                                                 <tr key={lead.id} className="hover:bg-white/[0.02] transition-colors group">
                                                     <td className="px-6 py-4 whitespace-nowrap text-zinc-400">
-                                                        {formatDate(lead.created_at)}
+                                                        {formatDate(lead.updated_at || lead.created_at)}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap font-bold text-white uppercase">
                                                         {lead.name || '-'}
