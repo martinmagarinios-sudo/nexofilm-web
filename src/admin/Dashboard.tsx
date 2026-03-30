@@ -257,7 +257,7 @@ const Dashboard: React.FC = () => {
                                                         {lead.name || '-'}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap font-medium text-nexo-lime">
-                                                        +{lead.phone}
+                                                        {lead.phone.startsWith('+') ? lead.phone : `+${lead.phone}`}
                                                     </td>
                                                     <td className="px-6 py-4 text-center">
                                                         {lead.is_hot ? (

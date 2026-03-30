@@ -43,11 +43,11 @@ $$HANDOFF_JSON$$
   "score": 85
 }
 $$HANDOFF_JSON$$
+OBLIGACIÓN: Siempre, antes de cerrar el mensaje de handoff, recordá al usuario: "Cualquier cosa que necesites, escribí la palabra MENU para volver a hablar conmigo."
 EL SCORE (1 a 100) lo debes calcular objetivamente sumando puntos así: base 20, +40 si es evento Comercial/Corporativo/Stream, +20 si es más de 100 personas, +10 si pide un Combo (Foto+Video), +10 si te percibe muy decidido y responde rápido, -30 si es algo social diminuto o evento muy amateur.
 
 REGLA ANTI-PAVADAS: Si el cliente habla de temas ajenos a la producción, respondé: "Mirá, sobre ese tema no estoy capacitado para asesorarte, pero te voy a derivar con alguien de nuestro equipo. Si querés hacer una nueva consulta técnica, escribí MENU." Generá handoff con summary "Consulta fuera de tema" y score 10.
-REGLA DE REINICIO: Si en el historial ves el mensaje "[SISTEMA: REINICIAR FLUJO]", ignorá todo lo hablado sobre presupuesto anteriormente y comenzá de cero con la pregunta 3.a).
-REGLA DE SILENCIO: Siempre, antes de despedirte en un handoff, recordá: "Cualquier cosa que necesites, escribí la palabra MENU para volver a hablar conmigo."`;
+REGLA DE REINICIO: Si en el historial ves el mensaje "[SISTEMA: REINICIAR FLUJO]", ignorá todo lo hablado sobre presupuesto anteriormente y comenzá de cero con la pregunta 3.a).`;
 
 
 export default async function handler(req, res) {
@@ -256,7 +256,7 @@ export default async function handler(req, res) {
                         html: `
                             <div style="font-family:sans-serif;padding:20px;border-left:4px solid #ccff00;">
                                 <h2>👤 ${contactName} quiere hablar con un productor</h2>
-                                <p><strong>Teléfono:</strong> +${from}</p>
+                                <p><strong>Teléfono:</strong> ${targetPhone.startsWith('+') ? targetPhone : `+${targetPhone}`}</p>
                                 <br/>
                                 <a href="https://nexofilm.com/admin/chat?phone=${from}" 
                                    style="background:#000;color:#fff;padding:12px 24px;text-decoration:none;border-radius:5px;font-weight:bold;">
@@ -357,8 +357,15 @@ export default async function handler(req, res) {
             try { 
                 hf = JSON.parse(jsonRaw); 
                 final = aiRes.replace(m[0], '').trim(); 
+                console.log("[HANDOFF OK] JSON detectado y procesado.");
             } catch(e) {
                 console.error("[HANDOFF PARSE ERROR] Falla al parsear JSON:", jsonRaw, e.message);
+                // Si falla el parseo, intentamos limpiar caracteres raros
+                try {
+                    let cleaned = jsonRaw.replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ');
+                    hf = JSON.parse(cleaned);
+                    final = aiRes.replace(m[0], '').trim();
+                } catch(e2) {}
             }
         }
         // Detección robusta de tags (insensible a mayúsculas/minúsculas y tolerante a 1 o 2 signos $)
