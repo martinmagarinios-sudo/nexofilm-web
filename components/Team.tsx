@@ -50,7 +50,7 @@ const Team: React.FC = () => {
                     <p className="text-nexo-lime text-[10px] font-bold uppercase tracking-[0.3em]">
                       {member.role}
                     </p>
-                    <p className="text-zinc-500 text-sm font-light italic">
+                    <p className="text-zinc-500 text-sm font-light italic opacity-80">
                       "{member.bio}"
                     </p>
                     <a
