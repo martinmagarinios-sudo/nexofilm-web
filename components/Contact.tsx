@@ -38,12 +38,12 @@ const Contact: React.FC = () => {
           <h2 className="text-5xl md:text-7xl font-bold uppercase tracking-tighter mb-12 leading-[1] text-white">{t('contact.title')}</h2>
           <div className="space-y-8">
             <div>
-              <p className="text-zinc-500 uppercase tracking-[0.4em] text-[10px] font-bold mb-2">{t('contact.email_label')}</p>
+              <h3 className="text-zinc-500 uppercase tracking-[0.4em] text-[10px] font-bold mb-2">{t('contact.email_label')}</h3>
               <a href="mailto:hola@nexofilm.com" className="text-2xl font-light hover:text-nexo-lime transition-colors">hola@nexofilm.com</a>
             </div>
 
             <div className="pt-4">
-              <p className="text-zinc-500 uppercase tracking-[0.4em] text-[10px] font-bold mb-6">{t('contact.social_label')}</p>
+              <h3 className="text-zinc-500 uppercase tracking-[0.4em] text-[10px] font-bold mb-6">{t('contact.social_label')}</h3>
               <div className="flex gap-6 justify-center md:justify-start">
                 <a
                   href={whatsappUrl}

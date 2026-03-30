@@ -10,6 +10,8 @@ import Process from './components/Process';
 import Contact from './components/Contact';
 import Logo from './components/Logo';
 import FloatingWhatsApp from './components/FloatingWhatsApp';
+import ValueProp from './components/ValueProp';
+import Team from './components/Team';
 import { CONFIG } from './data/config';
 
 const App: React.FC = () => {
@@ -136,6 +138,7 @@ const App: React.FC = () => {
 
       <main>
         <Hero />
+        <ValueProp />
 
         <section id="historia" className="py-20 md:py-32 bg-black overflow-hidden border-b border-white/5 relative">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full text-center pointer-events-none opacity-[0.02] select-none">
@@ -210,6 +213,7 @@ const App: React.FC = () => {
         </section>
 
         <Process />
+        <Team />
         <Clients />
         <Portfolio />
         <Testimonials />

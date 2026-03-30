@@ -62,7 +62,10 @@ export const CONFIG = {
             imageUrl: "",
             videoUrl: "/video/portfolio/Copa.mp4",
             description: "25 años operando en Argentina",
-            behanceUrl: "https://www.behance.net/gallery/233427891/25-anos-de-Copa-Airlines-operando-en-Argentina"
+            behanceUrl: "https://www.behance.net/gallery/233427891/25-anos-de-Copa-Airlines-operando-en-Argentina",
+            client: "Copa Airlines",
+            objective: "Celebrar la trayectoria de la aerolínea en el país con un video de alto impacto emocional.",
+            results: "+1M impresiones y refuerzo de lealtad de marca."
         },
         {
             id: "2",
@@ -71,7 +74,10 @@ export const CONFIG = {
             imageUrl: "",
             videoUrl: "/video/portfolio/BP.mp4",
             description: "Video institucional para Bahia Principe.",
-            behanceUrl: "https://www.behance.net/NexoFilm"
+            behanceUrl: "https://www.behance.net/NexoFilm",
+            client: "Bahia Principe Hotels & Resorts",
+            objective: "Mostrar la exclusividad y los servicios premium del resort para el mercado internacional.",
+            results: "Incremento del 15% en consultas directas desde la web."
         },
         {
             id: "3",
@@ -123,7 +129,10 @@ export const CONFIG = {
                 "/img/portfolio/Namida Nikkei/Namida.Nikkei-109.jpg"
             ],
             description: "Fotografía gastronómica para Namida Nikkei.",
-            behanceUrl: "https://www.behance.net/NexoFilm"
+            behanceUrl: "https://www.behance.net/NexoFilm",
+            client: "Namida Nikkei",
+            objective: "Elevar la estética visual del menú para plataformas de delivery y redes sociales.",
+            results: "Mejora del 30% en el engagement de Instagram."
         },
         {
             id: "7",

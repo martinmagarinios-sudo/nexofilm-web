@@ -10,6 +10,9 @@ export interface Project {
   embedUrl?: string;
   description: string;
   behanceUrl: string;
+  client?: string;
+  objective?: string;
+  results?: string;
 }
 
 export interface Client {

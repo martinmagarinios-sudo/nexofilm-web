@@ -49,7 +49,7 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
         <button 
           className="hover:opacity-80 transition-all duration-500 transform active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-nexo-lime rounded-sm" 
           onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); setIsMenuOpen(false); }}
-          aria-label={t('navbar.about')}
+          aria-label="Volver al Inicio"
         >
           <Logo size={isScrolled ? "sm" : "md"} className="transition-all duration-500" />
         </button>
@@ -90,7 +90,7 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
         <button
           className="md:hidden flex flex-col space-y-1.5 cursor-pointer p-2 group z-50 focus:outline-none"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          aria-label={t('navbar.contact')}
+          aria-label={isMenuOpen ? "Cerrar Menú" : "Abrir Menú"}
         >
           <span className={`h-[1px] bg-white group-hover:bg-nexo-lime transition-all duration-300 ${isMenuOpen ? 'w-6 rotate-45 translate-y-1.5' : (isScrolled ? 'w-6' : 'w-8')}`}></span>
           <span className={`h-[1px] bg-white group-hover:bg-nexo-lime transition-all duration-300 ${isMenuOpen ? 'opacity-0' : (isScrolled ? 'w-4' : 'w-6')}`}></span>

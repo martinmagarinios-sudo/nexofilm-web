@@ -56,7 +56,23 @@
 </head>
 
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <!-- SEO Prerender Lite: This content is visible to bots before JS hydration -->
+    <header style="display:none;">
+      <h1>NexoFilm | Productora Audiovisual</h1>
+      <p>Especialistas en Video Corporativo, Fotografía y Streaming.</p>
+    </header>
+    <main style="display:none;">
+      <section>
+        <h2>Producción de Alto Impacto</h2>
+        <p>Conectamos marcas con historias audiovisuales de estética cinematográfica.</p>
+      </section>
+      <section>
+        <h2>Propuesta de Valor</h2>
+        <p>No solo filmamos, creamos activos de marca utilizando tecnología de vanguardia.</p>
+      </section>
+    </main>
+  </div>
   <script type="module" src="/index.tsx"></script>
 </body>
 

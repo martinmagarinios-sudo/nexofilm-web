@@ -12,7 +12,7 @@ const LanguageSwitcher: React.FC = () => {
     { code: 'pt', label: 'PT', name: 'Português' }
   ];
 
-  const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0];
+  const currentLanguage = languages.find(lang => i18n.language && i18n.language.startsWith(lang.code)) || languages[0];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

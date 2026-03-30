@@ -15,12 +15,10 @@ i18n
       en: { translation: en },
       pt: { translation: pt }
     },
-    fallbackLng: 'es',
-    interpolation: {
-      escapeValue: false // react already safes from xss
-    },
+    load: 'languageOnly', // es-AR -> es
     detection: {
-      order: ['localStorage', 'navigator'],
+      order: ['querystring', 'localStorage', 'navigator'],
+      lookupQuerystring: 'lng',
       caches: ['localStorage']
     }
   });

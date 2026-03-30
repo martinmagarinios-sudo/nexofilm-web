@@ -106,7 +106,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
                             <div key={idx} className="w-1/3 h-full border-r border-black/10 last:border-0 relative overflow-hidden">
                                 <img
                                     src={imgSrc}
-                                    alt={`${project.title} ${idx}`}
+                                    alt={t('projects.image_alt', { title: project.title, category: t(`projects.categories.${project.category === 'Video Comercial' ? 'commercial' : project.category === 'Video Institucional' ? 'institutional' : 'food'}`) })}
                                     loading="lazy"
                                     className="w-full h-full object-cover transition-transform duration-1000 scale-105"
                                 />
@@ -156,6 +156,29 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
                     </p>
                     <h3 className="text-2xl md:text-3xl font-bold uppercase tracking-tight group-hover:text-nexo-lime transition-colors">{project.title}</h3>
                     <p className="text-zinc-500 text-xs mt-2 font-light">{t(`projects.items.${project.id}`)}</p>
+                    
+                    {(project.client || project.objective || project.results) && (
+                        <div className="mt-4 pt-4 border-t border-white/5 space-y-3">
+                           {project.client && (
+                             <div className="flex items-center gap-2">
+                               <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-bold">Cliente:</span>
+                               <span className="text-[10px] text-zinc-400 font-medium">{project.client}</span>
+                             </div>
+                           )}
+                           {project.objective && (
+                             <div className="flex flex-col gap-1">
+                               <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-bold">Objetivo:</span>
+                               <span className="text-[10px] text-zinc-500 font-light leading-relaxed">{project.objective}</span>
+                             </div>
+                           )}
+                           {project.results && (
+                             <div className="flex items-center gap-2">
+                               <span className="text-[8px] uppercase tracking-widest text-nexo-lime font-black">Resultado:</span>
+                               <span className="text-[10px] text-white font-bold">{project.results}</span>
+                             </div>
+                           )}
+                        </div>
+                    )}
                 </div>
             </div>
 

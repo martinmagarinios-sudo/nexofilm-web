@@ -65,12 +65,54 @@
       "7": "Producción audiovisual para TS Tour Operador.",
       "8": "Producción audiovisual para Vista Sol.",
       "9": "Producción audiovisual para Droguería del Sud."
-    }
+    },
+    "image_alt": "{{title}} - Producción de {{category}} por NexoFilm"
   },
   "clients": {
     "badge": "Aliados Estratégicos",
     "title": "Clientes que confían",
-    "logo_alt": "Logo de {{name}}"
+    "logo_alt": "Socio estratégico de NexoFilm: {{name}}"
+  },
+  "value_prop": {
+    "badge": "Diferenciación Técnica",
+    "title_main": "No solo filmamos,",
+    "title_gradient": "creamos activos de marca.",
+    "description": "Fusionamos estética cinematográfica con objetivos de negocio. En NexoFilm entendemos que cada frame debe trabajar para tu marca, convirtiendo la visión creativa en resultados tangibles.",
+    "stats": {
+      "years": "Años de trayectoria",
+      "projects": "Proyectos entregados"
+    },
+    "features": {
+      "01": {
+        "title": "Mentalidad Estratégica",
+        "desc": "Cada pieza audiovisual nace de un objetivo comercial claro, no solo de un capricho artístico."
+      },
+      "02": {
+        "title": "Calidad Cine en cada Frame",
+        "desc": "Utilizamos tecnología de última generación para asegurar que tu marca se vea al nivel de las grandes producciones."
+      }
+    }
+  },
+  "team": {
+    "badge": "Liderazgo y Talento",
+    "title": "Quiénes somos",
+    "description": "NexoFilm combina la visión estratégica de su liderazgo con una red global de especialistas de élite para cada etapa de la producción.",
+    "roles": {
+      "founder": "Fundador & Director Creativo"
+    },
+    "bios": {
+      "martin": "Creativo apasionado por la estética cinematográfica y la narrativa de marca. 15 años conectando marcas con historias visuales de alto impacto."
+    },
+    "specialists_title": "Red de Especialistas",
+    "specialists": {
+      "dp": "Directores de Fotografía",
+      "editors": "Editores Senior",
+      "colorists": "Coloristas Pro",
+      "sound": "Post-Producción de Sonido",
+      "vfx": "Efectos Visuales (VFX)",
+      "producers": "Productores de Campo"
+    },
+    "culture_quote": "Creemos en la colaboración radical. Seleccionamos el mejor talento específico para cada proyecto, garantizando una ejecución impecable sin importar la complejidad."
   },
   "process": {
     "badge": "Metodología",
