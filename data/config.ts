@@ -86,7 +86,10 @@ export const CONFIG = {
             imageUrl: "",
             videoUrl: "/video/portfolio/CSL.mp4",
             description: "Producción audiovisual para Cerámica San Lorenzo.",
-            behanceUrl: "https://www.behance.net/NexoFilm"
+            behanceUrl: "https://www.behance.net/NexoFilm",
+            client: "Cerámica San Lorenzo",
+            objective: "Comunicar los estándares de calidad y durabilidad de sus productos en una pieza visual de alto impacto.",
+            results: "Video optimizado para puntos de venta, mejorando el tiempo de permanencia de los clientes."
         },
         {
             id: "4",
@@ -104,7 +107,10 @@ export const CONFIG = {
             imageUrl: "",
             videoUrl: "/video/portfolio/GEA.mp4",
             description: "Producción audiovisual para GEA.",
-            behanceUrl: "https://www.behance.net/NexoFilm"
+            behanceUrl: "https://www.behance.net/NexoFilm",
+            client: "Grupo GEA Latam",
+            objective: "Presentar la red de soluciones logísticas globales con una narrativa moderna y profesional.",
+            results: "Video corporativo central para su comunicación institucional en la región."
         },
         {
             id: "6",
@@ -141,7 +147,10 @@ export const CONFIG = {
             imageUrl: "",
             videoUrl: "/video/portfolio/TS.mp4",
             description: "Producción audiovisual para TS Tour Operador.",
-            behanceUrl: "https://www.behance.net/NexoFilm"
+            behanceUrl: "https://www.behance.net/NexoFilm",
+            client: "TS Tour Operador",
+            objective: "Destacar los destinos exclusivos y el servicio personalizado para agencias de viajes.",
+            results: "Pieza audiovisual clave para su convención anual de ventas."
         },
         {
             id: "8",
@@ -150,7 +159,10 @@ export const CONFIG = {
             imageUrl: "",
             videoUrl: "/video/portfolio/Vista.mp4",
             description: "Producción audiovisual para Vista Sol.",
-            behanceUrl: "https://www.behance.net/NexoFilm"
+            behanceUrl: "https://www.behance.net/NexoFilm",
+            client: "Vista Sol Punta Cana",
+            objective: "Capturar la belleza natural y la experiencia de relajación total en el paraíso dominicano.",
+            results: "Material visual premium utilizado en campañas globales de reserva directa."
         },
         {
             id: "9",
