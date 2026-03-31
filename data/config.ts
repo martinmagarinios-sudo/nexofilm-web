@@ -98,7 +98,10 @@ export const CONFIG = {
             imageUrl: "",
             videoUrl: "/video/portfolio/dds_fiesta_2025.mp4",
             description: "Producción audiovisual para Droguería del Sud.",
-            behanceUrl: "https://www.behance.net/NexoFilm"
+            behanceUrl: "https://www.behance.net/NexoFilm",
+            client: "Droguería del Sud",
+            objective: "Documentar la magnitud y energía de la fiesta anual de la empresa para comunicación interna.",
+            results: "Aumento del compromiso interno y pieza clave de employer branding."
         },
         {
             id: "5",
@@ -171,7 +174,10 @@ export const CONFIG = {
             imageUrl: "",
             videoUrl: "/video/portfolio/DDS.mp4",
             description: "Producción audiovisual para Droguería del Sud.",
-            behanceUrl: "https://www.behance.net/NexoFilm"
+            behanceUrl: "https://www.behance.net/NexoFilm",
+            client: "Droguería del Sud",
+            objective: "Generar una pieza institucional que refuerce la posición de liderazgo en el sector logístico farmacéutico.",
+            results: "Fortalecimiento de la confianza de marca ante socios estratégicos."
         },
     ] as Project[],
 
