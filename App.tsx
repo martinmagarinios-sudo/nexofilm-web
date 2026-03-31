@@ -58,7 +58,16 @@ const App: React.FC = () => {
         t('history.video_badge'),
         t('history.photo_badge'),
         t('history.stream_badge')
-      ]
+      ],
+      "hasPart": CONFIG.projects.map(proj => ({
+        "@type": "CreativeWork",
+        "name": proj.title,
+        "description": proj.description,
+        "genre": proj.category,
+        "author": { "@type": "Organization", "name": "NexoFilm" },
+        "contentUrl": proj.videoUrl || proj.imageUrl,
+        "thumbnailUrl": proj.imageUrl || "https://nexofilm.com/favicon.png"
+      }))
     };
 
     const script = document.createElement('script');
