@@ -15,8 +15,8 @@ i18n
       en: { translation: en },
       pt: { translation: pt }
     },
+    lng: 'es',
     fallbackLng: 'es',
-    supportedLngs: ['es', 'en', 'pt'],
     load: 'languageOnly', // es-AR -> es
     nonExplicitSupportedLngs: true,
     detection: {

@@ -20,8 +20,8 @@ const ValueProp: React.FC = () => {
           </div>
 
           <h2 className="uppercase tracking-tighter leading-[1.1] mb-12">
-            <span className="font-black text-white text-4xl md:text-7xl block mb-4">{t('value_prop.title_main')}</span>
-            <span className="font-normal text-nexo-lime text-2xl md:text-5xl block">
+            <span className="font-bold text-white text-4xl md:text-7xl block mb-4">{t('value_prop.title_main')}</span>
+            <span className="font-light text-nexo-lime-dark text-3xl md:text-6xl block">
               {t('value_prop.title_gradient')}
             </span>
           </h2>
