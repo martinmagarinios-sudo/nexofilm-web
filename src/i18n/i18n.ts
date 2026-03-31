@@ -20,7 +20,7 @@ i18n
     load: 'languageOnly', // es-AR -> es
     nonExplicitSupportedLngs: true,
     detection: {
-      order: ['querystring', 'localStorage', 'navigator'],
+      order: ['htmlTag', 'navigator', 'querystring', 'localStorage'],
       lookupQuerystring: 'lng',
       caches: ['localStorage']
     }
