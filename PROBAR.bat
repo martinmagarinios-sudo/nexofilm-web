@@ -33,18 +33,26 @@ git push origin staging
 echo  ✓ Guardado en GitHub
 echo.
 
-:: 3. Subir a Vercel (Preview)
+:: 3. Subir a Vercel (Preview) y asignar dominio
 echo  [2/2] Publicando en URL de pruebas...
-:: Usamos vercel SIN --prod para generar una URL de Preview aislada
-call npx vercel --force
-echo  ✓ Publicado en Staging
+:: Redirigimos la salida a un archivo para capturar la URL exacta generada
+call npx vercel --force > vercel_out.txt
+set /p VERCEL_URL=<vercel_out.txt
+del vercel_out.txt
+
+echo  ✓ Venta de Preview creada: %VERCEL_URL%
+echo  Asignando al dominio www.nexofilm.online...
+
+call npx vercel alias set %VERCEL_URL% www.nexofilm.online
 echo.
 
 echo  ====================================
 echo   ✓ Listo! Tu web de pruebas se actualizo.
-echo   Podes ver la URL en la consola arriba.
-echo   Recorda configurar las variables de 
-echo   entorno (PREVIEW) en tu panel de Vercel.
+echo   Podes verla en: https://www.nexofilm.online
+echo.
+echo   (Nota: Si Vercel tira error de alias, asegúrate
+echo   de haber configurado los DNS en tu proveedor
+echo   de dominios como vimos en el panel).
 echo  ====================================
 echo.
 pause
