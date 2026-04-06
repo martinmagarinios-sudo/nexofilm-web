@@ -3,7 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const supabaseKey = process.env.VITE_SUPABASE_KEY || process.env.SUPABASE_KEY;
 
+const stagingUrl = process.env.STAGING_SUPABASE_URL || 'https://bprjsdkhvqobrommxfnk.supabase.co';
+const stagingKey = process.env.STAGING_SUPABASE_KEY;
+
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+const supabaseStaging = stagingUrl && stagingKey ? createClient(stagingUrl, stagingKey) : null;
 
 export default async function handler(req, res) {
   // Opcional: Proteger el endpoint para que solo lo llame Vercel Cron
@@ -15,33 +19,46 @@ export default async function handler(req, res) {
       }
   }
 
-  if (!supabase) {
-    return res.status(500).json({ error: 'Supabase no está configurado', status: 'PAUSED' });
+  const results = { status: 'HEALTHY', pings: [] };
+
+  if (!supabase && !supabaseStaging) {
+    return res.status(500).json({ error: 'Ningún Supabase (Prod/Staging) está configurado', status: 'PAUSED' });
   }
 
-  try {
-    console.log("Iniciando ping a Supabase para prevenir inactividad...");
-    
-    // Hacemos una lectura muy ligera a la tabla para registrar actividad en la BD
-    const { data, error } = await supabase
-      .from('whatsapp_sessions')
-      .select('phone')
-      .limit(1);
-
-    if (error) throw error;
-
-    console.log("¡Ping exitoso! Supabase se mantiene activo.");
-    return res.status(200).json({ 
-        message: 'Ping a Supabase exitoso. Proyecto activo.', 
-        status: 'HEALTHY',
-        timestamp: new Date().toISOString()
-    });
-
-  } catch (err) {
-    console.error("Error al hacer el ping a Supabase:", err);
-    return res.status(500).json({ 
-        error: 'Error al contactar a la base de datos', 
-        details: err.message 
-    });
+  // Ping a Producción
+  if (supabase) {
+    try {
+      console.log("Iniciando ping a Supabase Producción...");
+      const { error } = await supabase.from('whatsapp_sessions').select('phone').limit(1);
+      if (error && error.code !== '42P01') throw error; // Ignoramos si la tabla no existe aún, el ping cuenta igual
+      console.log("¡Ping a Producción exitoso!");
+      results.pings.push('Production: OK');
+    } catch (err) {
+      console.error("Error ping Producción:", err);
+      results.pings.push(`Production: ERROR (${err.message})`);
+      results.status = 'DEGRADED';
+    }
   }
+
+  // Ping a Staging
+  if (supabaseStaging) {
+    try {
+      console.log("Iniciando ping a Supabase Staging...");
+      const { error } = await supabaseStaging.from('whatsapp_sessions').select('phone').limit(1);
+      if (error && error.code !== '42P01') throw error;
+      console.log("¡Ping a Staging exitoso!");
+      results.pings.push('Staging: OK');
+    } catch (err) {
+      console.error("Error ping Staging:", err);
+      results.pings.push(`Staging: ERROR (${err.message})`);
+      results.status = 'DEGRADED';
+    }
+  } else {
+    results.pings.push('Staging: SKIPPED (No STAGING_SUPABASE_KEY found)');
+  }
+
+  const statusCode = results.status === 'HEALTHY' ? 200 : 207;
+  results.timestamp = new Date().toISOString();
+
+  return res.status(statusCode).json(results);
 }
