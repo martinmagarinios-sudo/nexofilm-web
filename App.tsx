@@ -235,7 +235,7 @@ const App: React.FC = () => {
               <p className="text-zinc-500 text-xs font-light leading-relaxed max-w-[220px]">
                 Productora audiovisual<br />
                 <span className="text-nexo-lime font-medium">Buenos Aires, Argentina</span><br />
-                Cobertura en toda Latam
+                Con alcance global
               </p>
             </div>
 
@@ -264,7 +264,7 @@ const App: React.FC = () => {
           <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-zinc-600 text-[10px] uppercase tracking-widest font-bold text-center md:text-left">
               <p>© {new Date().getFullYear()} {CONFIG.footer.copyright}</p>
-              <p className="mt-1 text-[9px] text-zinc-600">Buenos Aires, Argentina · Latam</p>
+              <p className="mt-1 text-[9px] text-zinc-600">Buenos Aires, Argentina · Global</p>
               <p className="mt-1 text-[9px] text-zinc-700">{t('footer.copyright_note')}</p>
             </div>
             <div className="flex gap-6 text-[10px] uppercase tracking-widest font-bold text-zinc-400">
