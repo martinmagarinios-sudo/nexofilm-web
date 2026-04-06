@@ -230,8 +230,13 @@ const App: React.FC = () => {
       <footer className="py-20 bg-black border-t border-white/5">
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-12 mb-16">
-            <div className="space-y-1 text-center md:text-left">
+            <div className="space-y-3 text-center md:text-left">
               <Logo size="md" />
+              <p className="text-zinc-500 text-xs font-light leading-relaxed max-w-[220px]">
+                Productora audiovisual<br />
+                <span className="text-nexo-lime font-medium">Buenos Aires, Argentina</span><br />
+                Cobertura en toda Latam
+              </p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-16 text-center md:text-left">
@@ -259,7 +264,8 @@ const App: React.FC = () => {
           <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-zinc-600 text-[10px] uppercase tracking-widest font-bold text-center md:text-left">
               <p>© {new Date().getFullYear()} {CONFIG.footer.copyright}</p>
-              <p className="mt-2 text-[9px] text-zinc-700">{t('footer.copyright_note')}</p>
+              <p className="mt-1 text-[9px] text-zinc-600">Buenos Aires, Argentina · Latam</p>
+              <p className="mt-1 text-[9px] text-zinc-700">{t('footer.copyright_note')}</p>
             </div>
             <div className="flex gap-6 text-[10px] uppercase tracking-widest font-bold text-zinc-400">
               <a href="#portfolio" className="hover:text-nexo-lime transition-colors">{t('navbar.portfolio')}</a>
