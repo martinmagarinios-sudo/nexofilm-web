@@ -56,7 +56,8 @@
     "categories": {
       "commercial": "Commercial Video",
       "institutional": "Institutional Video",
-      "food": "Food Photography"
+      "food": "Food Photography",
+      "event": "Event Coverage"
     },
     "items": {
       "1": "25 years operating in Argentina",
@@ -67,7 +68,8 @@
       "6": "Food photography for Namida Nikkei.",
       "7": "Audiovisual production for TS Tour Operador.",
       "8": "Audiovisual production for Vista Sol.",
-      "9": "Audiovisual production for Droguería del Sud."
+      "9": "Audiovisual production for Droguería del Sud.",
+      "10": "Audiovisual coverage of Expo Delicatessen & Vinos, the most important premium food and beverage business hub in the region."
     },
     "objectives": {
       "1": "Celebrate 25 years of operations in Argentina with a high emotional-impact piece that reinforces brand loyalty.",
@@ -78,7 +80,8 @@
       "6": "Elevate the full menu's visual aesthetics for delivery platforms, social media, and printed menus.",
       "7": "Highlight exclusive destinations and personalized service for a high-volume travel agency audience.",
       "8": "Capture the luxury and nature experience of the resort for global direct booking acquisition campaigns.",
-      "9": "Reinforce the company's leadership as a key player in pharmaceutical logistics with a high corporate-impact audiovisual piece."
+      "9": "Reinforce the company's leadership as a key player in pharmaceutical logistics with a high corporate-impact audiovisual piece.",
+      "10": "Document the 18th edition of Expo Delicatessen & Vinos in Córdoba — an event that brings together producers, importers, sommeliers and premium food and beverage professionals — with a high-impact audiovisual piece for institutional communication, social media, and exhibitor outreach for future editions."
     },
     "results": {
       "1": "+1.2M organic impressions in the first 72 hours of publication.",
@@ -89,7 +92,8 @@
       "6": "+38% increase in Instagram engagement in the 30 days following publication.",
       "7": "Presented to +250 agencies at the annual sales convention. Repositioned as a permanent sales asset.",
       "8": "Selected as official material for digital campaigns in 4 international markets.",
-      "9": "Measured increase in the trust index among strategic partners after a board of directors presentation."
+      "9": "Measured increase in the trust index among strategic partners after a board of directors presentation.",
+      "10": "+3,000 attendees per edition and over 200 premium food and beverage exhibitors. The video was used as the official outreach material for the 2026 edition."
     },
     "image_alt": "{{title}} - {{category}} Production by NexoFilm"
   },

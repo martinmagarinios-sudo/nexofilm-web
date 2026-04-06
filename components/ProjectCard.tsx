@@ -152,7 +152,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
             <div className="flex justify-between items-start mb-6">
                 <div>
                      <p className="text-nexo-lime text-[9px] md:text-[10px] font-bold uppercase tracking-[0.4em] mb-3">
-                        {t(`projects.categories.${project.category === 'Video Comercial' ? 'commercial' : project.category === 'Video Institucional' ? 'institutional' : 'food'}`)}
+                        {t(`projects.categories.${project.category === 'Video Comercial' ? 'commercial' : project.category === 'Video Institucional' ? 'institutional' : project.category === 'Cobertura de Evento' ? 'event' : 'food'}`)}
                     </p>
                     <h3 className="text-2xl md:text-3xl font-bold uppercase tracking-tight group-hover:text-nexo-lime transition-colors">{project.title}</h3>
                     <p className="text-zinc-500 text-xs mt-2 font-light">{t(`projects.items.${project.id}`)}</p>

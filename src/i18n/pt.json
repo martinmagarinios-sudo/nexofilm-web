@@ -56,7 +56,8 @@
     "categories": {
       "commercial": "Vídeo Comercial",
       "institutional": "Vídeo Institucional",
-      "food": "Foto Produto"
+      "food": "Foto Produto",
+      "event": "Cobertura de Evento"
     },
     "items": {
       "1": "25 anos operando na Argentina",
@@ -67,7 +68,8 @@
       "6": "Fotografia gastronômica para Namida Nikkei.",
       "7": "Produção audiovisual para TS Tour Operador.",
       "8": "Produção audiovisual para Vista Sol.",
-      "9": "Produção audiovisual para Droguería del Sud."
+      "9": "Produção audiovisual para Droguería del Sud.",
+      "10": "Cobertura audiovisual da Expo Delicatessen & Vinos, o epicentro de negócios de alimentos e bebidas de alta qualidade mais importante da região."
     },
     "objectives": {
       "1": "Celebrar 25 anos de operações na Argentina com uma peça de alto impacto emocional que reforce a lealdade à marca.",
@@ -78,7 +80,8 @@
       "6": "Elevar a estética visual do cardápio completo para plataformas de delivery, redes sociais e cardápio impresso.",
       "7": "Destacar destinos exclusivos e serviço personalizado para apresentar a um público de agências de viagens de alto volume.",
       "8": "Capturar a experiência de luxo e natureza do resort para campanhas globais de captação de reservas diretas.",
-      "9": "Reforçar a liderança da empresa como ator-chave em logística farmacêutica com uma peça audiovisual de alto impacto corporativo."
+      "9": "Reforçar a liderança da empresa como ator-chave em logística farmacêutica com uma peça audiovisual de alto impacto corporativo.",
+      "10": "Documentar a 18ª edição da Expo Delicatessen & Vinos em Córdoba — um evento que reúne produtores, importadores, sommeliers e profissionais do setor gastronômico premium — com uma peça audiovisual de alto impacto para comunicação institucional, redes sociais e convocatória de expositores para edições futuras."
     },
     "results": {
       "1": "+1,2M de impressões orgânicas nas primeiras 72 hs. de publicação.",
@@ -89,7 +92,8 @@
       "6": "+38% de aumento no engajamento do Instagram nos 30 dias posteriores à publicação.",
       "7": "Apresentado a +250 agências na convenção anual de vendas. Material reutilizado como ativo de vendas permanente.",
       "8": "Selecionado como material oficial para campanhas digitais em 4 mercados internacionais.",
-      "9": "Aumento medido no índice de confiança de parceiros estratégicos após apresentação em reunião de diretoria."
+      "9": "Aumento medido no índice de confiança de parceiros estratégicos após apresentação em reunião de diretoria.",
+      "10": "+3.000 participantes por edição e mais de 200 expositores de alimentos e bebidas selecionados. O vídeo foi utilizado como material oficial de convocatória para a edição 2026."
     },
     "image_alt": "{{title}} - Produção de {{category}} pela NexoFilm"
   },
