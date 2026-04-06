@@ -191,7 +191,7 @@ export const CONFIG = {
         { id: "c4", name: "Eseade", logo: "/img/clientes/Eseade_Logo.png" },
         { id: "c5", name: "GEA", logo: "/img/clientes/GEA_logo.png" },
         { id: "c6", name: "Iberostar", logo: "/img/clientes/iberostar_logo.png" },
-        { id: "c7", name: "Julia Tours", logo: "/img/clientes/Julia Tours_logo.png" },
+        { id: "c7", name: "Joint Group", logo: "/img/clientes/Logo Joint.png" },
         { id: "c8", name: "RIU Hotels", logo: "/img/clientes/RIU_Logo.png" },
         { id: "c9", name: "Ceramica San Lorenzo", logo: "/img/clientes/San Lorenzo_logo.png" },
         { id: "c10", name: "TS Tour Operador", logo: "/img/clientes/TS_logo.png" },
