@@ -85,10 +85,13 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
         return () => clearInterval(interval);
     }, [isAuthenticated]);
 
-    // Bajar el scroll al cambiar de chat o recibir mensaje
+    const activeSession = sessions.find(s => s.phone === selectedPhone);
+    const historyLength = activeSession?.history?.length || 0;
+
+    // Bajar el scroll al cambiar de chat o recibir mensaje (solo si hay mensajes nuevos)
     useEffect(() => {
         scrollToBottom();
-    }, [selectedPhone, sessions]);
+    }, [selectedPhone, historyLength]);
 
     // Buscar datos del lead (Resumen IA)
     useEffect(() => {
@@ -113,8 +116,6 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
         };
         fetchLeadData();
     }, [selectedPhone, isAuthenticated]);
-
-    const activeSession = sessions.find(s => s.phone === selectedPhone);
 
     const sendPromo = async (phone: string) => {
         if (!confirm('¿Seguro que querés enviar la promoción de servicios a este cliente?')) return;
