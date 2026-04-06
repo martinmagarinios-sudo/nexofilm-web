@@ -13,6 +13,7 @@
   "hero": {
     "visual_tag": "Estética Cinematográfica",
     "view_portfolio": "Ver Portfolio",
+    "segmentation_tagline": "Producción audiovisual técnica y estratégica: proyectamos empresas y eventos al mercado global.",
     "slides": [
       {
         "title": "Producción Audiovisual",
@@ -91,7 +92,9 @@
         "title": "Calidad Cine en cada Frame",
         "desc": "Utilizamos tecnología de última generación para asegurar que tu marca se vea al nivel de las grandes producciones."
       }
-    }
+    },
+    "cta_primary": "Solicitá tu presupuesto en 24hs",
+    "cta_whatsapp": "Consultá por WhatsApp"
   },
   "team": {
     "badge": "Liderazgo y Talento",

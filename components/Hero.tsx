@@ -138,9 +138,16 @@ const Hero: React.FC = () => {
               </div>
             )}
 
-            <p className={`text-lg md:text-2xl text-white/60 max-w-2xl mb-12 font-light leading-relaxed transition-all duration-1000 delay-[1200ms] ${idx === current ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'}`}>
+            <p className={`text-lg md:text-2xl text-white/60 max-w-2xl mb-6 font-light leading-relaxed transition-all duration-1000 delay-[1200ms] ${idx === current ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10'}`}>
               {t(`hero.slides.${idx}.subtitle`)}
             </p>
+
+            {/* Tagline de segmentación — fijo en todos los slides */}
+            {idx === current && (
+              <p className="text-[11px] md:text-xs font-bold uppercase tracking-[0.35em] text-nexo-lime/70 mb-10 transition-all duration-1000 delay-[1500ms] opacity-100">
+                {t('hero.segmentation_tagline')}
+              </p>
+            )}
 
             <div className={`transition-all duration-1000 delay-[2000ms] ${idx === current ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
               <a href="#portfolio" className="group flex items-center gap-8 hover-pulse justify-center md:justify-start">
