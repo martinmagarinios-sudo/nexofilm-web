@@ -179,6 +179,18 @@ export const CONFIG = {
             objective: "Reforzar el liderazgo de la empresa como actor clave en logística farmacéutica con una pieza audiovisual de alto impacto corporativo.",
             results: "Incremento medido en el índice de confianza de socios estratégicos tras presentación en reunión de directorio."
         },
+        {
+            id: "10",
+            title: "Expo Delicatessen & Vinos",
+            category: "Cobertura de Evento",
+            imageUrl: "",
+            videoUrl: "/video/portfolio/joint.mp4",
+            description: "Cobertura audiovisual de la Expo Delicatessen & Vinos, el epicentro de negocios de alimentos y bebidas de alta calidad más importante de la región.",
+            behanceUrl: "https://www.behance.net/NexoFilm",
+            client: "Joint Group",
+            objective: "Documentar la 18ª edición de la Expo Delicatessen & Vinos en Córdoba — un evento que reúne a productores, importadores, sommeliers y profesionales del sector gastronómico premium — con una pieza audiovisual de alto impacto para comunicación institucional, redes sociales y convocatoria de expositores para ediciones futuras.",
+            results: "+3.000 asistentes por edición y más de 200 expositores de alimentos y bebidas selectas. El video fue utilizado como material oficial de convocatoria para la edición 2026."
+        },
     ] as Project[],
 
     // --- CLIENTES ---
