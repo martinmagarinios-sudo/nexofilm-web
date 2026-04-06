@@ -233,9 +233,9 @@ const App: React.FC = () => {
             <div className="space-y-3 text-center md:text-left">
               <Logo size="md" />
               <p className="text-zinc-500 text-xs font-light leading-relaxed max-w-[220px]">
-                Productora audiovisual<br />
+                Productora audiovisual en<br />
                 <span className="text-nexo-lime font-medium">Buenos Aires, Argentina</span><br />
-                Con alcance global
+                con alcance global.
               </p>
             </div>
 
