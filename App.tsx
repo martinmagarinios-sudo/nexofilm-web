@@ -43,20 +43,88 @@ const App: React.FC = () => {
 
     const schemaData = {
       "@context": "https://schema.org",
-      "@type": "Organization",
+      "@type": ["LocalBusiness", "VideoProductionCompany"],
       "name": "NexoFilm",
       "alternateName": "NexoFilm Productora Audiovisual",
       "url": "https://nexofilm.com",
-      "logo": "https://nexofilm.com/favicon.png",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://nexofilm.com/favicon.png",
+        "width": 512,
+        "height": 512
+      },
+      "image": "https://nexofilm.com/preview_whatsapp.jpg",
       "description": t('seo.description'),
+      "telephone": "+541158804711",
+      "email": "hola@nexofilm.com",
       "address": {
         "@type": "PostalAddress",
+        "addressLocality": "Buenos Aires",
+        "addressRegion": "CABA",
         "addressCountry": "AR"
       },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": -34.6037,
+        "longitude": -58.3816
+      },
+      "areaServed": [
+        { "@type": "Country", "name": "Argentina" },
+        { "@type": "Country", "name": "Uruguay" },
+        { "@type": "Country", "name": "Chile" },
+        { "@type": "Country", "name": "Paraguay" },
+        { "@type": "Country", "name": "Colombia" },
+        { "@type": "Country", "name": "México" },
+        { "@type": "Country", "name": "España" }
+      ],
+      "priceRange": "$$",
+      "currenciesAccepted": "ARS, USD",
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday"],
+          "opens": "09:00",
+          "closes": "18:00"
+        }
+      ],
+      "sameAs": [
+        CONFIG.social.instagram,
+        CONFIG.social.linkedin,
+        CONFIG.social.behance
+      ],
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Servicios Audiovisuales NexoFilm",
+        "itemListElement": [
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Video Corporativo e Institucional",
+              "description": "Producción de video comercial y corporativo con estética cinematográfica para marcas globales."
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Fotografía Profesional y Publicitaria",
+              "description": "Fotografía de producto, eventos y campañas publicitarias con calidad de alto impacto."
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Streaming en Vivo",
+              "description": "Transmisiones en vivo con calidad broadcast para eventos corporativos, conferencias y presentaciones."
+            }
+          }
+        ]
+      },
       "knowsAbout": [
-        t('history.video_badge'),
-        t('history.photo_badge'),
-        t('history.stream_badge')
+        "Video Corporativo", "Fotografía Publicitaria", "Streaming en Vivo",
+        "Producción Audiovisual", "Cine Publicitario", "Video Institucional"
       ],
       "hasPart": CONFIG.projects.map(proj => ({
         "@type": "CreativeWork",
@@ -65,7 +133,7 @@ const App: React.FC = () => {
         "genre": proj.category,
         "author": { "@type": "Organization", "name": "NexoFilm" },
         "contentUrl": proj.videoUrl || proj.imageUrl,
-        "thumbnailUrl": proj.imageUrl || "https://nexofilm.com/favicon.png"
+        "thumbnailUrl": proj.imageUrl || "https://nexofilm.com/preview_whatsapp.jpg"
       }))
     };
 
