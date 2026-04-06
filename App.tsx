@@ -11,7 +11,6 @@ import Contact from './components/Contact';
 import Logo from './components/Logo';
 import FloatingWhatsApp from './components/FloatingWhatsApp';
 import ValueProp from './components/ValueProp';
-import Team from './components/Team';
 import { CONFIG } from './data/config';
 
 const App: React.FC = () => {
@@ -222,7 +221,6 @@ const App: React.FC = () => {
         </section>
 
         <Process />
-        <Team />
         <Clients />
         <Portfolio />
         <Testimonials />
