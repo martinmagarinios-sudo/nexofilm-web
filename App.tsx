@@ -233,9 +233,9 @@ const App: React.FC = () => {
             <div className="space-y-3 text-center md:text-left">
               <Logo size="md" />
               <p className="text-zinc-500 text-xs font-light leading-relaxed max-w-[220px]">
-                Productora audiovisual en<br />
-                <span className="text-nexo-lime font-medium">Buenos Aires, Argentina</span><br />
-                con alcance global.
+                {t('footer.tagline_line1')}<br />
+                <span className="text-nexo-lime font-medium">{t('footer.tagline_highlight')}</span><br />
+                {t('footer.tagline_line2')}
               </p>
             </div>
 

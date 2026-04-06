@@ -161,22 +161,22 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
                         <div className="mt-4 pt-4 border-t border-white/5 space-y-3">
                            {project.client && (
                              <div className="flex items-center gap-2">
-                               <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-bold">Cliente:</span>
+                               <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-bold">{t('projects.label_client')}</span>
                                <span className="text-[10px] text-zinc-400 font-medium">{project.client}</span>
                              </div>
                            )}
-                           {project.objective && (
+                           {t(`projects.objectives.${project.id}`, '') && (
                              <div className="flex flex-col gap-1">
-                               <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-bold">Objetivo:</span>
-                               <span className="text-[10px] text-zinc-500 font-light leading-relaxed">{project.objective}</span>
+                               <span className="text-[8px] uppercase tracking-widest text-zinc-600 font-bold">{t('projects.label_objective')}</span>
+                               <span className="text-[10px] text-zinc-500 font-light leading-relaxed">{t(`projects.objectives.${project.id}`)}</span>
                              </div>
                            )}
-                           {project.results && (
+                           {t(`projects.results.${project.id}`, '') && (
                              <div className="flex items-start gap-2 mt-2 bg-nexo-lime/5 border border-nexo-lime/20 rounded-sm px-3 py-2">
                                <svg className="w-3.5 h-3.5 text-nexo-lime shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                                </svg>
-                               <span className="text-xs text-white font-semibold leading-snug">{project.results}</span>
+                               <span className="text-xs text-white font-semibold leading-snug">{t(`projects.results.${project.id}`)}</span>
                              </div>
                            )}
                         </div>

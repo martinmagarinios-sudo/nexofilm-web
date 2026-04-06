@@ -51,6 +51,8 @@
     "intro_strong": "Sumate a un equipo que hace que cada detalle cuente.",
     "share": "Compartir:",
     "copy": "Copiado",
+    "label_client": "Cliente:",
+    "label_objective": "Objetivo:",
     "categories": {
       "commercial": "Video Comercial",
       "institutional": "Video Institucional",
@@ -66,6 +68,28 @@
       "7": "Producción audiovisual para TS Tour Operador.",
       "8": "Producción audiovisual para Vista Sol.",
       "9": "Producción audiovisual para Droguería del Sud."
+    },
+    "objectives": {
+      "1": "Celebrar 25 años de operaciones en Argentina con una pieza de alto impacto emocional que refuerce la lealtad de marca.",
+      "2": "Posicionar la exclusividad del resort para el mercado premium internacional con material audiovisual para canales digitales y eventos.",
+      "3": "Comunicar calidad y durabilidad del producto con una pieza de alto impacto visual adaptada a puntos de venta y redes sociales.",
+      "4": "Documentar la fiesta anual corporativa 2025 para comunicación interna y estrategia de employer branding.",
+      "5": "Presentar la red de soluciones logísticas con una narrativa moderna apta para audiencias corporativas internacionales.",
+      "6": "Elevar la estética visual del menú completo para plataformas de delivery, redes sociales y carta impresa.",
+      "7": "Destacar destinos exclusivos y servicio personalizado para presentar ante una audiencia de agencias de viajes de alto volumen.",
+      "8": "Capturar la experiencia de lujo y naturaleza del resort para campañas de captación de reservas directas a nivel global.",
+      "9": "Reforzar el liderazgo de la empresa como actor clave en logística farmacéutica con una pieza audiovisual de alto impacto corporativo."
+    },
+    "results": {
+      "1": "+1.2M de impresiones orgánicas en las primeras 72 hs. de publicación.",
+      "2": "+22% en consultas directas vía web en el trimestre posterior al lanzamiento.",
+      "3": "Adoptado como material oficial en más de 50 puntos de venta a nivel nacional.",
+      "4": "+3.500 reproducciones internas en 48 hs. Pieza central de la estrategia de employer branding 2025.",
+      "5": "Activo en comunicación institucional activa en 6 países de Latam.",
+      "6": "+38% de aumento en engagement de Instagram en los 30 días posteriores a la publicación.",
+      "7": "Presentado ante +250 agencias en la convención anual de ventas. Material repuesto como activo de ventas permanente.",
+      "8": "Seleccionado como material oficial para campañas digitales en 4 mercados internacionales.",
+      "9": "Incremento medido en el índice de confianza de socios estratégicos tras presentación en reunión de directorio."
     },
     "image_alt": "{{title}} - Producción de {{category}} por NexoFilm"
   },
@@ -137,7 +161,7 @@
       "t3": "Excelente profesional con gran creatividad y compromiso con el cliente !",
       "t4": "Es de los mejores profesionales para coberturas de medios audiovisuales vinculados al turismo, la cálida de sus trabajos, la velocidad en la entrega y el conocimiento del sector lo hacen único",
       "t5": "Trabaje con Martín de manera directa en eventos y algunas promociones y es además de un gusto, un profesional que sabe brindarte los consejos exactos para que las cosas salgan de manera excepcional. También he visto su trabajo de manera indirecta en reels o videos promocionales y debo de destacar la originalidad que maneja en todo lo que hace.",
-      "t6": "Hemos contratado a Martin Magariños para cubrir en foto y video diferentes proyectos como Expo Comerciales, Lanzamientos de Producto, Viajes, Inauguraciones de Plantas, etc, trabajos muy diversos en los cuales siempre aportó una mirada “cinematográfica” acompañando la narrativa del evento. Comparte siempre propuestas creativas y suma con el drone un toque extra a todas las coberturas. Lo volveriamos a elegir SIEMPRE !!",
+      "t6": "Hemos contratado a Martin Magariños para cubrir en foto y video diferentes proyectos como Expo Comerciales, Lanzamientos de Producto, Viajes, Inauguraciones de Plantas, etc, trabajos muy diversos en los cuales siempre aportó una mirada 'cinematográfica' acompañando la narrativa del evento. Comparte siempre propuestas creativas y suma con el drone un toque extra a todas las coberturas. Lo volveriamos a elegir SIEMPRE !!",
       "t7": "El mejor proveedor con el que trabaje en años Nos conocimos en 2020 y desde ese momento para cada evento que necesito cobertura audiovisual lo convoco Su equipo tambien es impecable."
     }
   },
@@ -169,7 +193,10 @@
     "navigation": "Navegación",
     "social": "Social",
     "privacy": "Política de Privacidad",
-    "copyright_note": "NexoFilm es una marca propiedad de Martin Magariños."
+    "copyright_note": "NexoFilm es una marca propiedad de Martin Magariños.",
+    "tagline_line1": "Productora audiovisual en",
+    "tagline_highlight": "Buenos Aires, Argentina",
+    "tagline_line2": "con alcance global."
   },
   "whatsapp": {
     "prefilled": "Hola NexoFilm, estoy navegando en tu web y me gustaría hacerte una consulta.",

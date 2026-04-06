@@ -1,7 +1,7 @@
 {
   "seo": {
     "title": "NexoFilm | Audiovisual Production & Cinematic Photography",
-    "description": "Audiovisual production company in Buenos Aires specializing in commercial video, streaming, and photography with high-impact cinematic aesthetics."
+    "description": "Audiovisual production company in Buenos Aires specializing in commercial video, streaming, and photography with high-impact cinematic aesthetics for global brands."
   },
   "navbar": {
     "about": "About Us",
@@ -13,6 +13,7 @@
   "hero": {
     "visual_tag": "Cinematic Aesthetics",
     "view_portfolio": "View Portfolio",
+    "segmentation_tagline": "Technical and strategic audiovisual production: we project companies and events to the global market.",
     "slides": [
       {
         "title": "Cinematic Excellence",
@@ -50,6 +51,8 @@
     "intro_strong": "Join a team that makes every detail count.",
     "share": "Share:",
     "copy": "Copied",
+    "label_client": "Client:",
+    "label_objective": "Objective:",
     "categories": {
       "commercial": "Commercial Video",
       "institutional": "Institutional Video",
@@ -66,6 +69,28 @@
       "8": "Audiovisual production for Vista Sol.",
       "9": "Audiovisual production for Droguería del Sud."
     },
+    "objectives": {
+      "1": "Celebrate 25 years of operations in Argentina with a high emotional-impact piece that reinforces brand loyalty.",
+      "2": "Position the resort's exclusivity for the international premium market with audiovisual content for digital channels and events.",
+      "3": "Communicate product quality and durability with a high visual-impact piece adapted for point-of-sale and social media.",
+      "4": "Document the 2025 annual corporate party for internal communications and employer branding strategy.",
+      "5": "Present the logistics solutions network with a modern narrative suitable for international corporate audiences.",
+      "6": "Elevate the full menu's visual aesthetics for delivery platforms, social media, and printed menus.",
+      "7": "Highlight exclusive destinations and personalized service for a high-volume travel agency audience.",
+      "8": "Capture the luxury and nature experience of the resort for global direct booking acquisition campaigns.",
+      "9": "Reinforce the company's leadership as a key player in pharmaceutical logistics with a high corporate-impact audiovisual piece."
+    },
+    "results": {
+      "1": "+1.2M organic impressions in the first 72 hours of publication.",
+      "2": "+22% in direct web inquiries in the quarter following the launch.",
+      "3": "Adopted as official material in over 50 points of sale nationwide.",
+      "4": "+3,500 internal views in 48 hours. Central piece of the 2025 employer branding strategy.",
+      "5": "Active in institutional communications across 6 Latin American countries.",
+      "6": "+38% increase in Instagram engagement in the 30 days following publication.",
+      "7": "Presented to +250 agencies at the annual sales convention. Repositioned as a permanent sales asset.",
+      "8": "Selected as official material for digital campaigns in 4 international markets.",
+      "9": "Measured increase in the trust index among strategic partners after a board of directors presentation."
+    },
     "image_alt": "{{title}} - {{category}} Production by NexoFilm"
   },
   "clients": {
@@ -75,7 +100,7 @@
   },
   "value_prop": {
     "badge": "Technical Differentiation",
-    "title_main": "We don’t just film,",
+    "title_main": "We don't just film,",
     "title_gradient": "we create the nexus.",
     "description": "We blend cinematic aesthetics with business objectives. At NexoFilm, we understand that every frame must work for your brand, turning creative vision into tangible results.",
     "stats": {
@@ -91,7 +116,9 @@
         "title": "Cinema Quality in Every Frame",
         "desc": "We use state-of-the-art technology to ensure your brand looks at the same level as big productions."
       }
-    }
+    },
+    "cta_primary": "Request your quote in 24h",
+    "cta_whatsapp": "Chat on WhatsApp"
   },
   "team": {
     "badge": "Leadership and Talent",
@@ -166,7 +193,10 @@
     "navigation": "Navigation",
     "social": "Social",
     "privacy": "Privacy Policy",
-    "copyright_note": "NexoFilm is a brand owned by Martin Magariños."
+    "copyright_note": "NexoFilm is a brand owned by Martin Magariños.",
+    "tagline_line1": "Audiovisual production based in",
+    "tagline_highlight": "Buenos Aires, Argentina",
+    "tagline_line2": "with global reach."
   },
   "whatsapp": {
     "prefilled": "Hi NexoFilm, I'm browsing your website and would like to make an inquiry.",
