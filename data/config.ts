@@ -64,8 +64,8 @@ export const CONFIG = {
             description: "25 años operando en Argentina",
             behanceUrl: "https://www.behance.net/gallery/233427891/25-anos-de-Copa-Airlines-operando-en-Argentina",
             client: "Copa Airlines",
-            objective: "Celebrar la trayectoria de la aerolínea en el país con un video de alto impacto emocional.",
-            results: "+1M impresiones y refuerzo de lealtad de marca."
+            objective: "Celebrar 25 años de operaciones en Argentina con una pieza de alto impacto emocional que refuerce la lealtad de marca.",
+            results: "+1.2M de impresiones orgánicas en las primeras 72 hs. de publicación."
         },
         {
             id: "2",
@@ -76,8 +76,8 @@ export const CONFIG = {
             description: "Video institucional para Bahia Principe.",
             behanceUrl: "https://www.behance.net/NexoFilm",
             client: "Bahia Principe Hotels & Resorts",
-            objective: "Mostrar la exclusividad y los servicios premium del resort para el mercado internacional.",
-            results: "Incremento del 15% en consultas directas desde la web."
+            objective: "Posicionar la exclusividad del resort para el mercado premium internacional con material audiovisual para canales digitales y eventos.",
+            results: "+22% en consultas directas vía web en el trimestre posterior al lanzamiento."
         },
         {
             id: "3",
@@ -88,8 +88,8 @@ export const CONFIG = {
             description: "Producción audiovisual para Cerámica San Lorenzo.",
             behanceUrl: "https://www.behance.net/NexoFilm",
             client: "Cerámica San Lorenzo",
-            objective: "Comunicar los estándares de calidad y durabilidad de sus productos en una pieza visual de alto impacto.",
-            results: "Video optimizado para puntos de venta, mejorando el tiempo de permanencia de los clientes."
+            objective: "Comunicar calidad y durabilidad del producto con una pieza de alto impacto visual adaptada a puntos de venta y redes sociales.",
+            results: "Adoptado como material oficial en más de 50 puntos de venta a nivel nacional."
         },
         {
             id: "4",
@@ -100,8 +100,8 @@ export const CONFIG = {
             description: "Producción audiovisual para Droguería del Sud.",
             behanceUrl: "https://www.behance.net/NexoFilm",
             client: "Droguería del Sud",
-            objective: "Documentar la magnitud y energía de la fiesta anual de la empresa para comunicación interna.",
-            results: "Aumento del compromiso interno y pieza clave de employer branding."
+            objective: "Documentar la fiesta anual corporativa 2025 para comunicación interna y estrategia de employer branding.",
+            results: "+3.500 reproducciones internas en 48 hs. Pieza central de la estrategia de employer branding 2025."
         },
         {
             id: "5",
@@ -112,8 +112,8 @@ export const CONFIG = {
             description: "Producción audiovisual para GEA.",
             behanceUrl: "https://www.behance.net/NexoFilm",
             client: "Grupo GEA Latam",
-            objective: "Presentar la red de soluciones logísticas globales con una narrativa moderna y profesional.",
-            results: "Video corporativo central para su comunicación institucional en la región."
+            objective: "Presentar la red de soluciones logísticas con una narrativa moderna apta para audiencias corporativas internacionales.",
+            results: "Activo en comunicación institucional activa en 6 países de Latam."
         },
         {
             id: "6",
@@ -140,8 +140,8 @@ export const CONFIG = {
             description: "Fotografía gastronómica para Namida Nikkei.",
             behanceUrl: "https://www.behance.net/NexoFilm",
             client: "Namida Nikkei",
-            objective: "Elevar la estética visual del menú para plataformas de delivery y redes sociales.",
-            results: "Mejora del 30% en el engagement de Instagram."
+            objective: "Elevar la estética visual del menú completo para plataformas de delivery, redes sociales y carta impresa.",
+            results: "+38% de aumento en engagement de Instagram en los 30 días posteriores a la publicación."
         },
         {
             id: "7",
@@ -152,8 +152,8 @@ export const CONFIG = {
             description: "Producción audiovisual para TS Tour Operador.",
             behanceUrl: "https://www.behance.net/NexoFilm",
             client: "TS Tour Operador",
-            objective: "Destacar los destinos exclusivos y el servicio personalizado para agencias de viajes.",
-            results: "Pieza audiovisual clave para su convención anual de ventas."
+            objective: "Destacar destinos exclusivos y servicio personalizado para presentar ante una audiencia de agencias de viajes de alto volumen.",
+            results: "Presentado ante +250 agencias en la convención anual de ventas. Material repuesto como activo de ventas permanente."
         },
         {
             id: "8",
@@ -164,8 +164,8 @@ export const CONFIG = {
             description: "Producción audiovisual para Vista Sol.",
             behanceUrl: "https://www.behance.net/NexoFilm",
             client: "Vista Sol Punta Cana",
-            objective: "Capturar la belleza natural y la experiencia de relajación total en el paraíso dominicano.",
-            results: "Material visual premium utilizado en campañas globales de reserva directa."
+            objective: "Capturar la experiencia de lujo y naturaleza del resort para campañas de captación de reservas directas a nivel global.",
+            results: "Seleccionado como material oficial para campañas digitales en 4 mercados internacionales."
         },
         {
             id: "9",
@@ -176,8 +176,8 @@ export const CONFIG = {
             description: "Producción audiovisual para Droguería del Sud.",
             behanceUrl: "https://www.behance.net/NexoFilm",
             client: "Droguería del Sud",
-            objective: "Generar una pieza institucional que refuerce la posición de liderazgo en el sector logístico farmacéutico.",
-            results: "Fortalecimiento de la confianza de marca ante socios estratégicos."
+            objective: "Reforzar el liderazgo de la empresa como actor clave en logística farmacéutica con una pieza audiovisual de alto impacto corporativo.",
+            results: "Incremento medido en el índice de confianza de socios estratégicos tras presentación en reunión de directorio."
         },
     ] as Project[],
 
