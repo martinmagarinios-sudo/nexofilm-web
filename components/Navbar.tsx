@@ -47,7 +47,7 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
 
       <div className="container mx-auto px-6 flex justify-between items-center relative z-20">
         <button 
-          className="hover:opacity-80 transition-all duration-500 transform active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-nexo-lime rounded-sm" 
+          className="cursor-pointer hover:opacity-80 transition-all duration-500 transform active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-nexo-lime rounded-sm" 
           onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); setIsMenuOpen(false); }}
           aria-label="Volver al Inicio"
         >
