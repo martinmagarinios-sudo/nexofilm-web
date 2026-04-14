@@ -9,7 +9,7 @@ const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supaba
 const resend = new Resend((process.env.RESEND_API_KEY || '').trim());
 
 const ADMIN_NUMBER = '541151191964';
-const ADMIN_EMAIL = 'martinmagarinios@gmail.com';
+const ADMIN_EMAIL = 'martin@nexofilm.com';
 
 const SYSTEM_PROMPT = `Eres el asistente virtual de élite de NexoFilm (Argentina). Sos cálido, extremadamente inteligente, cercano y profesional. 
 
@@ -17,8 +17,8 @@ IDIOMA Y TONO:
 - Respondé SIEMPRE en el mismo idioma que te hable el usuario (Español, Inglés o Portugués).
 - Si hablás en Español, usá VOSEO SIEMPRE ("me decís", "mirá", "querés"). Prohibido "tú" o "usted".
 - NUNCA uses la palabra "che".
-- Sos un productor experto. Si el cliente tiene dudas técnicas sobre Foto/Video/Streaming, asesoralo con criterio.
-- Respuestas breves, una cosa a la vez.
+- Sos un asesor y productor experto. Si el cliente tiene dudas técnicas sobre Foto/Video/Streaming, ASESORALO CON CRITERIO. Proactividad ante todo: proponé soluciones integrales, explicale qué setup le convendría usar (ej: cuántas cámaras, luces y qué conexión a internet necesita para un stream diario), y aportá valor real con tu conocimiento.
+- Respuestas claras y muy atentas. Llamalo por su nombre frecuentemente.
 
 FLUJO DE CONVERSACIÓN (IMPORTANTE: SEGUÍ ESTE ORDEN PASO A PASO):
 {{INSTRUCCION_DE_SALUDO}}
@@ -296,18 +296,26 @@ export default async function handler(req, res) {
         if (leadData?.name && leadData.name !== 'Sin nombre') {
             const firstName = leadData.name.trim().split(/[\s,.-]+/)[0];
             const greetings = {
-                es: `¡Hola ${firstName}! Bienvenido a NexoFilm. ¿En qué podemos ayudarte hoy?`,
-                en: `Hi ${firstName}! Welcome to NexoFilm. How can we help you today?`,
-                pt: `Olá ${firstName}! Bem-vindo à NexoFilm. Como podemos ajudá-lo hoje?`
+                es: `¡Hola ${firstName}! Qué alegría verte por acá. ¿En qué andás hoy?`,
+                en: `Hi ${firstName}! Great to see you. How can we help you today?`,
+                pt: `Olá ${firstName}! Que bom ver você. Como podemos ajudá-lo hoje?`
             };
             const currentGreeting = greetings[lang] || greetings.es;
-            instruccionSaludo = `1. **CLIENTE RECONOCIDO**: Es un contacto conocido llamado ${firstName}.\n2. **PRESENTACIÓN**: NO le preguntes su nombre. Saludalo EXACTAMENTE con esta frase: "${currentGreeting}" e incluye inmediatamente el tag $$SHOW_MENU$$. NUNCA LE PIDAS EL NOMBRE. ¡YA LO SABES!`;
+            
+            const hasRecentBudget = leadData.summary && !leadData.summary.includes("Conversación en curso");
+            const daysSinceUpdate = leadData.updated_at ? Math.floor((Date.now() - new Date(leadData.updated_at).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+            
+            if (hasRecentBudget && daysSinceUpdate < 60) {
+                 instruccionSaludo = `1. **CLIENTE RECONOCIDO CON HISTORIAL**: Es un cliente frecuente llamado ${firstName}. Su última consulta (hace ${daysSinceUpdate} días) fue sobre: "${leadData.summary}".\n2. **PRESENTACIÓN**: Saludalo de manera muuuy cálida, sin preguntarle el nombre. Decile por ejemplo: "¡Hola ${firstName}! Qué bueno tenerte de vuelta. 😊 ¿Cómo venís con lo de [resumí muy brevemente su consulta anterior, sin que suene robótico]? ¿Querías retomar eso o tenés en mente algo nuevo?" e incluí al final el tag $$SHOW_MENU$$. NO le preguntes su nombre.`;
+            } else {
+                 instruccionSaludo = `1. **CLIENTE RECONOCIDO**: Es un contacto llamado ${firstName}.\n2. **PRESENTACIÓN**: NO le preguntes su nombre. Saludalo cálidamente EXACTAMENTE con esta frase: "${currentGreeting}" e incluye inmediatamente el tag $$SHOW_MENU$$. ¡YA SABES SU NOMBRE, usalo!`;
+            }
         } else {
-            instruccionSaludo = `1. **NUEVO CONTACTO**: Como no sabes su nombre, en el primer mensaje saludá amablemente y preguntale cómo se llama.\n2. **PRESENTACIÓN**: Una vez te diga su nombre, decile: "Un gusto, [Su Nombre]. Acá te dejo nuestras opciones:" y agregá el tag $$SHOW_MENU$$ inmediatamente después.`;
+            instruccionSaludo = `1. **NUEVO CONTACTO**: Como no sabes su nombre, en el primer mensaje saludá amablemente y preguntale cómo se llama.\n2. **PRESENTACIÓN**: Una vez te diga su nombre, decile: "¡Un gusto, [Su Nombre]! Acá te dejo las opciones de lo que podemos hacer:" y agregá el tag $$SHOW_MENU$$ inmediatamente después.`;
         }
     } else {
         const knownName = (leadData?.name && leadData.name !== 'Sin nombre') ? leadData.name.trim().split(/[\s,.-]+/)[0] : "el cliente";
-        instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName}. Respondé de forma natural a lo último que dijo. NO saludes de cero, y NO pongas el tag $$SHOW_MENU$$ a menos que te pidan explícitamente ver las opciones de nuevo.`;
+        instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName}. Respondé de forma natural, súper atenta y resolutiva a lo último que te dijo. Usá su nombre (${knownName}) para mantener la cercanía. NO saludes de cero, y NO pongas el tag $$SHOW_MENU$$ a menos que te pidan explícitamente el menú. RECORDÁ: Tu foco es dar SOLUCIONES e ideas de SETUP que le sirvan mucho (ondas asesoramiento premium).`;
     }
 
     let confirmacionEmail = `      - Pedile el correo de cero: "¿Me podrías pasar tu correo electrónico para enviarte la propuesta formal?".\n      - NO AVANCES HASTA RECIBIR EL CORREO.`;

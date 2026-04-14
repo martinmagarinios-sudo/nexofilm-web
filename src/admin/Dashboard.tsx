@@ -16,20 +16,27 @@ interface WhatsAppLead {
 }
 
 const Dashboard: React.FC = () => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [password, setPassword] = useState('');
+    const [isAuthenticated, setIsAuthenticated] = useState(() => sessionStorage.getItem('admin_auth') === 'true');
+    const [password, setPassword] = useState(() => sessionStorage.getItem('admin_pass') || '');
     const [error, setError] = useState('');
     const [leads, setLeads] = useState<WhatsAppLead[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [totalCount, setTotalCount] = useState<number>(0);
     const [loading, setLoading] = useState(false);
 
+    useEffect(() => {
+        if (isAuthenticated) {
+            fetchLeads();
+        }
+    }, [isAuthenticated]);
+
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
         // Contraseña solicitada por el usuario
         if (password === 'Nex@2023R') {
+            sessionStorage.setItem('admin_auth', 'true');
+            sessionStorage.setItem('admin_pass', password);
             setIsAuthenticated(true);
-            fetchLeads();
         } else {
             setError('Contraseña incorrecta');
         }

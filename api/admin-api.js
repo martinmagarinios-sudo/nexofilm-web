@@ -41,7 +41,14 @@ export default async function handler(req, res) {
                 });
                 
                 const leadsData = await Promise.all(leadsPromises);
-                const filteredLeads = leadsData.filter(lead => lead !== null);
+                let filteredLeads = leadsData.filter(lead => lead !== null);
+                
+                // Sort leads descending by updated_at or created_at
+                filteredLeads.sort((a, b) => {
+                    const dateA = new Date(a.updated_at || a.created_at).getTime();
+                    const dateB = new Date(b.updated_at || b.created_at).getTime();
+                    return dateB - dateA;
+                });
 
                 // 3. Obtener conteo total para la tarjeta superior
                 const { count, error: countErr } = await supabase

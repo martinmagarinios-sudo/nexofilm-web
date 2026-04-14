@@ -20,8 +20,8 @@ interface AdminChatProps {
 }
 
 const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [password, setPassword] = useState('');
+    const [isAuthenticated, setIsAuthenticated] = useState(() => sessionStorage.getItem('admin_auth') === 'true');
+    const [password, setPassword] = useState(() => sessionStorage.getItem('admin_pass') || '');
     const [error, setError] = useState('');
     const [sessions, setSessions] = useState<WhatsAppSession[]>([]);
     const [selectedPhone, setSelectedPhone] = useState<string | null>(initialPhone || null);
@@ -39,11 +39,18 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
+    useEffect(() => {
+        if (isAuthenticated) {
+            fetchSessions();
+        }
+    }, [isAuthenticated]);
+
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
         if (password === 'Nex@2023R') {
+            sessionStorage.setItem('admin_auth', 'true');
+            sessionStorage.setItem('admin_pass', password);
             setIsAuthenticated(true);
-            fetchSessions();
         } else {
             setError('Contraseña incorrecta');
         }
