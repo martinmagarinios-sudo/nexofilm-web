@@ -16,11 +16,11 @@ i18n
       pt: { translation: pt }
     },
     fallbackLng: 'es',
+    supportedLngs: ['es', 'en', 'pt'],
     load: 'languageOnly', // es-AR -> es
     nonExplicitSupportedLngs: true,
     detection: {
-      order: ['localStorage', 'htmlTag', 'path', 'subdomain'],
-      lookupQuerystring: 'lng',
+      order: ['navigator', 'localStorage', 'htmlTag'],
       caches: ['localStorage']
     }
   });
