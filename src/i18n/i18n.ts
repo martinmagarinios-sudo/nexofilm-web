@@ -20,7 +20,8 @@ i18n
     load: 'languageOnly', // es-AR -> es
     nonExplicitSupportedLngs: true,
     detection: {
-      order: ['navigator', 'localStorage', 'htmlTag'],
+      order: ['querystring', 'localStorage', 'navigator', 'htmlTag'],
+      lookupQuerystring: 'lng',
       caches: ['localStorage']
     }
   });
