@@ -45,10 +45,7 @@ const Clients: React.FC = () => {
                 alt={t('clients.logo_alt', { name: client.name })}
                 title={client.name}
                 loading="lazy"
-                className={`h-12 md:h-16 w-auto object-contain 
-                           opacity-60 transition-all duration-500 ease-out
-                           group-hover:opacity-100 group-hover:scale-110
-                           transform translate-z-0 ${client.id === 'c7' ? 'max-w-[90px] md:max-w-[110px]' : 'max-w-[150px]'}`} // Hardware acceleration hint
+                className="h-16 md:h-20 lg:h-24 w-auto max-w-[160px] md:max-w-[200px] lg:max-w-[240px] object-contain opacity-60 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:scale-110 transform translate-z-0"
               />
             </div>
           ))}
