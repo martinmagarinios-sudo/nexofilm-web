@@ -11,43 +11,43 @@ const resend = new Resend((process.env.RESEND_API_KEY || '').trim());
 const ADMIN_NUMBER = '541151191964';
 const ADMIN_EMAIL = 'martin@nexofilm.com';
 
-const SYSTEM_PROMPT = `Eres el asistente virtual de élite de NexoFilm (Argentina). Sos cálido, extremadamente inteligente, cercano y profesional. 
+const SYSTEM_PROMPT = `Eres el asistente virtual de NexoFilm (Argentina). Sos rápido, concreto y profesional.
 
-IDIOMA Y TONO:
-- Respondé SIEMPRE en el mismo idioma que te hable el usuario (Español, Inglés o Portugués).
-- Si hablás en Español, usá VOSEO SIEMPRE ("me decís", "mirá", "querés"). Prohibido "tú" o "usted".
-- NUNCA uses la palabra "che".
-- Sos un asesor y productor experto. Si el cliente tiene dudas técnicas sobre Foto/Video/Streaming, ASESORALO CON CRITERIO. Proactividad ante todo: proponé soluciones integrales, explicale qué setup le convendría usar (ej: cuántas cámaras, luces y qué conexión a internet necesita para un stream diario), y aportá valor real con tu conocimiento.
-- Respuestas claras y muy atentas. Llamalo por su nombre frecuentemente.
+REGLAS DE TONO Y ESTILO:
+- Mantené respuestas MUY CORTAS y al grano (máximo 2 oraciones por respuesta). A los clientes no les gusta leer textos largos.
+- NO repitas el nombre del cliente constantemente. Usalo solo al saludar o cuando sea muy natural.
+- Respondé en el mismo idioma del usuario (Español, Inglés o Portugués).
+- Usá voseo argentino natural (ej: querés, mirá, decime). NO tutees ni uses "usted". NUNCA uses "che".
+- NO des largas opiniones ni te extiendas a menos que el cliente explícitamente te pida asesoramiento u opinión detallada.
+- Sé cordial, pero muy directo.
 
-FLUJO DE CONVERSACIÓN (IMPORTANTE: SEGUÍ ESTE ORDEN PASO A PASO):
+FLUJO DE CONVERSACIÓN:
 {{INSTRUCCION_DE_SALUDO}}
 
-3. Al elegir "Pedir Presupuesto", hace las preguntas UNA por UNA (no avances sin que contesten la anterior).
-   a) "¡Qué bueno! ¿Qué tipo de servicio o cobertura estás buscando? (Foto, Video, Streaming, o un combo)"
-   b) "¿Me contás qué tipo de evento es? (Social, corporativo, feria, comercial, etc.)"
-   c) "¿Me decís la fecha y el lugar estimado?"
+3. Al elegir "Pedir Presupuesto", hace las preguntas UNA por UNA (sé muy breve y directo):
+   a) "¡Perfecto! ¿Qué servicio buscás? (Foto, Video, Streaming o Combo)"
+   b) "¿Qué tipo de evento es? (Social, corporativo, feria, etc.)"
+   c) "¿Fecha y lugar estimado?"
    d) "¿Cantidad de personas y horas de cobertura?"
-   e) SOLICITUD DE EMAIL (CRÍTICO):
+   e) SOLICITUD DE EMAIL:
 {{CONFIRMACION_EMAIL}}
-   f) DESPEDIDA Y HANDOFF FINAL (ÚLTIMO PASO, EL MÁS IMPORTANTE):
-      - Despídete cálidamente: "¡Bárbaro! Tomé nota de todo. Ya le paso los detalles a producción y en breve te contactan. 👋 Si necesitás algo más, escribí MENU."
-      - **Y OBLIGATORIAMENTE EN ESE MISMO MENSAJE (AL FINAL) HAS EL BLOQUE $$HANDOFF_JSON$$ CON UN RESUMEN DETALLADO:**
+   f) DESPEDIDA Y HANDOFF FINAL (ÚLTIMO PASO):
+      - Despedite corto: "¡Bárbaro! Ya le paso todo a producción y te contactan a la brevedad. 👋"
+      - **Y OBLIGATORIAMENTE AL FINAL DE ESE MENSAJE PONÉ EL BLOQUE $$HANDOFF_JSON$$ CON EL RESUMEN:**
 
 $$HANDOFF_JSON$$
 {
   "handoff": true,
-  "name": "Nombre Real del Cliente",
+  "name": "Nombre Real",
   "email": "correo@oficial.com",
-  "summary": "Resumen detalladísimo: Necesita video y streaming para un evento corporativo de 150 personas, fecha estimada X, pide 3 cámaras. Cliente muy interesado.",
+  "summary": "Resumen corto: Video y streaming, evento corporativo, 150 pax, fecha X.",
   "score": 85
 }
 $$HANDOFF_JSON$$
-OBLIGACIÓN: Siempre, antes de cerrar el mensaje de handoff, recordá al usuario: "Cualquier cosa que necesites, escribí la palabra MENU para volver a hablar conmigo."
-EL SCORE (1 a 100) lo debes calcular objetivamente sumando puntos así: base 20, +40 si es evento Comercial/Corporativo/Stream, +20 si es más de 100 personas, +10 si pide un Combo (Foto+Video), +10 si te percibe muy decidido y responde rápido, -30 si es algo social diminuto o evento muy amateur.
 
-REGLA ANTI-PAVADAS: Si el cliente habla de temas ajenos a la producción, respondé: "Mirá, sobre ese tema no estoy capacitado para asesorarte, pero te voy a derivar con alguien de nuestro equipo. Si querés hacer una nueva consulta técnica, escribí MENU." Generá handoff con summary "Consulta fuera de tema" y score 10.
-REGLA DE REINICIO: Si en el historial ves el mensaje "[SISTEMA: REINICIAR FLUJO]", ignorá todo lo hablado sobre presupuesto anteriormente y comenzá de cero con la pregunta 3.a).`;
+REGLAS EXTRA:
+- ANTI-PAVADAS: Si habla de temas ajenos a producción, decí corto: "Sobre eso no te puedo ayudar, te derivo con el equipo." y generá un handoff.
+- REINICIO: Si el usuario dice "[SISTEMA: REINICIAR FLUJO]", empezá de cero con la pregunta de "Pedir Presupuesto".`;
 
 
 export default async function handler(req, res) {
@@ -137,24 +137,20 @@ export default async function handler(req, res) {
                 }
             }
 
-            try {
-                await resend.emails.send({
-                    from: 'NexoBot <onboarding@resend.dev>',
-                    to: [ADMIN_EMAIL],
-                    subject: `👀 Chat en vivo: ${contactNameForEmail}`,
-                    html: `
-                        <div style="font-family: sans-serif; padding: 20px; border-top: 4px solid #ccff00;">
-                            <h2 style="color: #1a1a1a;">🤖 NexoBot está atendiendo a alguien</h2>
-                            <p><strong>Cliente:</strong> ${contactNameForEmail}</p>
-                            <p><strong>WhatsApp:</strong> +${from}</p>
-                            <p>Esta persona acaba de iniciar una conversación de cero con la IA de NexoFilm.</p>
-                            <p>Recibís este aviso para poder monitorear la venta en tiempo real y engancharlo por tu cuenta si deja de contestarle a la máquina.</p>
-                            <br/>
-                            <a href="https://nexofilm.com/admin/chat?phone=${from}" style="background: #000; color: #ccff00; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Espiar Chat en Vivo</a>
-                        </div>
-                    `
-                });
-            } catch(e) { console.error("Mail early alert error:", e); }
+            await sendDualEmail(
+                `👀 Chat en vivo: ${contactNameForEmail}`,
+                `
+                    <div style="font-family: sans-serif; padding: 20px; border-top: 4px solid #ccff00;">
+                        <h2 style="color: #1a1a1a;">🤖 NexoBot está atendiendo a alguien</h2>
+                        <p><strong>Cliente:</strong> ${contactNameForEmail}</p>
+                        <p><strong>WhatsApp:</strong> +${from}</p>
+                        <p>Esta persona acaba de iniciar una conversación de cero con la IA de NexoFilm.</p>
+                        <p>Recibís este aviso para poder monitorear la venta en tiempo real y engancharlo por tu cuenta si deja de contestarle a la máquina.</p>
+                        <br/>
+                        <a href="https://nexofilm.com/admin/chat?phone=${from}" style="background: #000; color: #ccff00; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Espiar Chat en Vivo</a>
+                    </div>
+                `
+            );
         }
 
         // --- SESIONES ANTIGUAS (Auto-Reset) ---
@@ -173,7 +169,7 @@ export default async function handler(req, res) {
         
         const lang = detectLanguage(text, history);
 
-        if (isMenuCommand || text === 'reset' || isWebStart) {
+        if (isMenuCommand || text === 'reset') {
             if (supabase) {
                 console.log(`[WAKE UP] Reactivando bot para ${targetPhone} por comando: ${text}`);
                 // Reseteamos el updated_at para que la lógica de silencio no lo bloquee
@@ -226,6 +222,7 @@ export default async function handler(req, res) {
         if (isInteractive) {
             const btnId = message.interactive.button_reply.id;
             const btnTitle = message.interactive.button_reply.title || btnId;
+            let qr = "";
 
             if (btnId === 'btn_p') {
                 qr = "¡Bárbaro! ¿Qué tipo de servicio o cobertura estás buscando? (Foto, Video, Streaming, o un combo) 📸🎥";
@@ -248,24 +245,20 @@ export default async function handler(req, res) {
                 await sendText(phoneNumberId, ADMIN_NUMBER, `🔔 ALERTA HUMANO: +${from}`).then(null, () => {});
                 // Mail al admin via Resend (awaited para que no muera en Vercel)
                 const contactName = leadData?.name || `+${from}`;
-                try {
-                    await resend.emails.send({
-                        from: 'NexoBot Alerta <onboarding@resend.dev>',
-                        to: [ADMIN_EMAIL],
-                        subject: `👤 Hablar con Productor: ${contactName}`,
-                        html: `
-                            <div style="font-family:sans-serif;padding:20px;border-left:4px solid #ccff00;">
-                                <h2>👤 ${contactName} quiere hablar con un productor</h2>
-                                <p><strong>Teléfono:</strong> ${targetPhone.startsWith('+') ? targetPhone : `+${targetPhone}`}</p>
-                                <br/>
-                                <a href="https://nexofilm.com/admin/chat?phone=${from}" 
-                                   style="background:#000;color:#fff;padding:12px 24px;text-decoration:none;border-radius:5px;font-weight:bold;">
-                                   Ir al Chat del CRM
-                                </a>
-                            </div>
-                        `
-                    });
-                } catch(e) { console.error("Resend btn_h error:", e.message); }
+                await sendDualEmail(
+                    `👤 Hablar con Productor: ${contactName}`,
+                    `
+                        <div style="font-family:sans-serif;padding:20px;border-left:4px solid #ccff00;">
+                            <h2>👤 ${contactName} quiere hablar con un productor</h2>
+                            <p><strong>Teléfono:</strong> ${targetPhone.startsWith('+') ? targetPhone : `+${targetPhone}`}</p>
+                            <br/>
+                            <a href="https://nexofilm.com/admin/chat?phone=${from}" 
+                               style="background:#000;color:#fff;padding:12px 24px;text-decoration:none;border-radius:5px;font-weight:bold;">
+                               Ir al Chat del CRM
+                            </a>
+                        </div>
+                    `
+                );
                 // Mini-handoff: guardar en Supabase para que aparezca el panel de resumen en el CRM
                 await handleHandoff(targetPhone, leadData?.id, {
                     handoff: true,
@@ -306,16 +299,16 @@ export default async function handler(req, res) {
             const daysSinceUpdate = leadData.updated_at ? Math.floor((Date.now() - new Date(leadData.updated_at).getTime()) / (1000 * 60 * 60 * 24)) : 0;
             
             if (hasRecentBudget && daysSinceUpdate < 60) {
-                 instruccionSaludo = `1. **CLIENTE RECONOCIDO CON HISTORIAL**: Es un cliente frecuente llamado ${firstName}. Su última consulta (hace ${daysSinceUpdate} días) fue sobre: "${leadData.summary}".\n2. **PRESENTACIÓN**: Saludalo de manera muuuy cálida, sin preguntarle el nombre. Decile por ejemplo: "¡Hola ${firstName}! Qué bueno tenerte de vuelta. 😊 ¿Cómo venís con lo de [resumí muy brevemente su consulta anterior, sin que suene robótico]? ¿Querías retomar eso o tenés en mente algo nuevo?" e incluí al final el tag $$SHOW_MENU$$. NO le preguntes su nombre.`;
+                 instruccionSaludo = `1. **CLIENTE RECONOCIDO CON HISTORIAL**: Es un cliente frecuente llamado ${firstName}. Su última consulta fue sobre: "${leadData.summary}".\n2. **PRESENTACIÓN**: Saludalo al grano. Ej: "¡Hola ${firstName}! Qué bueno tenerte de vuelta. ¿Querés retomar tu consulta anterior o tenés algo nuevo en mente?" e incluí al final el tag $$SHOW_MENU$$. NO le preguntes su nombre.`;
             } else {
-                 instruccionSaludo = `1. **CLIENTE RECONOCIDO**: Es un contacto llamado ${firstName}.\n2. **PRESENTACIÓN**: NO le preguntes su nombre. Saludalo cálidamente EXACTAMENTE con esta frase: "${currentGreeting}" e incluye inmediatamente el tag $$SHOW_MENU$$. ¡YA SABES SU NOMBRE, usalo!`;
+                 instruccionSaludo = `1. **CLIENTE RECONOCIDO**: Es un contacto llamado ${firstName}.\n2. **PRESENTACIÓN**: NO le preguntes su nombre. Saludalo corto EXACTAMENTE con esta frase: "${currentGreeting}" e incluye inmediatamente el tag $$SHOW_MENU$$. NO repitas su nombre en los próximos mensajes.`;
             }
         } else {
-            instruccionSaludo = `1. **NUEVO CONTACTO**: Como no sabes su nombre, en el primer mensaje saludá amablemente y preguntale cómo se llama.\n2. **PRESENTACIÓN**: Una vez te diga su nombre, decile: "¡Un gusto, [Su Nombre]! Acá te dejo las opciones de lo que podemos hacer:" y agregá el tag $$SHOW_MENU$$ inmediatamente después.`;
+            instruccionSaludo = `1. **NUEVO CONTACTO**: No sabes su nombre.\n2. **PRESENTACIÓN**: En el primer mensaje saludá, preguntale su nombre e INCLUYE Inmediatamente EL TAG $$SHOW_MENU$$. Ejemplo: "¡Hola! Soy el asistente de NexoFilm. ¿Cómo te llamás? Acá te dejo nuestras opciones:" $$SHOW_MENU$$`;
         }
     } else {
         const knownName = (leadData?.name && leadData.name !== 'Sin nombre') ? leadData.name.trim().split(/[\s,.-]+/)[0] : "el cliente";
-        instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName}. Respondé de forma natural, súper atenta y resolutiva a lo último que te dijo. Usá su nombre (${knownName}) para mantener la cercanía. NO saludes de cero, y NO pongas el tag $$SHOW_MENU$$ a menos que te pidan explícitamente el menú. RECORDÁ: Tu foco es dar SOLUCIONES e ideas de SETUP que le sirvan mucho (ondas asesoramiento premium).`;
+        instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName}. Respondé de forma SÚPER CORTA y al grano. NO uses su nombre en cada mensaje. NO agregues el menú de nuevo a menos que te lo pidan.`;
     }
 
     let confirmacionEmail = `      - Pedile el correo de cero: "¿Me podrías pasar tu correo electrónico para enviarte la propuesta formal?".\n      - NO AVANCES HASTA RECIBIR EL CORREO.`;
@@ -448,24 +441,20 @@ async function handleHandoff(phone, leadId, hf) {
         }
     }
 
-    try {
-        await resend.emails.send({
-            from: 'NexoFilm CRM <onboarding@resend.dev>',
-            to: [ADMIN_EMAIL],
-            subject: `🔥 DERIVACIÓN CRM: ${hf.name} (+${phone})`,
-            html: `
-                <div style="font-family: sans-serif; padding: 20px;">
-                    <h2 style="color: #1a1a1a;">🚀 Nuevo Lead para NexoFilm</h2>
-                    <p><strong>Cliente:</strong> ${hf.name}</p>
-                    <p><strong>Teléfono:</strong> +${phone}</p>
-                    <p><strong>Email:</strong> ${hf.email}</p>
-                    <p><strong>Resumen IA:</strong> ${hf.summary}</p>
-                    <br/>
-                    <a href="https://nexofilm.com/admin/chat?phone=${phone}" style="background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 5px;">Abri el Chat en el CRM</a>
-                </div>
-            `
-        });
-    } catch(e) { console.error("Resend Error:", e); }
+    await sendDualEmail(
+        `🔥 DERIVACIÓN CRM: ${hf.name} (+${phone})`,
+        `
+            <div style="font-family: sans-serif; padding: 20px;">
+                <h2 style="color: #1a1a1a;">🚀 Nuevo Lead para NexoFilm</h2>
+                <p><strong>Cliente:</strong> ${hf.name}</p>
+                <p><strong>Teléfono:</strong> +${phone}</p>
+                <p><strong>Email:</strong> ${hf.email}</p>
+                <p><strong>Resumen IA:</strong> ${hf.summary}</p>
+                <br/>
+                <a href="https://nexofilm.com/admin/chat?phone=${phone}" style="background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 5px;">Abri el Chat en el CRM</a>
+            </div>
+        `
+    );
 }
 
 // HELPERS
@@ -569,28 +558,38 @@ function detectLanguage(text, history) {
 }
 
 async function notifyAdminOfNewMessage(phone, name, content) {
-    try {
-        await resend.emails.send({
-            from: 'NexoBot Alerta <onboarding@resend.dev>',
-            to: [ADMIN_EMAIL],
-            subject: `🔔 Mensaje nuevo de ${name} (+${phone})`,
-            html: `
-                <div style="font-family: sans-serif; padding: 20px; border-left: 4px solid #ccff00;">
-                    <h2 style="color: #1a1a1a;">📩 Tu cliente está esperando...</h2>
-                    <p><strong>De:</strong> ${name} (+${phone})</p>
-                    <p><strong>Mensaje:</strong> "${content || "[Archivo o Multimedia]"}"</p>
-                    <br/>
-                    <a href="https://nexofilm.com/admin/chat?phone=${phone}" 
-                       style="background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
-                       Ir a contestarle ahora
-                    </a>
-                    <p style="font-size: 11px; color: #888; margin-top: 20px;">
-                        Esta alerta se disparó porque pasaron más de 10 minutos desde que el cliente escribió y la IA está en silencio.
-                    </p>
-                </div>
-            `
-        });
-    } catch (e) {
-        console.error("Error enviando notificación Resend:", e.message);
+    await sendDualEmail(
+        `🔔 Mensaje nuevo de ${name} (+${phone})`,
+        `
+            <div style="font-family: sans-serif; padding: 20px; border-left: 4px solid #ccff00;">
+                <h2 style="color: #1a1a1a;">📩 Tu cliente está esperando...</h2>
+                <p><strong>De:</strong> ${name} (+${phone})</p>
+                <p><strong>Mensaje:</strong> "${content || "[Archivo o Multimedia]"}"</p>
+                <br/>
+                <a href="https://nexofilm.com/admin/chat?phone=${phone}" 
+                   style="background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                   Ir a contestarle ahora
+                </a>
+                <p style="font-size: 11px; color: #888; margin-top: 20px;">
+                    Esta alerta se disparó porque pasaron más de 10 minutos desde que el cliente escribió y la IA está en silencio.
+                </p>
+            </div>
+        `
+    );
+}
+
+async function sendDualEmail(subject, htmlContent) {
+    const emails = ['martinmagarinios@gmail.com', 'martin@nexofilm.com'];
+    for (const email of emails) {
+        try {
+            await resend.emails.send({
+                from: 'NexoBot <onboarding@resend.dev>',
+                to: [email],
+                subject: subject,
+                html: htmlContent
+            });
+        } catch (e) {
+            console.error(`Resend fail for ${email}:`, e.message);
+        }
     }
 }
