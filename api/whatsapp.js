@@ -622,7 +622,7 @@ async function sendDualEmail(subject, htmlContent) {
     for (const email of emails) {
         try {
             await resend.emails.send({
-                from: 'NexoBot <onboarding@resend.dev>',
+                from: 'NexoBot <martin@nexofilm.com>',
                 to: [email],
                 subject: subject,
                 html: htmlContent
