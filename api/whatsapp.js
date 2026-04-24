@@ -288,9 +288,9 @@ export default async function handler(req, res) {
         if (leadData?.name && leadData.name !== 'Sin nombre') {
             const firstName = leadData.name.trim().split(/[\s,.-]+/)[0];
             const greetings = {
-                es: `¡Bienvenido ${firstName} a NexoFilm, un placer atenderte! ¿En qué te puedo ayudar hoy?`,
-                en: `Welcome ${firstName} to NexoFilm, a pleasure to assist you! How can I help you today?`,
-                pt: `Bem-vindo ${firstName} à NexoFilm, um prazer atendê-lo! Como posso ajudar hoje?`
+                es: `¡Bienvenido ${firstName} a NexoFilm, un placer atenderte!`,
+                en: `Welcome ${firstName} to NexoFilm, great to have you here!`,
+                pt: `Bem-vindo ${firstName} à NexoFilm, é um prazer atendê-lo!`
             };
             const currentGreeting = greetings[lang] || greetings.es;
             
@@ -298,19 +298,19 @@ export default async function handler(req, res) {
             const daysSinceUpdate = leadData.updated_at ? Math.floor((Date.now() - new Date(leadData.updated_at).getTime()) / (1000 * 60 * 60 * 24)) : 0;
             
             if (hasRecentBudget && daysSinceUpdate < 60) {
-                 instruccionSaludo = `1. **CLIENTE RECONOCIDO CON HISTORIAL**: Ya sabes que es ${firstName}. Su última consulta fue sobre: "${leadData.summary}".\n2. **PRESENTACIÓN**: Saludalo así: "¡Bienvenido ${firstName} a NexoFilm, un placer atenderte! La consulta es por el presupuesto anterior ([Mencioná muy brevemente su proyecto]) o por un presupuesto nuevo?" e incluí el tag $$SHOW_MENU$$. NO le preguntes su nombre.`;
+                 instruccionSaludo = `1. **CLIENTE RECONOCIDO CON HISTORIAL**: Ya sabes que es ${firstName}. Su última consulta fue sobre: "${leadData.summary}".\n2. **PRESENTACIÓN**: Saludalo cálidamente y mencioná su consulta anterior. Ej: "¡Bienvenido ${firstName} a NexoFilm! Vi que tu consulta anterior fue sobre [proyecto]. ¿Seguímos con eso o tenés algo nuevo en mente?" e incluí el tag $$SHOW_MENU$$. NO le preguntes su nombre. NO termines con '¿en qué te puedo ayudar?' porque el menú ya lo ofrece.`;
             } else {
-                 instruccionSaludo = `1. **CLIENTE RECONOCIDO**: Ya sabes que es ${firstName}.\n2. **PRESENTACIÓN**: Saludalo EXACTAMENTE con esta frase: "${currentGreeting}" e incluye inmediatamente el tag $$SHOW_MENU$$.`;
+                 instruccionSaludo = `1. **CLIENTE RECONOCIDO**: Ya sabes que es ${firstName}.\n2. **PRESENTACIÓN**: Saludalo EXACTAMENTE con esta frase: "${currentGreeting}" e incluye inmediatamente el tag $$SHOW_MENU$$. NO agregues '¿en qué te puedo ayudar?' porque el menú con botones ya se lo ofrece automáticamente.`;
             }
         } else {
             instruccionSaludo = `1. **NUEVO CONTACTO**: No sabes su nombre. En el primer mensaje EXACTAMENTE decí esto: "¡Bienvenido a NexoFilm, un placer atenderte! ¿Me podrías decir tu nombre por favor?".\n2. IMPORTANTE: NO MANDES EL MENU TODAVÍA. Esperá a que te diga su nombre.`;
         }
     } else {
         const knownName = (leadData?.name && leadData.name !== 'Sin nombre') ? leadData.name.trim().split(/[\s,.-]+/)[0] : "";
-        instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName || "el cliente"}. Si te acaba de decir su nombre por primera vez, saludalo cordialmente por su nombre e INCLUYE el tag $$SHOW_MENU$$ inmediatamente. Si ya le habías dado el menú, respondé cálidamente a sus respuestas valorando su idea (ej: "Suena genial tu idea"), pero sé concreto con tus preguntas. NO repitas su nombre en cada mensaje.`;
+        instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName || "el cliente"}. Si te acaba de decir su nombre por primera vez, saludalo cálidamente por su nombre e INCLUYE el tag $$SHOW_MENU$$ (sin agregar '¿en qué te puedo ayudar?' porque el menú ya lo tiene). Si ya le habías dado el menú, respondé cálidamente a sus respuestas valorando su idea, pero avanzá con la siguiente pregunta. NO repitas su nombre en cada mensaje.`;
     }
 
-    let confirmacionEmail = `      - Pedile el correo de forma cálida y explicando por qué: "Para poder prepararte una propuesta personalizada con todos los detalles y el presupuesto, necesito tu correo. ¿Me lo pasás?".\n      - NO AVANCES HASTA RECIBIR EL CORREO.`;
+    let confirmacionEmail = `      - Pedile el correo de forma cálida y natural. Ejemplo: "Para prepararte la propuesta, ¿me pasás tu mail?".\n      - Si el cliente no quiere dar el mail o dice que lo tiene lleno, NO insistás. En cambio, respondé algo como: "No hay problema, un asesor te va a contactar directamente por acá o por teléfono." y a continuación emite el HANDOFF_JSON igual, poniendo email como null.\n      - NUNCA presiones ni repitás la misma frase varias veces. Siempre hay una salida amable.`;
 
     if (leadData?.name && leadData.name !== 'Sin nombre') {
         const firstName = leadData.name.trim().split(/[\s,.-]+/)[0];
@@ -523,15 +523,15 @@ async function sendText(pid, to, msg) {
 async function sendMenu(pid, to, lang = 'es') {
     const translations = {
         es: {
-            body: "¿En qué te puedo ayudar?",
+            body: "Seleccioná una opción 👇",
             btns: ["Pedir Presupuesto", "Ver Portfolio", "Hablar con Productor"]
         },
         en: {
-            body: "How can I help you?",
+            body: "Choose an option 👇",
             btns: ["Request Quote", "See Portfolio", "Talk to Producer"]
         },
         pt: {
-            body: "Como posso ajudar?",
+            body: "Escolha uma opção 👇",
             btns: ["Pedir Orçamento", "Ver Portfólio", "Falar com Produtor"]
         }
     };
