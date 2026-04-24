@@ -14,38 +14,27 @@ const ADMIN_EMAIL = 'martin@nexofilm.com';
 const SYSTEM_PROMPT = `Eres el asistente virtual de NexoFilm (Argentina). Sos cálido, empático, concreto y profesional.
 
 REGLAS DE TONO Y ESTILO:
-- Sé cordial y empático. Si te cuentan sobre su evento o proyecto, validá su idea con frases cortas (ej: "Suena muy bien el video corporativo", "Me parece genial un evento de presentación").
+- Sé cordial y empático. Si te cuentan sobre su evento o proyecto, validá su idea con frases cortas (ej: "Suena muy bien el video corporativo", "Me parece genial una presentación de producto").
 - Mantené respuestas concretas y al grano. No te extiendas en monólogos.
-- NO repitas el nombre del cliente constantemente. Usalo solo al saludar o cuando sea estrictamente necesario.
+- NO repitas el nombre del cliente constantemente. Usalo solo al saludar.
 - Respondé en el mismo idioma del usuario (Español, Inglés o Portugués).
 - Usá voseo argentino natural (ej: querés, mirá, decime). NO tutees ni uses "usted". NUNCA uses "che".
 
 FLUJO DE CONVERSACIÓN:
 {{INSTRUCCION_DE_SALUDO}}
 
-3. Al elegir "Pedir Presupuesto", hace las preguntas UNA por UNA (esperá la respuesta, no mandes todo junto):
+3. Al elegir "Pedir Presupuesto", hace las preguntas UNA por UNA (esperá la respuesta):
    a) "¡Perfecto! ¿Qué servicio buscás? (Foto, Video, Streaming, o una combinación de varios)"
-   b) TIPO DE EVENTO: Preguntá de forma cálida y enumerá opciones con entusiasmo. Ejemplo: "¡Genial! ¿Qué tipo de evento es? Por ejemplo: un evento corporativo, una presentación de producto, una campaña publicitaria, una feria o congreso, una fiesta de fin de año, un evento social, una cobertura deportiva... o lo que sea que tengas en mente. 🎬"
+   b) TIPO DE EVENTO: Preguntá de forma cálida: "¡Genial! ¿Qué tipo de evento es? Por ejemplo: un evento corporativo, una presentación de producto, una campaña publicitaria, una feria o congreso, una fiesta de fin de año, un evento social, una cobertura deportiva... o lo que sea que tenés en mente. 🎬"
    c) "¿Fecha y lugar estimado?"
    d) "¿Cantidad de personas y horas de cobertura?"
    e) SOLICITUD DE EMAIL:
 {{CONFIRMACION_EMAIL}}
-   f) DESPEDIDA Y HANDOFF FINAL (ÚLTIMO PASO):
-      - Despedite con calidez: "¡Bárbaro! Ya le paso todo a producción y un asesor te contactará a la brevedad. 👋"
-      - **Y OBLIGATORIAMENTE AL FINAL DE ESE MENSAJE PONÉ EL BLOQUE $$HANDOFF_JSON$$ CON EL RESUMEN:**
-
-$$HANDOFF_JSON$$
-{
-  "handoff": true,
-  "name": "Nombre Real",
-  "email": "correo@oficial.com",
-  "summary": "Resumen corto: Video y streaming, evento corporativo, 150 pax, fecha X.",
-  "score": 85
-}
-$$HANDOFF_JSON$$
+   f) DESPEDIDA FINAL (ÚLTIMO PASO, cuando ya tenés todos los datos):
+      - Decí EXACTAMENTE esta frase y nada más: "¡Bárbaro! Ya le paso todo a producción y un asesor te contactará a la brevedad. 👋"
 
 REGLAS EXTRA:
-- ANTI-PAVADAS: Si habla de temas ajenos a producción, decí corto: "Sobre eso no te puedo ayudar, te derivo con el equipo." y generá un handoff.
+- ANTI-PAVADAS: Si habla de temas ajenos a producción, decí: "Sobre eso no te puedo ayudar, pero podemos conectarte con el equipo." y usá la despedida final.
 - REINICIO: Si el usuario dice "[SISTEMA: REINICIAR FLUJO]", empezá de cero con la pregunta de "Pedir Presupuesto".`;
 
 
@@ -347,92 +336,103 @@ export default async function handler(req, res) {
         persistHistory(from, history).then(null, () => {});
 
         // ============================================================
-        // EXTRACCION PROGRESIVA DE NOMBRE (sin esperar al handoff final)
-        // Si el lead es 'Sin nombre' y la IA lo llama por su nombre en
-        // el saludo, lo guardamos de inmediato en Supabase.
+        // EXTRACCION DE NOMBRE DESDE MENSAJE DEL USUARIO
+        // Detectamos cuando el bot pidio el nombre y el usuario acaba
+        // de responder - extraemos del mensaje del usuario directamente.
         // ============================================================
-        if (supabase && (!leadData?.name || leadData.name === 'Sin nombre')) {
-            // Buscamos el patron: "Bienvenido X", "Hola X!", "Encantado X", etc.
-            const nameMatch = aiRes.match(
-                /(?:bienvenido|hola|encantado|gusto|qu[eé] tal)\s+([A-Z][a-z]{2,20})(?:[,!. ]|$)/i
+        let capturedName = (leadData?.name && leadData.name !== 'Sin nombre') ? leadData.name : null;
+
+        if (!capturedName && supabase) {
+            // Buscar si el penultimo asistente preguntaba el nombre
+            const histSinActual = history.slice(0, -2);
+            const prevAssistant = [...histSinActual].reverse().find(m => m.role === 'assistant');
+            const botAskedName = prevAssistant && (
+                prevAssistant.content.includes('nombre') ||
+                prevAssistant.content.includes('llamás') ||
+                prevAssistant.content.includes('llamas') ||
+                prevAssistant.content.includes('name')
             );
-            if (nameMatch && nameMatch[1]) {
-                const capturedName = nameMatch[1].trim();
-                console.log(`[NAME CAPTURE] Nombre detectado en respuesta IA: ${capturedName}`);
-                // Buscar el lead actual (puede haberse creado en este mismo request)
+            const userMsg = text.trim();
+            const looksLikeName = /^[A-Za-záéíóúÁÉÍÓÚñÑüÜ]+(\s[A-Za-záéíóúÁÉÍÓÚñÑüÜ]+){0,3}$/.test(userMsg) &&
+                userMsg.length >= 2 && userMsg.length <= 40;
+
+            if (botAskedName && looksLikeName) {
+                capturedName = userMsg.split(' ')
+                    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                console.log(`[NAME FROM USER] Nombre del mensaje: ${capturedName}`);
+            } else {
+                // Fallback: buscar en la respuesta de la IA
+                const nm = aiRes.match(/(?:bienvenido|bienvenida|hola|encantado|gusto)\s+([A-Za-záéíóúÁÉÍÓÚñÑüÜ][a-záéíóúñü]{1,20})(?:[,!. ]|$)/i);
+                if (nm?.[1]) capturedName = nm[1].charAt(0).toUpperCase() + nm[1].slice(1).toLowerCase();
+            }
+
+            if (capturedName) {
                 const searchStr = (targetPhone || '').replace(/\D/g, '').slice(-8);
                 const { data: freshLead } = await supabase
-                    .from('whatsapp_leads')
-                    .select('id, name')
-                    .like('phone', `%${searchStr}%`)
-                    .maybeSingle();
+                    .from('whatsapp_leads').select('id, name')
+                    .like('phone', `%${searchStr}%`).maybeSingle();
                 if (freshLead && (!freshLead.name || freshLead.name === 'Sin nombre')) {
                     await supabase.from('whatsapp_leads')
                         .update({ name: capturedName, updated_at: new Date().toISOString() })
-                        .eq('id', freshLead.id)
-                        .then(null, () => {});
-                    console.log(`[NAME SAVED] Nombre guardado: ${capturedName}`);
+                        .eq('id', freshLead.id).then(null, () => {});
+                    console.log(`[NAME SAVED] ${capturedName}`);
                 }
             }
         }
 
-        // Procesar tags de handoff y menu
-        let final = aiRes;
-        let showMenu = false;
+        // ============================================================
+        // HANDOFF BACKEND-DRIVEN: detectado por frase de despedida.
+        // No dependemos de que la IA genere JSON perfecto.
+        // Cuando la IA dice la despedida, extraemos datos del historial.
+        // ============================================================
+        const isFarewell = aiRes.includes('paso todo a producci') || aiRes.includes('asesor te contactar');
         let hf = null;
 
-        // Regex ultra-robusto: detecta el bloque HANDOFF_JSON sin importar
-        // cuantos $ use la IA, si usa backticks, saltos de linea, etc.
-        const handoffRegex = /\${0,3}HANDOFF_JSON\${0,3}[\s\S]*?(\{[\s\S]*?"handoff"\s*:\s*true[\s\S]*?\})[\s\S]*?\${0,3}HANDOFF_JSON\${0,3}/i;
-        const m = aiRes.match(handoffRegex);
-        if (m) {
-            let jsonRaw = m[1].replace(/```json/gi, '').replace(/```/g, '').trim();
-            try { 
-                hf = JSON.parse(jsonRaw); 
-                final = aiRes.replace(m[0], '').trim(); 
-                console.log("[HANDOFF OK] JSON detectado y procesado:", hf.name, hf.summary);
-            } catch(e) {
-                console.error("[HANDOFF PARSE ERROR] Falla al parsear JSON:", jsonRaw, e.message);
-                try {
-                    let cleaned = jsonRaw.replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ');
-                    hf = JSON.parse(cleaned);
-                    final = aiRes.replace(m[0], '').trim();
-                } catch(e2) { console.error("[HANDOFF PARSE ERROR 2]", e2.message); }
-            }
+        if (isFarewell) {
+            const emailMsg = [...history].reverse().find(m => m.role === 'user' && m.content.includes('@'));
+            const emailFound = emailMsg
+                ? emailMsg.content.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/)?.[0]
+                : null;
+
+            const userMessages = history.filter(m => m.role === 'user' && !m.content.startsWith('['));
+            const summaryText = userMessages.slice(-6).map(m => m.content).join(' | ').substring(0, 250);
+            const finalName = capturedName || leadData?.name || 'Sin nombre';
+
+            hf = {
+                handoff: true,
+                name: finalName,
+                email: emailFound || leadData?.email || null,
+                summary: summaryText || 'Presupuesto solicitado',
+                is_hot: true,
+                score: 85
+            };
+            console.log('[HANDOFF BACKEND]', hf.name, '|', hf.email, '|', hf.summary.substring(0, 80));
         }
 
-        // Failsafe: si quedaron restos del bloque en el texto, eliminarlos
+        // Limpiar cualquier rastro de JSON/tags en el mensaje al cliente
+        let final = aiRes;
+        let showMenu = false;
         final = final.replace(/\${0,3}HANDOFF_JSON\${0,3}[\s\S]*?\${0,3}HANDOFF_JSON\${0,3}/gi, '').trim();
-        // Eliminar cualquier JSON suelto que pueda haberse colado
         final = final.replace(/```json[\s\S]*?```/gi, '').trim();
-        // Eliminar bloques de texto que sean solo llaves JSON al final del mensaje
-        final = final.replace(/\n?\{[\s\S]*?"handoff"[\s\S]*?\}/gi, '').trim();
+        final = final.replace(/\{[\s\S]*?"handoff"[\s\S]*?\}/gi, '').trim();
+        final = final.replace(/\${0,3}HANDOFF_JSON\${0,3}/gi, '').trim();
 
-        // Detección robusta de tags SHOW_MENU (insensible a mayúsculas y tolerante a 1 o 2 signos $)
+        // Deteccion de tag SHOW_MENU
         if (/\${1,2}SHOW_MENU\${1,2}/i.test(final)) {
             showMenu = true;
             final = final.replace(/\${1,2}SHOW_MENU\${1,2}/gi, '').trim();
         }
 
-        // Fail-safe: Si el bot menciona opciones pero olvidó el tag (o usó una variante)
+        // Fail-safe menu por palabras clave
         const keywords = ["opciones", "acá te dejo", "nuestras alternativas", "menú"];
         if (!showMenu && keywords.some(k => final.toLowerCase().includes(k))) {
             showMenu = true;
-            console.log("[FAIL-SAFE] Menú activado por palabras clave en el texto.");
+            console.log("[FAIL-SAFE] Menú activado por palabras clave.");
         }
 
-        // Solo enviar texto si hay contenido (WhatsApp rechaza mensajes vacios silenciosamente)
-        if (final && final.trim().length > 0) {
-            await sendText(phoneNumberId, from, final);
-        }
-        // El menu siempre despues del texto
-        if (showMenu) {
-            await sendMenu(phoneNumberId, from, lang);
-        }
-
-        if (hf?.handoff) {
-            await handleHandoff(targetPhone, leadData?.id, hf);
-        }
+        if (final && final.trim().length > 0) await sendText(phoneNumberId, from, final);
+        if (showMenu) await sendMenu(phoneNumberId, from, lang);
+        if (hf?.handoff) await handleHandoff(targetPhone, leadData?.id, hf);
 
     } catch (err) {
         console.error("BOT ERROR:", err.message);
