@@ -11,20 +11,19 @@ const resend = new Resend((process.env.RESEND_API_KEY || '').trim());
 const ADMIN_NUMBER = '541151191964';
 const ADMIN_EMAIL = 'martin@nexofilm.com';
 
-const SYSTEM_PROMPT = `Eres el asistente virtual de NexoFilm (Argentina). Sos rápido, concreto y profesional.
+const SYSTEM_PROMPT = `Eres el asistente virtual de NexoFilm (Argentina). Sos cálido, empático, concreto y profesional.
 
 REGLAS DE TONO Y ESTILO:
-- Mantené respuestas MUY CORTAS y al grano (máximo 2 oraciones por respuesta). A los clientes no les gusta leer textos largos.
-- NO repitas el nombre del cliente constantemente. Usalo solo al saludar o cuando sea muy natural.
+- Sé cordial y empático. Si te cuentan sobre su evento o proyecto, validá su idea con frases cortas (ej: "Suena muy bien el video corporativo", "Me parece genial un evento de presentación").
+- Mantené respuestas concretas y al grano. No te extiendas en monólogos.
+- NO repitas el nombre del cliente constantemente. Usalo solo al saludar o cuando sea estrictamente necesario.
 - Respondé en el mismo idioma del usuario (Español, Inglés o Portugués).
 - Usá voseo argentino natural (ej: querés, mirá, decime). NO tutees ni uses "usted". NUNCA uses "che".
-- NO des largas opiniones ni te extiendas a menos que el cliente explícitamente te pida asesoramiento u opinión detallada.
-- Sé cordial, pero muy directo.
 
 FLUJO DE CONVERSACIÓN:
 {{INSTRUCCION_DE_SALUDO}}
 
-3. Al elegir "Pedir Presupuesto", hace las preguntas UNA por UNA (sé muy breve y directo):
+3. Al elegir "Pedir Presupuesto", hace las preguntas UNA por UNA (esperá la respuesta, no mandes todo junto):
    a) "¡Perfecto! ¿Qué servicio buscás? (Foto, Video, Streaming o Combo)"
    b) "¿Qué tipo de evento es? (Social, corporativo, feria, etc.)"
    c) "¿Fecha y lugar estimado?"
@@ -32,7 +31,7 @@ FLUJO DE CONVERSACIÓN:
    e) SOLICITUD DE EMAIL:
 {{CONFIRMACION_EMAIL}}
    f) DESPEDIDA Y HANDOFF FINAL (ÚLTIMO PASO):
-      - Despedite corto: "¡Bárbaro! Ya le paso todo a producción y te contactan a la brevedad. 👋"
+      - Despedite con calidez: "¡Bárbaro! Ya le paso todo a producción y un asesor te contactará a la brevedad. 👋"
       - **Y OBLIGATORIAMENTE AL FINAL DE ESE MENSAJE PONÉ EL BLOQUE $$HANDOFF_JSON$$ CON EL RESUMEN:**
 
 $$HANDOFF_JSON$$
@@ -229,7 +228,7 @@ export default async function handler(req, res) {
                 history.push({ role: 'user', content: "[SISTEMA: REINICIAR FLUJO]" }); // Forzar a la IA a reiniciar las preguntas
             }
             else if (btnId === 'btn_v') {
-                qr = "🎬 Mirá algunos de nuestros trabajos en: https://nexofilm.com \n¿Te gustaría consultar por un presupuesto?";
+                qr = "🎬 Mirá algunos de nuestros trabajos acá: https://nexofilm.com/#portfolio \n¿Te gustaría consultar por un presupuesto?";
                 // Mini-handoff silencioso para registrar que está mirando el portfolio
                 await handleHandoff(targetPhone, leadData?.id, {
                     name: leadData?.name || from,
@@ -289,9 +288,9 @@ export default async function handler(req, res) {
         if (leadData?.name && leadData.name !== 'Sin nombre') {
             const firstName = leadData.name.trim().split(/[\s,.-]+/)[0];
             const greetings = {
-                es: `¡Hola ${firstName}! Qué alegría verte por acá. ¿En qué andás hoy?`,
-                en: `Hi ${firstName}! Great to see you. How can we help you today?`,
-                pt: `Olá ${firstName}! Que bom ver você. Como podemos ajudá-lo hoje?`
+                es: `¡Bienvenido ${firstName} a NexoFilm, un placer atenderte! ¿En qué te puedo ayudar hoy?`,
+                en: `Welcome ${firstName} to NexoFilm, a pleasure to assist you! How can I help you today?`,
+                pt: `Bem-vindo ${firstName} à NexoFilm, um prazer atendê-lo! Como posso ajudar hoje?`
             };
             const currentGreeting = greetings[lang] || greetings.es;
             
@@ -299,16 +298,16 @@ export default async function handler(req, res) {
             const daysSinceUpdate = leadData.updated_at ? Math.floor((Date.now() - new Date(leadData.updated_at).getTime()) / (1000 * 60 * 60 * 24)) : 0;
             
             if (hasRecentBudget && daysSinceUpdate < 60) {
-                 instruccionSaludo = `1. **CLIENTE RECONOCIDO CON HISTORIAL**: Es un cliente frecuente llamado ${firstName}. Su última consulta fue sobre: "${leadData.summary}".\n2. **PRESENTACIÓN**: Saludalo al grano. Ej: "¡Hola ${firstName}! Qué bueno tenerte de vuelta. ¿Querés retomar tu consulta anterior o tenés algo nuevo en mente?" e incluí al final el tag $$SHOW_MENU$$. NO le preguntes su nombre.`;
+                 instruccionSaludo = `1. **CLIENTE RECONOCIDO CON HISTORIAL**: Ya sabes que es ${firstName}. Su última consulta fue sobre: "${leadData.summary}".\n2. **PRESENTACIÓN**: Saludalo así: "¡Bienvenido ${firstName} a NexoFilm, un placer atenderte! La consulta es por el presupuesto anterior ([Mencioná muy brevemente su proyecto]) o por un presupuesto nuevo?" e incluí el tag $$SHOW_MENU$$. NO le preguntes su nombre.`;
             } else {
-                 instruccionSaludo = `1. **CLIENTE RECONOCIDO**: Es un contacto llamado ${firstName}.\n2. **PRESENTACIÓN**: NO le preguntes su nombre. Saludalo corto EXACTAMENTE con esta frase: "${currentGreeting}" e incluye inmediatamente el tag $$SHOW_MENU$$. NO repitas su nombre en los próximos mensajes.`;
+                 instruccionSaludo = `1. **CLIENTE RECONOCIDO**: Ya sabes que es ${firstName}.\n2. **PRESENTACIÓN**: Saludalo EXACTAMENTE con esta frase: "${currentGreeting}" e incluye inmediatamente el tag $$SHOW_MENU$$.`;
             }
         } else {
-            instruccionSaludo = `1. **NUEVO CONTACTO**: No sabes su nombre.\n2. **PRESENTACIÓN**: En el primer mensaje saludá, preguntale su nombre e INCLUYE Inmediatamente EL TAG $$SHOW_MENU$$. Ejemplo: "¡Hola! Soy el asistente de NexoFilm. ¿Cómo te llamás? Acá te dejo nuestras opciones:" $$SHOW_MENU$$`;
+            instruccionSaludo = `1. **NUEVO CONTACTO**: No sabes su nombre. En el primer mensaje EXACTAMENTE decí esto: "¡Bienvenido a NexoFilm, un placer atenderte! ¿Me podrías decir tu nombre por favor?".\n2. IMPORTANTE: NO MANDES EL MENU TODAVÍA. Esperá a que te diga su nombre.`;
         }
     } else {
-        const knownName = (leadData?.name && leadData.name !== 'Sin nombre') ? leadData.name.trim().split(/[\s,.-]+/)[0] : "el cliente";
-        instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName}. Respondé de forma SÚPER CORTA y al grano. NO uses su nombre en cada mensaje. NO agregues el menú de nuevo a menos que te lo pidan.`;
+        const knownName = (leadData?.name && leadData.name !== 'Sin nombre') ? leadData.name.trim().split(/[\s,.-]+/)[0] : "";
+        instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName || "el cliente"}. Si te acaba de decir su nombre por primera vez, saludalo cordialmente por su nombre e INCLUYE el tag $$SHOW_MENU$$ inmediatamente. Si ya le habías dado el menú, respondé cálidamente a sus respuestas valorando su idea (ej: "Suena genial tu idea"), pero sé concreto con tus preguntas. NO repitas su nombre en cada mensaje.`;
     }
 
     let confirmacionEmail = `      - Pedile el correo de cero: "¿Me podrías pasar tu correo electrónico para enviarte la propuesta formal?".\n      - NO AVANCES HASTA RECIBIR EL CORREO.`;
