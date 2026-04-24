@@ -346,29 +346,69 @@ export default async function handler(req, res) {
         if (history.length > 20) history.splice(0, history.length - 20);
         persistHistory(from, history).then(null, () => {});
 
-        // Procesar tags
+        // ============================================================
+        // EXTRACCION PROGRESIVA DE NOMBRE (sin esperar al handoff final)
+        // Si el lead es 'Sin nombre' y la IA lo llama por su nombre en
+        // el saludo, lo guardamos de inmediato en Supabase.
+        // ============================================================
+        if (supabase && (!leadData?.name || leadData.name === 'Sin nombre')) {
+            // Buscamos el patron: "Bienvenido X", "Hola X!", "Encantado X", etc.
+            const nameMatch = aiRes.match(
+                /(?:bienvenido|hola|encantado|gusto|qu[eé] tal)\s+([A-Z][a-z]{2,20})(?:[,!. ]|$)/i
+            );
+            if (nameMatch && nameMatch[1]) {
+                const capturedName = nameMatch[1].trim();
+                console.log(`[NAME CAPTURE] Nombre detectado en respuesta IA: ${capturedName}`);
+                // Buscar el lead actual (puede haberse creado en este mismo request)
+                const searchStr = (targetPhone || '').replace(/\D/g, '').slice(-8);
+                const { data: freshLead } = await supabase
+                    .from('whatsapp_leads')
+                    .select('id, name')
+                    .like('phone', `%${searchStr}%`)
+                    .maybeSingle();
+                if (freshLead && (!freshLead.name || freshLead.name === 'Sin nombre')) {
+                    await supabase.from('whatsapp_leads')
+                        .update({ name: capturedName, updated_at: new Date().toISOString() })
+                        .eq('id', freshLead.id)
+                        .then(null, () => {});
+                    console.log(`[NAME SAVED] Nombre guardado: ${capturedName}`);
+                }
+            }
+        }
+
+        // Procesar tags de handoff y menu
         let final = aiRes;
         let showMenu = false;
         let hf = null;
 
-        const m = aiRes.match(/\${1,2}HANDOFF_JSON\${1,2}([\s\S]*?)\${1,2}HANDOFF_JSON\${1,2}/i);
+        // Regex ultra-robusto: detecta el bloque HANDOFF_JSON sin importar
+        // cuantos $ use la IA, si usa backticks, saltos de linea, etc.
+        const handoffRegex = /\${0,3}HANDOFF_JSON\${0,3}[\s\S]*?(\{[\s\S]*?"handoff"\s*:\s*true[\s\S]*?\})[\s\S]*?\${0,3}HANDOFF_JSON\${0,3}/i;
+        const m = aiRes.match(handoffRegex);
         if (m) {
             let jsonRaw = m[1].replace(/```json/gi, '').replace(/```/g, '').trim();
             try { 
                 hf = JSON.parse(jsonRaw); 
                 final = aiRes.replace(m[0], '').trim(); 
-                console.log("[HANDOFF OK] JSON detectado y procesado.");
+                console.log("[HANDOFF OK] JSON detectado y procesado:", hf.name, hf.summary);
             } catch(e) {
                 console.error("[HANDOFF PARSE ERROR] Falla al parsear JSON:", jsonRaw, e.message);
-                // Si falla el parseo, intentamos limpiar caracteres raros
                 try {
                     let cleaned = jsonRaw.replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ');
                     hf = JSON.parse(cleaned);
                     final = aiRes.replace(m[0], '').trim();
-                } catch(e2) {}
+                } catch(e2) { console.error("[HANDOFF PARSE ERROR 2]", e2.message); }
             }
         }
-        // Detección robusta de tags (insensible a mayúsculas/minúsculas y tolerante a 1 o 2 signos $)
+
+        // Failsafe: si quedaron restos del bloque en el texto, eliminarlos
+        final = final.replace(/\${0,3}HANDOFF_JSON\${0,3}[\s\S]*?\${0,3}HANDOFF_JSON\${0,3}/gi, '').trim();
+        // Eliminar cualquier JSON suelto que pueda haberse colado
+        final = final.replace(/```json[\s\S]*?```/gi, '').trim();
+        // Eliminar bloques de texto que sean solo llaves JSON al final del mensaje
+        final = final.replace(/\n?\{[\s\S]*?"handoff"[\s\S]*?\}/gi, '').trim();
+
+        // Detección robusta de tags SHOW_MENU (insensible a mayúsculas y tolerante a 1 o 2 signos $)
         if (/\${1,2}SHOW_MENU\${1,2}/i.test(final)) {
             showMenu = true;
             final = final.replace(/\${1,2}SHOW_MENU\${1,2}/gi, '').trim();
