@@ -4,6 +4,13 @@
             "maxDuration": 30
         }
     },
+    "redirects": [
+        {
+            "source": "/portfolio",
+            "destination": "/#portfolio",
+            "permanent": false
+        }
+    ],
     "rewrites": [
         {
             "source": "/api/(.*)",

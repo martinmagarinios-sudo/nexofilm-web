@@ -24,8 +24,8 @@ FLUJO DE CONVERSACIÓN:
 {{INSTRUCCION_DE_SALUDO}}
 
 3. Al elegir "Pedir Presupuesto", hace las preguntas UNA por UNA (esperá la respuesta, no mandes todo junto):
-   a) "¡Perfecto! ¿Qué servicio buscás? (Foto, Video, Streaming o Combo)"
-   b) "¿Qué tipo de evento es? (Social, corporativo, feria, etc.)"
+   a) "¡Perfecto! ¿Qué servicio buscás? (Foto, Video, Streaming, o una combinación de varios)"
+   b) TIPO DE EVENTO: Preguntá de forma cálida y enumerá opciones con entusiasmo. Ejemplo: "¡Genial! ¿Qué tipo de evento es? Por ejemplo: un evento corporativo, una presentación de producto, una campaña publicitaria, una feria o congreso, una fiesta de fin de año, un evento social, una cobertura deportiva... o lo que sea que tengas en mente. 🎬"
    c) "¿Fecha y lugar estimado?"
    d) "¿Cantidad de personas y horas de cobertura?"
    e) SOLICITUD DE EMAIL:
@@ -228,15 +228,15 @@ export default async function handler(req, res) {
                 history.push({ role: 'user', content: "[SISTEMA: REINICIAR FLUJO]" }); // Forzar a la IA a reiniciar las preguntas
             }
             else if (btnId === 'btn_v') {
-                qr = "🎬 Mirá algunos de nuestros trabajos acá: https://nexofilm.com/#portfolio \n¿Te gustaría consultar por un presupuesto?";
-                // Mini-handoff silencioso para registrar que está mirando el portfolio
-                await handleHandoff(targetPhone, leadData?.id, {
-                    name: leadData?.name || from,
-                    email: leadData?.email || null,
-                    summary: '👀 Explorando Portfolio...',
-                    is_hot: false,
-                    score: Math.max(leadData?.score || 0, 30)
-                });
+                qr = "🎬 Mirá algunos de nuestros trabajos acá: https://nexofilm.com/portfolio \n¿Te gustaría consultar por un presupuesto?";
+                // Mini-handoff SILENCIOSO: solo actualiza Supabase, NO manda email
+                if (supabase && leadData?.id) {
+                    await supabase.from('whatsapp_leads').update({
+                        summary: '👀 Explorando Portfolio...',
+                        score: Math.max(leadData?.score || 0, 30),
+                        updated_at: new Date().toISOString()
+                    }).eq('id', leadData.id).then(null, () => {});
+                }
             }
             else if (btnId === 'btn_h') {
                 qr = "Entendido. Un productor te va a contactar a la brevedad. 👤📞 Cualquier cosa que necesites, escribí la palabra MENU.";
@@ -310,7 +310,7 @@ export default async function handler(req, res) {
         instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName || "el cliente"}. Si te acaba de decir su nombre por primera vez, saludalo cordialmente por su nombre e INCLUYE el tag $$SHOW_MENU$$ inmediatamente. Si ya le habías dado el menú, respondé cálidamente a sus respuestas valorando su idea (ej: "Suena genial tu idea"), pero sé concreto con tus preguntas. NO repitas su nombre en cada mensaje.`;
     }
 
-    let confirmacionEmail = `      - Pedile el correo de cero: "¿Me podrías pasar tu correo electrónico para enviarte la propuesta formal?".\n      - NO AVANCES HASTA RECIBIR EL CORREO.`;
+    let confirmacionEmail = `      - Pedile el correo de forma cálida y explicando por qué: "Para poder prepararte una propuesta personalizada con todos los detalles y el presupuesto, necesito tu correo. ¿Me lo pasás?".\n      - NO AVANCES HASTA RECIBIR EL CORREO.`;
 
     if (leadData?.name && leadData.name !== 'Sin nombre') {
         const firstName = leadData.name.trim().split(/[\s,.-]+/)[0];
