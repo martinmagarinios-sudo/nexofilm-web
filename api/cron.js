@@ -30,7 +30,7 @@ export default async function handler(req, res) {
     try {
       console.log("Iniciando ping a Supabase Producción...");
       const { error } = await supabase.from('whatsapp_sessions').select('phone').limit(1);
-      if (error && error.code !== '42P01') throw error; // Ignoramos si la tabla no existe aún, el ping cuenta igual
+      if (error && error.code !== '42P01' && !error.message?.includes('schema cache')) throw error; // Ignoramos si la tabla no existe aún, el ping cuenta igual
       console.log("¡Ping a Producción exitoso!");
       results.pings.push('Production: OK');
     } catch (err) {
@@ -45,7 +45,7 @@ export default async function handler(req, res) {
     try {
       console.log("Iniciando ping a Supabase Staging...");
       const { error } = await supabaseStaging.from('whatsapp_sessions').select('phone').limit(1);
-      if (error && error.code !== '42P01') throw error;
+      if (error && error.code !== '42P01' && !error.message?.includes('schema cache')) throw error;
       console.log("¡Ping a Staging exitoso!");
       results.pings.push('Staging: OK');
     } catch (err) {
