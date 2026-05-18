@@ -7,12 +7,13 @@ echo.
 echo  ADVERTENCIA: Esta accion sobreescribira nexofilm.com
 echo  con los archivos que tienes actualmente abiertos.
 echo.
-set /p CONFIRM="Estas seguro que quieres SOBREESCRIBIR LA WEB PUBLICA? (s/n): "
-if /i not "%CONFIRM%"=="s" (
-    echo  Publicacion cancelada por seguridad.
-    pause
-    exit /b
-)
+set /p CONFIRM="Estas seguro que quieres SOBREESCRIBIR LA WEB PUBLICA? (s/y/n): "
+if /i "%CONFIRM%"=="s" goto :continuar
+if /i "%CONFIRM%"=="y" goto :continuar
+echo  Publicacion cancelada por seguridad.
+pause
+exit /b
+:continuar
 
 :: Ir a la carpeta del proyecto
 cd /d "%~dp0"

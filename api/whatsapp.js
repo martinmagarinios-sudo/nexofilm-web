@@ -125,20 +125,45 @@ export default async function handler(req, res) {
                 }
             }
 
+            const firstMessageText = message.text?.body || "[Mensaje sin texto / multimedia]";
             await sendDualEmail(
                 `👀 Chat en vivo: ${contactNameForEmail}`,
                 `
                     <div style="font-family: sans-serif; padding: 20px; border-top: 4px solid #ccff00;">
                         <h2 style="color: #1a1a1a;">🤖 NexoBot está atendiendo a alguien</h2>
-                        <p><strong>Cliente:</strong> ${contactNameForEmail}</p>
-                        <p><strong>WhatsApp:</strong> +${from}</p>
-                        <p>Esta persona acaba de iniciar una conversación de cero con la IA de NexoFilm.</p>
-                        <p>Recibís este aviso para poder monitorear la venta en tiempo real y engancharlo por tu cuenta si deja de contestarle a la máquina.</p>
+                        <table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+                            <tr>
+                                <td style="padding: 6px 12px 6px 0; color: #555; white-space: nowrap;"><strong>Cliente:</strong></td>
+                                <td style="padding: 6px 0;">${contactNameForEmail}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 12px 6px 0; color: #555; white-space: nowrap;"><strong>WhatsApp:</strong></td>
+                                <td style="padding: 6px 0;">+${from}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 12px 6px 0; color: #555; white-space: nowrap;"><strong>Origen:</strong></td>
+                                <td style="padding: 6px 0;">${detectedSource}</td>
+                            </tr>
+                        </table>
+                        <div style="background: #f5f5f5; border-left: 4px solid #ccff00; padding: 12px 16px; border-radius: 4px; margin-bottom: 20px;">
+                            <p style="margin: 0 0 4px 0; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">💬 Su primer mensaje fue:</p>
+                            <p style="margin: 0; font-size: 15px; color: #1a1a1a; font-style: italic;">"${firstMessageText}"</p>
+                        </div>
+                        <p style="color: #555; font-size: 13px;">Recibís este aviso para poder monitorear la venta en tiempo real y engancharlo por tu cuenta si deja de contestarle a la máquina.</p>
                         <br/>
                         <a href="https://nexofilm.com/admin/chat?phone=${from}" style="background: #000; color: #ccff00; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Espiar Chat en Vivo</a>
                     </div>
                 `
             );
+
+            // 🔒 GUARDAR SESIÓN TEMPRANA: Persistimos el primer mensaje del cliente
+            // inmediatamente, antes de llamar a Groq. Así el chat aparece en el CRM
+            // aunque el bot crashee después (timeout de Vercel, error de Groq, etc.)
+            await persistHistory(from, [{
+                role: 'user',
+                content: message.text?.body || "[Inició conversación]",
+                timestamp: new Date().toISOString()
+            }]).catch(() => {}); // Silencioso para no romper el flujo
         }
 
         // --- SESIONES ANTIGUAS (Auto-Reset) ---
