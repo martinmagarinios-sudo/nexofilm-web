@@ -61,6 +61,7 @@ export default async function handler(req, res) {
     try {
         const text = message.text?.body?.toLowerCase() || "";
         const isInteractive = message.type === 'interactive';
+        const isTextMessage = message.type === 'text';
 
         // 2. Cargar historial + Info del Lead (CRM) en PARALELO (Búsqueda Robusta)
         const normalizePhone = (p) => {
@@ -343,8 +344,15 @@ export default async function handler(req, res) {
         .replace('{{INSTRUCCION_DE_SALUDO}}', instruccionSaludo)
         .replace('{{CONFIRMACION_EMAIL}}', confirmacionEmail);
 
+        // 🛡️ GUARDIA ANTI-CRASH: si no es texto (sticker, imagen, audio...), responder y salir.
+        // Antes de este punto ya pasó la alerta temprana y la sesión quedó guardada.
+        if (!isTextMessage && !isInteractive) {
+            await sendText(phoneNumberId, from, "¡Hola! Por el momento solo puedo leer mensajes de texto. Si querés consultarme algo, escribime 😊");
+            return res.status(200).send('OK');
+        }
+
         // 3. El mensaje actual del usuario DEBE entrar al historial ANTES de llamar a Groq
-        history.push({ role: 'user', content: message.text.body || "[Mensaje sin texto]" });
+        history.push({ role: 'user', content: message.text?.body || "[Mensaje sin texto]" });
 
         // Llamada a Groq (Modelo 70B para máxima inteligencia)
         const comp = await groq.chat.completions.create({
@@ -393,14 +401,19 @@ export default async function handler(req, res) {
 
             if (capturedName) {
                 const searchStr = (targetPhone || '').replace(/\D/g, '').slice(-8);
-                const { data: freshLead } = await supabase
+                // Usamos limit(1) en vez de maybeSingle() para evitar crash si hay múltiples filas (datos de test)
+                const { data: freshLeads } = await supabase
                     .from('whatsapp_leads').select('id, name')
-                    .like('phone', `%${searchStr}%`).maybeSingle();
+                    .like('phone', `%${searchStr}%`)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+                const freshLead = freshLeads?.[0];
                 if (freshLead && (!freshLead.name || freshLead.name === 'Sin nombre')) {
-                    await supabase.from('whatsapp_leads')
+                    const { error: nameErr } = await supabase.from('whatsapp_leads')
                         .update({ name: capturedName, updated_at: new Date().toISOString() })
-                        .eq('id', freshLead.id).then(null, () => {});
-                    console.log(`[NAME SAVED] ${capturedName}`);
+                        .eq('id', freshLead.id);
+                    if (nameErr) console.error('[NAME SAVE ERROR]', nameErr.message);
+                    else console.log(`[NAME SAVED] ${capturedName}`);
                 }
             }
         }
@@ -419,9 +432,52 @@ export default async function handler(req, res) {
                 ? emailMsg.content.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/)?.[0]
                 : null;
 
-            const userMessages = history.filter(m => m.role === 'user' && !m.content.startsWith('['));
-            const summaryText = userMessages.slice(-6).map(m => m.content).join(' | ').substring(0, 250);
-            const finalName = capturedName || leadData?.name || 'Sin nombre';
+            // FALLBACK DE NOMBRE: si no lo tenemos en DB ni en esta vuelta,
+            // escaneamos el historial buscando el mensaje que el usuario respondió al pedido de nombre.
+            let finalName = capturedName || (leadData?.name !== 'Sin nombre' ? leadData?.name : null) || null;
+            if (!finalName) {
+                for (let i = 1; i < history.length; i++) {
+                    const prev = history[i - 1];
+                    const curr = history[i];
+                    const prevBotAskedName = prev.role === 'assistant' && (
+                        prev.content.includes('nombre') || prev.content.includes('llamás') ||
+                        prev.content.includes('llamas') || prev.content.includes('name')
+                    );
+                    const looksLikeName = curr.role === 'user' &&
+                        /^[A-Za-záéíóúÁÉÍÓÚñÑüÜ]+(\s[A-Za-záéíóúÁÉÍÓÚñÑüÜ]+){0,3}$/.test(curr.content.trim()) &&
+                        curr.content.trim().length >= 2 && curr.content.trim().length <= 40;
+                    if (prevBotAskedName && looksLikeName) {
+                        finalName = curr.content.trim().split(' ')
+                            .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                        break;
+                    }
+                }
+            }
+            finalName = finalName || 'Sin nombre';
+
+            // RESUMEN ESTRUCTURADO: etiquetamos cada dato de la conversación.
+            const labeledPairs = [];
+            const botQuestions = history.filter(m => m.role === 'assistant');
+            const userAnswers = history.filter(m => m.role === 'user' && !m.content.startsWith('['));
+            // Mapeo simple: preguntas del bot → respuestas del usuario
+            const labels = [
+                { key: 'servicio', keywords: ['servicio', 'cobertura', 'foto', 'video', 'streaming'] },
+                { key: 'tipo de evento', keywords: ['tipo de evento', 'qué tipo', 'what type', 'que tipo'] },
+                { key: 'fecha y lugar', keywords: ['fecha', 'lugar', 'cuándo', 'date', 'location'] },
+                { key: 'personas y horas', keywords: ['personas', 'horas', 'people', 'hours'] },
+            ];
+            for (const label of labels) {
+                const botQ = botQuestions.find(m => label.keywords.some(k => m.content.toLowerCase().includes(k)));
+                if (botQ) {
+                    const botIdx = history.indexOf(botQ);
+                    const userReply = history.slice(botIdx + 1).find(m => m.role === 'user' && !m.content.startsWith('['));
+                    if (userReply) labeledPairs.push(`${label.key}: "${userReply.content}"`);
+                }
+            }
+            const summaryText = labeledPairs.length > 0
+                ? labeledPairs.join(' | ')
+                : userAnswers.slice(-5).map(m => m.content).join(' | ');
+
 
             hf = {
                 handoff: true,
@@ -474,24 +530,28 @@ async function handleHandoff(phone, leadId, hf) {
         if (!finalLeadId) {
             const searchStr = (phone || '').replace(/\D/g, '').slice(-8);
             if (searchStr.length >= 8) {
-                const { data: existingLead } = await supabase
+                // Usamos limit(1) para no fallar si hay múltiples filas (ej: datos de test)
+                const { data: existingLeads } = await supabase
                     .from('whatsapp_leads')
                     .select('id')
                     .like('phone', `%${searchStr}%`)
-                    .maybeSingle();
-                if (existingLead) finalLeadId = existingLead.id;
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+                if (existingLeads?.[0]) finalLeadId = existingLeads[0].id;
             }
         }
 
         if (finalLeadId) {
-            await supabase.from('whatsapp_leads').update({
+            const { error: updateErr } = await supabase.from('whatsapp_leads').update({
                 name: hf.name,
                 email: hf.email,
                 summary: hf.summary,
                 is_hot: hf.is_hot !== undefined ? hf.is_hot : true,
                 score: hf.score || 90,
                 updated_at: new Date().toISOString()
-            }).eq('id', finalLeadId).then(null, () => {});
+            }).eq('id', finalLeadId);
+            if (updateErr) console.error('[HANDOFF UPDATE ERROR]', updateErr.message);
+            else console.log(`[HANDOFF OK] Lead ${finalLeadId} → ${hf.name} | ${hf.summary?.substring(0, 60)}`);
         } else {
             await supabase.from('whatsapp_leads').insert({
                 phone,
