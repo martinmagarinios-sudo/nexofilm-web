@@ -1,11 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
+import Groq from 'groq-sdk';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.VITE_SUPABASE_KEY;
 const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
 
 const resend = new Resend((process.env.RESEND_API_KEY || '').trim());
+const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY.trim() }) : null;
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -148,6 +150,88 @@ export default async function handler(req, res) {
                 return res.status(200).json({ 
                     success: true, 
                     project 
+                });
+            }
+
+            case 'generateBudgetIA': {
+                const { title, client_name } = req.body;
+                if (!title) {
+                    return res.status(400).json({ error: 'El título del proyecto es requerido' });
+                }
+
+                if (!groq) {
+                    return res.status(500).json({ error: 'Groq API Key is not configured' });
+                }
+
+                const systemPrompt = `Eres un experto productor audiovisual y consultor comercial de la productora NexoFilm (Argentina).
+Tu tarea es generar el desglose de ítems comerciales y las condiciones de pago ideales para un proyecto audiovisual.
+
+Genera una propuesta estética, profesional y sumamente detallada (describiendo equipamiento de gama alta, cámaras Sony FX3/FX6, ópticas de precisión, iluminación de cine, jornadas de edición, colorización, etc.).
+
+Debes responder ÚNICAMENTE con un objeto JSON válido con la siguiente estructura (no agregues texto fuera del JSON, Markdown ni explicaciones):
+{
+  "items": [
+    {
+      "description": "Descripción muy profesional y técnica del servicio (ej: Jornada de rodaje de 8hs con 2 cámaras Sony FX3, ópticas de cine, micrófonos corbateros e iluminación LED Aputure)",
+      "quantity": 1,
+      "unit_price": 0
+    }
+  ],
+  "payment_terms": "Condiciones de pago profesionales redactadas en español rioplatense (voseo), aclarando plazos de entrega, anticipo del 50%, y datos de facturación."
+}`;
+
+                const userPrompt = `Proyecto: "${title}" para el cliente "${client_name || 'Particular'}".
+Generame entre 2 y 4 ítems de presupuesto detallando los servicios específicos requeridos (ej. pre-producción, jornadas de rodaje, post-producción/edición, entregas especiales) y las condiciones de pago recomendadas. Ajusta los unit_price a 0 (el usuario los ingresará manualmente).`;
+
+                const chatCompletion = await groq.chat.completions.create({
+                    model: 'llama-3.3-70b-versatile',
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: userPrompt }
+                    ],
+                    temperature: 0.6,
+                    response_format: { type: "json_object" }
+                });
+
+                const responseText = chatCompletion.choices[0].message.content;
+                const generatedData = JSON.parse(responseText);
+
+                return res.status(200).json({
+                    success: true,
+                    items: generatedData.items || [],
+                    payment_terms: generatedData.payment_terms || ''
+                });
+            }
+
+            case 'sendInvoice': {
+                const { 
+                    invoice_url, 
+                    invoice_type, 
+                    invoice_amount, 
+                    bank_details
+                } = req.body;
+
+                if (!project_id) {
+                    return res.status(400).json({ error: 'El ID del proyecto es requerido' });
+                }
+
+                const { data: updatedProject, error: updateErr } = await supabase
+                    .from('projects')
+                    .update({
+                        invoice_url: invoice_url || null,
+                        invoice_type: invoice_type || null,
+                        invoice_amount: invoice_amount ? parseFloat(invoice_amount) : null,
+                        bank_details: bank_details || null
+                    })
+                    .eq('id', project_id)
+                    .select()
+                    .single();
+
+                if (updateErr) throw updateErr;
+
+                return res.status(200).json({
+                    success: true,
+                    project: updatedProject
                 });
             }
 

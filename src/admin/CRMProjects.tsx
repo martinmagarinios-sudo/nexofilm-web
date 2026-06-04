@@ -196,10 +196,11 @@ const CRMProjects: React.FC = () => {
         setSuccessMsg('');
 
         try {
-            const res = await fetch('/api/comercial/generate-budget', {
+            const res = await fetch('/api/comercial/admin-crm', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    action: 'generateBudgetIA',
                     title: titleToUse,
                     client_name: nameToUse,
                     password
@@ -390,10 +391,11 @@ const CRMProjects: React.FC = () => {
         setSuccessMsg('');
 
         try {
-            const res = await fetch('/api/comercial/send-invoice', {
+            const res = await fetch('/api/comercial/admin-crm', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    action: 'sendInvoice',
                     project_id: selectedProject.id,
                     invoice_url: invoiceUrl,
                     invoice_type: invoiceType,
