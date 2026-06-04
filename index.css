@@ -43,3 +43,105 @@ body {
 .hover-pulse:hover {
     animation: gentle-pulse 2s infinite ease-in-out;
 }
+
+/* --- Estilos de Impresión (PDF) --- */
+#print-proposal {
+    display: none;
+}
+
+@media print {
+    html, body {
+        background-color: #ffffff !important;
+        background-image: none !important;
+        color: #000000 !important;
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* Ocultar la app web interactiva, botones, chat, y otros modales */
+    #root, header, footer, button, .no-print, form, .status-tracker, select, input, textarea {
+        display: none !important;
+    }
+
+    /* Mostrar el contenedor de impresión */
+    #print-proposal {
+        display: block !important;
+        color: #000000 !important;
+        background-color: #ffffff !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 40px !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Estilos del membrete y propuesta */
+    .print-divider {
+        border-bottom: 2px solid #000000 !important;
+        margin-top: 15px !important;
+        margin-bottom: 25px !important;
+    }
+
+    .print-section-title {
+        font-size: 14px !important;
+        font-weight: bold !important;
+        text-transform: uppercase !important;
+        border-bottom: 1px solid #e5e7eb !important;
+        padding-bottom: 5px !important;
+        margin-top: 25px !important;
+        margin-bottom: 15px !important;
+        letter-spacing: 0.5px !important;
+    }
+
+    /* Tablas de Presupuesto en Impresión */
+    .print-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin-top: 15px !important;
+        margin-bottom: 15px !important;
+    }
+
+    .print-table th {
+        background-color: #f3f4f6 !important;
+        color: #000000 !important;
+        border: 1px solid #d1d5db !important;
+        font-weight: bold !important;
+        font-size: 11px !important;
+        text-transform: uppercase !important;
+        padding: 8px 12px !important;
+        text-align: left !important;
+    }
+
+    .print-table td {
+        border: 1px solid #e5e7eb !important;
+        padding: 8px 12px !important;
+        font-size: 11px !important;
+        color: #1f2937 !important;
+    }
+
+    .print-table tr.total-row td {
+        border-top: 2px solid #000000 !important;
+        background-color: #f9fafb !important;
+        font-weight: bold !important;
+        font-size: 12px !important;
+        color: #000000 !important;
+    }
+
+    /* Caja de Condiciones de Pago */
+    .print-terms {
+        border: 1px solid #d1d5db !important;
+        background-color: #fafafa !important;
+        padding: 15px !important;
+        border-radius: 4px !important;
+        font-size: 10px !important;
+        line-height: 1.5 !important;
+        white-space: pre-line !important;
+    }
+
+    /* Evitar saltos de página huérfanos */
+    .print-card, tr, .print-terms {
+        page-break-inside: avoid !important;
+    }
+}

@@ -4,6 +4,8 @@ import App from './App';
 import Dashboard from './src/admin/Dashboard';
 import AdminChat from './src/admin/AdminChat';
 import PrivacyPolicy from './PrivacyPolicy';
+import CRMProjects from './src/admin/CRMProjects';
+import ClientPortal from './src/components/ClientPortal';
 import './src/i18n/i18n';
 
 const rootElement = document.getElementById('root');
@@ -16,6 +18,8 @@ const isDashboard = path === '/admin';
 const isPrivacyPolicy = path === '/politica-de-privacidad';
 const isChat = path.startsWith('/admin/chat');
 const isPortfolio = path === '/portfolio';
+const isPortal = path === '/portal';
+const isCrm = path === '/admin/crm';
 
 let initialPhone = null;
 if (isChat) {
@@ -42,6 +46,8 @@ root.render(
   <React.StrictMode>
     {isPrivacyPolicy ? <PrivacyPolicy /> : 
       isChat ? <AdminChat initialPhone={initialPhone} /> :
-        isDashboard ? <Dashboard /> : <App />}
+        isDashboard ? <Dashboard /> : 
+          isPortal ? <ClientPortal /> :
+            isCrm ? <CRMProjects /> : <App />}
   </React.StrictMode>
 );

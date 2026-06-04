@@ -117,12 +117,20 @@ const Dashboard: React.FC = () => {
                         <span className="text-zinc-600">|</span>
                         <h1 className="text-zinc-300 font-medium tracking-wide">Panel de Contactos (Leads)</h1>
                     </div>
-                    <button
-                        onClick={() => fetchLeads()}
-                        className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded transition-colors"
-                    >
-                        ↻ Actualizar
-                    </button>
+                    <div className="flex gap-3">
+                        <a
+                            href="/admin/crm"
+                            className="text-xs bg-nexo-lime text-black font-bold px-4 py-2 rounded hover:bg-white transition-colors flex items-center"
+                        >
+                            💼 CRM Comercial
+                        </a>
+                        <button
+                            onClick={() => fetchLeads()}
+                            className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded transition-colors"
+                        >
+                            ↻ Actualizar
+                        </button>
+                    </div>
                 </div>
             </header>
 

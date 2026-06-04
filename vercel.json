@@ -2,9 +2,16 @@
     "functions": {
         "api/whatsapp.js": {
             "maxDuration": 30
+        },
+        "api/portal-render.js": {
+            "includeFiles": "dist/index.html"
         }
     },
     "rewrites": [
+        {
+            "source": "/portal",
+            "destination": "/api/portal-render"
+        },
         {
             "source": "/api/(.*)",
             "destination": "/api/$1"
