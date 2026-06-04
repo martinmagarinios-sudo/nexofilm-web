@@ -137,6 +137,38 @@ const CRMProjects: React.FC = () => {
         }
     };
 
+    // Eliminar Proyecto
+    const handleDeleteProject = async (projectId: string, clientName: string) => {
+        if (!window.confirm(`¿Estás seguro de que querés eliminar definitivamente el proyecto de "${clientName}"? Esta acción borrará permanentemente el proyecto y su presupuesto asociado en Supabase.`)) {
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+        setSuccessMsg('');
+
+        try {
+            const res = await fetch('/api/comercial/admin-crm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'deleteProject',
+                    project_id: projectId,
+                    password
+                })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al eliminar proyecto');
+
+            setSuccessMsg(`Proyecto de "${clientName}" eliminado correctamente.`);
+            fetchData();
+        } catch (err: any) {
+            setError('Error al eliminar: ' + err.message);
+            setLoading(false);
+        }
+    };
+
     // Crear Proyecto + Presupuesto
     const handleCreateProject = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -729,6 +761,13 @@ const CRMProjects: React.FC = () => {
                                                                 🧾 Factura / Pagos
                                                             </button>
                                                         )}
+                                                        <button
+                                                            onClick={() => handleDeleteProject(project.id, project.client_name)}
+                                                            className="text-xs bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-500/20 px-3 py-1.5 rounded transition-colors flex items-center gap-1"
+                                                            title="Eliminar proyecto permanentemente"
+                                                        >
+                                                            🗑️ Eliminar
+                                                        </button>
                                                     </div>
                                                 </div>
 

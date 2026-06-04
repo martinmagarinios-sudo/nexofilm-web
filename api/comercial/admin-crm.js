@@ -235,6 +235,26 @@ Generame entre 2 y 4 ítems de presupuesto detallando los servicios específicos
                 });
             }
 
+            case 'deleteProject': {
+                if (!project_id) {
+                    return res.status(400).json({ error: 'El ID del proyecto es requerido' });
+                }
+
+                const { data, error: delErr } = await supabase
+                    .from('projects')
+                    .delete()
+                    .eq('id', project_id)
+                    .select()
+                    .single();
+
+                if (delErr) throw delErr;
+
+                return res.status(200).json({
+                    success: true,
+                    project: data
+                });
+            }
+
             default:
                 return res.status(400).json({ error: 'Acción inválida' });
         }
