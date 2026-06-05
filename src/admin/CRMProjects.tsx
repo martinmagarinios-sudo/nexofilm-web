@@ -43,6 +43,7 @@ interface Project {
     guests_count?: number | null;
     client_billing_info?: string | null;
     client_notes?: string | null;
+    admin_notes?: string | null;
     currency?: 'USD' | 'ARS' | null;
     crew_count?: number | null;
     created_at: string;
@@ -75,6 +76,12 @@ const CRMProjects: React.FC = () => {
     const [editingClientPhone, setEditingClientPhone] = useState('');
     const [editingCurrency, setEditingCurrency] = useState<'USD' | 'ARS'>('USD');
     const [editingCrewCount, setEditingCrewCount] = useState<number | ''>('');
+    const [editingAdminNotes, setEditingAdminNotes] = useState('');
+    const [editingEventDate, setEditingEventDate] = useState('');
+    const [editingEventTime, setEditingEventTime] = useState('');
+    const [editingLocation, setEditingLocation] = useState('');
+    const [editingCoverageHours, setEditingCoverageHours] = useState<number | ''>('');
+    const [editingGuestsCount, setEditingGuestsCount] = useState<number | ''>('');
     
     // Formulario de presupuesto
     const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([{ description: '', quantity: 1, unit_price: 0 }]);
@@ -441,17 +448,23 @@ const CRMProjects: React.FC = () => {
                     client_phone: editingClientPhone || null,
                     currency: editingCurrency,
                     crew_count: editingCrewCount === '' ? null : Number(editingCrewCount),
+                    admin_notes: editingAdminNotes || null,
+                    event_date: editingEventDate || null,
+                    event_time: editingEventTime || null,
+                    location: editingLocation || null,
+                    coverage_hours: editingCoverageHours === '' ? null : Number(editingCoverageHours),
+                    guests_count: editingGuestsCount === '' ? null : Number(editingGuestsCount),
                     password
                 })
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error al actualizar contacto');
             
-            setSuccessMsg('Datos de contacto actualizados.');
+            setSuccessMsg('Datos actualizados correctamente.');
             setEditingContactProjectId(null);
             fetchData();
         } catch (err: any) {
-            setError('Error al actualizar contacto: ' + err.message);
+            setError('Error al actualizar: ' + err.message);
         }
     };
 
@@ -994,74 +1007,61 @@ const CRMProjects: React.FC = () => {
                                                             </span>
                                                         </div>
                                                         {editingContactProjectId === project.id ? (
-                                                            <div className="flex flex-wrap gap-2 items-center bg-black/40 p-3 rounded border border-white/10 mt-2">
-                                                                <input
-                                                                    type="text"
-                                                                    value={editingContactName}
-                                                                    onChange={(e) => setEditingContactName(e.target.value)}
-                                                                    placeholder="Contacto"
-                                                                    className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white"
-                                                                />
-                                                                <input
-                                                                    type="text"
-                                                                    value={editingCompanyName}
-                                                                    onChange={(e) => setEditingCompanyName(e.target.value)}
-                                                                    placeholder="Empresa (Opcional)"
-                                                                    className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white"
-                                                                />
-                                                                <input
-                                                                    type="email"
-                                                                    value={editingClientEmail}
-                                                                    onChange={(e) => setEditingClientEmail(e.target.value)}
-                                                                    placeholder="Email"
-                                                                    className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white"
-                                                                />
-                                                                <input
-                                                                    type="text"
-                                                                    value={editingClientPhone}
-                                                                    onChange={(e) => setEditingClientPhone(e.target.value)}
-                                                                    placeholder="WhatsApp (ej: 549...)"
-                                                                    className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white w-36"
-                                                                />
-                                                                <select
-                                                                    value={editingCurrency}
-                                                                    onChange={(e) => setEditingCurrency(e.target.value as 'USD' | 'ARS')}
-                                                                    className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white"
-                                                                >
-                                                                    <option value="USD">USD</option>
-                                                                    <option value="ARS">ARS</option>
-                                                                </select>
-                                                                <input
-                                                                    type="number"
-                                                                    min="1"
-                                                                    value={editingCrewCount}
-                                                                    onChange={(e) => setEditingCrewCount(e.target.value === '' ? '' : parseInt(e.target.value))}
-                                                                    placeholder="Personal"
-                                                                    className="w-16 bg-black border border-white/20 rounded px-2 py-1 text-xs text-center text-white"
-                                                                />
-                                                                <button
-                                                                    onClick={() => handleUpdateContactSave(project.id)}
-                                                                    className="bg-nexo-lime text-black font-bold px-2 py-1 rounded text-xs"
-                                                                >
-                                                                    Guardar
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => setEditingContactProjectId(null)}
-                                                                    className="bg-zinc-800 text-white px-2 py-1 rounded text-xs"
-                                                                >
-                                                                    Cancelar
-                                                                </button>
+                                                            <div className="bg-black/40 p-4 rounded border border-white/10 mt-2 space-y-4">
+                                                                {/* Sección Contacto */}
+                                                                <div>
+                                                                    <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-2">👤 Datos de Contacto</p>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        <input type="text" value={editingContactName} onChange={(e) => setEditingContactName(e.target.value)} placeholder="Nombre contacto" className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white" />
+                                                                        <input type="text" value={editingCompanyName} onChange={(e) => setEditingCompanyName(e.target.value)} placeholder="Empresa (Opcional)" className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white" />
+                                                                        <input type="email" value={editingClientEmail} onChange={(e) => setEditingClientEmail(e.target.value)} placeholder="Email" className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white" />
+                                                                        <input type="text" value={editingClientPhone} onChange={(e) => setEditingClientPhone(e.target.value)} placeholder="WhatsApp (ej: 549...)" className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white w-40" />
+                                                                        <select value={editingCurrency} onChange={(e) => setEditingCurrency(e.target.value as 'USD' | 'ARS')} className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white">
+                                                                            <option value="USD">USD</option>
+                                                                            <option value="ARS">ARS</option>
+                                                                        </select>
+                                                                        <input type="number" min="1" value={editingCrewCount} onChange={(e) => setEditingCrewCount(e.target.value === '' ? '' : parseInt(e.target.value))} placeholder="Personal" className="w-20 bg-black border border-white/20 rounded px-2 py-1 text-xs text-center text-white" />
+                                                                    </div>
+                                                                </div>
+                                                                {/* Sección Evento */}
+                                                                <div className="border-t border-white/5 pt-3">
+                                                                    <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-2">📅 Detalles del Evento</p>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        <input type="date" value={editingEventDate} onChange={(e) => setEditingEventDate(e.target.value)} className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white" title="Fecha del evento" />
+                                                                        <input type="time" value={editingEventTime} onChange={(e) => setEditingEventTime(e.target.value)} className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white" title="Horario de inicio" />
+                                                                        <input type="text" value={editingLocation} onChange={(e) => setEditingLocation(e.target.value)} placeholder="Locación / Lugar" className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white flex-1 min-w-32" />
+                                                                        <input type="number" min="1" value={editingCoverageHours} onChange={(e) => setEditingCoverageHours(e.target.value === '' ? '' : parseInt(e.target.value))} placeholder="Hs cobertura" className="w-28 bg-black border border-white/20 rounded px-2 py-1 text-xs text-white" />
+                                                                        <input type="number" min="1" value={editingGuestsCount} onChange={(e) => setEditingGuestsCount(e.target.value === '' ? '' : parseInt(e.target.value))} placeholder="Nº invitados" className="w-28 bg-black border border-white/20 rounded px-2 py-1 text-xs text-white" />
+                                                                    </div>
+                                                                </div>
+                                                                {/* Sección Nota para el Cliente */}
+                                                                <div className="border-t border-white/5 pt-3">
+                                                                    <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-1">📝 Mensaje para el Cliente (visible en su portal)</p>
+                                                                    <textarea
+                                                                        value={editingAdminNotes}
+                                                                        onChange={(e) => setEditingAdminNotes(e.target.value)}
+                                                                        placeholder="Ej: Necesitamos saber si el evento incluye viáticos, la dirección exacta del salón y si requieren edición express..."
+                                                                        className="w-full bg-black border border-amber-500/30 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-400 h-20 resize-none"
+                                                                    />
+                                                                    <p className="text-zinc-600 text-[9px] mt-1">Este mensaje aparecerá resaltado en el portal del cliente como una solicitud tuya.</p>
+                                                                </div>
+                                                                {/* Botones */}
+                                                                <div className="flex gap-2 pt-1">
+                                                                    <button onClick={() => handleUpdateContactSave(project.id)} className="bg-nexo-lime text-black font-bold px-4 py-1.5 rounded text-xs hover:bg-white transition-colors">💾 Guardar</button>
+                                                                    <button onClick={() => setEditingContactProjectId(null)} className="bg-zinc-800 text-white px-3 py-1.5 rounded text-xs hover:bg-zinc-700">Cancelar</button>
+                                                                </div>
                                                             </div>
                                                         ) : (
-                                                            <div className="flex items-center gap-2 mt-1">
-                                                                <p className="text-sm text-zinc-400">
-                                                                    Contacto: <span className="text-white font-medium">{project.contact_name}</span>
-                                                                    {project.company_name && <span> (Empresa: <span className="text-white font-medium">{project.company_name}</span>)</span>}
-                                                                    {` · ${project.client_email}`}
-                                                                    {project.client_phone && ` · WhatsApp: +${project.client_phone}`}
-                                                                    {` · Moneda: ${project.currency || 'USD'}`}
-                                                                    {project.crew_count && ` · Cobertura: ${project.crew_count} ${project.crew_count === 1 ? 'persona' : 'personas'}`}
-                                                                </p>
+                                                            <div className="mt-1 space-y-1">
+                                                                <div className="flex items-center gap-2">
+                                                                    <p className="text-sm text-zinc-400">
+                                                                        Contacto: <span className="text-white font-medium">{project.contact_name}</span>
+                                                                        {project.company_name && <span> (Empresa: <span className="text-white font-medium">{project.company_name}</span>)</span>}
+                                                                        {` · ${project.client_email}`}
+                                                                        {project.client_phone && ` · WhatsApp: +${project.client_phone}`}
+                                                                        {` · Moneda: ${project.currency || 'USD'}`}
+                                                                        {project.crew_count && ` · Cobertura: ${project.crew_count} ${project.crew_count === 1 ? 'persona' : 'personas'}`}
+                                                                    </p>
                                                                 <button
                                                                     onClick={() => {
                                                                         setEditingContactProjectId(project.id);
@@ -1071,12 +1071,25 @@ const CRMProjects: React.FC = () => {
                                                                         setEditingClientPhone(project.client_phone || '');
                                                                         setEditingCurrency(project.currency || 'USD');
                                                                         setEditingCrewCount(project.crew_count || '');
+                                                                        setEditingAdminNotes(project.admin_notes || '');
+                                                                        setEditingEventDate(project.event_date || '');
+                                                                        setEditingEventTime(project.event_time || '');
+                                                                        setEditingLocation(project.location || '');
+                                                                        setEditingCoverageHours(project.coverage_hours || '');
+                                                                        setEditingGuestsCount(project.guests_count || '');
                                                                     }}
                                                                     className="text-zinc-500 hover:text-white text-xs"
-                                                                    title="Editar contacto"
+                                                                    title="Editar datos del proyecto"
                                                                 >
                                                                     ✏️
                                                                 </button>
+                                                            </div>
+                                                            {project.admin_notes && (
+                                                                <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded px-3 py-2 mt-2">
+                                                                    <span className="text-amber-400 text-xs">📝</span>
+                                                                    <p className="text-amber-300 text-xs italic flex-1">Nota activa al cliente: &quot;{project.admin_notes}&quot;</p>
+                                                                </div>
+                                                            )}
                                                             </div>
                                                         )}
                                                     </div>
@@ -1096,15 +1109,28 @@ const CRMProjects: React.FC = () => {
                                                             🔄 Rotar Token
                                                         </button>
                                                         {project.client_phone && (
-                                                            <a
-                                                                href={`https://wa.me/${project.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(`🎥 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla directamente desde tu portal seguro haciendo clic en el siguiente enlace:\n👉 ${window.location.origin}/portal?token=${project.access_token}`)}`}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded transition-colors flex items-center gap-1"
-                                                                title="Enviar presupuesto por WhatsApp"
-                                                            >
-                                                                💬 WhatsApp
-                                                            </a>
+                                                            <>
+                                                                <a
+                                                                    href={`https://wa.me/${project.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(`🎥 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla directamente desde tu portal seguro haciendo clic en el siguiente enlace:\n👉 ${window.location.origin}/portal?token=${project.access_token}`)}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded transition-colors flex items-center gap-1"
+                                                                    title="Enviar presupuesto por WhatsApp"
+                                                                >
+                                                                    💬 Enviar Presupuesto
+                                                                </a>
+                                                                {(project.status === 'draft' || project.status === 'review') && (
+                                                                    <a
+                                                                        href={`https://wa.me/${project.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(`📋 *NexoFilm - Solicitud de Información*\n\n¡Hola ${project.contact_name}!${project.admin_notes ? `\n\n${project.admin_notes}` : '\n\nNecesitamos algunos datos adicionales para terminar de armar tu presupuesto.'}\n\nPodés completarlos directamente desde tu portal ingresando aquí:\n👉 ${window.location.origin}/portal?token=${project.access_token}`)}`}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="text-xs bg-amber-600 hover:bg-amber-500 text-white font-bold px-3 py-1.5 rounded transition-colors flex items-center gap-1"
+                                                                        title="Solicitar datos faltantes por WhatsApp"
+                                                                    >
+                                                                        📲 Pedir datos
+                                                                    </a>
+                                                                )}
+                                                            </>
                                                         )}
                                                         <button
                                                             onClick={() => openBudgetModal(project)}
@@ -1192,20 +1218,32 @@ const CRMProjects: React.FC = () => {
                                                                     <span className="font-bold text-white block mb-1">📁 Archivo adjunto por el cliente:</span>
                                                                     <span className="text-zinc-400 font-mono">{project.ai_extracted_requirements.filename}</span>
                                                                 </div>
-                                                                <button
-                                                                    onClick={() => handleAnalyzeBrief(project.id)}
-                                                                    disabled={analyzingProjectId === project.id}
-                                                                    className="bg-nexo-lime text-black font-black text-[10px] uppercase tracking-wider py-2 px-3 rounded hover:bg-white transition-colors shrink-0 disabled:opacity-50"
-                                                                >
-                                                                    {analyzingProjectId === project.id ? (
-                                                                        <span className="flex items-center gap-1.5">
-                                                                            <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
-                                                                            Analizando...
-                                                                        </span>
-                                                                    ) : (
-                                                                        "🪄 Analizar pliego y autocompletar"
+                                                                <div className="flex flex-wrap gap-2 shrink-0">
+                                                                    {project.ai_extracted_requirements.file_url && (
+                                                                        <a
+                                                                            href={project.ai_extracted_requirements.file_url}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="bg-zinc-700 hover:bg-zinc-600 text-white text-[10px] font-bold uppercase tracking-wider py-2 px-3 rounded transition-colors flex items-center gap-1"
+                                                                        >
+                                                                            📥 Descargar pliego
+                                                                        </a>
                                                                     )}
-                                                                </button>
+                                                                    <button
+                                                                        onClick={() => handleAnalyzeBrief(project.id)}
+                                                                        disabled={analyzingProjectId === project.id}
+                                                                        className="bg-nexo-lime text-black font-black text-[10px] uppercase tracking-wider py-2 px-3 rounded hover:bg-white transition-colors disabled:opacity-50"
+                                                                    >
+                                                                        {analyzingProjectId === project.id ? (
+                                                                            <span className="flex items-center gap-1.5">
+                                                                                <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+                                                                                Analizando...
+                                                                            </span>
+                                                                        ) : (
+                                                                            "🪄 Analizar pliego y autocompletar"
+                                                                        )}
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                         ) : (
                                                             <div className="bg-nexo-lime/5 p-4 border border-nexo-lime/10 rounded-lg text-xs space-y-2">

@@ -40,19 +40,30 @@ function extractTextFromDocx(buffer) {
         return cleanedText;
     } catch (err) {
         console.error('Error parsing DOCX:', err);
-        throw new Error('No se pudo extraer el texto del archivo Word (.docx)');
+        return ''; // Retornar vacío en lugar de lanzar error
     }
 }
 
 // Helper para extraer texto de PDF
 async function extractTextFromPdf(buffer) {
+    let parser;
     try {
-        const pdfParse = require('pdf-parse');
-        const data = await pdfParse(buffer);
-        return data.text;
+        const pdfParseModule = require('pdf-parse');
+        const PDFParse = pdfParseModule.PDFParse;
+        parser = new PDFParse({ data: buffer });
+        const result = await parser.getText();
+        return result.text || '';
     } catch (err) {
         console.error('Error parsing PDF:', err);
-        throw new Error('No se pudo extraer el texto del archivo PDF');
+        return ''; // Retornar vacío en lugar de lanzar error
+    } finally {
+        if (parser && typeof parser.destroy === 'function') {
+            try {
+                await parser.destroy();
+            } catch (destroyErr) {
+                console.error('Error destroying PDF parser:', destroyErr);
+            }
+        }
     }
 }
 
@@ -437,6 +448,16 @@ Generame entre 2 y 4 ítems de presupuesto detallando los servicios específicos
                     return res.status(400).json({ error: 'El ID del proyecto es requerido' });
                 }
 
+                const {
+                    event_date,
+                    event_time,
+                    location,
+                    coverage_hours,
+                    guests_count,
+                    coverage_types,
+                    admin_notes
+                } = req.body;
+
                 const { data: updatedProject, error: updateErr } = await supabase
                     .from('projects')
                     .update({
@@ -445,7 +466,14 @@ Generame entre 2 y 4 ítems de presupuesto detallando los servicios específicos
                         client_phone: client_phone || null,
                         company_name: company_name || null,
                         currency: currency || 'USD',
-                        crew_count: crew_count ? parseInt(crew_count) : null
+                        crew_count: crew_count ? parseInt(crew_count) : null,
+                        event_date: event_date || null,
+                        event_time: event_time || null,
+                        location: location || null,
+                        coverage_hours: coverage_hours ? parseInt(coverage_hours) : null,
+                        guests_count: guests_count ? parseInt(guests_count) : null,
+                        coverage_types: coverage_types || null,
+                        admin_notes: admin_notes || null
                     })
                     .eq('id', project_id)
                     .select()

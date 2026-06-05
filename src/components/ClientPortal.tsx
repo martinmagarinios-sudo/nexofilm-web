@@ -37,6 +37,7 @@ interface Project {
     guests_count?: number | null;
     client_billing_info?: string | null;
     client_notes?: string | null;
+    admin_notes?: string | null;
     currency?: 'USD' | 'ARS' | null;
     crew_count?: number | null;
 }
@@ -755,7 +756,23 @@ const ClientPortal: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Canal de Notificación Destacado */}
+                            {/* Banner de solicitud del productor */}
+                            {project.admin_notes && (
+                                <div className="bg-amber-500/10 border border-amber-500/40 rounded-xl p-5 flex gap-4 items-start animate-pulse-slow">
+                                    <div className="text-2xl shrink-0">📋</div>
+                                    <div className="space-y-1">
+                                        <p className="text-amber-400 font-bold text-sm uppercase tracking-wide">Solicitud del Productor</p>
+                                        <p className="text-amber-200 text-sm leading-relaxed whitespace-pre-wrap">{project.admin_notes}</p>
+                                        <button
+                                            onClick={() => setIsEditingSpecs(true)}
+                                            className="mt-2 inline-flex items-center gap-1.5 text-xs bg-amber-500 hover:bg-amber-400 text-black font-bold px-4 py-2 rounded-lg transition-colors"
+                                        >
+                                            ✏️ Actualizar mis datos
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="bg-black/30 p-5 rounded-lg border border-white/5 space-y-3">
                                 <h4 className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider block">🔔 Medio de Notificación Elegido:</h4>
                                 <p className="text-sm font-bold text-nexo-lime">
@@ -811,6 +828,17 @@ const ClientPortal: React.FC = () => {
                                     Contanos los detalles de tu evento/producción para que el equipo arme la cotización a medida.
                                 </p>
                             </div>
+
+                            {/* Banner de solicitud del productor (si existe) */}
+                            {project.admin_notes && (
+                                <div className="bg-amber-500/10 border border-amber-500/40 rounded-xl p-5 flex gap-4 items-start">
+                                    <div className="text-2xl shrink-0">📋</div>
+                                    <div className="space-y-1">
+                                        <p className="text-amber-400 font-bold text-sm uppercase tracking-wide">Solicitud del Productor</p>
+                                        <p className="text-amber-200 text-sm leading-relaxed whitespace-pre-wrap">{project.admin_notes}</p>
+                                    </div>
+                                </div>
+                            )}
 
                             <form onSubmit={handleUpdateSpecifications} className="space-y-6">
                                 <div className="space-y-2">

@@ -88,18 +88,29 @@ function extractTextFromDocx(buffer) {
         return cleanedText;
     } catch (err) {
         console.error('Error parsing DOCX:', err);
-        throw new Error('No se pudo extraer el texto del archivo Word (.docx)');
+        return ''; // Retornar vacío en lugar de lanzar error
     }
 }
 
 async function extractTextFromPdf(buffer) {
+    let parser;
     try {
-        const pdfParse = require('pdf-parse');
-        const data = await pdfParse(buffer);
-        return data.text;
+        const pdfParseModule = require('pdf-parse');
+        const PDFParse = pdfParseModule.PDFParse;
+        parser = new PDFParse({ data: buffer });
+        const result = await parser.getText();
+        return result.text || '';
     } catch (err) {
         console.error('Error parsing PDF:', err);
-        throw new Error('No se pudo extraer el texto del archivo PDF');
+        return ''; // Retornar vacío en lugar de tirar error, el archivo se respalda en storage
+    } finally {
+        if (parser && typeof parser.destroy === 'function') {
+            try {
+                await parser.destroy();
+            } catch (destroyErr) {
+                console.error('Error destroying PDF parser:', destroyErr);
+            }
+        }
     }
 }
 
@@ -311,8 +322,8 @@ export default async function handler(req, res) {
                     const contactName = project.contact_name || '';
                     const projectTitle = project.title || '';
                     title = `Portal de Clientes - NexoFilm`;
-                    if (contactName && projectTitle) {
-                        description = `Hola ${contactName}, ingresá aquí para completar los datos de "${projectTitle}" y generar tu presupuesto.`;
+                    if (contactName) {
+                        description = `Hola ${contactName}, ingresá aquí para completar los datos de tu solicitud.`;
                     }
                 }
 
@@ -573,12 +584,46 @@ export default async function handler(req, res) {
                     return res.status(400).json({ error: 'Formato no soportado. Subir PDF o Word (.docx).' });
                 }
 
+                // Subir archivo original a Supabase Storage (en el bucket 'invoices')
+                let fileUrl = null;
+                const fileExt = filename.split('.').pop() || '';
+                const storagePath = `briefings/project_${project.id}_${Date.now()}.${fileExt}`;
+                let mimeType = 'application/octet-stream';
+                if (filename.toLowerCase().endsWith('.pdf')) {
+                    mimeType = 'application/pdf';
+                } else if (filename.toLowerCase().endsWith('.docx')) {
+                    mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+                } else if (filename.toLowerCase().endsWith('.doc')) {
+                    mimeType = 'application/msword';
+                }
+
+                try {
+                    const { data: uploadData, error: uploadErr } = await supabase.storage
+                        .from('invoices')
+                        .upload(storagePath, fileBuffer, {
+                            contentType: mimeType,
+                            upsert: true
+                        });
+
+                    if (uploadErr) {
+                        console.error('Error uploading briefing to storage:', uploadErr);
+                    } else {
+                        const { data: { publicUrl } } = supabase.storage
+                            .from('invoices')
+                            .getPublicUrl(storagePath);
+                        fileUrl = publicUrl;
+                    }
+                } catch (storeErr) {
+                    console.error('Exception during storage upload:', storeErr);
+                }
+
                 const { data: updatedProj, error: updateErr } = await supabase
                     .from('projects')
                     .update({ 
                         ai_extracted_requirements: {
                             filename: filename,
                             text: extractedText,
+                            file_url: fileUrl,
                             raw_uploaded: true
                         }
                     })
