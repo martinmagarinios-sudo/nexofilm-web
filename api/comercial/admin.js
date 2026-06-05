@@ -533,6 +533,102 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                 });
             }
 
+            case 'analyzeStoredDocument': {
+                if (!project_id) {
+                    return res.status(400).json({ error: 'El ID del proyecto es requerido' });
+                }
+
+                if (!groq) {
+                    return res.status(500).json({ error: 'Groq API Key is not configured' });
+                }
+
+                // Obtener el proyecto para acceder a ai_extracted_requirements
+                const { data: project, error: getErr } = await supabase
+                    .from('projects')
+                    .select('*')
+                    .eq('id', project_id)
+                    .maybeSingle();
+
+                if (getErr) throw getErr;
+                if (!project) {
+                    return res.status(404).json({ error: 'Proyecto no encontrado' });
+                }
+
+                const requirements = project.ai_extracted_requirements;
+                if (!requirements || !requirements.text) {
+                    return res.status(400).json({ error: 'No hay texto de pliego/documento almacenado para analizar.' });
+                }
+
+                const extractedText = requirements.text;
+                const filename = requirements.filename || 'Archivo';
+
+                const systemPrompt = `Sos un asistente de NexoFilm, productora audiovisual argentina.
+Analizá el siguiente texto que es un pliego de requerimientos de un cliente.
+Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues explicaciones ni markdown, responde con el objeto JSON puro):
+{
+  "basic_data": { 
+    "event_date": "YYYY-MM-DD o null",
+    "location": "string o null",
+    "coverage_hours": "number o null"
+  },
+  "deliverables": { 
+    "videos_to_deliver": "string o null",
+    "photos_required": "boolean",
+    "live_streaming": "boolean"
+  },
+  "special_services": { 
+    "live_editing_recap": "boolean",
+    "lighting_setup": "string o null",
+    "notes": "string o null"
+  }
+}`;
+
+                const chatCompletion = await groq.chat.completions.create({
+                    model: 'llama-3.3-70b-versatile',
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: `Extraé los requerimientos de este documento:\n\n${extractedText}` }
+                    ],
+                    temperature: 0.2,
+                    response_format: { type: "json_object" }
+                });
+
+                const aiJSON = JSON.parse(chatCompletion.choices[0].message.content);
+                // Adjuntar el filename para que el admin sepa qué archivo se analizó
+                aiJSON.filename = filename;
+
+                // Actualizar el proyecto en la base de datos
+                // Si la IA detecta la fecha o lugar o horas de cobertura, los precargamos si están vacíos
+                const updatePayload = {
+                    ai_extracted_requirements: aiJSON
+                };
+
+                if (aiJSON.basic_data?.event_date && !project.event_date) {
+                    updatePayload.event_date = aiJSON.basic_data.event_date;
+                }
+                if (aiJSON.basic_data?.location && !project.location) {
+                    updatePayload.location = aiJSON.basic_data.location;
+                }
+                if (aiJSON.basic_data?.coverage_hours && !project.coverage_hours) {
+                    updatePayload.coverage_hours = aiJSON.basic_data.coverage_hours;
+                }
+
+                const { data: updatedProject, error: updateErr } = await supabase
+                    .from('projects')
+                    .update(updatePayload)
+                    .eq('id', project_id)
+                    .select()
+                    .single();
+
+                if (updateErr) throw updateErr;
+
+                return res.status(200).json({
+                    success: true,
+                    ai_extracted_requirements: aiJSON,
+                    project: updatedProject
+                });
+            }
+
             case 'sendProactiveBudget': {
                 if (!project_id || !items) {
                     return res.status(400).json({ error: 'Faltan campos project_id o items' });

@@ -573,46 +573,14 @@ export default async function handler(req, res) {
                     return res.status(400).json({ error: 'Formato no soportado. Subir PDF o Word (.docx).' });
                 }
 
-                const systemPrompt = `Sos un asistente de NexoFilm, productora audiovisual argentina.
-Analizá el siguiente texto que es un pliego de requerimientos de un cliente.
-Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta:
-{
-  "basic_data": { 
-    "event_date": "YYYY-MM-DD o null",
-    "location": "string o null",
-    "coverage_hours": "number o null"
-  },
-  "deliverables": { 
-    "videos_to_deliver": "string o null",
-    "photos_required": "boolean",
-    "live_streaming": "boolean"
-  },
-  "special_services": { 
-    "live_editing_recap": "boolean",
-    "lighting_setup": "string o null",
-    "notes": "string o null"
-  }
-}`;
-
-                const chatCompletion = await groq.chat.completions.create({
-                    model: 'llama-3.3-70b-versatile',
-                    messages: [
-                        { role: 'system', content: systemPrompt },
-                        { role: 'user', content: `Extraé los requerimientos de este documento:\n\n${extractedText}` }
-                    ],
-                    temperature: 0.2,
-                    response_format: { type: "json_object" }
-                });
-
-                const aiJSON = JSON.parse(chatCompletion.choices[0].message.content);
-
                 const { data: updatedProj, error: updateErr } = await supabase
                     .from('projects')
                     .update({ 
-                        ai_extracted_requirements: aiJSON,
-                        event_date: aiJSON.basic_data?.event_date || project.event_date,
-                        location: aiJSON.basic_data?.location || project.location,
-                        coverage_hours: aiJSON.basic_data?.coverage_hours || project.coverage_hours
+                        ai_extracted_requirements: {
+                            filename: filename,
+                            text: extractedText,
+                            raw_uploaded: true
+                        }
                     })
                     .eq('id', project.id)
                     .select()
@@ -623,7 +591,6 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta:
 
                 return res.status(200).json({
                     success: true,
-                    ai_extracted_requirements: aiJSON,
                     project: updatedProject
                 });
             } else {

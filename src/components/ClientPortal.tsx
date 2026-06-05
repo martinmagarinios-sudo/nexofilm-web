@@ -500,11 +500,11 @@ const ClientPortal: React.FC = () => {
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.error || 'Error al procesar el documento');
 
-                    setSuccessMsg('✨ ¡Requerimientos extraídos exitosamente con IA! Se actualizaron tus especificaciones.');
+                    setSuccessMsg('📁 ¡Archivo adjuntado correctamente! Se ha guardado en tu solicitud.');
                     await fetchPortalData();
                 } catch (err: any) {
                     console.error(err);
-                    setUploadError(err.message || 'Error al procesar el documento con IA.');
+                    setUploadError(err.message || 'Error al procesar el documento.');
                 } finally {
                     setUploadingDoc(false);
                 }
@@ -980,7 +980,7 @@ const ClientPortal: React.FC = () => {
                             <div className="mt-6 border-t border-white/5 pt-6 space-y-3">
                                 <h3 className="text-zinc-400 text-xs font-bold uppercase tracking-wider block">⚡ ¿Tenés un pliego o briefing técnico?</h3>
                                 <p className="text-zinc-500 text-[11px]">
-                                    Subí tu archivo PDF o Word y nuestra Inteligencia Artificial extraerá automáticamente los requerimientos para el presupuesto.
+                                    Subí tu pliego o briefing técnico en formato PDF o Word para adjuntarlo a tu solicitud de presupuesto.
                                 </p>
                                 
                                 <div 
@@ -997,7 +997,7 @@ const ClientPortal: React.FC = () => {
                                     {uploadingDoc ? (
                                         <div className="space-y-3 py-2">
                                             <div className="w-8 h-8 border-4 border-nexo-lime border-t-transparent rounded-full animate-spin mx-auto"></div>
-                                            <p className="text-xs text-nexo-lime font-bold uppercase tracking-widest animate-pulse">Procesando documento con IA...</p>
+                                            <p className="text-xs text-nexo-lime font-bold uppercase tracking-widest animate-pulse">Subiendo pliego...</p>
                                         </div>
                                     ) : (
                                         <div className="space-y-2">

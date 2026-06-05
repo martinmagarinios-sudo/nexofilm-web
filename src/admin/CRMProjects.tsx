@@ -94,6 +94,47 @@ const CRMProjects: React.FC = () => {
     // Estado de Drive
     const [tempDriveId, setTempDriveId] = useState<{ [key: string]: string }>({});
 
+    // Búsqueda, orden y filtros
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortBy, setSortBy] = useState<'date' | 'price' | 'status' | 'name'>('date');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+    const [filterStatus, setFilterStatus] = useState<string>('all');
+    const [analyzingProjectId, setAnalyzingProjectId] = useState<string | null>(null);
+
+    const filteredAndSortedProjects = projects
+        .filter((project) => {
+            const projectBudget = budgets.find(b => b.project_id === project.id);
+            const matchesSearch = 
+                (project.contact_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (project.company_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (project.client_email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (project.client_phone || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (project.location || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (project.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (projectBudget && String(projectBudget.total_price).includes(searchTerm));
+            
+            const matchesStatus = filterStatus === 'all' || project.status === filterStatus;
+            
+            return matchesSearch && matchesStatus;
+        })
+        .sort((a, b) => {
+            let comparison = 0;
+            if (sortBy === 'date') {
+                const dateA = new Date(a.created_at || 0).getTime();
+                const dateB = new Date(b.created_at || 0).getTime();
+                comparison = dateA - dateB;
+            } else if (sortBy === 'name') {
+                comparison = (a.contact_name || '').localeCompare(b.contact_name || '');
+            } else if (sortBy === 'status') {
+                comparison = (a.status || '').localeCompare(b.status || '');
+            } else if (sortBy === 'price') {
+                const budgetA = budgets.find(b => b.project_id === a.id)?.total_price || 0;
+                const budgetB = budgets.find(b => b.project_id === b.id)?.total_price || 0;
+                comparison = budgetA - budgetB;
+            }
+            return sortOrder === 'asc' ? comparison : -comparison;
+        });
+
     useEffect(() => {
         if (isAuthenticated) {
             fetchData();
@@ -240,13 +281,13 @@ const CRMProjects: React.FC = () => {
         }
     };
 
-    // Generar presupuesto con IA
+    // Generar presupuesto sugerido automáticamente
     const handleGenerateAIBudget = async () => {
         const titleToUse = budgetingProject ? budgetingProject.title : newProjTitle;
         const nameToUse = budgetingProject ? budgetingProject.contact_name : newContactName;
 
         if (!titleToUse.trim()) {
-            setError('Ingresá el título del proyecto primero para que la IA sepa qué presupuestar.');
+            setError('Ingresá el título del proyecto primero para poder generar sugerencias.');
             return;
         }
 
@@ -276,9 +317,9 @@ const CRMProjects: React.FC = () => {
                 setPaymentTerms(data.payment_terms);
             }
 
-            setSuccessMsg('✨ ¡Presupuesto sugerido por IA! Podés editar las descripciones, poner tus precios y ajustar lo que necesités.');
+            setSuccessMsg('✨ ¡Propuesta sugerida! Podés editar las descripciones, poner tus precios y ajustar lo que necesités.');
         } catch (err: any) {
-            setError('Error al generar con IA: ' + err.message);
+            setError('Error al generar propuesta: ' + err.message);
         } finally {
             setAiLoading(false);
         }
@@ -464,6 +505,33 @@ const CRMProjects: React.FC = () => {
             setSuccessMsg('Carpeta de Google Drive asociada.');
         } catch (err: any) {
             setError(err.message);
+        }
+    };
+
+    // Analizar pliego técnico almacenado
+    const handleAnalyzeBrief = async (projectId: string) => {
+        setAnalyzingProjectId(projectId);
+        setError('');
+        setSuccessMsg('');
+        try {
+            const res = await fetch('/api/comercial/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'analyzeStoredDocument',
+                    project_id: projectId,
+                    password
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al analizar documento');
+
+            setSuccessMsg('✨ ¡Pliego técnico analizado con éxito! Los requerimientos y campos básicos fueron actualizados.');
+            fetchData();
+        } catch (err: any) {
+            setError('Error al analizar pliego: ' + err.message);
+        } finally {
+            setAnalyzingProjectId(null);
         }
     };
 
@@ -739,7 +807,7 @@ const CRMProjects: React.FC = () => {
                                             disabled={aiLoading}
                                             className="text-[10px] bg-nexo-lime text-black font-bold px-2 py-1 rounded hover:bg-white transition-colors disabled:opacity-50"
                                         >
-                                            {aiLoading ? '🪄 Generando...' : '🪄 Sugerir con IA'}
+                                            {aiLoading ? '🪄 Generando...' : '🪄 Sugerir Propuesta'}
                                         </button>
                                         <button
                                             type="button"
@@ -837,17 +905,71 @@ const CRMProjects: React.FC = () => {
                     {/* COLUMNA DERECHA: PIPELINE DE PROYECTOS */}
                     <div className="lg:col-span-2 space-y-8">
                         <div className="bg-zinc-900/40 border border-white/5 rounded-xl overflow-hidden shadow-2xl">
-                            <div className="p-6 border-b border-white/10 bg-zinc-800/20">
+                            <div className="p-6 border-b border-white/10 bg-zinc-800/20 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
                                 <h2 className="text-xl font-bold text-white tracking-tight">Pipeline de Proyectos comerciales</h2>
+                                
+                                {/* Controles de Búsqueda y Ordenamiento */}
+                                <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+                                    <div className="relative flex-1 min-w-[200px] xl:flex-initial">
+                                        <input
+                                            type="text"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            placeholder="Buscar cliente, empresa, mail, locación..."
+                                            className="w-full bg-black/60 border border-white/10 rounded px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-nexo-lime"
+                                        />
+                                        {searchTerm && (
+                                            <button 
+                                                onClick={() => setSearchTerm('')}
+                                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white text-xs"
+                                            >
+                                                ✕
+                                            </button>
+                                        )}
+                                    </div>
+                                    <select
+                                        value={filterStatus}
+                                        onChange={(e) => setFilterStatus(e.target.value)}
+                                        className="bg-black/60 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-nexo-lime cursor-pointer"
+                                    >
+                                        <option value="all">Todos los Estados</option>
+                                        <option value="draft">Borradores</option>
+                                        <option value="review">Por Cotizar</option>
+                                        <option value="sent">Enviados</option>
+                                        <option value="approved">Aprobados</option>
+                                        <option value="rejected">Rechazados</option>
+                                        <option value="production">En Producción</option>
+                                        <option value="delivered">Entregados</option>
+                                    </select>
+                                    <select
+                                        value={sortBy}
+                                        onChange={(e) => setSortBy(e.target.value as any)}
+                                        className="bg-black/60 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-nexo-lime cursor-pointer"
+                                    >
+                                        <option value="date">Ordenar por Fecha</option>
+                                        <option value="name">Ordenar por Nombre</option>
+                                        <option value="price">Ordenar por Precio</option>
+                                        <option value="status">Ordenar por Estado</option>
+                                    </select>
+                                    <button
+                                        onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                                        className="bg-black/60 border border-white/10 rounded px-3 py-1.5 text-xs text-white hover:border-nexo-lime transition-colors"
+                                        title={sortOrder === 'asc' ? 'Orden Ascendente' : 'Orden Descendente'}
+                                    >
+                                        {sortOrder === 'asc' ? '▲' : '▼'}
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="divide-y divide-white/5">
                                 {loading ? (
                                     <div className="p-12 text-center text-zinc-500">Cargando proyectos...</div>
-                                ) : projects.length === 0 ? (
-                                    <div className="p-12 text-center text-zinc-500">No hay proyectos activos creados.</div>
+                                ) : filteredAndSortedProjects.length === 0 ? (
+                                    <div className="p-12 text-center text-zinc-500">
+                                        {projects.length === 0 ? "No hay proyectos activos creados." : "No se encontraron proyectos que coincidan con los filtros."}
+                                    </div>
                                 ) : (
-                                    projects.map((project) => {
+                                    filteredAndSortedProjects.map((project) => {
                                         const projectBudget = budgets.find(b => b.project_id === project.id);
                                         const statusColors: { [key: string]: string } = {
                                             draft: 'bg-zinc-800 text-zinc-400 border-zinc-700',
@@ -1051,36 +1173,70 @@ const CRMProjects: React.FC = () => {
                                                     </div>
                                                 )}
 
-                                                {/* Detalle de Requerimientos Extraídos por IA */}
+                                                {/* Detalle de Requerimientos Extraídos */}
                                                 {project.ai_extracted_requirements && Object.keys(project.ai_extracted_requirements).length > 0 && (
-                                                    <div className="bg-nexo-lime/5 p-4 border border-nexo-lime/10 rounded-lg text-xs space-y-2">
-                                                        <span className="font-bold text-nexo-lime block uppercase tracking-wider text-[10px]">✨ Requerimientos Extraídos por IA:</span>
-                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-zinc-300">
-                                                            <div>
-                                                                <h4 className="font-bold text-white mb-1">Datos Básicos</h4>
-                                                                <ul className="space-y-1 list-disc list-inside">
-                                                                    <li>Fecha: {project.ai_extracted_requirements.basic_data?.event_date || 'No especificada'}</li>
-                                                                    <li>Lugar: {project.ai_extracted_requirements.basic_data?.location || 'No especificado'}</li>
-                                                                    <li>Horas: {project.ai_extracted_requirements.basic_data?.coverage_hours || 'No especificadas'}</li>
-                                                                </ul>
+                                                    <div className="bg-black/20 p-4 border border-dashed border-white/10 rounded-lg text-xs space-y-3">
+                                                        {project.ai_extracted_requirements.raw_uploaded ? (
+                                                            <div className="bg-zinc-900 border border-white/10 p-4 rounded-lg text-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                                                <div>
+                                                                    <span className="font-bold text-white block mb-1">📁 Archivo adjunto por el cliente:</span>
+                                                                    <span className="text-zinc-400 font-mono">{project.ai_extracted_requirements.filename}</span>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => handleAnalyzeBrief(project.id)}
+                                                                    disabled={analyzingProjectId === project.id}
+                                                                    className="bg-nexo-lime text-black font-black text-[10px] uppercase tracking-wider py-2 px-3 rounded hover:bg-white transition-colors shrink-0 disabled:opacity-50"
+                                                                >
+                                                                    {analyzingProjectId === project.id ? (
+                                                                        <span className="flex items-center gap-1.5">
+                                                                            <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+                                                                            Analizando...
+                                                                        </span>
+                                                                    ) : (
+                                                                        "🪄 Analizar pliego y autocompletar"
+                                                                    )}
+                                                                </button>
                                                             </div>
-                                                            <div>
-                                                                <h4 className="font-bold text-white mb-1">Entregables</h4>
-                                                                <ul className="space-y-1 list-disc list-inside">
-                                                                    <li>Videos: {project.ai_extracted_requirements.deliverables?.videos_to_deliver || 'No especificados'}</li>
-                                                                    <li>Fotos: {project.ai_extracted_requirements.deliverables?.photos_required ? 'Sí' : 'No'}</li>
-                                                                    <li>Streaming: {project.ai_extracted_requirements.deliverables?.live_streaming ? 'Sí' : 'No'}</li>
-                                                                </ul>
+                                                        ) : (
+                                                            <div className="bg-nexo-lime/5 p-4 border border-nexo-lime/10 rounded-lg text-xs space-y-2">
+                                                                <div className="flex justify-between items-center">
+                                                                    <span className="font-bold text-nexo-lime block uppercase tracking-wider text-[10px]">✨ Requerimientos Extraídos del Documento ({project.ai_extracted_requirements.filename || 'Archivo'}):</span>
+                                                                    <button
+                                                                        onClick={() => handleAnalyzeBrief(project.id)}
+                                                                        disabled={analyzingProjectId === project.id}
+                                                                        className="text-zinc-400 hover:text-white text-[10px] underline font-medium"
+                                                                    >
+                                                                        {analyzingProjectId === project.id ? "Analizando..." : "Re-analizar"}
+                                                                    </button>
+                                                                </div>
+                                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-zinc-300">
+                                                                    <div>
+                                                                        <h4 className="font-bold text-white mb-1">Datos Básicos</h4>
+                                                                        <ul className="space-y-1 list-disc list-inside">
+                                                                            <li>Fecha: {project.ai_extracted_requirements.basic_data?.event_date || 'No especificada'}</li>
+                                                                            <li>Lugar: {project.ai_extracted_requirements.basic_data?.location || 'No especificado'}</li>
+                                                                            <li>Horas: {project.ai_extracted_requirements.basic_data?.coverage_hours || 'No especificadas'}</li>
+                                                                        </ul>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h4 className="font-bold text-white mb-1">Entregables</h4>
+                                                                        <ul className="space-y-1 list-disc list-inside">
+                                                                            <li>Videos: {project.ai_extracted_requirements.deliverables?.videos_to_deliver || 'No especificados'}</li>
+                                                                            <li>Fotos: {project.ai_extracted_requirements.deliverables?.photos_required ? 'Sí' : 'No'}</li>
+                                                                            <li>Streaming: {project.ai_extracted_requirements.deliverables?.live_streaming ? 'Sí' : 'No'}</li>
+                                                                        </ul>
+                                                                    </div>
+                                                                    <div>
+                                                                        <h4 className="font-bold text-white mb-1">Servicios Especiales</h4>
+                                                                        <ul className="space-y-1 list-disc list-inside">
+                                                                            <li>Edición en vivo: {project.ai_extracted_requirements.special_services?.live_editing_recap ? 'Sí' : 'No'}</li>
+                                                                            <li>Iluminación: {project.ai_extracted_requirements.special_services?.lighting_setup || 'No especificada'}</li>
+                                                                            <li>Notas: {project.ai_extracted_requirements.special_services?.notes || 'Ninguna'}</li>
+                                                                        </ul>
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                            <div>
-                                                                <h4 className="font-bold text-white mb-1">Servicios Especiales</h4>
-                                                                <ul className="space-y-1 list-disc list-inside">
-                                                                    <li>Edición en vivo: {project.ai_extracted_requirements.special_services?.live_editing_recap ? 'Sí' : 'No'}</li>
-                                                                    <li>Iluminación: {project.ai_extracted_requirements.special_services?.lighting_setup || 'No especificada'}</li>
-                                                                    <li>Notas: {project.ai_extracted_requirements.special_services?.notes || 'Ninguna'}</li>
-                                                                </ul>
-                                                            </div>
-                                                        </div>
+                                                        )}
                                                     </div>
                                                 )}
 
@@ -1296,7 +1452,7 @@ const CRMProjects: React.FC = () => {
                                             disabled={aiLoading}
                                             className="text-[10px] bg-nexo-lime text-black font-bold px-2 py-1 rounded hover:bg-white transition-colors disabled:opacity-50"
                                         >
-                                            {aiLoading ? '🪄 Generando...' : '🪄 Sugerir con IA'}
+                                            {aiLoading ? '🪄 Generando...' : '🪄 Sugerir Propuesta'}
                                         </button>
                                         <button
                                             type="button"
