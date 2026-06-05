@@ -1,10 +1,20 @@
+// Polyfills para pdf-parse en ambiente serverless sin navegador
+if (typeof global.DOMMatrix === 'undefined') {
+    global.DOMMatrix = class DOMMatrix {};
+}
+if (typeof global.ImageData === 'undefined') {
+    global.ImageData = class ImageData {};
+}
+if (typeof global.Path2D === 'undefined') {
+    global.Path2D = class Path2D {};
+}
+
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import Groq from 'groq-sdk';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
 const AdmZip = require('adm-zip');
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
@@ -37,6 +47,7 @@ function extractTextFromDocx(buffer) {
 // Helper para extraer texto de PDF
 async function extractTextFromPdf(buffer) {
     try {
+        const pdfParse = require('pdf-parse');
         const data = await pdfParse(buffer);
         return data.text;
     } catch (err) {
