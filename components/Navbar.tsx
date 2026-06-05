@@ -118,7 +118,7 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
             { name: t('navbar.clients'), href: '#clientes' },
             { name: t('navbar.reviews'), href: '#reviews' },
             { name: t('navbar.contact'), href: '#contacto' },
-            { name: '🔐 Portal Clientes', href: '/portal/login' },
+            { name: '🔐 Autogestión', href: '/portal/login' },
           ].map((item, idx) => (
             <a
               key={item.name}
