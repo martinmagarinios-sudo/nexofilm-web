@@ -4,6 +4,7 @@ interface BudgetItem {
     description: string;
     quantity: number;
     unit_price: number;
+    is_optional?: boolean;
 }
 
 interface Budget {
@@ -16,8 +17,10 @@ interface Budget {
 
 interface Project {
     id: string;
-    client_name: string;
+    contact_name: string;
     client_email: string;
+    company_name: string | null;
+    ai_extracted_requirements: any | null;
     title: string;
     status: 'draft' | 'sent' | 'review' | 'approved' | 'rejected' | 'production' | 'delivered';
     event_date: string | null;
@@ -81,6 +84,19 @@ const ClientPortal: React.FC = () => {
     const [loadingDrive, setLoadingDrive] = useState(false);
     const [driveError, setDriveError] = useState('');
 
+    // Encuesta de Satisfacción (Sprint 2)
+    const [hasReviewed, setHasReviewed] = useState(false);
+    const [surveyRating, setSurveyRating] = useState<number>(5);
+    const [surveyHover, setSurveyHover] = useState<number>(0);
+    const [surveyText, setSurveyText] = useState('');
+    const [surveyNps, setSurveyNps] = useState<number | ''>('');
+    const [surveySuccess, setSurveySuccess] = useState(false);
+
+    // Ingesta de Documentos (IA)
+    const [uploadingDoc, setUploadingDoc] = useState(false);
+    const [uploadError, setUploadError] = useState('');
+    const [dragActive, setDragActive] = useState(false);
+
     // Extraer token de la URL
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -111,7 +127,7 @@ const ClientPortal: React.FC = () => {
         setLoading(true);
         setError('');
         try {
-            const res = await fetch(`/api/comercial/client-portal?token=${token}`, {
+            const res = await fetch(`/api/comercial/client?token=${token}`, {
                 headers: { 'x-client-token': token || '' }
             });
             const data = await res.json();
@@ -122,6 +138,7 @@ const ClientPortal: React.FC = () => {
 
             setProject(data.project);
             setBudget(data.budget);
+            setHasReviewed(data.hasReviewed || false);
             
             // Cargar specs si existen
             if (data.project) {
@@ -150,7 +167,7 @@ const ClientPortal: React.FC = () => {
         setLoadingDrive(true);
         setDriveError('');
         try {
-            const res = await fetch(`/api/comercial/drive-bridge?token=${token}`, {
+            const res = await fetch(`/api/comercial/client?action=drive&token=${token}`, {
                 headers: { 'x-client-token': token || '' }
             });
             const data = await res.json();
@@ -175,7 +192,7 @@ const ClientPortal: React.FC = () => {
         setError('');
 
         try {
-            const res = await fetch('/api/comercial/client-action', {
+            const res = await fetch('/api/comercial/client', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -220,7 +237,7 @@ const ClientPortal: React.FC = () => {
         setSuccessMsg('');
 
         try {
-            const res = await fetch('/api/comercial/client-action', {
+            const res = await fetch('/api/comercial/client', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -253,7 +270,7 @@ const ClientPortal: React.FC = () => {
         setSuccessMsg('');
 
         try {
-            const res = await fetch('/api/comercial/client-action', {
+            const res = await fetch('/api/comercial/client', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -288,7 +305,7 @@ const ClientPortal: React.FC = () => {
         setSuccessMsg('');
 
         try {
-            const res = await fetch('/api/comercial/client-action', {
+            const res = await fetch('/api/comercial/client', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -319,7 +336,7 @@ const ClientPortal: React.FC = () => {
         setError('');
 
         try {
-            const res = await fetch('/api/comercial/client-action', {
+            const res = await fetch('/api/comercial/client', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -348,7 +365,7 @@ const ClientPortal: React.FC = () => {
         setError('');
 
         try {
-            const res = await fetch('/api/comercial/client-action', {
+            const res = await fetch('/api/comercial/client', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -381,7 +398,7 @@ const ClientPortal: React.FC = () => {
         setError('');
 
         try {
-            const res = await fetch('/api/comercial/client-action', {
+            const res = await fetch('/api/comercial/client', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -404,6 +421,116 @@ const ClientPortal: React.FC = () => {
         } catch (err: any) {
             setError(err.message);
             setLoading(false);
+        }
+    };
+
+    const handleSubmitReview = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!surveyRating) return;
+        setSendingAction(true);
+        setError('');
+        try {
+            const res = await fetch('/api/comercial/client', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'x-client-token': token || ''
+                },
+                body: JSON.stringify({
+                    token,
+                    action: 'submit_review',
+                    rating: surveyRating,
+                    feedback_text: surveyText,
+                    recommendation_score: surveyNps === '' ? null : Number(surveyNps)
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al enviar feedback');
+            setSurveySuccess(true);
+            setHasReviewed(true);
+            setSuccessMsg('¡Muchas gracias por tu opinión! Nos ayuda un montón a seguir mejorando.');
+        } catch (err: any) {
+            console.error(err);
+            setError(err.message || 'Error al enviar feedback');
+        } finally {
+            setSendingAction(false);
+        }
+    };
+
+    const handleFileUpload = async (file: File) => {
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+            setUploadError('El archivo es demasiado grande (máximo 5MB).');
+            return;
+        }
+        
+        const allowedExtensions = ['.pdf', '.doc', '.docx'];
+        const extension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+        if (!allowedExtensions.includes(extension)) {
+            setUploadError('Formato no soportado. Por favor, subí un archivo PDF o Word (.docx).');
+            return;
+        }
+
+        setUploadingDoc(true);
+        setUploadError('');
+        setSuccessMsg('');
+
+        try {
+            const reader = new FileReader();
+            reader.onload = async () => {
+                const base64String = (reader.result as string).split(',')[1];
+                
+                try {
+                    const res = await fetch('/api/comercial/client', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'x-client-token': token || ''
+                        },
+                        body: JSON.stringify({
+                            token,
+                            action: 'upload_document',
+                            fileBase64: base64String,
+                            filename: file.name
+                        })
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'Error al procesar el documento');
+
+                    setSuccessMsg('✨ ¡Requerimientos extraídos exitosamente con IA! Se actualizaron tus especificaciones.');
+                    await fetchPortalData();
+                } catch (err: any) {
+                    console.error(err);
+                    setUploadError(err.message || 'Error al procesar el documento con IA.');
+                } finally {
+                    setUploadingDoc(false);
+                }
+            };
+            reader.readAsDataURL(file);
+        } catch (err: any) {
+            console.error(err);
+            setUploadError('Error al leer el archivo.');
+            setUploadingDoc(false);
+        }
+    };
+
+    const handleDrag = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleFileUpload(e.dataTransfer.files[0]);
         }
     };
 
@@ -510,7 +637,7 @@ const ClientPortal: React.FC = () => {
                                 Portal de Autogestión Comercial
                             </div>
                             <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight uppercase">
-                                ¡Bienvenido a NexoFilm, <span className="text-nexo-lime">{project.client_name}</span>!
+                                ¡Bienvenido a NexoFilm, <span className="text-nexo-lime">{project.contact_name}{project.company_name ? ` (${project.company_name})` : ''}</span>!
                             </h2>
                             {project.status === 'draft' ? (
                                 <p className="text-zinc-400 text-xs md:text-sm leading-relaxed max-w-2xl">
@@ -548,7 +675,7 @@ const ClientPortal: React.FC = () => {
                 {/* --- SECCIÓN TITULO Y PROGRESS BAR --- */}
                 <div className="bg-zinc-900/30 border border-white/5 p-6 md:p-8 rounded-xl space-y-6">
                     <div className="space-y-2">
-                        <h2 className="text-zinc-500 text-[10px] uppercase tracking-widest font-black">Cliente: {project.client_name}</h2>
+                        <h2 className="text-zinc-500 text-[10px] uppercase tracking-widest font-black">Cliente: {project.contact_name}{project.company_name ? ` (${project.company_name})` : ''}</h2>
                         <h1 className="text-3xl md:text-4xl font-extrabold uppercase tracking-tighter text-white">{project.title}</h1>
                     </div>
 
@@ -615,7 +742,7 @@ const ClientPortal: React.FC = () => {
                                 <div className="space-y-2">
                                     <h2 className="text-xl font-bold text-white uppercase tracking-tight">¡Especificaciones Recibidas!</h2>
                                     <p className="text-zinc-400 text-sm max-w-md mx-auto leading-relaxed">
-                                        Hola <span className="text-white font-semibold">{project.client_name}</span>. Ya registramos los detalles de tu evento/producción. El productor está elaborando tu propuesta comercial a medida.
+                                        Hola <span className="text-white font-semibold">{project.contact_name}</span>. Ya registramos los detalles de tu evento/producción. El productor está elaborando tu propuesta comercial a medida.
                                     </p>
                                 </div>
                             </div>
@@ -840,6 +967,57 @@ const ClientPortal: React.FC = () => {
                                     )}
                                 </div>
                             </form>
+
+                            {/* Zona de Ingesta de Documentos (IA) */}
+                            <div className="mt-6 border-t border-white/5 pt-6 space-y-3">
+                                <h3 className="text-zinc-400 text-xs font-bold uppercase tracking-wider block">⚡ ¿Tenés un pliego o briefing técnico?</h3>
+                                <p className="text-zinc-500 text-[11px]">
+                                    Subí tu archivo PDF o Word y nuestra Inteligencia Artificial extraerá automáticamente los requerimientos para el presupuesto.
+                                </p>
+                                
+                                <div 
+                                    onDragEnter={handleDrag}
+                                    onDragOver={handleDrag}
+                                    onDragLeave={handleDrag}
+                                    onDrop={handleDrop}
+                                    className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-all ${
+                                        dragActive 
+                                            ? 'border-nexo-lime bg-nexo-lime/5 shadow-[0_0_15px_rgba(204,255,0,0.1)]' 
+                                            : 'border-white/10 hover:border-white/20 bg-black/20'
+                                    }`}
+                                >
+                                    {uploadingDoc ? (
+                                        <div className="space-y-3 py-2">
+                                            <div className="w-8 h-8 border-4 border-nexo-lime border-t-transparent rounded-full animate-spin mx-auto"></div>
+                                            <p className="text-xs text-nexo-lime font-bold uppercase tracking-widest animate-pulse">Procesando documento con IA...</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            <span className="text-2xl block">📁</span>
+                                            <p className="text-xs text-zinc-300">
+                                                Arrastrá y soltá tu archivo PDF o Word acá, o{" "}
+                                                <label className="text-nexo-lime cursor-pointer font-bold hover:underline">
+                                                    buscalo en tu equipo
+                                                    <input 
+                                                        type="file" 
+                                                        className="hidden" 
+                                                        accept=".pdf,.doc,.docx"
+                                                        onChange={(e) => {
+                                                            if (e.target.files && e.target.files[0]) {
+                                                                handleFileUpload(e.target.files[0]);
+                                                            }
+                                                        }}
+                                                    />
+                                                </label>
+                                            </p>
+                                            <p className="text-[10px] text-zinc-500">PDF, DOC, DOCX (Máx. 5MB)</p>
+                                        </div>
+                                    )}
+                                </div>
+                                {uploadError && (
+                                    <p className="text-red-400 text-[11px] mt-1 font-semibold">⚠️ {uploadError}</p>
+                                )}
+                            </div>
                         </div>
                     )
                 )}
@@ -866,7 +1044,7 @@ const ClientPortal: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5 text-sm text-zinc-300">
-                                    {budget.items.map((item, idx) => (
+                                    {budget.items.filter(item => !item.is_optional).map((item, idx) => (
                                         <tr key={idx}>
                                             <td className="px-6 py-4 font-medium text-white">{item.description}</td>
                                             <td className="px-6 py-4 text-center">{item.quantity}</td>
@@ -875,12 +1053,41 @@ const ClientPortal: React.FC = () => {
                                         </tr>
                                     ))}
                                     <tr className="bg-zinc-850/50 font-bold text-white text-base">
-                                        <td colSpan={3} className="px-6 py-5 text-right text-zinc-400 text-sm font-normal">Valor Total de la Propuesta:</td>
+                                        <td colSpan={3} className="px-6 py-5 text-right text-zinc-400 text-sm font-normal">Valor Total de la Propuesta Base:</td>
                                         <td className="px-6 py-5 text-right text-nexo-lime">USD {budget.total_price.toLocaleString()}</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* Servicios Opcionales / Extras Sugeridos */}
+                        {budget.items.some(item => item.is_optional) && (
+                            <div className="space-y-3">
+                                <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Adicionales recomendados (Opcionales)</h4>
+                                <div className="overflow-hidden border border-[#00e5ff]/20 rounded-lg bg-[#00e5ff]/5">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="bg-zinc-800/20 text-[#00e5ff] text-xs tracking-wider uppercase border-b border-[#00e5ff]/20">
+                                                <th className="px-6 py-3 font-semibold">Servicio Opcional</th>
+                                                <th className="px-6 py-3 font-semibold w-24 text-center">Cant.</th>
+                                                <th className="px-6 py-3 font-semibold w-32 text-right">Precio Unit.</th>
+                                                <th className="px-6 py-3 font-semibold w-32 text-right">Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-white/5 text-sm text-zinc-300">
+                                            {budget.items.filter(item => item.is_optional).map((item, idx) => (
+                                                <tr key={idx}>
+                                                    <td className="px-6 py-3 font-medium text-white">➕ {item.description}</td>
+                                                    <td className="px-6 py-3 text-center">{item.quantity}</td>
+                                                    <td className="px-6 py-3 text-right">USD {item.unit_price.toLocaleString()}</td>
+                                                    <td className="px-6 py-3 text-right text-[#00e5ff]">USD {(item.quantity * item.unit_price).toLocaleString()}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Condiciones de Pago */}
                         {budget.payment_terms && (
@@ -1188,6 +1395,91 @@ const ClientPortal: React.FC = () => {
                                 })}
                             </div>
                         )}
+
+                        {/* Módulo de Encuesta de Satisfacción Opcional */}
+                        {!hasReviewed && !surveySuccess ? (
+                            <div className="border-t border-white/5 pt-8 mt-8 space-y-6">
+                                <div className="space-y-2">
+                                    <h3 className="text-lg font-bold text-white uppercase tracking-tight">⭐ Tu opinión nos ayuda a mejorar</h3>
+                                    <p className="text-xs text-zinc-400 max-w-2xl leading-relaxed">
+                                        ¡Gracias por confiar en NexoFilm! Tu feedback nos ayuda a seguir perfeccionando nuestras producciones. Esta encuesta es totalmente opcional y te llevará menos de un minuto.
+                                    </p>
+                                </div>
+
+                                <form onSubmit={handleSubmitReview} className="space-y-6 bg-black/30 p-5 rounded-lg border border-white/5">
+                                    {/* Estrellas */}
+                                    <div className="space-y-2">
+                                        <label className="block text-zinc-400 text-xs font-bold uppercase tracking-wider">Calificación General</label>
+                                        <div className="flex gap-2">
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                <button
+                                                    key={star}
+                                                    type="button"
+                                                    onClick={() => setSurveyRating(star)}
+                                                    onMouseEnter={() => setSurveyHover(star)}
+                                                    onMouseLeave={() => setSurveyHover(0)}
+                                                    className="text-2xl transition-all hover:scale-110 cursor-pointer focus:outline-none"
+                                                >
+                                                    <span className={star <= (surveyHover || surveyRating) ? 'text-nexo-lime' : 'text-zinc-700'}>
+                                                        ★
+                                                    </span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* NPS (0-10) */}
+                                    <div className="space-y-2">
+                                        <label className="block text-zinc-400 text-xs font-bold uppercase tracking-wider">¿Qué tan probable es que nos recomiendes con un colega o amigo? (0 al 10)</label>
+                                        <div className="flex flex-wrap gap-1.5 md:gap-2">
+                                            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                                                <button
+                                                    key={num}
+                                                    type="button"
+                                                    onClick={() => setSurveyNps(num)}
+                                                    className={`w-8 h-8 rounded text-xs font-bold transition-all border ${
+                                                        surveyNps === num 
+                                                            ? 'bg-[#00e5ff] text-black border-[#00e5ff] shadow-[0_0_10px_rgba(0,229,255,0.3)]' 
+                                                            : 'bg-black text-zinc-400 border-white/10 hover:border-white/20'
+                                                    }`}
+                                                >
+                                                    {num}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <div className="flex justify-between text-[9px] text-zinc-500 max-w-sm pt-1">
+                                            <span>Extremadamente improbable</span>
+                                            <span>Muy probable</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Comentarios */}
+                                    <div className="space-y-2">
+                                        <label className="block text-zinc-400 text-xs font-bold uppercase tracking-wider">¿Querés dejarnos algún comentario o sugerencia? (Opcional)</label>
+                                        <textarea
+                                            value={surveyText}
+                                            onChange={(e) => setSurveyText(e.target.value)}
+                                            className="w-full bg-black border border-white/10 rounded px-4 py-2 text-xs text-white focus:outline-none focus:border-nexo-lime h-20 resize-none"
+                                            placeholder="Tu experiencia con el rodaje, edición, puntualidad..."
+                                        />
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={sendingAction}
+                                        className="bg-nexo-lime text-black font-black text-xs uppercase tracking-widest py-3 px-6 rounded hover:bg-white transition-colors disabled:opacity-50"
+                                    >
+                                        {sendingAction ? 'Enviando...' : 'Enviar opinión'}
+                                    </button>
+                                </form>
+                            </div>
+                        ) : (
+                            <div className="border-t border-white/5 pt-8 mt-8 text-center py-6 bg-nexo-lime/5 border border-nexo-lime/10 rounded-lg">
+                                <span className="text-2xl block mb-2">💚</span>
+                                <h4 className="font-bold text-nexo-lime text-sm uppercase tracking-wider">¡Gracias por tu opinión!</h4>
+                                <p className="text-zinc-400 text-xs mt-1">Valoramos muchísimo tu tiempo y nos alegra haber compartido este proyecto con vos.</p>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -1287,7 +1579,8 @@ const ClientPortal: React.FC = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                         <div>
                             <h3 className="print-section-title" style={{ margin: 0 }}>Información del Cliente</h3>
-                            <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>Nombre:</strong> {project.client_name}</p>
+                            <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>Contacto:</strong> {project.contact_name}</p>
+                            {project.company_name && <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>Empresa:</strong> {project.company_name}</p>}
                             <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>Email:</strong> {project.client_email}</p>
                             {project.client_phone && <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>WhatsApp:</strong> +{project.client_phone}</p>}
                         </div>
@@ -1340,7 +1633,7 @@ const ClientPortal: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {budget.items.map((item, idx) => (
+                            {budget.items.filter(item => !item.is_optional).map((item, idx) => (
                                 <tr key={idx}>
                                     <td>{item.description}</td>
                                     <td style={{ textAlign: 'center' }}>{item.quantity}</td>
@@ -1349,9 +1642,26 @@ const ClientPortal: React.FC = () => {
                                 </tr>
                             ))}
                             <tr className="total-row">
-                                <td colSpan={3} style={{ textAlign: 'right', fontWeight: 'bold' }}>Total de la Propuesta:</td>
+                                <td colSpan={3} style={{ textAlign: 'right', fontWeight: 'bold' }}>Total de la Propuesta Base:</td>
                                 <td style={{ textAlign: 'right', fontWeight: 'bold' }}>USD {budget.total_price.toLocaleString()}</td>
                             </tr>
+                            {budget.items.some(item => item.is_optional) && (
+                                <>
+                                    <tr className="print-section-header-row">
+                                        <td colSpan={4} style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '10px', color: '#4b5563', padding: '12px 0 6px 0', borderBottom: '1px solid #e5e7eb', backgroundColor: '#f9fafb' }}>
+                                            Adicionales Recomendados (Opcionales)
+                                        </td>
+                                    </tr>
+                                    {budget.items.filter(item => item.is_optional).map((item, idx) => (
+                                        <tr key={idx}>
+                                            <td style={{ color: '#4b5563' }}>➕ {item.description}</td>
+                                            <td style={{ textAlign: 'center', color: '#4b5563' }}>{item.quantity}</td>
+                                            <td style={{ textAlign: 'right', color: '#4b5563' }}>USD {item.unit_price.toLocaleString()}</td>
+                                            <td style={{ textAlign: 'right', color: '#4b5563', fontWeight: '600' }}>USD {(item.quantity * item.unit_price).toLocaleString()}</td>
+                                        </tr>
+                                    ))}
+                                </>
+                            )}
                         </tbody>
                     </table>
                     

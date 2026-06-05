@@ -15,12 +15,16 @@ interface BudgetItem {
     description: string;
     quantity: number;
     unit_price: number;
+    is_optional?: boolean;
 }
 
 interface Project {
     id: string;
-    client_name: string;
+    contact_name: string;
     client_email: string;
+    company_name: string | null;
+    ai_extracted_requirements: any | null;
+    last_magic_link_at: string | null;
     title: string;
     status: 'draft' | 'sent' | 'review' | 'approved' | 'rejected' | 'production' | 'delivered';
     access_token: string;
@@ -52,11 +56,18 @@ const CRMProjects: React.FC = () => {
     const [loading, setLoading] = useState(false);
 
     // Formulario de creación
-    const [newClientName, setNewClientName] = useState('');
+    const [newContactName, setNewContactName] = useState('');
+    const [newCompanyName, setNewCompanyName] = useState('');
     const [newClientEmail, setNewClientEmail] = useState('');
     const [newClientPhone, setNewClientPhone] = useState('');
     const [newProjTitle, setNewProjTitle] = useState('');
     const [newProjStatus, setNewProjStatus] = useState<'draft' | 'sent'>('sent');
+
+    // Inline editing contact info
+    const [editingContactProjectId, setEditingContactProjectId] = useState<string | null>(null);
+    const [editingContactName, setEditingContactName] = useState('');
+    const [editingCompanyName, setEditingCompanyName] = useState('');
+    const [editingClientEmail, setEditingClientEmail] = useState('');
     
     // Formulario de presupuesto
     const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([{ description: '', quantity: 1, unit_price: 0 }]);
@@ -112,7 +123,7 @@ const CRMProjects: React.FC = () => {
         setLoading(true);
         setError('');
         try {
-            const res = await fetch('/api/comercial/admin-crm', {
+            const res = await fetch('/api/comercial/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'listProjects', password })
@@ -148,7 +159,7 @@ const CRMProjects: React.FC = () => {
         setSuccessMsg('');
 
         try {
-            const res = await fetch('/api/comercial/admin-crm', {
+            const res = await fetch('/api/comercial/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -175,14 +186,19 @@ const CRMProjects: React.FC = () => {
         setError('');
         setSuccessMsg('');
 
-        const totalPrice = budgetItems.reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0);
+        // Excluir opcionales de la suma total
+        const totalPrice = budgetItems
+            .filter(item => !item.is_optional)
+            .reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0);
 
         try {
-            const res = await fetch('/api/comercial/create-project', {
+            const res = await fetch('/api/comercial/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    client_name: newClientName,
+                    action: 'createProject',
+                    contact_name: newContactName,
+                    company_name: newCompanyName || null,
                     client_email: newClientEmail,
                     client_phone: newClientPhone,
                     notification_preference: 'both',
@@ -201,7 +217,8 @@ const CRMProjects: React.FC = () => {
             setSuccessMsg(`Proyecto creado con éxito. Copia el link del cliente.`);
             
             // Limpiar formulario
-            setNewClientName('');
+            setNewContactName('');
+            setNewCompanyName('');
             setNewClientEmail('');
             setNewClientPhone('');
             setNewProjTitle('');
@@ -216,7 +233,7 @@ const CRMProjects: React.FC = () => {
     // Generar presupuesto con IA
     const handleGenerateAIBudget = async () => {
         const titleToUse = budgetingProject ? budgetingProject.title : newProjTitle;
-        const nameToUse = budgetingProject ? budgetingProject.client_name : newClientName;
+        const nameToUse = budgetingProject ? budgetingProject.contact_name : newContactName;
 
         if (!titleToUse.trim()) {
             setError('Ingresá el título del proyecto primero para que la IA sepa qué presupuestar.');
@@ -228,7 +245,7 @@ const CRMProjects: React.FC = () => {
         setSuccessMsg('');
 
         try {
-            const res = await fetch('/api/comercial/admin-crm', {
+            const res = await fetch('/api/comercial/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -278,10 +295,13 @@ const CRMProjects: React.FC = () => {
         setError('');
         setSuccessMsg('');
 
-        const totalPrice = budgetItems.reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0);
+        // Excluir opcionales de la suma total
+        const totalPrice = budgetItems
+            .filter(item => !item.is_optional)
+            .reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0);
 
         try {
-            const res = await fetch('/api/comercial/admin-crm', {
+            const res = await fetch('/api/comercial/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -297,7 +317,7 @@ const CRMProjects: React.FC = () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error al guardar presupuesto');
 
-            setSuccessMsg(`Presupuesto actualizado y enviado al cliente ${budgetingProject.client_name} (estado cambiado a SENT).`);
+            setSuccessMsg(`Presupuesto actualizado y enviado al cliente ${budgetingProject.contact_name} (estado cambiado a SENT).`);
             setBudgetingProject(null);
             fetchData();
         } catch (err: any) {
@@ -317,10 +337,67 @@ const CRMProjects: React.FC = () => {
             newItems[index].quantity = parseInt(val) || 0;
         } else if (field === 'unit_price') {
             newItems[index].unit_price = parseFloat(val) || 0;
+        } else if (field === 'is_optional') {
+            newItems[index].is_optional = !!val;
         } else {
+            // @ts-ignore
             newItems[index].description = val;
         }
         setBudgetItems(newItems);
+    };
+
+    // Rotar token de acceso
+    const handleRotateToken = async (projectId: string) => {
+        if (!confirm('¿Seguro que querés rotar el token de acceso? El enlace anterior dejará de funcionar inmediatamente.')) return;
+        
+        setError('');
+        setSuccessMsg('');
+        try {
+            const res = await fetch('/api/comercial/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'rotateToken',
+                    project_id: projectId,
+                    password
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al rotar token');
+            
+            setSuccessMsg('Token rotado exitosamente. Ya podés copiar el nuevo enlace.');
+            fetchData();
+        } catch (err: any) {
+            setError('Error al rotar token: ' + err.message);
+        }
+    };
+
+    // Guardar actualización de contacto
+    const handleUpdateContactSave = async (projectId: string) => {
+        setError('');
+        setSuccessMsg('');
+        try {
+            const res = await fetch('/api/comercial/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'updateContact',
+                    project_id: projectId,
+                    contact_name: editingContactName,
+                    company_name: editingCompanyName || null,
+                    client_email: editingClientEmail,
+                    password
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al actualizar contacto');
+            
+            setSuccessMsg('Datos de contacto actualizados.');
+            setEditingContactProjectId(null);
+            fetchData();
+        } catch (err: any) {
+            setError('Error al actualizar contacto: ' + err.message);
+        }
     };
 
     // Eliminar fila de presupuesto
@@ -333,7 +410,7 @@ const CRMProjects: React.FC = () => {
     // Cambiar estado del proyecto manualmente
     const handleUpdateStatus = async (projectId: string, newStatus: string) => {
         try {
-            const res = await fetch('/api/comercial/admin-crm', {
+            const res = await fetch('/api/comercial/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -357,7 +434,7 @@ const CRMProjects: React.FC = () => {
     // Guardar carpeta de drive
     const handleSaveDriveFolder = async (projectId: string) => {
         try {
-            const res = await fetch('/api/comercial/admin-crm', {
+            const res = await fetch('/api/comercial/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -423,7 +500,7 @@ const CRMProjects: React.FC = () => {
         setSuccessMsg('');
 
         try {
-            const res = await fetch('/api/comercial/admin-crm', {
+            const res = await fetch('/api/comercial/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -440,7 +517,7 @@ const CRMProjects: React.FC = () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error al guardar factura');
 
-            setSuccessMsg(`Facturación registrada para ${selectedProject.client_name}. El cliente ya puede verla.`);
+            setSuccessMsg(`Facturación registrada para ${selectedProject.contact_name}. El cliente ya puede verla.`);
             setSelectedProject(null);
             setInvoiceUrl('');
             setBankDetails('');
@@ -547,14 +624,25 @@ const CRMProjects: React.FC = () => {
                         
                         <form onSubmit={handleCreateProject} className="space-y-6">
                             <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Nombre del Cliente</label>
+                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Persona de Contacto</label>
                                 <input
                                     type="text"
                                     required
-                                    value={newClientName}
-                                    onChange={(e) => setNewClientName(e.target.value)}
+                                    value={newContactName}
+                                    onChange={(e) => setNewContactName(e.target.value)}
                                     className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                    placeholder="Ej: Carlos Gómez (Nike)"
+                                    placeholder="Ej: Carlos Gómez"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Nombre de la Empresa (Opcional)</label>
+                                <input
+                                    type="text"
+                                    value={newCompanyName}
+                                    onChange={(e) => setNewCompanyName(e.target.value)}
+                                    className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                    placeholder="Ej: Nike Argentina"
                                 />
                             </div>
 
@@ -651,11 +739,21 @@ const CRMProjects: React.FC = () => {
                                             className="w-20 bg-black border border-white/5 rounded px-2 py-1 text-xs text-right text-white"
                                             placeholder="Precio U."
                                         />
+                                        <div className="flex items-center gap-1 shrink-0">
+                                            <input
+                                                type="checkbox"
+                                                checked={!!item.is_optional}
+                                                onChange={(e) => updateBudgetItem(idx, 'is_optional', e.target.checked)}
+                                                className="accent-nexo-lime h-3.5 w-3.5 bg-black border border-white/10 rounded cursor-pointer"
+                                                title="Marcar como Extra / Opcional"
+                                            />
+                                            <span className="text-[9px] text-zinc-500">Extra</span>
+                                        </div>
                                         {budgetItems.length > 1 && (
                                             <button
                                                 type="button"
                                                 onClick={() => removeBudgetItem(idx)}
-                                                className="text-red-500 hover:text-red-400 font-bold px-1"
+                                                className="text-red-500 hover:text-red-400 font-bold px-1 text-xs"
                                             >
                                                 ×
                                             </button>
@@ -663,11 +761,21 @@ const CRMProjects: React.FC = () => {
                                     </div>
                                 ))}
 
-                                <div className="text-right text-sm">
-                                    <span className="text-zinc-500">Total: </span>
-                                    <span className="font-bold text-nexo-lime">
-                                        USD {budgetItems.reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
-                                    </span>
+                                <div className="text-right text-xs space-y-1">
+                                    <div>
+                                        <span className="text-zinc-500">Total Principal: </span>
+                                        <span className="font-bold text-nexo-lime">
+                                            USD {budgetItems.filter(i => !i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
+                                        </span>
+                                    </div>
+                                    {budgetItems.some(i => i.is_optional) && (
+                                        <div>
+                                            <span className="text-zinc-500">Extras Sugeridos: </span>
+                                            <span className="font-bold text-[#00e5ff]">
+                                                + USD {budgetItems.filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -724,27 +832,89 @@ const CRMProjects: React.FC = () => {
                                                                 {project.status.toUpperCase()}
                                                             </span>
                                                         </div>
-                                                        <p className="text-sm text-zinc-400 mt-1">
-                                                            Cliente: <span className="text-white font-medium">{project.client_name}</span> ({project.client_email}) {project.client_phone && ` · WhatsApp: +${project.client_phone}`}
-                                                        </p>
+                                                        {editingContactProjectId === project.id ? (
+                                                            <div className="flex flex-wrap gap-2 items-center bg-black/40 p-3 rounded border border-white/10 mt-2">
+                                                                <input
+                                                                    type="text"
+                                                                    value={editingContactName}
+                                                                    onChange={(e) => setEditingContactName(e.target.value)}
+                                                                    placeholder="Contacto"
+                                                                    className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white"
+                                                                />
+                                                                <input
+                                                                    type="text"
+                                                                    value={editingCompanyName}
+                                                                    onChange={(e) => setEditingCompanyName(e.target.value)}
+                                                                    placeholder="Empresa (Opcional)"
+                                                                    className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white"
+                                                                />
+                                                                <input
+                                                                    type="email"
+                                                                    value={editingClientEmail}
+                                                                    onChange={(e) => setEditingClientEmail(e.target.value)}
+                                                                    placeholder="Email"
+                                                                    className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white"
+                                                                />
+                                                                <button
+                                                                    onClick={() => handleUpdateContactSave(project.id)}
+                                                                    className="bg-nexo-lime text-black font-bold px-2 py-1 rounded text-xs"
+                                                                >
+                                                                    Guardar
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => setEditingContactProjectId(null)}
+                                                                    className="bg-zinc-800 text-white px-2 py-1 rounded text-xs"
+                                                                >
+                                                                    Cancelar
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <p className="text-sm text-zinc-400">
+                                                                    Contacto: <span className="text-white font-medium">{project.contact_name}</span>
+                                                                    {project.company_name && <span> (Empresa: <span className="text-white font-medium">{project.company_name}</span>)</span>}
+                                                                    {` · ${project.client_email}`}
+                                                                    {project.client_phone && ` · WhatsApp: +${project.client_phone}`}
+                                                                </p>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setEditingContactProjectId(project.id);
+                                                                        setEditingContactName(project.contact_name);
+                                                                        setEditingCompanyName(project.company_name || '');
+                                                                        setEditingClientEmail(project.client_email || '');
+                                                                    }}
+                                                                    className="text-zinc-500 hover:text-white text-xs"
+                                                                    title="Editar contacto"
+                                                                >
+                                                                    ✏️
+                                                                </button>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                    <div className="flex gap-2">
+                                                    <div className="flex flex-wrap gap-2">
                                                         <button
                                                             onClick={() => copyClientLink(project.access_token)}
                                                             className="text-xs bg-zinc-800 hover:bg-zinc-700 border border-white/10 px-3 py-1.5 rounded transition-colors flex items-center gap-1.5"
                                                             title="Copiar link seguro para el cliente"
                                                         >
-                                                            🔗 Copiar Link Cliente
+                                                            🔗 Copiar Link
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleRotateToken(project.id)}
+                                                            className="text-xs bg-zinc-900 hover:bg-zinc-800 border border-red-500/20 text-red-400 px-3 py-1.5 rounded transition-colors flex items-center gap-1"
+                                                            title="Rotar token de acceso (invalida el link anterior)"
+                                                        >
+                                                            🔄 Rotar Token
                                                         </button>
                                                         {project.client_phone && (
                                                             <a
-                                                                href={`https://wa.me/${project.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(`🎥 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.client_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla directamente desde tu portal seguro haciendo clic en el siguiente enlace:\n👉 ${window.location.origin}/portal?token=${project.access_token}`)}`}
+                                                                href={`https://wa.me/${project.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(`🎥 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla directamente desde tu portal seguro haciendo clic en el siguiente enlace:\n👉 ${window.location.origin}/portal?token=${project.access_token}`)}`}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded transition-colors flex items-center gap-1"
-                                                                title="Enviar presupuesto por tu WhatsApp Business (1964)"
+                                                                title="Enviar presupuesto por WhatsApp"
                                                             >
-                                                                💬 Enviar WP (1964)
+                                                                💬 WhatsApp
                                                             </a>
                                                         )}
                                                         <button
@@ -762,7 +932,7 @@ const CRMProjects: React.FC = () => {
                                                             </button>
                                                         )}
                                                         <button
-                                                            onClick={() => handleDeleteProject(project.id, project.client_name)}
+                                                            onClick={() => handleDeleteProject(project.id, project.contact_name)}
                                                             className="text-xs bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-500/20 px-3 py-1.5 rounded transition-colors flex items-center gap-1"
                                                             title="Eliminar proyecto permanentemente"
                                                         >
@@ -821,6 +991,39 @@ const CRMProjects: React.FC = () => {
                                                                 <pre className="font-mono text-[10px] whitespace-pre-wrap leading-relaxed text-zinc-300 bg-black/40 p-2.5 rounded">{project.client_billing_info}</pre>
                                                             </div>
                                                         )}
+                                                    </div>
+                                                )}
+
+                                                {/* Detalle de Requerimientos Extraídos por IA */}
+                                                {project.ai_extracted_requirements && Object.keys(project.ai_extracted_requirements).length > 0 && (
+                                                    <div className="bg-nexo-lime/5 p-4 border border-nexo-lime/10 rounded-lg text-xs space-y-2">
+                                                        <span className="font-bold text-nexo-lime block uppercase tracking-wider text-[10px]">✨ Requerimientos Extraídos por IA:</span>
+                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-zinc-300">
+                                                            <div>
+                                                                <h4 className="font-bold text-white mb-1">Datos Básicos</h4>
+                                                                <ul className="space-y-1 list-disc list-inside">
+                                                                    <li>Fecha: {project.ai_extracted_requirements.basic_data?.event_date || 'No especificada'}</li>
+                                                                    <li>Lugar: {project.ai_extracted_requirements.basic_data?.location || 'No especificado'}</li>
+                                                                    <li>Horas: {project.ai_extracted_requirements.basic_data?.coverage_hours || 'No especificadas'}</li>
+                                                                </ul>
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="font-bold text-white mb-1">Entregables</h4>
+                                                                <ul className="space-y-1 list-disc list-inside">
+                                                                    <li>Videos: {project.ai_extracted_requirements.deliverables?.videos_to_deliver || 'No especificados'}</li>
+                                                                    <li>Fotos: {project.ai_extracted_requirements.deliverables?.photos_required ? 'Sí' : 'No'}</li>
+                                                                    <li>Streaming: {project.ai_extracted_requirements.deliverables?.live_streaming ? 'Sí' : 'No'}</li>
+                                                                </ul>
+                                                            </div>
+                                                            <div>
+                                                                <h4 className="font-bold text-white mb-1">Servicios Especiales</h4>
+                                                                <ul className="space-y-1 list-disc list-inside">
+                                                                    <li>Edición en vivo: {project.ai_extracted_requirements.special_services?.live_editing_recap ? 'Sí' : 'No'}</li>
+                                                                    <li>Iluminación: {project.ai_extracted_requirements.special_services?.lighting_setup || 'No especificada'}</li>
+                                                                    <li>Notas: {project.ai_extracted_requirements.special_services?.notes || 'Ninguna'}</li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 )}
 
@@ -991,7 +1194,7 @@ const CRMProjects: React.FC = () => {
                         <div className="flex justify-between items-start border-b border-white/5 pb-4">
                             <div>
                                 <h3 className="text-xl font-bold text-white">Confeccionar / Editar Presupuesto</h3>
-                                <p className="text-zinc-400 text-xs mt-1">Proyecto: {budgetingProject.title} ({budgetingProject.client_name})</p>
+                                <p className="text-zinc-400 text-xs mt-1">Proyecto: {budgetingProject.title} ({budgetingProject.contact_name}{budgetingProject.company_name ? ` - ${budgetingProject.company_name}` : ''})</p>
                             </div>
                             <button
                                 onClick={() => setBudgetingProject(null)}
@@ -1076,11 +1279,21 @@ const CRMProjects: React.FC = () => {
                                             className="w-20 bg-black border border-white/5 rounded px-2 py-1 text-xs text-right text-white"
                                             placeholder="Precio U."
                                         />
+                                        <div className="flex items-center gap-1 shrink-0">
+                                            <input
+                                                type="checkbox"
+                                                checked={!!item.is_optional}
+                                                onChange={(e) => updateBudgetItem(idx, 'is_optional', e.target.checked)}
+                                                className="accent-nexo-lime h-3.5 w-3.5 bg-black border border-white/10 rounded cursor-pointer"
+                                                title="Marcar como Extra / Opcional"
+                                            />
+                                            <span className="text-[9px] text-zinc-500">Extra</span>
+                                        </div>
                                         {budgetItems.length > 1 && (
                                             <button
                                                 type="button"
                                                 onClick={() => removeBudgetItem(idx)}
-                                                className="text-red-500 hover:text-red-400 font-bold px-1"
+                                                className="text-red-500 hover:text-red-400 font-bold px-1 text-xs"
                                             >
                                                 ×
                                             </button>
@@ -1088,11 +1301,21 @@ const CRMProjects: React.FC = () => {
                                     </div>
                                 ))}
 
-                                <div className="text-right text-sm">
-                                    <span className="text-zinc-500">Total: </span>
-                                    <span className="font-bold text-nexo-lime">
-                                        USD {budgetItems.reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
-                                    </span>
+                                <div className="text-right text-xs space-y-1">
+                                    <div>
+                                        <span className="text-zinc-500">Total Principal: </span>
+                                        <span className="font-bold text-nexo-lime">
+                                            USD {budgetItems.filter(i => !i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
+                                        </span>
+                                    </div>
+                                    {budgetItems.some(i => i.is_optional) && (
+                                        <div>
+                                            <span className="text-zinc-500">Extras Sugeridos: </span>
+                                            <span className="font-bold text-[#00e5ff]">
+                                                + USD {budgetItems.filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

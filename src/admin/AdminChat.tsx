@@ -59,7 +59,7 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
     const fetchSessions = async () => {
         setLoading(true);
         try {
-            const res = await fetch('/api/admin-api', {
+            const res = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'getSessions', password })
@@ -108,7 +108,7 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
         }
         const fetchLeadData = async () => {
             try {
-                const res = await fetch('/api/admin-api', {
+                const res = await fetch('/api/admin', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'getLeadDetail', password, phone: selectedPhone })
@@ -129,10 +129,10 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
         
         setPromoLoading(true);
         try {
-            const res = await fetch('/api/whatsapp_promo', {
+            const res = await fetch('/api/whatsapp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone })
+                body: JSON.stringify({ action: 'send_promo', phone, password })
             });
             const data = await res.json();
             if (data.status === 'success') {
@@ -167,13 +167,14 @@ const AdminChat: React.FC<AdminChatProps> = ({ initialPhone }) => {
         setMessageInput(''); // Optimistic clear
 
         try {
-            const res = await fetch('/api/whatsapp-send', {
+            const res = await fetch('/api/whatsapp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    action: 'admin_send',
                     phone: selectedPhone,
                     message: textToSend,
-                    password: password // para seguridad del endpoint
+                    password: password
                 })
             });
 

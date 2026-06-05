@@ -5,7 +5,6 @@ const supabaseKey = process.env.SUPABASE_KEY || process.env.VITE_SUPABASE_KEY;
 const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
 
 export default async function handler(req, res) {
-    // Solo permitir POST para mayor seguridad al enviar la contraseña
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -28,7 +27,7 @@ export default async function handler(req, res) {
                 const { data: allSessions, error: sErr } = await supabase.from('whatsapp_sessions').select('phone');
                 if (sErr) throw sErr;
 
-                // 2. Por cada sesión, traer su registro de CRM (evitando el límite de 1000 rows de Supabase)
+                // 2. Por cada sesión, traer su registro de CRM
                 const leadsPromises = (allSessions || []).map(async (session) => {
                     const searchStr = (session.phone || '').replace(/\D/g, '').slice(-8);
                     if (!searchStr) return null;
@@ -43,14 +42,14 @@ export default async function handler(req, res) {
                 const leadsData = await Promise.all(leadsPromises);
                 let filteredLeads = leadsData.filter(lead => lead !== null);
                 
-                // Sort leads descending by updated_at or created_at
+                // Ordenar leads por fecha de actualización descendente
                 filteredLeads.sort((a, b) => {
                     const dateA = new Date(a.updated_at || a.created_at).getTime();
                     const dateB = new Date(b.updated_at || b.created_at).getTime();
                     return dateB - dateA;
                 });
 
-                // 3. Obtener conteo total para la tarjeta superior
+                // 3. Obtener conteo total
                 const { count, error: countErr } = await supabase
                     .from('whatsapp_leads')
                     .select('*', { count: 'exact', head: true });

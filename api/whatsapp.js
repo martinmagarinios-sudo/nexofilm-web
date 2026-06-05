@@ -48,6 +48,144 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).send('Method not allowed');
 
     const body = req.body;
+
+    // --- ACCIONES CONSOLIDADAS DEL ADMIN / PROMOS ---
+    if (body && body.action) {
+        const { action, phone, message: adminMsg, password } = body;
+        
+        // Validación de seguridad simple
+        if (password !== 'Nex@2023R') {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        if (!supabase) {
+            return res.status(500).json({ error: 'Supabase credentials not configured' });
+        }
+
+        const token = process.env.WHATSAPP_TOKEN?.trim();
+        const phoneNumberId = process.env.WHATSAPP_PHONE_ID?.trim();
+
+        if (!token || !phoneNumberId) {
+            return res.status(500).json({ error: 'Faltan credenciales de WhatsApp (Token o PhoneID) en el servidor' });
+        }
+
+        try {
+            if (action === 'admin_send') {
+                if (!phone || !adminMsg) {
+                    return res.status(400).json({ error: 'Faltan datos requeridos (phone o message)' });
+                }
+
+                const url = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        messaging_product: 'whatsapp',
+                        recipient_type: 'individual',
+                        to: phone,
+                        type: 'text',
+                        text: { body: adminMsg }
+                    })
+                });
+
+                const result = await response.json();
+                if (result.error) {
+                    console.error("Error API Meta al enviar:", result.error);
+                    return res.status(500).json({ error: 'Meta rechazó el mensaje', details: result.error });
+                }
+
+                // Guardar en el historial de Supabase
+                const { data: sessionInfo } = await supabase
+                    .from('whatsapp_sessions')
+                    .select('history')
+                    .eq('phone', phone)
+                    .maybeSingle();
+                
+                let currentHistory = sessionInfo?.history || [];
+                currentHistory.push({
+                    role: 'admin',
+                    content: adminMsg,
+                    timestamp: new Date().toISOString()
+                });
+
+                await supabase
+                    .from('whatsapp_sessions')
+                    .upsert({ 
+                        phone: phone,
+                        history: currentHistory,
+                        updated_at: new Date().toISOString() 
+                    });
+
+                return res.status(200).json({ success: true, messageId: result.messages?.[0]?.id });
+
+            } else if (action === 'send_promo') {
+                if (!phone) return res.status(400).json({ error: 'Falta el teléfono' });
+
+                const PROMO_MESSAGE = `¡Hola! Te escribimos de NexoFilm 🎬. Vimos que consultaste por nuestros servicios hace poco. 
+
+Te recordamos que además de coberturas, hacemos:
+✅ Foto Producto
+✅ Streaming Profesional
+✅ Video Institucional
+
+¡Si mencionás este mensaje tenés un 10% OFF en tu próxima reserva! 🎥✨
+¿Te gustaría que te coticemos algo nuevo?`;
+
+                const url = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        messaging_product: 'whatsapp',
+                        to: phone,
+                        type: 'text',
+                        text: { body: PROMO_MESSAGE }
+                    })
+                });
+
+                const result = await response.json();
+                if (result.error) {
+                    throw new Error(result.error.message);
+                }
+
+                // Registrar en historial
+                const { data: session } = await supabase
+                    .from('whatsapp_sessions')
+                    .select('history')
+                    .eq('phone', phone)
+                    .maybeSingle();
+
+                const history = session?.history || [];
+                history.push({
+                    role: 'admin',
+                    content: `🚀 PROMO ENVIADA: \n${PROMO_MESSAGE}`,
+                    timestamp: new Date().toISOString()
+                });
+
+                await supabase.from('whatsapp_sessions').upsert({
+                    phone,
+                    history,
+                    updated_at: new Date().toISOString()
+                });
+                
+                await supabase.from('whatsapp_leads').update({ etiquetas: 'promo_enviada' }).eq('phone', phone);
+
+                return res.status(200).json({ success: true, message: 'Promo enviada' });
+            } else {
+                return res.status(400).json({ error: 'Acción no soportada' });
+            }
+        } catch (err) {
+            console.error("Error en whatsapp-admin action:", err);
+            return res.status(500).json({ error: err.message });
+        }
+    }
+
     const message = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
     if (!message) return res.status(200).send('OK');
 

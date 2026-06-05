@@ -6,6 +6,7 @@ import AdminChat from './src/admin/AdminChat';
 import PrivacyPolicy from './PrivacyPolicy';
 import CRMProjects from './src/admin/CRMProjects';
 import ClientPortal from './src/components/ClientPortal';
+import PortalLogin from './src/components/PortalLogin';
 import './src/i18n/i18n';
 
 const rootElement = document.getElementById('root');
@@ -19,6 +20,7 @@ const isPrivacyPolicy = path === '/politica-de-privacidad';
 const isChat = path.startsWith('/admin/chat');
 const isPortfolio = path === '/portfolio';
 const isPortal = path === '/portal';
+const isPortalLogin = path === '/portal/login';
 const isCrm = path === '/admin/crm';
 
 let initialPhone = null;
@@ -48,6 +50,7 @@ root.render(
       isChat ? <AdminChat initialPhone={initialPhone} /> :
         isDashboard ? <Dashboard /> : 
           isPortal ? <ClientPortal /> :
-            isCrm ? <CRMProjects /> : <App />}
+            isPortalLogin ? <PortalLogin /> :
+              isCrm ? <CRMProjects /> : <App />}
   </React.StrictMode>
 );
