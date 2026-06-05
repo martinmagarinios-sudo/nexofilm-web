@@ -72,6 +72,7 @@ export default async function handler(req, res) {
         payment_terms,
         contact_name,
         client_email,
+        client_phone,
         company_name,
         currency,
         crew_count,
@@ -441,6 +442,7 @@ Generame entre 2 y 4 ítems de presupuesto detallando los servicios específicos
                     .update({
                         contact_name: contact_name || '',
                         client_email: client_email || '',
+                        client_phone: client_phone || null,
                         company_name: company_name || null,
                         currency: currency || 'USD',
                         crew_count: crew_count ? parseInt(crew_count) : null

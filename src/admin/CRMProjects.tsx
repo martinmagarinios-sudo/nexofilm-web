@@ -72,6 +72,7 @@ const CRMProjects: React.FC = () => {
     const [editingContactName, setEditingContactName] = useState('');
     const [editingCompanyName, setEditingCompanyName] = useState('');
     const [editingClientEmail, setEditingClientEmail] = useState('');
+    const [editingClientPhone, setEditingClientPhone] = useState('');
     const [editingCurrency, setEditingCurrency] = useState<'USD' | 'ARS'>('USD');
     const [editingCrewCount, setEditingCrewCount] = useState<number | ''>('');
     
@@ -437,6 +438,7 @@ const CRMProjects: React.FC = () => {
                     contact_name: editingContactName,
                     company_name: editingCompanyName || null,
                     client_email: editingClientEmail,
+                    client_phone: editingClientPhone || null,
                     currency: editingCurrency,
                     crew_count: editingCrewCount === '' ? null : Number(editingCrewCount),
                     password
@@ -1014,6 +1016,13 @@ const CRMProjects: React.FC = () => {
                                                                     placeholder="Email"
                                                                     className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white"
                                                                 />
+                                                                <input
+                                                                    type="text"
+                                                                    value={editingClientPhone}
+                                                                    onChange={(e) => setEditingClientPhone(e.target.value)}
+                                                                    placeholder="WhatsApp (ej: 549...)"
+                                                                    className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white w-36"
+                                                                />
                                                                 <select
                                                                     value={editingCurrency}
                                                                     onChange={(e) => setEditingCurrency(e.target.value as 'USD' | 'ARS')}
@@ -1059,6 +1068,7 @@ const CRMProjects: React.FC = () => {
                                                                         setEditingContactName(project.contact_name);
                                                                         setEditingCompanyName(project.company_name || '');
                                                                         setEditingClientEmail(project.client_email || '');
+                                                                        setEditingClientPhone(project.client_phone || '');
                                                                         setEditingCurrency(project.currency || 'USD');
                                                                         setEditingCrewCount(project.crew_count || '');
                                                                     }}
