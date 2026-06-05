@@ -77,7 +77,7 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
               href="/portal/login"
               className="px-5 py-2.5 text-[10px] font-black tracking-[0.4em] uppercase transition-all duration-500 rounded-sm border border-nexo-lime/30 text-nexo-lime hover:bg-nexo-lime hover:text-black hover:border-nexo-lime"
             >
-              🔐 Portal
+              🔐 Autogestión
             </a>
             <a
               href="#contacto"
