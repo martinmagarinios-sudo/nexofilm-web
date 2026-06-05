@@ -641,7 +641,7 @@ const ClientPortal: React.FC = () => {
                             <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight uppercase">
                                 ¡Bienvenido a NexoFilm, <span className="text-nexo-lime">{project.contact_name}{project.company_name ? ` (${project.company_name})` : ''}</span>!
                             </h2>
-                            {project.status === 'draft' ? (
+                            {(project.status === 'draft' || !budget) ? (
                                 <p className="text-zinc-400 text-xs md:text-sm leading-relaxed max-w-2xl">
                                     Hemos diseñado este espacio privado y seguro para gestionar tu propuesta. Para comenzar, por favor <strong>completá el Formulario de Especificaciones</strong> a continuación con los datos de tu evento o producción. Con esta información, nuestro equipo podrá confeccionar una cotización comercial a tu medida.
                                 </p>
@@ -649,7 +649,7 @@ const ClientPortal: React.FC = () => {
                                 <p className="text-zinc-400 text-xs md:text-sm leading-relaxed max-w-2xl">
                                     Ya recibimos tus especificaciones. Nuestro equipo de producción está elaborando la propuesta comercial adaptada a tus necesidades. Te notificaremos de manera automática en cuanto el presupuesto esté listo para ser revisado y aprobado en este mismo portal.
                                 </p>
-                            ) : project.status === 'sent' ? (
+                            ) : (project.status === 'sent' && budget) ? (
                                 <p className="text-zinc-400 text-xs md:text-sm leading-relaxed max-w-2xl">
                                     ¡Tu propuesta comercial ya está disponible! A continuación podés <strong>revisar el desglose del presupuesto</strong>, descargar el PDF para su presentación interna, y decidir si deseas aprobarlo o solicitar modificaciones con tus comentarios directamente desde aquí.
                                 </p>
@@ -740,7 +740,7 @@ const ClientPortal: React.FC = () => {
                 
                 {/* ESTADO 1: DRAFT O REVIEW (EDICIÓN DE ESPECIFICACIONES) */}
                 {/* ESTADO 1: DRAFT O REVIEW (EDICIÓN DE ESPECIFICACIONES) */}
-                {(project.status === 'draft' || project.status === 'review') && (
+                {(project.status === 'draft' || project.status === 'review' || !budget) && (
                     (project.status === 'review' && !isEditingSpecs) ? (
                         <div className="bg-zinc-900/40 border border-white/5 p-6 md:p-8 rounded-xl shadow-2xl space-y-6 no-print">
                             <div className="text-center py-6 space-y-4">

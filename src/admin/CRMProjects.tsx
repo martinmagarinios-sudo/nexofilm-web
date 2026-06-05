@@ -63,7 +63,7 @@ const CRMProjects: React.FC = () => {
     const [newClientEmail, setNewClientEmail] = useState('');
     const [newClientPhone, setNewClientPhone] = useState('');
     const [newProjTitle, setNewProjTitle] = useState('');
-    const [newProjStatus, setNewProjStatus] = useState<'draft' | 'sent'>('sent');
+    const [newProjStatus, setNewProjStatus] = useState<'draft' | 'sent'>('draft');
     const [newCurrency, setNewCurrency] = useState<'USD' | 'ARS'>('USD');
     const [newCrewCount, setNewCrewCount] = useState<number | ''>('');
 
