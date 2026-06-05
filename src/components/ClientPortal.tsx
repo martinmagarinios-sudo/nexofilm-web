@@ -37,6 +37,8 @@ interface Project {
     guests_count?: number | null;
     client_billing_info?: string | null;
     client_notes?: string | null;
+    currency?: 'USD' | 'ARS' | null;
+    crew_count?: number | null;
 }
 
 interface DriveFile {
@@ -700,7 +702,7 @@ const ClientPortal: React.FC = () => {
 
                     {/* Resumen de especificaciones del evento (Para estados posteriores a Draft/Review) */}
                     {project.status !== 'draft' && project.status !== 'review' && (project.event_date || project.location) && (
-                        <div className="border-t border-white/5 pt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-zinc-400 no-print">
+                        <div className="border-t border-white/5 pt-4 grid grid-cols-1 md:grid-cols-4 gap-4 text-xs text-zinc-400 no-print">
                             <div>
                                 <span className="text-zinc-500 font-bold block uppercase tracking-wider text-[9px]">📅 Fecha y Hora</span>
                                 <span className="text-zinc-300 font-semibold">{project.event_date || 'A confirmar'} {project.event_time || ''}</span>
@@ -714,6 +716,12 @@ const ClientPortal: React.FC = () => {
                                 <span className="text-zinc-300 font-semibold capitalize">
                                     {project.coverage_types?.join(', ') || '-'} {project.coverage_hours ? `(${project.coverage_hours} hs)` : ''}
                                     {project.guests_count ? ` · ${project.guests_count} invitados` : ''}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="text-zinc-500 font-bold block uppercase tracking-wider text-[9px]">🎥 Personal Cobertura</span>
+                                <span className="text-zinc-300 font-semibold">
+                                    {project.crew_count ? `${project.crew_count} ${project.crew_count === 1 ? 'persona' : 'personas'}` : 'A confirmar'}
                                 </span>
                             </div>
                         </div>
@@ -1048,13 +1056,13 @@ const ClientPortal: React.FC = () => {
                                         <tr key={idx}>
                                             <td className="px-6 py-4 font-medium text-white">{item.description}</td>
                                             <td className="px-6 py-4 text-center">{item.quantity}</td>
-                                            <td className="px-6 py-4 text-right">USD {item.unit_price.toLocaleString()}</td>
-                                            <td className="px-6 py-4 text-right text-white">USD {(item.quantity * item.unit_price).toLocaleString()}</td>
+                                            <td className="px-6 py-4 text-right">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</td>
+                                            <td className="px-6 py-4 text-right text-white">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</td>
                                         </tr>
                                     ))}
                                     <tr className="bg-zinc-850/50 font-bold text-white text-base">
                                         <td colSpan={3} className="px-6 py-5 text-right text-zinc-400 text-sm font-normal">Valor Total de la Propuesta Base:</td>
-                                        <td className="px-6 py-5 text-right text-nexo-lime">USD {budget.total_price.toLocaleString()}</td>
+                                        <td className="px-6 py-5 text-right text-nexo-lime">{project.currency || 'USD'} {budget.total_price.toLocaleString()}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1079,8 +1087,8 @@ const ClientPortal: React.FC = () => {
                                                 <tr key={idx}>
                                                     <td className="px-6 py-3 font-medium text-white">➕ {item.description}</td>
                                                     <td className="px-6 py-3 text-center">{item.quantity}</td>
-                                                    <td className="px-6 py-3 text-right">USD {item.unit_price.toLocaleString()}</td>
-                                                    <td className="px-6 py-3 text-right text-[#00e5ff]">USD {(item.quantity * item.unit_price).toLocaleString()}</td>
+                                                    <td className="px-6 py-3 text-right">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</td>
+                                                    <td className="px-6 py-3 text-right text-[#00e5ff]">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -1271,7 +1279,7 @@ const ClientPortal: React.FC = () => {
                                         <div className="text-xs">
                                             <span className="text-zinc-500">Monto del depósito:</span>
                                             <div className="text-xl font-black text-white mt-0.5">
-                                                USD {project.invoice_amount ? project.invoice_amount.toLocaleString() : '0'} 
+                                                {project.currency || 'USD'} {project.invoice_amount ? project.invoice_amount.toLocaleString() : '0'} 
                                                 <span className="text-[10px] text-zinc-500 font-normal ml-1">
                                                     ({project.invoice_type === 'deposit_50' ? '50% Seña' : project.invoice_type === 'total' ? '100% Total' : 'Concepto Asignado'})
                                                 </span>
@@ -1616,6 +1624,9 @@ const ClientPortal: React.FC = () => {
                                     {project.guests_count !== null && project.guests_count !== undefined && (
                                         <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>Cantidad de Invitados:</strong> {project.guests_count} personas</p>
                                     )}
+                                    {project.crew_count !== null && project.crew_count !== undefined && (
+                                        <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>Staff Cobertura:</strong> {project.crew_count} {project.crew_count === 1 ? 'persona' : 'personas'}</p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -1637,13 +1648,13 @@ const ClientPortal: React.FC = () => {
                                 <tr key={idx}>
                                     <td>{item.description}</td>
                                     <td style={{ textAlign: 'center' }}>{item.quantity}</td>
-                                    <td style={{ textAlign: 'right' }}>USD {item.unit_price.toLocaleString()}</td>
-                                    <td style={{ textAlign: 'right' }}>USD {(item.quantity * item.unit_price).toLocaleString()}</td>
+                                    <td style={{ textAlign: 'right' }}>{project.currency || 'USD'} {item.unit_price.toLocaleString()}</td>
+                                    <td style={{ textAlign: 'right' }}>{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</td>
                                 </tr>
                             ))}
                             <tr className="total-row">
                                 <td colSpan={3} style={{ textAlign: 'right', fontWeight: 'bold' }}>Total de la Propuesta Base:</td>
-                                <td style={{ textAlign: 'right', fontWeight: 'bold' }}>USD {budget.total_price.toLocaleString()}</td>
+                                <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{project.currency || 'USD'} {budget.total_price.toLocaleString()}</td>
                             </tr>
                             {budget.items.some(item => item.is_optional) && (
                                 <>
@@ -1656,8 +1667,8 @@ const ClientPortal: React.FC = () => {
                                         <tr key={idx}>
                                             <td style={{ color: '#4b5563' }}>➕ {item.description}</td>
                                             <td style={{ textAlign: 'center', color: '#4b5563' }}>{item.quantity}</td>
-                                            <td style={{ textAlign: 'right', color: '#4b5563' }}>USD {item.unit_price.toLocaleString()}</td>
-                                            <td style={{ textAlign: 'right', color: '#4b5563', fontWeight: '600' }}>USD {(item.quantity * item.unit_price).toLocaleString()}</td>
+                                            <td style={{ textAlign: 'right', color: '#4b5563' }}>{project.currency || 'USD'} {item.unit_price.toLocaleString()}</td>
+                                            <td style={{ textAlign: 'right', color: '#4b5563', fontWeight: '600' }}>{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</td>
                                         </tr>
                                     ))}
                                 </>

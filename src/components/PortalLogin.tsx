@@ -50,7 +50,7 @@ const PortalLogin: React.FC = () => {
                     <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-nexo-lime/10 border border-nexo-lime/20 text-nexo-lime text-xl font-bold mb-2">
                         🔐
                     </div>
-                    <h1 className="text-2xl font-black uppercase tracking-wider text-white">Portal de Clientes</h1>
+                    <h1 className="text-2xl font-black uppercase tracking-wider text-white">Portal de Autogestión</h1>
                     <p className="text-zinc-500 text-xs leading-relaxed max-w-xs mx-auto">
                         Ingresá tu correo electrónico registrado para recibir el enlace de acceso confidencial a tu portal de proyectos.
                     </p>

@@ -77,7 +77,7 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
               href="/portal/login"
               className="px-5 py-2.5 text-[10px] font-black tracking-[0.4em] uppercase transition-all duration-500 rounded-sm border border-nexo-lime/30 text-nexo-lime hover:bg-nexo-lime hover:text-black hover:border-nexo-lime"
             >
-              🔐 Autogestión
+              {t('navbar.login')}
             </a>
             <a
               href="#contacto"
@@ -118,7 +118,7 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
             { name: t('navbar.clients'), href: '#clientes' },
             { name: t('navbar.reviews'), href: '#reviews' },
             { name: t('navbar.contact'), href: '#contacto' },
-            { name: '🔐 Autogestión', href: '/portal/login' },
+            { name: t('navbar.login'), href: '/portal/login' },
           ].map((item, idx) => (
             <a
               key={item.name}
@@ -147,7 +147,7 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
                     setIsMenuOpen(false); 
                   }}
                   className={`text-[10px] font-black tracking-widest px-4 py-2 transition-all duration-300 rounded-sm border ${
-                    i18n.language === lang.code 
+                    i18n.language?.startsWith(lang.code) 
                       ? 'text-nexo-lime border-nexo-lime/40 bg-nexo-lime/5' 
                       : 'text-zinc-500 border-white/5 hover:border-white/20'
                   }`}

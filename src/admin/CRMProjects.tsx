@@ -43,6 +43,8 @@ interface Project {
     guests_count?: number | null;
     client_billing_info?: string | null;
     client_notes?: string | null;
+    currency?: 'USD' | 'ARS' | null;
+    crew_count?: number | null;
     created_at: string;
 }
 
@@ -62,12 +64,16 @@ const CRMProjects: React.FC = () => {
     const [newClientPhone, setNewClientPhone] = useState('');
     const [newProjTitle, setNewProjTitle] = useState('');
     const [newProjStatus, setNewProjStatus] = useState<'draft' | 'sent'>('sent');
+    const [newCurrency, setNewCurrency] = useState<'USD' | 'ARS'>('USD');
+    const [newCrewCount, setNewCrewCount] = useState<number | ''>('');
 
     // Inline editing contact info
     const [editingContactProjectId, setEditingContactProjectId] = useState<string | null>(null);
     const [editingContactName, setEditingContactName] = useState('');
     const [editingCompanyName, setEditingCompanyName] = useState('');
     const [editingClientEmail, setEditingClientEmail] = useState('');
+    const [editingCurrency, setEditingCurrency] = useState<'USD' | 'ARS'>('USD');
+    const [editingCrewCount, setEditingCrewCount] = useState<number | ''>('');
     
     // Formulario de presupuesto
     const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([{ description: '', quantity: 1, unit_price: 0 }]);
@@ -204,6 +210,8 @@ const CRMProjects: React.FC = () => {
                     notification_preference: 'both',
                     title: newProjTitle,
                     status: newProjStatus,
+                    currency: newCurrency,
+                    crew_count: newCrewCount === '' ? null : Number(newCrewCount),
                     items: budgetItems,
                     total_price: totalPrice,
                     payment_terms: paymentTerms,
@@ -222,6 +230,8 @@ const CRMProjects: React.FC = () => {
             setNewClientEmail('');
             setNewClientPhone('');
             setNewProjTitle('');
+            setNewCurrency('USD');
+            setNewCrewCount('');
             setBudgetItems([{ description: '', quantity: 1, unit_price: 0 }]);
             
             fetchData();
@@ -386,6 +396,8 @@ const CRMProjects: React.FC = () => {
                     contact_name: editingContactName,
                     company_name: editingCompanyName || null,
                     client_email: editingClientEmail,
+                    currency: editingCurrency,
+                    crew_count: editingCrewCount === '' ? null : Number(editingCrewCount),
                     password
                 })
             });
@@ -691,6 +703,31 @@ const CRMProjects: React.FC = () => {
                                 </select>
                             </div>
 
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Moneda</label>
+                                    <select
+                                        value={newCurrency}
+                                        onChange={(e) => setNewCurrency(e.target.value as 'USD' | 'ARS')}
+                                        className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                    >
+                                        <option value="USD">USD (Dólares)</option>
+                                        <option value="ARS">ARS (Pesos)</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Personal Cobertura</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={newCrewCount}
+                                        onChange={(e) => setNewCrewCount(e.target.value === '' ? '' : parseInt(e.target.value))}
+                                        className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                        placeholder="Ej: 2"
+                                    />
+                                </div>
+                            </div>
+
                             {/* Creador dinámico de presupuesto */}
                             <div className="space-y-4 border-t border-white/5 pt-4">
                                 <div className="flex justify-between items-center">
@@ -765,14 +802,14 @@ const CRMProjects: React.FC = () => {
                                     <div>
                                         <span className="text-zinc-500">Total Principal: </span>
                                         <span className="font-bold text-nexo-lime">
-                                            USD {budgetItems.filter(i => !i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
+                                            {newCurrency} {budgetItems.filter(i => !i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
                                         </span>
                                     </div>
                                     {budgetItems.some(i => i.is_optional) && (
                                         <div>
                                             <span className="text-zinc-500">Extras Sugeridos: </span>
                                             <span className="font-bold text-[#00e5ff]">
-                                                + USD {budgetItems.filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
+                                                + {newCurrency} {budgetItems.filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
                                             </span>
                                         </div>
                                     )}
@@ -855,6 +892,22 @@ const CRMProjects: React.FC = () => {
                                                                     placeholder="Email"
                                                                     className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white"
                                                                 />
+                                                                <select
+                                                                    value={editingCurrency}
+                                                                    onChange={(e) => setEditingCurrency(e.target.value as 'USD' | 'ARS')}
+                                                                    className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white"
+                                                                >
+                                                                    <option value="USD">USD</option>
+                                                                    <option value="ARS">ARS</option>
+                                                                </select>
+                                                                <input
+                                                                    type="number"
+                                                                    min="1"
+                                                                    value={editingCrewCount}
+                                                                    onChange={(e) => setEditingCrewCount(e.target.value === '' ? '' : parseInt(e.target.value))}
+                                                                    placeholder="Personal"
+                                                                    className="w-16 bg-black border border-white/20 rounded px-2 py-1 text-xs text-center text-white"
+                                                                />
                                                                 <button
                                                                     onClick={() => handleUpdateContactSave(project.id)}
                                                                     className="bg-nexo-lime text-black font-bold px-2 py-1 rounded text-xs"
@@ -875,6 +928,8 @@ const CRMProjects: React.FC = () => {
                                                                     {project.company_name && <span> (Empresa: <span className="text-white font-medium">{project.company_name}</span>)</span>}
                                                                     {` · ${project.client_email}`}
                                                                     {project.client_phone && ` · WhatsApp: +${project.client_phone}`}
+                                                                    {` · Moneda: ${project.currency || 'USD'}`}
+                                                                    {project.crew_count && ` · Cobertura: ${project.crew_count} ${project.crew_count === 1 ? 'persona' : 'personas'}`}
                                                                 </p>
                                                                 <button
                                                                     onClick={() => {
@@ -882,6 +937,8 @@ const CRMProjects: React.FC = () => {
                                                                         setEditingContactName(project.contact_name);
                                                                         setEditingCompanyName(project.company_name || '');
                                                                         setEditingClientEmail(project.client_email || '');
+                                                                        setEditingCurrency(project.currency || 'USD');
+                                                                        setEditingCrewCount(project.crew_count || '');
                                                                     }}
                                                                     className="text-zinc-500 hover:text-white text-xs"
                                                                     title="Editar contacto"
@@ -946,7 +1003,7 @@ const CRMProjects: React.FC = () => {
                                                     <div className="bg-black/30 p-4 border border-white/5 rounded-lg flex flex-col md:flex-row justify-between gap-4">
                                                         <div className="text-xs text-zinc-400 space-y-1">
                                                             <span className="font-bold text-zinc-300">Presupuesto Activo (v{projectBudget.version}): </span>
-                                                            <span className="text-white font-medium">USD {projectBudget.total_price.toLocaleString()}</span>
+                                                            <span className="text-white font-medium">{project.currency || 'USD'} {projectBudget.total_price.toLocaleString()}</span>
                                                             <div className="mt-1">
                                                                  {projectBudget.items.map((it, i) => (
                                                                      <span key={i} className="inline-block bg-white/5 border border-white/5 rounded px-2 py-0.5 mr-1.5 mb-1.5">
@@ -1140,7 +1197,7 @@ const CRMProjects: React.FC = () => {
 
                             {/* Monto de Factura */}
                             <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Monto a Transferir (USD)</label>
+                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Monto a Transferir ({selectedProject?.currency || 'USD'})</label>
                                 <input
                                     type="number"
                                     required
@@ -1305,14 +1362,14 @@ const CRMProjects: React.FC = () => {
                                     <div>
                                         <span className="text-zinc-500">Total Principal: </span>
                                         <span className="font-bold text-nexo-lime">
-                                            USD {budgetItems.filter(i => !i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
+                                            {budgetingProject?.currency || 'USD'} {budgetItems.filter(i => !i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
                                         </span>
                                     </div>
                                     {budgetItems.some(i => i.is_optional) && (
                                         <div>
                                             <span className="text-zinc-500">Extras Sugeridos: </span>
                                             <span className="font-bold text-[#00e5ff]">
-                                                + USD {budgetItems.filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
+                                                + {budgetingProject?.currency || 'USD'} {budgetItems.filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
                                             </span>
                                         </div>
                                     )}

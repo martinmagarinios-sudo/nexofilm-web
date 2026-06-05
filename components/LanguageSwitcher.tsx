@@ -60,7 +60,7 @@ const LanguageSwitcher: React.FC = () => {
             key={lang.code}
             onClick={() => toggleLanguage(lang.code)}
             className={`w-full text-left px-4 py-2 text-[10px] font-bold uppercase tracking-widest transition-colors hover:bg-white/5 ${
-              i18n.language === lang.code ? 'text-nexo-lime' : 'text-zinc-500 hover:text-white'
+              i18n.language?.startsWith(lang.code) ? 'text-nexo-lime' : 'text-zinc-500 hover:text-white'
             }`}
           >
             {lang.name}

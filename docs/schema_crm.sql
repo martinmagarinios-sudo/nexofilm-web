@@ -22,6 +22,8 @@ create table if not exists public.projects (
   coverage_types text[], -- Ej: ['foto', 'video', 'streaming']
   coverage_hours integer,
   guests_count integer,
+  currency varchar(10) default 'USD',
+  crew_count integer default 1,
   
   -- Integración de Google Drive
   drive_folder_id varchar(255),

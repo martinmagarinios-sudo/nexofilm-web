@@ -59,6 +59,8 @@ export default async function handler(req, res) {
         contact_name,
         client_email,
         company_name,
+        currency,
+        crew_count,
         fileBase64,
         filename
     } = req.body;
@@ -132,7 +134,9 @@ export default async function handler(req, res) {
                         coverage_types: coverage_types || [],
                         coverage_hours: coverage_hours ? parseInt(coverage_hours) : null,
                         guests_count: guests_count ? parseInt(guests_count) : null,
-                        drive_folder_id: drive_folder_id || null
+                        drive_folder_id: drive_folder_id || null,
+                        currency: currency || 'USD',
+                        crew_count: crew_count ? parseInt(crew_count) : null
                     })
                     .select()
                     .single();
@@ -423,7 +427,9 @@ Generame entre 2 y 4 ítems de presupuesto detallando los servicios específicos
                     .update({
                         contact_name: contact_name || '',
                         client_email: client_email || '',
-                        company_name: company_name || null
+                        company_name: company_name || null,
+                        currency: currency || 'USD',
+                        crew_count: crew_count ? parseInt(crew_count) : null
                     })
                     .eq('id', project_id)
                     .select()
@@ -592,13 +598,14 @@ async function notifyClient(project, items, total, terms, host) {
     // Separar ítems base de opcionales para el formato del email
     const baseItems = (items || []).filter(item => !item.is_optional);
     const optionalItems = (items || []).filter(item => item.is_optional);
+    const currencySymbol = project.currency || 'USD';
 
     let itemsHtml = '';
     baseItems.forEach(item => {
         itemsHtml += `<tr style="border-bottom: 1px solid #222;">
             <td style="padding: 10px 0; color: #e0e0e0;">${item.description}</td>
             <td style="padding: 10px 0; text-align: center; color: #a0a0a0;">${item.quantity}</td>
-            <td style="padding: 10px 0; text-align: right; color: #ccff00; font-weight: bold;">USD ${(item.quantity * item.unit_price).toLocaleString()}</td>
+            <td style="padding: 10px 0; text-align: right; color: #ccff00; font-weight: bold;">${currencySymbol} ${(item.quantity * item.unit_price).toLocaleString()}</td>
         </tr>`;
     });
 
@@ -610,7 +617,7 @@ async function notifyClient(project, items, total, terms, host) {
             optionalsHtml += `<tr style="border-bottom: 1px solid #222;">
                 <td style="padding: 8px 0; color: #a0a0a0;">➕ ${item.description}</td>
                 <td style="padding: 8px 0; text-align: center; color: #888;">${item.quantity}</td>
-                <td style="padding: 8px 0; text-align: right; color: #00e5ff; font-weight: bold;">+ USD ${(item.quantity * item.unit_price).toLocaleString()}</td>
+                <td style="padding: 8px 0; text-align: right; color: #00e5ff; font-weight: bold;">+ ${currencySymbol} ${(item.quantity * item.unit_price).toLocaleString()}</td>
             </tr>`;
         });
         optionalsHtml += `</table>`;
@@ -650,7 +657,7 @@ async function notifyClient(project, items, total, terms, host) {
                             </table>
 
                             <div style="text-align: right; font-size: 16px; font-weight: bold; margin-bottom: 20px; color: #ffffff;">
-                                Total Presupuesto Base: <span style="color: #ccff00; font-size: 18px;">USD ${total.toLocaleString()}</span>
+                                Total Presupuesto Base: <span style="color: #ccff00; font-size: 18px;">${currencySymbol} ${total.toLocaleString()}</span>
                             </div>
 
                             ${optionalsHtml}
@@ -693,7 +700,7 @@ async function notifyClient(project, items, total, terms, host) {
                 cleanPhone = '54' + cleanPhone;
             }
             
-            const messageText = `🎥 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya está listo tu presupuesto para "${project.title}".\n\nPresupuesto base: USD ${total.toLocaleString()}\n${optionalItems.length > 0 ? `(También incluimos algunos adicionales opcionales)\n` : ''}\nIngresá al portal para ver el desglose completo, pedir ajustes o confirmarlo:\n👉 ${portalUrl}`;
+            const messageText = `🎥 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya está listo tu presupuesto para "${project.title}".\n\nPresupuesto base: ${project.currency || 'USD'} ${total.toLocaleString()}\n${optionalItems.length > 0 ? `(También incluimos algunos adicionales opcionales)\n` : ''}\nIngresá al portal para ver el desglose completo, pedir ajustes o confirmarlo:\n👉 ${portalUrl}`;
 
             try {
                 const response = await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
