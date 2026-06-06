@@ -13,6 +13,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import Groq from 'groq-sdk';
 import { createRequire } from 'module';
+import crypto from 'crypto';
 
 const require = createRequire(import.meta.url);
 const AdmZip = require('adm-zip');
@@ -416,7 +417,6 @@ Generame entre 2 y 4 ítems de presupuesto detallando los servicios específicos
                     return res.status(400).json({ error: 'El ID del proyecto es requerido' });
                 }
 
-                const { crypto } = await import('crypto');
                 const newToken = crypto.randomUUID();
 
                 const { data: updatedProject, error: updateErr } = await supabase
