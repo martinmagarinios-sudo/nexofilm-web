@@ -46,24 +46,15 @@ function extractTextFromDocx(buffer) {
 
 // Helper para extraer texto de PDF
 async function extractTextFromPdf(buffer) {
-    let parser;
     try {
-        const pdfParseModule = require('pdf-parse');
-        const PDFParse = pdfParseModule.PDFParse;
-        parser = new PDFParse({ data: buffer });
-        const result = await parser.getText();
+        const pdfParse = require('pdf-parse');
+        // pdf-parse exporta una función directa (no clase)
+        const fn = typeof pdfParse === 'function' ? pdfParse : (pdfParse.default || pdfParse);
+        const result = await fn(buffer);
         return result.text || '';
     } catch (err) {
         console.error('Error parsing PDF:', err);
         return ''; // Retornar vacío en lugar de lanzar error
-    } finally {
-        if (parser && typeof parser.destroy === 'function') {
-            try {
-                await parser.destroy();
-            } catch (destroyErr) {
-                console.error('Error destroying PDF parser:', destroyErr);
-            }
-        }
     }
 }
 
@@ -668,12 +659,28 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                     .filter(item => !item.is_optional)
                     .reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0);
 
-                // Insertar presupuesto
+                // Desactivar presupuestos activos anteriores (evitar duplicados)
+                await supabase
+                    .from('budgets')
+                    .update({ is_active: false })
+                    .eq('project_id', project_id)
+                    .eq('is_active', true);
+
+                // Calcular versión siguiente
+                const { data: existingBudgets } = await supabase
+                    .from('budgets')
+                    .select('version')
+                    .eq('project_id', project_id)
+                    .order('version', { ascending: false })
+                    .limit(1);
+                const nextVersion = existingBudgets?.length > 0 ? (existingBudgets[0].version + 1) : 1;
+
+                // Insertar nuevo presupuesto activo
                 const { data: newBudget, error: bErr } = await supabase
                     .from('budgets')
                     .insert({
                         project_id,
-                        version: 1,
+                        version: nextVersion,
                         items,
                         total_price: calculatedTotal,
                         payment_terms: payment_terms || '',

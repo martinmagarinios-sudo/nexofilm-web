@@ -598,11 +598,11 @@ const ClientPortal: React.FC = () => {
 
     // Colores de estado
     const statusTrackers = [
-        { key: 'draft', label: 'Especificaciones', active: ['draft', 'review', 'sent', 'approved', 'rejected', 'production', 'delivered'] },
-        { key: 'sent', label: 'Presupuesto', active: ['sent', 'approved', 'production', 'delivered'] },
-        { key: 'approved', label: 'Facturación / Pago', active: ['approved', 'production', 'delivered'] },
-        { key: 'production', label: 'Rodaje / Edición', active: ['production', 'delivered'] },
-        { key: 'delivered', label: 'Entrega Material', active: ['delivered'] }
+        { key: 'draft', label: 'Especificaciones', shortLabel: 'Specs', active: ['draft', 'review', 'sent', 'approved', 'rejected', 'production', 'delivered'] },
+        { key: 'sent', label: 'Presupuesto', shortLabel: 'Propuesta', active: ['sent', 'approved', 'production', 'delivered'] },
+        { key: 'approved', label: 'Facturación / Pago', shortLabel: 'Pago', active: ['approved', 'production', 'delivered'] },
+        { key: 'production', label: 'Rodaje / Edición', shortLabel: 'Producción', active: ['production', 'delivered'] },
+        { key: 'delivered', label: 'Entrega Material', shortLabel: 'Entrega', active: ['delivered'] }
     ];
 
     return (
@@ -690,7 +690,8 @@ const ClientPortal: React.FC = () => {
                                         <div key={i} className="space-y-2">
                                             <div className={`h-1 rounded-full transition-colors ${isDone ? 'bg-nexo-lime shadow-[0_0_8px_rgba(204,255,0,0.5)]' : 'bg-zinc-800'}`}></div>
                                             <span className={`block text-[8px] md:text-[10px] uppercase tracking-wider font-bold transition-colors ${isDone ? 'text-nexo-lime' : 'text-zinc-500'}`}>
-                                                {track.label}
+                                                <span className="hidden md:block">{track.label}</span>
+                                                <span className="block md:hidden text-[7px] leading-tight break-all">{track.shortLabel}</span>
                                             </span>
                                         </div>
                                     );
@@ -1067,7 +1068,7 @@ const ClientPortal: React.FC = () => {
                         </div>
 
                         {/* Desglose de ítems */}
-                        <div className="overflow-hidden border border-white/10 rounded-lg">
+                        <div className="overflow-x-auto border border-white/10 rounded-lg">
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="bg-zinc-800/30 text-zinc-400 text-xs tracking-wider uppercase border-b border-white/10">
@@ -1098,7 +1099,7 @@ const ClientPortal: React.FC = () => {
                         {budget.items.some(item => item.is_optional) && (
                             <div className="space-y-3">
                                 <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Adicionales recomendados (Opcionales)</h4>
-                                <div className="overflow-hidden border border-[#00e5ff]/20 rounded-lg bg-[#00e5ff]/5">
+                                <div className="overflow-x-auto border border-[#00e5ff]/20 rounded-lg bg-[#00e5ff]/5">
                                     <table className="w-full text-left border-collapse">
                                         <thead>
                                             <tr className="bg-zinc-800/20 text-[#00e5ff] text-xs tracking-wider uppercase border-b border-[#00e5ff]/20">

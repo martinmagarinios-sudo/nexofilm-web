@@ -146,3 +146,41 @@ Se optó por sobreescribir los archivos físicos del logo original para evitar c
 
 **Instrucciones de Mantenimiento**:
 Si necesitas actualizar el logo principal nuevamente, lo más sencillo es reemplazar directamente los archivos `public/img/logo.png` y `components/logo.png` con el nuevo diseño asegurándote de usar el mismo nombre exacto `logo.png` para mantener intactas todas sus referencias.
+
+### Módulo CRM Comercial y Portal de Autogestión de Clientes (06/06/2026) -> Por Skill Documentador
+
+**Objetivo**: Centralizar la gestión comercial de proyectos (creación, edición rápida, análisis inteligente de especificaciones) y habilitar un Portal de Autogestión seguro para los clientes donde puedan cargar briefings, revisar y aprobar cotizaciones base u opcionales, cargar datos de facturación y descargar el material final de manera 100% responsiva y optimizada para móviles.
+
+**Características y Lógica de Negocio**:
+1. **Flujo de Cotización y Seguimiento**:
+   - **Creación**: El productor crea el proyecto en `/admin/crm` con datos básicos y envía un link seguro único (`/portal?token=[access_token]`).
+   - **Autogestión de Especificaciones**: El cliente accede al portal (sin requerir contraseñas complejas, solo usando su token único o pidiendo un enlace mágico por email) para completar requerimientos y subir pliegos técnicos (briefings).
+   - **Análisis Opcional**: El productor cuenta con un botón en el CRM comercial para ejecutar un análisis automático con la IA de Groq sobre el archivo subido, extrayendo locación, horas de cobertura, cantidad de invitados y sugerencias de ítems para el presupuesto de forma interna.
+   - **Cotización y Notificación**: El productor confecciona el presupuesto distinguiendo entre ítems principales y sugerencias opcionales de extras. Al pulsar "Enviar", el sistema notifica al cliente por Email (Resend) y WhatsApp (Meta API).
+   - **Aprobación o Feedback**: El cliente aprueba o solicita ajustes de forma interactiva en su portal.
+   - **Facturación y Pago**: Tras la aprobación, el productor carga el CBU y factura PDF, y el cliente realiza la transferencia bancaria.
+   - **Producción y Entrega**: El proyecto pasa a estado de rodaje/edición y finalmente entrega de material, donde el cliente descarga sus entregables y deja una reseña final y puntuación NPS.
+
+2. **Ocultamiento de Inteligencia Artificial (Confidencialidad)**:
+   - Todo rastro visual de análisis robótico o "IA" se mantiene 100% oculto de cara al cliente. El cliente simplemente sube su archivo briefing. El botón interactivo `"🪄 Analizar pliego"` es visible únicamente para el productor dentro del CRM comercial de administración.
+
+3. **Mejoras de Responsividad (Mobile-First)**:
+   - **CRM de Administración**: Las filas de armado de presupuestos se apilan verticalmente en pantallas móviles y se ensanchan a horizontal en desktop. Los controles de edición rápida (CBU, Teléfono, Moneda, etc.) están ordenados en una grilla responsiva compacta. Las acciones principales del proyecto ahora se agrupan en una cuadrícula (`grid-cols-2` en móvil) con botones centrados y legibles.
+   - **Portal de Autogestión**: La barra superior de estados se compacta en celulares usando etiquetas cortas virtuales (`Specs`, `Propuesta`, `Pago`, `Producción`, `Entrega`) para prevenir solapamientos. Las tablas de presupuestos (base y opcionales) cuentan con desplazamiento horizontal dinámico (`overflow-x-auto`) para no salirse del ancho de pantalla.
+
+**Configuración (Variables de Entorno)**:
+El backend comercial (`api/comercial/admin.js` y `api/comercial/client.js`) utiliza las siguientes variables que deben estar definidas en tu entorno local (`.env.local`) y en el panel de Vercel:
+- `VITE_SUPABASE_URL` / `SUPABASE_URL`: Dirección de la API de Supabase.
+- `VITE_SUPABASE_KEY` / `SUPABASE_SERVICE_ROLE_KEY`: Clave de acceso con permisos administrativos para guardar datos del CRM y acceder al almacenamiento seguro.
+- `RESEND_API_KEY`: Clave de integración de correo electrónico para el envío automático de notificaciones de presupuestos.
+- `GROQ_API_KEY`: Clave API de Groq utilizada para procesar briefings de proyectos técnicos mediante IA de forma interna en el CRM.
+- `WHATSAPP_TOKEN` y `WHATSAPP_PHONE_ID`: Credenciales oficiales de Meta para el envío de notificaciones automáticas vía WhatsApp al cliente.
+- **Parámetro Hardcoded de Administración**: El número de destino para alertas comerciales dirigidas al productor está fijado de manera definitiva a tu WhatsApp Business personal: `541151191964` (Martín).
+- **Almacenamiento de Briefings**: Los archivos se suben al bucket de Supabase Storage llamado `invoices` bajo la carpeta `briefings/`.
+
+**Archivos Afectados**:
+- `api/comercial/admin.js` (Serverless API para acciones administrativas).
+- `api/comercial/client.js` (Serverless API para acciones del cliente y renderizado dinámico de títulos/meta tags).
+- `src/admin/CRMProjects.tsx` (Vistas e interfaces de administración comercial, creación y presupuesto).
+- `src/components/ClientPortal.tsx` (Componente visual del portal de autogestión para clientes).
+- `vercel.json` (Reglas de ruteo para el portal `/portal` e incrementos de timeouts de funciones).

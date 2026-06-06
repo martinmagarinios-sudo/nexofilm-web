@@ -843,49 +843,57 @@ const CRMProjects: React.FC = () => {
                                 </div>
 
                                 {budgetItems.map((item, idx) => (
-                                    <div key={idx} className="flex gap-2 items-center bg-black/40 p-2 border border-white/5 rounded">
+                                    <div key={idx} className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center bg-black/40 p-3 sm:p-2 border border-white/5 rounded">
                                         <input
                                             type="text"
                                             value={item.description}
                                             onChange={(e) => updateBudgetItem(idx, 'description', e.target.value)}
-                                            className="flex-1 bg-black border border-white/5 rounded px-2 py-1 text-xs text-white"
+                                            className="w-full sm:flex-1 bg-black border border-white/5 rounded px-2 py-1 text-xs text-white"
                                             placeholder="Detalle (Ej: Jornada Rodaje)"
                                         />
-                                        <input
-                                            type="number"
-                                            min="1"
-                                            value={item.quantity}
-                                            onChange={(e) => updateBudgetItem(idx, 'quantity', e.target.value)}
-                                            className="w-12 bg-black border border-white/5 rounded px-1 py-1 text-xs text-center text-white"
-                                            placeholder="Cant"
-                                        />
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            value={item.unit_price}
-                                            onChange={(e) => updateBudgetItem(idx, 'unit_price', e.target.value)}
-                                            className="w-20 bg-black border border-white/5 rounded px-2 py-1 text-xs text-right text-white"
-                                            placeholder="Precio U."
-                                        />
-                                        <div className="flex items-center gap-1 shrink-0">
-                                            <input
-                                                type="checkbox"
-                                                checked={!!item.is_optional}
-                                                onChange={(e) => updateBudgetItem(idx, 'is_optional', e.target.checked)}
-                                                className="accent-nexo-lime h-3.5 w-3.5 bg-black border border-white/10 rounded cursor-pointer"
-                                                title="Marcar como Extra / Opcional"
-                                            />
-                                            <span className="text-[9px] text-zinc-500">Extra</span>
+                                        <div className="flex gap-2 items-center justify-between sm:justify-start w-full sm:w-auto shrink-0">
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-[10px] text-zinc-500 sm:hidden">Cant:</span>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    value={item.quantity}
+                                                    onChange={(e) => updateBudgetItem(idx, 'quantity', e.target.value)}
+                                                    className="w-12 bg-black border border-white/5 rounded px-1 py-1 text-xs text-center text-white"
+                                                    placeholder="Cant"
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-[10px] text-zinc-500 sm:hidden">Precio:</span>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={item.unit_price}
+                                                    onChange={(e) => updateBudgetItem(idx, 'unit_price', e.target.value)}
+                                                    className="w-20 bg-black border border-white/5 rounded px-2 py-1 text-xs text-right text-white"
+                                                    placeholder="Precio U."
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-1 shrink-0 bg-white/5 px-2 py-1 rounded border border-white/5">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={!!item.is_optional}
+                                                    onChange={(e) => updateBudgetItem(idx, 'is_optional', e.target.checked)}
+                                                    className="accent-nexo-lime h-3.5 w-3.5 bg-black border border-white/10 rounded cursor-pointer"
+                                                    title="Marcar como Extra / Opcional"
+                                                />
+                                                <span className="text-[10px] text-zinc-400">Extra</span>
+                                            </div>
+                                            {budgetItems.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeBudgetItem(idx)}
+                                                    className="text-red-500 hover:text-red-400 font-bold px-2 py-1 text-sm bg-red-950/20 border border-red-500/10 rounded sm:bg-transparent sm:border-0 sm:p-0"
+                                                >
+                                                    ×
+                                                </button>
+                                            )}
                                         </div>
-                                        {budgetItems.length > 1 && (
-                                            <button
-                                                type="button"
-                                                onClick={() => removeBudgetItem(idx)}
-                                                className="text-red-500 hover:text-red-400 font-bold px-1 text-xs"
-                                            >
-                                                ×
-                                            </button>
-                                        )}
                                     </div>
                                 ))}
 
@@ -1019,31 +1027,31 @@ const CRMProjects: React.FC = () => {
                                                             </span>
                                                         </div>
                                                         {editingContactProjectId === project.id ? (
-                                                            <div className="bg-black/40 p-4 rounded border border-white/10 mt-2 space-y-4">
+                                                            <div className="bg-black/40 p-4 md:p-6 rounded-xl border border-white/10 mt-2 space-y-4">
                                                                 {/* Sección Contacto */}
                                                                 <div>
                                                                     <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-2">👤 Datos de Contacto</p>
-                                                                    <div className="flex flex-wrap gap-2">
-                                                                        <input type="text" value={editingContactName} onChange={(e) => setEditingContactName(e.target.value)} placeholder="Nombre contacto" className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white" />
-                                                                        <input type="text" value={editingCompanyName} onChange={(e) => setEditingCompanyName(e.target.value)} placeholder="Empresa (Opcional)" className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white" />
-                                                                        <input type="email" value={editingClientEmail} onChange={(e) => setEditingClientEmail(e.target.value)} placeholder="Email" className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white" />
-                                                                        <input type="text" value={editingClientPhone} onChange={(e) => setEditingClientPhone(e.target.value)} placeholder="WhatsApp (ej: 549...)" className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white w-40" />
-                                                                        <select value={editingCurrency} onChange={(e) => setEditingCurrency(e.target.value as 'USD' | 'ARS')} className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white">
-                                                                            <option value="USD">USD</option>
-                                                                            <option value="ARS">ARS</option>
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                                                        <input type="text" value={editingContactName} onChange={(e) => setEditingContactName(e.target.value)} placeholder="Nombre contacto" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
+                                                                        <input type="text" value={editingCompanyName} onChange={(e) => setEditingCompanyName(e.target.value)} placeholder="Empresa (Opcional)" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
+                                                                        <input type="email" value={editingClientEmail} onChange={(e) => setEditingClientEmail(e.target.value)} placeholder="Email" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
+                                                                        <input type="text" value={editingClientPhone} onChange={(e) => setEditingClientPhone(e.target.value)} placeholder="WhatsApp (ej: 549...)" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
+                                                                        <select value={editingCurrency} onChange={(e) => setEditingCurrency(e.target.value as 'USD' | 'ARS')} className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none">
+                                                                            <option value="USD">USD (Dólares)</option>
+                                                                            <option value="ARS">ARS (Pesos)</option>
                                                                         </select>
-                                                                        <input type="number" min="1" value={editingCrewCount} onChange={(e) => setEditingCrewCount(e.target.value === '' ? '' : parseInt(e.target.value))} placeholder="Personal" className="w-20 bg-black border border-white/20 rounded px-2 py-1 text-xs text-center text-white" />
+                                                                        <input type="number" min="1" value={editingCrewCount} onChange={(e) => setEditingCrewCount(e.target.value === '' ? '' : parseInt(e.target.value))} placeholder="Personal" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-center text-white focus:border-nexo-lime focus:outline-none" />
                                                                     </div>
                                                                 </div>
                                                                 {/* Sección Evento */}
                                                                 <div className="border-t border-white/5 pt-3">
                                                                     <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-2">📅 Detalles del Evento</p>
-                                                                    <div className="flex flex-wrap gap-2">
-                                                                        <input type="date" value={editingEventDate} onChange={(e) => setEditingEventDate(e.target.value)} className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white" title="Fecha del evento" />
-                                                                        <input type="time" value={editingEventTime} onChange={(e) => setEditingEventTime(e.target.value)} className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white" title="Horario de inicio" />
-                                                                        <input type="text" value={editingLocation} onChange={(e) => setEditingLocation(e.target.value)} placeholder="Locación / Lugar" className="bg-black border border-white/20 rounded px-2 py-1 text-xs text-white flex-1 min-w-32" />
-                                                                        <input type="number" min="1" value={editingCoverageHours} onChange={(e) => setEditingCoverageHours(e.target.value === '' ? '' : parseInt(e.target.value))} placeholder="Hs cobertura" className="w-28 bg-black border border-white/20 rounded px-2 py-1 text-xs text-white" />
-                                                                        <input type="number" min="1" value={editingGuestsCount} onChange={(e) => setEditingGuestsCount(e.target.value === '' ? '' : parseInt(e.target.value))} placeholder="Nº invitados" className="w-28 bg-black border border-white/20 rounded px-2 py-1 text-xs text-white" />
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                                                        <input type="date" value={editingEventDate} onChange={(e) => setEditingEventDate(e.target.value)} className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" title="Fecha del evento" />
+                                                                        <input type="time" value={editingEventTime} onChange={(e) => setEditingEventTime(e.target.value)} className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" title="Horario de inicio" />
+                                                                        <input type="text" value={editingLocation} onChange={(e) => setEditingLocation(e.target.value)} placeholder="Locación / Lugar" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
+                                                                        <input type="number" min="1" value={editingCoverageHours} onChange={(e) => setEditingCoverageHours(e.target.value === '' ? '' : parseInt(e.target.value))} placeholder="Horas cobertura" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
+                                                                        <input type="number" min="1" value={editingGuestsCount} onChange={(e) => setEditingGuestsCount(e.target.value === '' ? '' : parseInt(e.target.value))} placeholder="Nº invitados" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
                                                                     </div>
                                                                 </div>
                                                                 {/* Sección Nota para el Cliente */}
@@ -1064,16 +1072,15 @@ const CRMProjects: React.FC = () => {
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <div className="mt-1 space-y-1">
-                                                                <div className="flex items-center gap-2">
-                                                                    <p className="text-sm text-zinc-400">
-                                                                        Contacto: <span className="text-white font-medium">{project.contact_name}</span>
-                                                                        {project.company_name && <span> (Empresa: <span className="text-white font-medium">{project.company_name}</span>)</span>}
-                                                                        {` · ${project.client_email}`}
-                                                                        {project.client_phone && ` · WhatsApp: +${project.client_phone}`}
-                                                                        {` · Moneda: ${project.currency || 'USD'}`}
-                                                                        {project.crew_count && ` · Cobertura: ${project.crew_count} ${project.crew_count === 1 ? 'persona' : 'personas'}`}
-                                                                    </p>
+                                                            <div className="mt-1 flex items-start justify-between gap-2">
+                                                                <div className="text-xs md:text-sm text-zinc-400 flex flex-wrap gap-x-3 gap-y-1">
+                                                                    <span>Contacto: <strong className="text-white">{project.contact_name}</strong></span>
+                                                                    {project.company_name && <span>Empresa: <strong className="text-white">{project.company_name}</strong></span>}
+                                                                    <span>Email: <strong className="text-white">{project.client_email}</strong></span>
+                                                                    {project.client_phone && <span>WhatsApp: <strong className="text-white">+{project.client_phone}</strong></span>}
+                                                                    <span>Moneda: <strong className="text-white">{project.currency || 'USD'}</strong></span>
+                                                                    {project.crew_count && <span>Personal: <strong className="text-white">{project.crew_count} {project.crew_count === 1 ? 'persona' : 'personas'}</strong></span>}
+                                                                </div>
                                                                 <button
                                                                     onClick={() => {
                                                                         setEditingContactProjectId(project.id);
@@ -1090,32 +1097,31 @@ const CRMProjects: React.FC = () => {
                                                                         setEditingCoverageHours(project.coverage_hours || '');
                                                                         setEditingGuestsCount(project.guests_count || '');
                                                                     }}
-                                                                    className="text-zinc-500 hover:text-white text-xs"
+                                                                    className="text-zinc-500 hover:text-white text-xs shrink-0 p-1 bg-white/5 border border-white/10 rounded hover:bg-white/10 transition-colors"
                                                                     title="Editar datos del proyecto"
                                                                 >
                                                                     ✏️
                                                                 </button>
                                                             </div>
-                                                            {project.admin_notes && (
-                                                                <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded px-3 py-2 mt-2">
-                                                                    <span className="text-amber-400 text-xs">📝</span>
-                                                                    <p className="text-amber-300 text-xs italic flex-1">Nota activa al cliente: &quot;{project.admin_notes}&quot;</p>
-                                                                </div>
-                                                            )}
+                                                        )}
+                                                        {project.admin_notes && (
+                                                            <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded px-3 py-2 mt-2">
+                                                                <span className="text-amber-400 text-xs">📝</span>
+                                                                <p className="text-amber-300 text-xs italic flex-1">Nota activa al cliente: &quot;{project.admin_notes}&quot;</p>
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <div className="flex flex-wrap gap-2">
+                                                    <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto">
                                                         <button
                                                             onClick={() => copyClientLink(project.access_token)}
-                                                            className="text-xs bg-zinc-800 hover:bg-zinc-700 border border-white/10 px-3 py-1.5 rounded transition-colors flex items-center gap-1.5"
+                                                            className="text-xs bg-zinc-800 hover:bg-zinc-700 border border-white/10 px-3 py-1.5 rounded transition-colors flex items-center justify-center gap-1.5"
                                                             title="Copiar link seguro para el cliente"
                                                         >
                                                             🔗 Copiar Link
                                                         </button>
                                                         <button
                                                             onClick={() => handleRotateToken(project.id)}
-                                                            className="text-xs bg-zinc-900 hover:bg-zinc-800 border border-red-500/20 text-red-400 px-3 py-1.5 rounded transition-colors flex items-center gap-1"
+                                                            className="text-xs bg-zinc-900 hover:bg-zinc-800 border border-red-500/20 text-red-400 px-3 py-1.5 rounded transition-colors flex items-center justify-center gap-1"
                                                             title="Rotar token de acceso (invalida el link anterior)"
                                                         >
                                                             🔄 Rotar Token
@@ -1126,7 +1132,7 @@ const CRMProjects: React.FC = () => {
                                                                     href={`https://wa.me/${project.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(`🎥 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla directamente desde tu portal seguro haciendo clic en el siguiente enlace:\n👉 ${window.location.origin}/portal?token=${project.access_token}`)}`}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
-                                                                    className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded transition-colors flex items-center gap-1"
+                                                                    className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded transition-colors flex items-center justify-center gap-1"
                                                                     title="Enviar presupuesto por WhatsApp"
                                                                 >
                                                                     💬 Enviar Presupuesto
@@ -1136,7 +1142,7 @@ const CRMProjects: React.FC = () => {
                                                                         href={`https://wa.me/${project.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(`📋 *NexoFilm - Solicitud de Información*\n\n¡Hola ${project.contact_name}!${project.admin_notes ? `\n\n${project.admin_notes}` : '\n\nNecesitamos algunos datos adicionales para terminar de armar tu presupuesto.'}\n\nPodés completarlos directamente desde tu portal ingresando aquí:\n👉 ${window.location.origin}/portal?token=${project.access_token}`)}`}
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"
-                                                                        className="text-xs bg-amber-600 hover:bg-amber-500 text-white font-bold px-3 py-1.5 rounded transition-colors flex items-center gap-1"
+                                                                        className="text-xs bg-amber-600 hover:bg-amber-500 text-white font-bold px-3 py-1.5 rounded transition-colors flex items-center justify-center gap-1"
                                                                         title="Solicitar datos faltantes por WhatsApp"
                                                                     >
                                                                         📲 Pedir datos
@@ -1146,21 +1152,21 @@ const CRMProjects: React.FC = () => {
                                                         )}
                                                         <button
                                                             onClick={() => openBudgetModal(project)}
-                                                            className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded transition-colors flex items-center gap-1"
+                                                            className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded transition-colors flex items-center justify-center gap-1"
                                                         >
                                                             📝 Presupuestar
                                                         </button>
                                                         {(project.status === 'approved' || project.status === 'production' || project.status === 'delivered') && (
                                                             <button
                                                                 onClick={() => openInvoiceModal(project)}
-                                                                className="text-xs bg-nexo-lime text-black font-bold px-3 py-1.5 rounded hover:bg-white transition-colors"
+                                                                className="text-xs bg-nexo-lime text-black font-bold px-3 py-1.5 rounded hover:bg-white transition-colors flex items-center justify-center gap-1"
                                                             >
                                                                 🧾 Factura / Pagos
                                                             </button>
                                                         )}
                                                         <button
                                                             onClick={() => handleDeleteProject(project.id, project.contact_name)}
-                                                            className="text-xs bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-500/20 px-3 py-1.5 rounded transition-colors flex items-center gap-1"
+                                                            className="text-xs bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-500/20 px-3 py-1.5 rounded transition-colors flex items-center justify-center gap-1"
                                                             title="Eliminar proyecto permanentemente"
                                                         >
                                                             🗑️ Eliminar
@@ -1525,52 +1531,60 @@ const CRMProjects: React.FC = () => {
                                 </div>
 
                                 {budgetItems.map((item, idx) => (
-                                    <div key={idx} className="flex gap-2 items-center bg-black/40 p-2 border border-white/5 rounded">
+                                    <div key={idx} className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center bg-black/40 p-3 sm:p-2 border border-white/5 rounded">
                                         <input
                                             type="text"
                                             required
                                             value={item.description}
                                             onChange={(e) => updateBudgetItem(idx, 'description', e.target.value)}
-                                            className="flex-1 bg-black border border-white/5 rounded px-2 py-1 text-xs text-white"
+                                            className="w-full sm:flex-1 bg-black border border-white/5 rounded px-2 py-1 text-xs text-white"
                                             placeholder="Detalle (Ej: Jornada Rodaje)"
                                         />
-                                        <input
-                                            type="number"
-                                            required
-                                            min="1"
-                                            value={item.quantity}
-                                            onChange={(e) => updateBudgetItem(idx, 'quantity', e.target.value)}
-                                            className="w-12 bg-black border border-white/5 rounded px-1 py-1 text-xs text-center text-white"
-                                            placeholder="Cant"
-                                        />
-                                        <input
-                                            type="number"
-                                            required
-                                            min="0"
-                                            value={item.unit_price}
-                                            onChange={(e) => updateBudgetItem(idx, 'unit_price', e.target.value)}
-                                            className="w-20 bg-black border border-white/5 rounded px-2 py-1 text-xs text-right text-white"
-                                            placeholder="Precio U."
-                                        />
-                                        <div className="flex items-center gap-1 shrink-0">
-                                            <input
-                                                type="checkbox"
-                                                checked={!!item.is_optional}
-                                                onChange={(e) => updateBudgetItem(idx, 'is_optional', e.target.checked)}
-                                                className="accent-nexo-lime h-3.5 w-3.5 bg-black border border-white/10 rounded cursor-pointer"
-                                                title="Marcar como Extra / Opcional"
-                                            />
-                                            <span className="text-[9px] text-zinc-500">Extra</span>
+                                        <div className="flex gap-2 items-center justify-between sm:justify-start w-full sm:w-auto shrink-0">
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-[10px] text-zinc-500 sm:hidden">Cant:</span>
+                                                <input
+                                                    type="number"
+                                                    required
+                                                    min="1"
+                                                    value={item.quantity}
+                                                    onChange={(e) => updateBudgetItem(idx, 'quantity', e.target.value)}
+                                                    className="w-12 bg-black border border-white/5 rounded px-1 py-1 text-xs text-center text-white"
+                                                    placeholder="Cant"
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-[10px] text-zinc-500 sm:hidden">Precio:</span>
+                                                <input
+                                                    type="number"
+                                                    required
+                                                    min="0"
+                                                    value={item.unit_price}
+                                                    onChange={(e) => updateBudgetItem(idx, 'unit_price', e.target.value)}
+                                                    className="w-20 bg-black border border-white/5 rounded px-2 py-1 text-xs text-right text-white"
+                                                    placeholder="Precio U."
+                                                />
+                                            </div>
+                                            <div className="flex items-center gap-1 shrink-0 bg-white/5 px-2 py-1 rounded border border-white/5">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={!!item.is_optional}
+                                                    onChange={(e) => updateBudgetItem(idx, 'is_optional', e.target.checked)}
+                                                    className="accent-nexo-lime h-3.5 w-3.5 bg-black border border-white/10 rounded cursor-pointer"
+                                                    title="Marcar como Extra / Opcional"
+                                                />
+                                                <span className="text-[10px] text-zinc-400">Extra</span>
+                                            </div>
+                                            {budgetItems.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeBudgetItem(idx)}
+                                                    className="text-red-500 hover:text-red-400 font-bold px-2 py-1 text-sm bg-red-950/20 border border-red-500/10 rounded sm:bg-transparent sm:border-0 sm:p-0"
+                                                >
+                                                    ×
+                                                </button>
+                                            )}
                                         </div>
-                                        {budgetItems.length > 1 && (
-                                            <button
-                                                type="button"
-                                                onClick={() => removeBudgetItem(idx)}
-                                                className="text-red-500 hover:text-red-400 font-bold px-1 text-xs"
-                                            >
-                                                ×
-                                            </button>
-                                        )}
                                     </div>
                                 ))}
 

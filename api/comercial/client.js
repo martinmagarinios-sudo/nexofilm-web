@@ -188,7 +188,7 @@ export default async function handler(req, res) {
                     <div style="background-color: #1a1a1a; padding: 20px; border-radius: 6px; border: 1px solid #333; line-height: 1.6;">
                         <p style="font-size: 15px; margin: 0 0 10px 0; color: #ffffff;">Hola,</p>
                         <p style="font-size: 13px; margin: 0 0 20px 0; color: #e0e0e0;">
-                            Hiciste clic en ingresar desde el Portal de Clientes. Aquí están tus enlaces seguros de autogestión:
+                            Hiciste clic en ingresar desde el Portal de Autogestión. Aquí están tus enlaces seguros:
                         </p>
                         <ul style="padding: 0; margin: 0;">
                             ${linksHtml}
@@ -315,13 +315,13 @@ export default async function handler(req, res) {
 
             // GET Acción: Render HTML con OG Tags Dinámicos
             if (action === 'render') {
-                let title = "Portal de Clientes | NexoFilm";
+                let title = "Portal de Autogestión | NexoFilm";
                 let description = "Portal de autogestión de NexoFilm. Completá la información del proyecto para diseñar tu propuesta comercial.";
 
                 if (project) {
                     const contactName = project.contact_name || '';
                     const projectTitle = project.title || '';
-                    title = `Portal de Clientes - NexoFilm`;
+                    title = `Portal de Autogestión - NexoFilm`;
                     if (contactName) {
                         description = `Hola ${contactName}, ingresá aquí para completar los datos de tu solicitud.`;
                     }
