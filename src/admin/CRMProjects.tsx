@@ -674,141 +674,149 @@ const CRMProjects: React.FC = () => {
         <div className="min-h-screen bg-black text-white font-sans selection:bg-nexo-lime selection:text-black">
             {/* Header */}
             <header className="border-b border-white/10 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-50">
-                <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <a href="/admin">
-                            <img src="/img/logo.png" alt="NexoFilm" className="h-6 brightness-0 invert hover:opacity-80" />
+                <div className="container mx-auto px-4 md:px-6 h-14 md:h-16 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 md:gap-4 min-w-0">
+                        <a href="/admin" className="shrink-0">
+                            <img src="/img/logo.png" alt="NexoFilm" className="h-5 md:h-6 brightness-0 invert hover:opacity-80" />
                         </a>
-                        <span className="text-zinc-600">|</span>
-                        <h1 className="text-zinc-300 font-medium tracking-wide">CRM Comercial & Proyectos</h1>
+                        <span className="text-zinc-700 hidden sm:inline">|</span>
+                        <h1 className="text-zinc-300 font-medium text-xs sm:text-sm tracking-wide hidden sm:block truncate">CRM Comercial</h1>
                     </div>
-                    <div className="flex gap-4">
-                        <a href="/admin" className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded transition-colors flex items-center">
-                            ← Panel Leads
+                    <div className="flex items-center gap-2 shrink-0">
+                        <a href="/admin" className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded transition-colors flex items-center gap-1">
+                            <span className="text-sm">←</span>
+                            <span className="hidden sm:inline">Leads</span>
                         </a>
                         <button
                             onClick={() => fetchData()}
-                            className="text-xs bg-nexo-lime text-black font-bold px-4 py-2 rounded hover:bg-white transition-colors"
+                            className="text-xs bg-nexo-lime text-black font-bold px-3 py-1.5 rounded hover:bg-white transition-colors flex items-center gap-1"
                         >
-                            ↻ Recargar
+                            <span>↻</span>
+                            <span className="hidden sm:inline">Actualizar</span>
                         </button>
                     </div>
                 </div>
             </header>
 
-            <main className="container mx-auto px-6 py-12">
+            <main className="container mx-auto px-4 md:px-6 py-6 md:py-10">
                 {/* Mensajes de Alerta */}
                 {error && (
-                    <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-lg mb-8">
+                    <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg mb-4 text-sm">
                         {error}
                     </div>
                 )}
                 {successMsg && (
-                    <div className="bg-nexo-lime/10 border border-nexo-lime/20 text-nexo-lime p-4 rounded-lg mb-8">
+                    <div className="bg-nexo-lime/10 border border-nexo-lime/20 text-nexo-lime p-3 rounded-lg mb-4 text-sm">
                         {successMsg}
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     
                     {/* COLUMNA IZQUIERDA: CREADOR DE PROYECTOS Y PRESUPUESTOS */}
-                    <div className="lg:col-span-1 bg-zinc-900/40 border border-white/5 p-6 rounded-xl shadow-2xl h-fit">
-                        <h2 className="text-xl font-bold tracking-tight mb-6 text-white border-b border-white/5 pb-3">
+                    <div className="lg:col-span-1 bg-zinc-900/40 border border-white/5 p-4 md:p-6 rounded-xl shadow-2xl h-fit">
+                        <h2 className="text-base md:text-lg font-bold tracking-tight mb-4 text-white border-b border-white/5 pb-3">
                             Nuevo Proyecto Comercial
                         </h2>
                         
-                        <form onSubmit={handleCreateProject} className="space-y-6">
-                            <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Persona de Contacto</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={newContactName}
-                                    onChange={(e) => setNewContactName(e.target.value)}
-                                    className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                    placeholder="Ej: Carlos Gómez"
-                                />
+                        <form onSubmit={handleCreateProject} className="space-y-4">
+                            {/* Fila 1: Contacto + Empresa */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Contacto *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={newContactName}
+                                        onChange={(e) => setNewContactName(e.target.value)}
+                                        className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                        placeholder="Carlos Gómez"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Empresa</label>
+                                    <input
+                                        type="text"
+                                        value={newCompanyName}
+                                        onChange={(e) => setNewCompanyName(e.target.value)}
+                                        className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                        placeholder="Nike Argentina"
+                                    />
+                                </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Nombre de la Empresa (Opcional)</label>
-                                <input
-                                    type="text"
-                                    value={newCompanyName}
-                                    onChange={(e) => setNewCompanyName(e.target.value)}
-                                    className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                    placeholder="Ej: Nike Argentina"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Email del Cliente (Opcional)</label>
+                            {/* Fila 2: Email (ancho completo) */}
+                            <div className="space-y-1">
+                                <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Email</label>
                                 <input
                                     type="email"
                                     value={newClientEmail}
                                     onChange={(e) => setNewClientEmail(e.target.value)}
-                                    className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                    className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
                                     placeholder="carlos@nike.com"
                                 />
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">WhatsApp del Cliente (Opcional)</label>
-                                <input
-                                    type="text"
-                                    value={newClientPhone}
-                                    onChange={(e) => setNewClientPhone(e.target.value)}
-                                    className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                    placeholder="Ej: 5491158804711"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Título del Proyecto (Opcional)</label>
-                                <input
-                                    type="text"
-                                    value={newProjTitle}
-                                    onChange={(e) => setNewProjTitle(e.target.value)}
-                                    className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                    placeholder="Ej: Video Lanzamiento Air Max 2026"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Estado Inicial</label>
-                                <select
-                                    value={newProjStatus}
-                                    onChange={(e) => setNewProjStatus(e.target.value as 'draft' | 'sent')}
-                                    className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                >
-                                    <option value="sent">Enviar presupuesto inmediatamente (Sent)</option>
-                                    <option value="draft">Borrador / Completar specs primero (Draft)</option>
-                                </select>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Moneda</label>
+                            {/* Fila 3: WhatsApp + Moneda */}
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="col-span-2 space-y-1">
+                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">WhatsApp</label>
+                                    <input
+                                        type="text"
+                                        value={newClientPhone}
+                                        onChange={(e) => setNewClientPhone(e.target.value)}
+                                        className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                        placeholder="5491158804711"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Moneda</label>
                                     <select
                                         value={newCurrency}
                                         onChange={(e) => setNewCurrency(e.target.value as 'USD' | 'ARS')}
-                                        className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                        className="w-full bg-black border border-white/10 rounded px-2 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
                                     >
-                                        <option value="USD">USD (Dólares)</option>
-                                        <option value="ARS">ARS (Pesos)</option>
+                                        <option value="USD">USD</option>
+                                        <option value="ARS">ARS</option>
                                     </select>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Personal Cobertura</label>
+                            </div>
+
+                            {/* Fila 4: Título + Personal */}
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="col-span-2 space-y-1">
+                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Título proyecto</label>
                                     <input
-                                        type="number"
-                                        min="1"
-                                        value={newCrewCount}
-                                        onChange={(e) => setNewCrewCount(e.target.value === '' ? '' : parseInt(e.target.value))}
-                                        className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                        placeholder="Ej: 2"
+                                        type="text"
+                                        value={newProjTitle}
+                                        onChange={(e) => setNewProjTitle(e.target.value)}
+                                        className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                        placeholder="Video Lanzamiento..."
                                     />
                                 </div>
+                                <div className="space-y-1">
+                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Personal</label>
+                                    <input
+                                        type="number" min="1"
+                                        value={newCrewCount}
+                                        onChange={(e) => setNewCrewCount(e.target.value === '' ? '' : parseInt(e.target.value))}
+                                        className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-center text-white focus:outline-none focus:border-nexo-lime"
+                                        placeholder="2"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Estado inicial */}
+                            <div className="space-y-1">
+                                <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Estado Inicial</label>
+                                <select
+                                    value={newProjStatus}
+                                    onChange={(e) => setNewProjStatus(e.target.value as 'draft' | 'sent')}
+                                    className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                >
+                                    <option value="draft">Borrador (cliente completa specs)</option>
+                                    <option value="sent">Enviar presupuesto ya</option>
+                                </select>
                             </div>
 
                             {/* Creador dinámico de presupuesto */}
@@ -920,59 +928,63 @@ const CRMProjects: React.FC = () => {
                     {/* COLUMNA DERECHA: PIPELINE DE PROYECTOS */}
                     <div className="lg:col-span-2 space-y-8">
                         <div className="bg-zinc-900/40 border border-white/5 rounded-xl overflow-hidden shadow-2xl">
-                            <div className="p-6 border-b border-white/10 bg-zinc-800/20 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-                                <h2 className="text-xl font-bold text-white tracking-tight">Pipeline de Proyectos comerciales</h2>
-                                
-                                {/* Controles de Búsqueda y Ordenamiento */}
-                                <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
-                                    <div className="relative flex-1 min-w-[200px] xl:flex-initial">
-                                        <input
-                                            type="text"
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                            placeholder="Buscar cliente, empresa, mail, locación..."
-                                            className="w-full bg-black/60 border border-white/10 rounded px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-nexo-lime"
-                                        />
-                                        {searchTerm && (
-                                            <button 
-                                                onClick={() => setSearchTerm('')}
-                                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white text-xs"
+                            <div className="p-4 md:p-6 border-b border-white/10 bg-zinc-800/20">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <h2 className="text-base md:text-lg font-bold text-white tracking-tight shrink-0">Pipeline de Proyectos</h2>
+                                    
+                                    {/* Controles compactos */}
+                                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                                        <div className="relative flex-1 min-w-0">
+                                            <input
+                                                type="text"
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                                placeholder="Buscar cliente, empresa, mail..."
+                                                className="w-full bg-black/60 border border-white/10 rounded px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-nexo-lime"
+                                            />
+                                            {searchTerm && (
+                                                <button 
+                                                    onClick={() => setSearchTerm('')}
+                                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white text-xs"
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="flex gap-1.5 shrink-0">
+                                            <select
+                                                value={filterStatus}
+                                                onChange={(e) => setFilterStatus(e.target.value)}
+                                                className="bg-black/60 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-nexo-lime cursor-pointer"
                                             >
-                                                ✕
+                                                <option value="all">Todos</option>
+                                                <option value="draft">Borrador</option>
+                                                <option value="review">Por Cotizar</option>
+                                                <option value="sent">Enviado</option>
+                                                <option value="approved">Aprobado</option>
+                                                <option value="rejected">Rechazado</option>
+                                                <option value="production">Producción</option>
+                                                <option value="delivered">Entregado</option>
+                                            </select>
+                                            <select
+                                                value={sortBy}
+                                                onChange={(e) => setSortBy(e.target.value as any)}
+                                                className="bg-black/60 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-nexo-lime cursor-pointer"
+                                            >
+                                                <option value="date">Fecha</option>
+                                                <option value="name">Nombre</option>
+                                                <option value="price">Precio</option>
+                                                <option value="status">Estado</option>
+                                            </select>
+                                            <button
+                                                onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                                                className="bg-black/60 border border-white/10 rounded px-2.5 py-1.5 text-xs text-white hover:border-nexo-lime transition-colors"
+                                                title={sortOrder === 'asc' ? 'Ascendente' : 'Descendente'}
+                                            >
+                                                {sortOrder === 'asc' ? '▲' : '▼'}
                                             </button>
-                                        )}
+                                        </div>
                                     </div>
-                                    <select
-                                        value={filterStatus}
-                                        onChange={(e) => setFilterStatus(e.target.value)}
-                                        className="bg-black/60 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-nexo-lime cursor-pointer"
-                                    >
-                                        <option value="all">Todos los Estados</option>
-                                        <option value="draft">Borradores</option>
-                                        <option value="review">Por Cotizar</option>
-                                        <option value="sent">Enviados</option>
-                                        <option value="approved">Aprobados</option>
-                                        <option value="rejected">Rechazados</option>
-                                        <option value="production">En Producción</option>
-                                        <option value="delivered">Entregados</option>
-                                    </select>
-                                    <select
-                                        value={sortBy}
-                                        onChange={(e) => setSortBy(e.target.value as any)}
-                                        className="bg-black/60 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-nexo-lime cursor-pointer"
-                                    >
-                                        <option value="date">Ordenar por Fecha</option>
-                                        <option value="name">Ordenar por Nombre</option>
-                                        <option value="price">Ordenar por Precio</option>
-                                        <option value="status">Ordenar por Estado</option>
-                                    </select>
-                                    <button
-                                        onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-                                        className="bg-black/60 border border-white/10 rounded px-3 py-1.5 text-xs text-white hover:border-nexo-lime transition-colors"
-                                        title={sortOrder === 'asc' ? 'Orden Ascendente' : 'Orden Descendente'}
-                                    >
-                                        {sortOrder === 'asc' ? '▲' : '▼'}
-                                    </button>
                                 </div>
                             </div>
 
