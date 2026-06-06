@@ -320,10 +320,9 @@ export default async function handler(req, res) {
 
                 if (project) {
                     const contactName = project.contact_name || '';
-                    const projectTitle = project.title || '';
-                    title = `Portal de Autogestión - NexoFilm`;
+                    title = "Portal de Autogestión";
                     if (contactName) {
-                        description = `Hola ${contactName}, ingresá aquí para completar los datos de tu solicitud.`;
+                        description = `Hola ${contactName}, ingresá aquí para completar los datos de tu solicitud en NexoFilm.`;
                     }
                 }
 
