@@ -315,14 +315,13 @@ export default async function handler(req, res) {
 
             // GET Acción: Render HTML con OG Tags Dinámicos
             if (action === 'render') {
-                let title = "Portal de Autogestión | NexoFilm";
-                let description = "Portal de autogestión de NexoFilm. Completá la información del proyecto para diseñar tu propuesta comercial.";
+                let title = "Portal de Autogestión";
+                let description = "Accedé al portal para gestionar tu propuesta comercial.";
 
                 if (project) {
                     const contactName = project.contact_name || '';
-                    title = "Portal de Autogestión";
                     if (contactName) {
-                        description = `Hola ${contactName}, ingresá aquí para completar los datos de tu solicitud en NexoFilm.`;
+                        description = `¡Hola ${contactName}! Ingresá aquí para completar los datos de tu solicitud.`;
                     }
                 }
 
