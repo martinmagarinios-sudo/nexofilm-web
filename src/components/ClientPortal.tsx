@@ -610,17 +610,17 @@ const ClientPortal: React.FC = () => {
             
             {/* Header de Portal Seguro */}
             <header className="border-b border-white/5 bg-zinc-950/60 backdrop-blur-md sticky top-0 z-50">
-                <div className="container mx-auto px-6 h-20 flex items-center justify-between">
+                <div className="container mx-auto px-4 md:px-6 h-14 md:h-16 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <img src="/img/logo.png" alt="NexoFilm" className="h-6 brightness-0 invert" />
+                        <img src="/img/logo.png" alt="NexoFilm" className="h-5 md:h-6 brightness-0 invert" />
                     </div>
-                    <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                    <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-wider">
                         <span>🔒 Portal Seguro</span>
                     </div>
                 </div>
             </header>
 
-            <main className="container mx-auto px-6 py-12 max-w-4xl space-y-8">
+            <main className="container mx-auto px-4 md:px-6 py-6 md:py-10 max-w-4xl space-y-5 md:space-y-8">
                 
                 {/* Alertas */}
                 {successMsg && (
@@ -631,55 +631,53 @@ const ClientPortal: React.FC = () => {
                 )}
 
                 {/* Banner de Bienvenida Premium */}
-                <div className="bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 border border-nexo-lime/20 p-6 md:p-8 rounded-xl shadow-[0_0_30px_rgba(204,255,0,0.03)] relative overflow-hidden no-print">
+                <div className="bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 border border-nexo-lime/20 p-4 md:p-8 rounded-xl shadow-[0_0_30px_rgba(204,255,0,0.03)] relative overflow-hidden no-print">
                     <div className="absolute top-0 right-0 w-48 h-48 bg-nexo-lime/5 rounded-full blur-3xl pointer-events-none"></div>
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
-                        <div className="space-y-3">
-                            <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-nexo-lime/10 text-nexo-lime border border-nexo-lime/25 rounded-md text-[10px] font-black uppercase tracking-wider">
-                                <span className="w-1.5 h-1.5 rounded-full bg-nexo-lime animate-pulse"></span>
-                                Portal de Autogestión Comercial
-                            </div>
-                            <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight uppercase">
-                                ¡Bienvenido a NexoFilm, <span className="text-nexo-lime">{project.contact_name}{project.company_name ? ` (${project.company_name})` : ''}</span>!
-                            </h2>
-                            {(project.status === 'draft' || !budget) ? (
-                                <p className="text-zinc-400 text-xs md:text-sm leading-relaxed max-w-2xl">
-                                    Hemos diseñado este espacio privado y seguro para gestionar tu propuesta. Para comenzar, por favor <strong>completá el Formulario de Especificaciones</strong> a continuación con los datos de tu evento o producción. Con esta información, nuestro equipo podrá confeccionar una cotización comercial a tu medida.
-                                </p>
-                            ) : project.status === 'review' ? (
-                                <p className="text-zinc-400 text-xs md:text-sm leading-relaxed max-w-2xl">
-                                    Ya recibimos tus especificaciones. Nuestro equipo de producción está elaborando la propuesta comercial adaptada a tus necesidades. Te notificaremos de manera automática en cuanto el presupuesto esté listo para ser revisado y aprobado en este mismo portal.
-                                </p>
-                            ) : (project.status === 'sent' && budget) ? (
-                                <p className="text-zinc-400 text-xs md:text-sm leading-relaxed max-w-2xl">
-                                    ¡Tu propuesta comercial ya está disponible! A continuación podés <strong>revisar el desglose del presupuesto</strong>, descargar el PDF para su presentación interna, y decidir si deseas aprobarlo o solicitar modificaciones con tus comentarios directamente desde aquí.
-                                </p>
-                            ) : project.status === 'approved' ? (
-                                <p className="text-zinc-400 text-xs md:text-sm leading-relaxed max-w-2xl">
-                                    ¡Presupuesto aprobado! Muchas gracias por confiar en NexoFilm. Para avanzar con la producción y la facturación, por favor <strong>completá los datos de facturación</strong> solicitados abajo para que podamos emitir el comprobante correspondiente.
-                                </p>
-                            ) : project.status === 'production' ? (
-                                <p className="text-zinc-400 text-xs md:text-sm leading-relaxed max-w-2xl">
-                                    ¡Estamos en etapa de producción! Nuestro equipo está trabajando en el rodaje, cobertura o edición de tu proyecto. Podés seguir el estado desde esta barra de progreso y, una vez finalizado el material, estará disponible para su descarga en este portal.
-                                </p>
-                            ) : project.status === 'delivered' ? (
-                                <p className="text-zinc-400 text-xs md:text-sm leading-relaxed max-w-2xl">
-                                    ¡Tu material audiovisual ya está listo y entregado! Podés acceder y <strong>descargar todas las entregas finales</strong> y archivos desde el panel de entregas seguro que ves a continuación.
-                                </p>
-                            ) : (
-                                <p className="text-zinc-400 text-xs md:text-sm leading-relaxed max-w-2xl">
-                                    Portal de autogestión comercial seguro de NexoFilm. Si tenés dudas o querés solicitar una nueva cotización, podés escribirnos en la caja de consultas o hacer click en el botón de solicitar nuevo presupuesto.
-                                </p>
-                            )}
+                    <div className="flex flex-col items-start gap-3 md:gap-4 relative z-10">
+                        <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-nexo-lime/10 text-nexo-lime border border-nexo-lime/25 rounded-md text-[9px] font-black uppercase tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-nexo-lime animate-pulse"></span>
+                            Portal de Autogestión
                         </div>
+                        <h2 className="text-lg md:text-3xl font-extrabold text-white tracking-tight uppercase leading-tight">
+                            Bienvenido, <span className="text-nexo-lime">{project.contact_name}{project.company_name ? ` (${project.company_name})` : ''}</span>
+                        </h2>
+                        {(project.status === 'draft' || !budget) ? (
+                            <p className="text-zinc-400 text-xs leading-relaxed">
+                                Completá el <strong>Formulario de Especificaciones</strong> a continuación con los datos de tu evento o producción para que podamos armar tu cotización.
+                            </p>
+                        ) : project.status === 'review' ? (
+                            <p className="text-zinc-400 text-xs leading-relaxed">
+                                Ya recibimos tus especificaciones. Nuestro equipo está elaborando la propuesta comercial. Te notificaremos cuando el presupuesto esté listo.
+                            </p>
+                        ) : (project.status === 'sent' && budget) ? (
+                            <p className="text-zinc-400 text-xs leading-relaxed">
+                                ¡Tu propuesta comercial ya está disponible! Revisá el desglose, descargá el PDF y aprobalo o solicitá modificaciones desde aquí.
+                            </p>
+                        ) : project.status === 'approved' ? (
+                            <p className="text-zinc-400 text-xs leading-relaxed">
+                                ¡Presupuesto aprobado! Completá los <strong>datos de facturación</strong> para que podamos emitir el comprobante.
+                            </p>
+                        ) : project.status === 'production' ? (
+                            <p className="text-zinc-400 text-xs leading-relaxed">
+                                ¡Estamos en producción! El equipo trabaja en el rodaje o edición. Seguí el estado en la barra de progreso.
+                            </p>
+                        ) : project.status === 'delivered' ? (
+                            <p className="text-zinc-400 text-xs leading-relaxed">
+                                ¡Tu material ya está listo! <strong>Descargá todas las entregas finales</strong> desde el panel a continuación.
+                            </p>
+                        ) : (
+                            <p className="text-zinc-400 text-xs leading-relaxed">
+                                Portal de autogestión comercial seguro de NexoFilm.
+                            </p>
+                        )}
                     </div>
                 </div>
 
                 {/* --- SECCIÓN TITULO Y PROGRESS BAR --- */}
-                <div className="bg-zinc-900/30 border border-white/5 p-6 md:p-8 rounded-xl space-y-6">
-                    <div className="space-y-2">
-                        <h2 className="text-zinc-500 text-[10px] uppercase tracking-widest font-black">Cliente: {project.contact_name}{project.company_name ? ` (${project.company_name})` : ''}</h2>
-                        <h1 className="text-3xl md:text-4xl font-extrabold uppercase tracking-tighter text-white">{project.title}</h1>
+                <div className="bg-zinc-900/30 border border-white/5 p-4 md:p-6 rounded-xl space-y-4 md:space-y-6">
+                    <div className="space-y-1">
+                        <h2 className="text-zinc-500 text-[9px] uppercase tracking-widest font-black">{project.contact_name}{project.company_name ? ` (${project.company_name})` : ''}</h2>
+                        <h1 className="text-2xl md:text-4xl font-extrabold uppercase tracking-tighter text-white leading-tight">{project.title}</h1>
                     </div>
 
                     {/* Barra de progreso de estados */}

@@ -111,31 +111,34 @@ const Dashboard: React.FC = () => {
         <div className="min-h-screen bg-black text-white font-['Noto_Sans_JP'] selection:bg-nexo-lime selection:text-black">
             {/* Header */}
             <header className="border-b border-white/10 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-50">
-                <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <img src="/img/logo.png" alt="NexoFilm" className="h-6 brightness-0 invert" />
-                        <span className="text-zinc-600">|</span>
-                        <h1 className="text-zinc-300 font-medium tracking-wide">Panel de Contactos (Leads)</h1>
+                <div className="container mx-auto px-4 md:px-6 h-14 md:h-16 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 md:gap-4 min-w-0">
+                        <img src="/img/logo.png" alt="NexoFilm" className="h-5 md:h-6 brightness-0 invert shrink-0" />
+                        <span className="text-zinc-700 hidden sm:inline">|</span>
+                        <h1 className="text-zinc-300 font-medium text-xs sm:text-sm tracking-wide hidden sm:block truncate">Panel de Contactos</h1>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex items-center gap-2 shrink-0">
                         <a
                             href="/admin/crm"
-                            className="text-xs bg-nexo-lime text-black font-bold px-4 py-2 rounded hover:bg-white transition-colors flex items-center"
+                            className="text-xs bg-nexo-lime text-black font-bold px-3 py-1.5 rounded hover:bg-white transition-colors flex items-center gap-1"
                         >
-                            💼 CRM Comercial
+                            <span>💼</span>
+                            <span className="hidden sm:inline">CRM Comercial</span>
+                            <span className="sm:hidden">CRM</span>
                         </a>
                         <button
                             onClick={() => fetchLeads()}
-                            className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded transition-colors"
+                            className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded transition-colors flex items-center gap-1"
                         >
-                            ↻ Actualizar
+                            <span>↻</span>
+                            <span className="hidden sm:inline">Actualizar</span>
                         </button>
                     </div>
                 </div>
             </header>
 
             {/* Content */}
-            <main className="container mx-auto px-6 py-12">
+            <main className="container mx-auto px-4 md:px-6 py-6 md:py-10">
                 {error.includes('Falla') ? (
                     <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-lg mb-8">
                         {error}
