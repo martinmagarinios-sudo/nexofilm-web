@@ -365,11 +365,24 @@ export default async function handler(req, res) {
                 if (review) hasReviewed = true;
             } catch (_) {}
 
+            // Obtener otros proyectos asociados al mismo mail del cliente (si está seteado)
+            let otherProjects = [];
+            if (project.client_email) {
+                const { data: others } = await supabase
+                    .from('projects')
+                    .select('id, title, access_token, status, event_date, company_name, created_at')
+                    .eq('client_email', project.client_email)
+                    .neq('id', project.id)
+                    .order('created_at', { ascending: false });
+                otherProjects = others || [];
+            }
+
             return res.status(200).json({
                 success: true,
                 project,
                 budget,
-                hasReviewed
+                hasReviewed,
+                otherProjects
             });
         }
 

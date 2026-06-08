@@ -106,6 +106,8 @@ const ClientPortal: React.FC = () => {
     const [uploadError, setUploadError] = useState('');
     const [uploadSuccess, setUploadSuccess] = useState('');
     const [dragActive, setDragActive] = useState(false);
+    const [otherProjects, setOtherProjects] = useState<any[]>([]);
+    const [viewMode, setViewMode] = useState<'dashboard' | 'detail'>('dashboard');
 
     // Extraer token de la URL
     useEffect(() => {
@@ -324,6 +326,23 @@ const ClientPortal: React.FC = () => {
             setProject(data.project);
             setBudget(data.budget);
             setHasReviewed(data.hasReviewed || false);
+            setOtherProjects(data.otherProjects || []);
+
+            // Decidir modo de vista inicial
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewParam = urlParams.get('view');
+            if (viewParam === 'detail') {
+                setViewMode('detail');
+            } else if (viewParam === 'dashboard') {
+                setViewMode('dashboard');
+            } else {
+                const hasOthers = data.otherProjects && data.otherProjects.length > 0;
+                if (hasOthers) {
+                    setViewMode('dashboard');
+                } else {
+                    setViewMode('detail');
+                }
+            }
             
             // Cargar specs si existen
             if (data.project) {
@@ -345,6 +364,24 @@ const ClientPortal: React.FC = () => {
             setError(err.message || 'Error al validar credenciales');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const goBackToDashboard = () => {
+        setViewMode('dashboard');
+        const url = new URL(window.location.href);
+        url.searchParams.delete('view');
+        window.history.pushState({}, '', url.toString());
+    };
+
+    const enterProjectDetail = (projectToken: string) => {
+        if (projectToken === token) {
+            setViewMode('detail');
+            const url = new URL(window.location.href);
+            url.searchParams.set('view', 'detail');
+            window.history.pushState({}, '', url.toString());
+        } else {
+            window.location.href = `/portal?token=${projectToken}&view=detail`;
         }
     };
 
@@ -507,7 +544,7 @@ const ClientPortal: React.FC = () => {
 
             if (data.redirectToken) {
                 // Redirigir al nuevo portal
-                window.location.search = `?token=${data.redirectToken}`;
+                window.location.href = `/portal?token=${data.redirectToken}&view=detail`;
             }
         } catch (err: any) {
             setError(err.message);
@@ -812,8 +849,161 @@ const ClientPortal: React.FC = () => {
                     </div>
                 )}
 
-                {/* Banner de Bienvenida Premium */}
-                <div className="bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 border border-nexo-lime/20 p-4 md:p-8 rounded-xl shadow-[0_0_30px_rgba(204,255,0,0.03)] relative overflow-hidden no-print">
+                {/* Navegación del Portal */}
+                {viewMode === 'detail' && otherProjects.length > 0 && (
+                    <div className="no-print pb-2">
+                        <button
+                            type="button"
+                            onClick={goBackToDashboard}
+                            className="inline-flex items-center gap-2 text-zinc-500 hover:text-nexo-lime font-bold text-xs uppercase tracking-wider transition-colors focus:outline-none cursor-pointer"
+                        >
+                            ← Volver a mis proyectos
+                        </button>
+                    </div>
+                )}
+
+                {viewMode === 'dashboard' ? (
+                    <div className="space-y-6 md:space-y-8 animate-fade-in">
+                        {/* Banner de Bienvenida Premium */}
+                        <div className="bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 border border-nexo-lime/20 p-6 md:p-8 rounded-xl shadow-[0_0_30px_rgba(204,255,0,0.03)] relative overflow-hidden no-print">
+                            <div className="absolute top-0 right-0 w-48 h-48 bg-nexo-lime/5 rounded-full blur-3xl pointer-events-none"></div>
+                            <div className="flex flex-col items-start gap-3 md:gap-4 relative z-10">
+                                <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-nexo-lime/10 text-nexo-lime border border-nexo-lime/25 rounded-md text-[9px] font-black uppercase tracking-wider">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-nexo-lime animate-pulse"></span>
+                                    Portal de Clientes
+                                </div>
+                                <h2 className="text-lg md:text-3xl font-extrabold text-white tracking-tight uppercase leading-tight">
+                                    {getWelcomeGreeting(project.contact_name)}, <span className="text-nexo-lime">{project.contact_name}{project.company_name ? ` (${project.company_name})` : ''}</span>
+                                </h2>
+                                <p className="text-zinc-400 text-xs leading-relaxed max-w-2xl">
+                                    Desde tu portal seguro podés gestionar todas tus producciones, revisar presupuestos comerciales, cargar datos de facturación y descargar los materiales terminados.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Listado de Proyectos */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Mis Proyectos & Presupuestos</h3>
+                                <span className="text-[9px] md:text-[10px] text-zinc-500 font-bold bg-zinc-900 px-2.5 py-1 rounded border border-white/5 uppercase">
+                                    Total: {1 + otherProjects.length} {1 + otherProjects.length === 1 ? 'proyecto' : 'proyectos'}
+                                </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                                {(() => {
+                                    const allProjects = [
+                                        {
+                                            id: project.id,
+                                            title: project.title,
+                                            access_token: token || '',
+                                            status: project.status,
+                                            event_date: project.event_date,
+                                            company_name: project.company_name,
+                                            created_at: (project as any).created_at || new Date().toISOString()
+                                        },
+                                        ...otherProjects.map(p => ({
+                                            id: p.id,
+                                            title: p.title,
+                                            access_token: p.access_token,
+                                            status: p.status,
+                                            event_date: p.event_date,
+                                            company_name: p.company_name,
+                                            created_at: p.created_at || new Date().toISOString()
+                                        }))
+                                    ];
+
+                                    const sorted = [...allProjects].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+                                    return sorted.map((proj) => {
+                                        let badgeColor = "bg-zinc-800 text-zinc-400 border-zinc-700/50";
+                                        let statusText = proj.status;
+
+                                        if (proj.status === 'draft') {
+                                            badgeColor = "bg-zinc-900 text-zinc-400 border-white/10";
+                                            statusText = "Especificaciones";
+                                        } else if (proj.status === 'review') {
+                                            badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+                                            statusText = "En Revisión";
+                                        } else if (proj.status === 'sent') {
+                                            badgeColor = "bg-[#00e5ff]/10 text-[#00e5ff] border-[#00e5ff]/20 animate-pulse";
+                                            statusText = "Revisar Presupuesto";
+                                        } else if (proj.status === 'approved') {
+                                            badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+                                            statusText = "Aprobado / Pago";
+                                        } else if (proj.status === 'production') {
+                                            badgeColor = "bg-nexo-lime/10 text-nexo-lime border-nexo-lime/20";
+                                            statusText = "En Producción";
+                                        } else if (proj.status === 'delivered') {
+                                            badgeColor = "bg-green-500/20 text-green-400 border-green-500/20";
+                                            statusText = "Entregado";
+                                        } else if (proj.status === 'rejected') {
+                                            badgeColor = "bg-red-500/10 text-red-400 border-red-500/20";
+                                            statusText = "Rechazado";
+                                        }
+
+                                        return (
+                                            <div
+                                                key={proj.id}
+                                                onClick={() => enterProjectDetail(proj.access_token)}
+                                                className="bg-zinc-900/30 border border-white/5 hover:border-nexo-lime/30 rounded-xl p-5 md:p-6 flex flex-col justify-between hover:shadow-[0_0_20px_rgba(204,255,0,0.02)] transition-all cursor-pointer group relative overflow-hidden"
+                                            >
+                                                <div className="space-y-3">
+                                                    <div className="flex justify-between items-start gap-2">
+                                                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[8px] md:text-[9px] font-black uppercase tracking-wider border ${badgeColor}`}>
+                                                            {statusText}
+                                                        </span>
+                                                        <span className="text-[10px] text-zinc-500 font-semibold">
+                                                            {proj.event_date ? new Date(proj.event_date + 'T00:00:00').toLocaleDateString('es-AR') : 'A confirmar'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <h4 className="font-extrabold text-sm md:text-base text-white group-hover:text-nexo-lime transition-colors uppercase tracking-tight line-clamp-2">
+                                                            {proj.title}
+                                                        </h4>
+                                                        {proj.company_name && (
+                                                            <p className="text-zinc-500 text-xs font-semibold">{proj.company_name}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="border-t border-white/5 pt-4 mt-4 flex items-center justify-between">
+                                                    <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">
+                                                        {proj.status === 'sent' ? 'Acción Requerida' : 'Gestionar'}
+                                                    </span>
+                                                    <span className="text-xs text-nexo-lime font-black uppercase tracking-wider group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                                                        {proj.status === 'sent' ? 'Ver Propuesta' : proj.status === 'delivered' ? 'Ver Entregas' : 'Ingresar'} →
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    });
+                                })()}
+
+                                {/* Tarjeta de creación rápida */}
+                                <div
+                                    onClick={handleRequestNewProject}
+                                    className="border-2 border-dashed border-white/10 hover:border-nexo-lime/40 bg-zinc-950/25 hover:bg-zinc-950/50 rounded-xl p-5 md:p-6 flex flex-col items-center justify-center text-center transition-all cursor-pointer group min-h-[150px] space-y-3"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-zinc-900 border border-white/5 text-zinc-400 group-hover:text-nexo-lime group-hover:border-nexo-lime/20 flex items-center justify-center text-lg transition-all">
+                                        ➕
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h4 className="font-bold text-xs md:text-sm text-zinc-300 group-hover:text-white transition-colors uppercase tracking-wider">
+                                            Solicitar Nuevo Presupuesto
+                                        </h4>
+                                        <p className="text-zinc-500 text-[10px] md:text-[11px] max-w-[220px] mx-auto leading-relaxed">
+                                            ¿Tenés otro evento o producción en mente? Iniciá una propuesta borrador aquí.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="space-y-5 md:space-y-8 animate-fade-in">
+                        {/* Banner de Bienvenida Premium */}
+                        <div className="bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 border border-nexo-lime/20 p-4 md:p-8 rounded-xl shadow-[0_0_30px_rgba(204,255,0,0.03)] relative overflow-hidden no-print">
                     <div className="absolute top-0 right-0 w-48 h-48 bg-nexo-lime/5 rounded-full blur-3xl pointer-events-none"></div>
                     <div className="flex flex-col items-start gap-3 md:gap-4 relative z-10">
                         <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-nexo-lime/10 text-nexo-lime border border-nexo-lime/25 rounded-md text-[9px] font-black uppercase tracking-wider">
@@ -857,9 +1047,33 @@ const ClientPortal: React.FC = () => {
 
                 {/* --- SECCIÓN TITULO Y PROGRESS BAR --- */}
                 <div className="bg-zinc-900/30 border border-white/5 p-4 md:p-6 rounded-xl space-y-4 md:space-y-6">
-                    <div className="space-y-1">
-                        <h2 className="text-zinc-500 text-[9px] uppercase tracking-widest font-black">{project.contact_name}{project.company_name ? ` (${project.company_name})` : ''}</h2>
-                        <h1 className="text-2xl md:text-4xl font-extrabold uppercase tracking-tighter text-white leading-tight">{project.title}</h1>
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div className="space-y-1">
+                            <h2 className="text-zinc-500 text-[9px] uppercase tracking-widest font-black">{project.contact_name}{project.company_name ? ` (${project.company_name})` : ''}</h2>
+                            <h1 className="text-2xl md:text-4xl font-extrabold uppercase tracking-tighter text-white leading-tight">{project.title}</h1>
+                        </div>
+                        {otherProjects.length > 0 && (
+                            <div className="flex items-center gap-2 bg-black/40 px-3 py-2 rounded-lg border border-white/5 shrink-0 self-start md:self-center no-print">
+                                <span className="text-zinc-500 text-[10px] uppercase tracking-wider font-bold">Cambiar Proyecto:</span>
+                                <select 
+                                    onChange={(e) => {
+                                        const selectedToken = e.target.value;
+                                        if (selectedToken) {
+                                            window.location.href = `/portal?token=${selectedToken}`;
+                                        }
+                                    }}
+                                    className="bg-black border border-white/10 rounded px-2.5 py-1 text-xs text-nexo-lime font-bold focus:outline-none focus:border-nexo-lime cursor-pointer"
+                                    defaultValue=""
+                                >
+                                    <option value="" disabled>Ver otro proyecto...</option>
+                                    {otherProjects.map((p: any) => (
+                                        <option key={p.id} value={p.access_token}>
+                                            {p.title} ({p.status.toUpperCase()})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                     </div>
 
                     {/* Barra de progreso de estados */}
@@ -1756,11 +1970,13 @@ const ClientPortal: React.FC = () => {
                         </div>
                     </div>
                 )}
+            </div>
+        )}
 
             </main>
 
             {/* Caja de Consultas Continuas (Siempre visible si el proyecto está cargado y activo) */}
-            {project && project.status !== 'rejected' && project.status !== 'delivered' && (
+            {viewMode === 'detail' && project && project.status !== 'rejected' && project.status !== 'delivered' && (
                 <div className="container mx-auto px-6 pb-12 max-w-4xl no-print">
                     <div className="bg-zinc-900/40 border border-white/5 p-6 md:p-8 rounded-xl shadow-2xl space-y-4">
                         <h3 className="text-lg font-bold text-white uppercase tracking-tight">📩 ¿Tenés alguna duda o comentario?</h3>
@@ -1793,7 +2009,7 @@ const ClientPortal: React.FC = () => {
             )}
 
             {/* Solicitar nuevo presupuesto */}
-            {project && (
+            {viewMode === 'detail' && project && (
                 <div className="flex justify-center pb-12 no-print">
                     <button
                         type="button"
