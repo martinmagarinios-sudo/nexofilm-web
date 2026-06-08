@@ -103,7 +103,11 @@ const CRMProjects: React.FC = () => {
     const [tempDriveId, setTempDriveId] = useState<{ [key: string]: string }>({});
 
     // Búsqueda, orden y filtros
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm, setSearchTerm] = useState(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('search') || '';
+    });
+    const [hasAutoOpened, setHasAutoOpened] = useState(false);
     const [sortBy, setSortBy] = useState<'date' | 'price' | 'status' | 'name'>('date');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -345,6 +349,20 @@ const CRMProjects: React.FC = () => {
             setPaymentTerms('50% de seña para reservar fecha, 50% contra entrega.');
         }
     };
+
+    useEffect(() => {
+        if (projects.length > 0 && budgets.length > 0 && !hasAutoOpened) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const pId = urlParams.get('project_id');
+            if (pId) {
+                const proj = projects.find(p => p.id === pId);
+                if (proj) {
+                    openBudgetModal(proj);
+                    setHasAutoOpened(true);
+                }
+            }
+        }
+    }, [projects, budgets, hasAutoOpened]);
 
     // Actualizar Presupuesto y Enviar (Pasar a SENT)
     const handleUpdateBudget = async (e: React.FormEvent) => {

@@ -420,7 +420,7 @@ Te recordamos que además de coberturas, hacemos:
                     is_hot: false,
                     source: 'Atención Directa', // Opcional, para saber que vino directamente (sin completar el flujo de presupuesto).
                     score: 70
-                });
+                }, history);
             }
 
             if (qr) {
@@ -651,7 +651,7 @@ Te recordamos que además de coberturas, hacemos:
 
         if (final && final.trim().length > 0) await sendText(phoneNumberId, from, final);
         if (showMenu) await sendMenu(phoneNumberId, from, lang);
-        if (hf?.handoff) await handleHandoff(targetPhone, leadData?.id, hf);
+        if (hf?.handoff) await handleHandoff(targetPhone, leadData?.id, hf, history);
 
     } catch (err) {
         console.error("BOT ERROR:", err.message);
@@ -660,7 +660,9 @@ Te recordamos que además de coberturas, hacemos:
     return res.status(200).send('OK');
 }
 
-async function handleHandoff(phone, leadId, hf) {
+async function handleHandoff(phone, leadId, hf, history = []) {
+    let createdProjectId = null;
+
     if (supabase) {
         let finalLeadId = leadId;
 
@@ -701,22 +703,150 @@ async function handleHandoff(phone, leadId, hf) {
                 updated_at: new Date().toISOString()
             }).then(null, () => {});
         }
+
+        // --- AUTOMATIC CRM PROJECT & BUDGET CREATION ---
+        // Se ejecuta solo si es una consulta calificada (is_hot es true) y tenemos historial
+        if (hf.is_hot && history && history.length > 0) {
+            try {
+                console.log(`[AUTO-CRM] Iniciando extracción para crear proyecto de ${hf.name}`);
+                
+                const extractionPrompt = `Analizá la siguiente conversación de WhatsApp entre un asistente virtual y un cliente que solicita un presupuesto audiovisual para la productora NexoFilm.
+Tu objetivo es extraer los datos clave del evento y formular una propuesta de ítems para el presupuesto en formato JSON.
+
+Debes responder ÚNICAMENTE con un objeto JSON válido con la siguiente estructura (no agregues texto fuera del JSON, markdown, ni explicaciones):
+{
+  "event_date": "YYYY-MM-DD o null si no se especifica la fecha exacta",
+  "event_time": "HH:MM:SS o null si no se especifica",
+  "location": "Lugar / dirección del evento o null",
+  "coverage_hours": 4, 
+  "guests_count": 100, 
+  "coverage_types": ["foto", "video", "streaming"], 
+  "title": "Proyecto [Tipo de evento] - [Nombre del cliente]",
+  "admin_notes": "Notas/Resumen detallado de la conversación",
+  "suggested_items": [
+    {
+      "description": "Detalle técnico profesional sugerido para el servicio (ej: Cobertura de fotografía profesional con cámaras full-frame, edición y entrega digital)",
+      "quantity": 1,
+      "unit_price": 0
+    }
+  ]
+}`;
+
+                const groqComp = await groq.chat.completions.create({
+                    model: 'llama-3.3-70b-versatile',
+                    messages: [
+                        { role: 'system', content: extractionPrompt },
+                        { role: 'user', content: `Conversación:\n${JSON.stringify(history)}` }
+                    ],
+                    temperature: 0.2,
+                    response_format: { type: "json_object" }
+                });
+
+                const extracted = JSON.parse(groqComp.choices[0].message.content);
+                console.log(`[AUTO-CRM] Datos extraídos:`, JSON.stringify(extracted));
+
+                if (extracted) {
+                    const projectTitle = extracted.title || `Proyecto WhatsApp - ${hf.name}`;
+                    
+                    // 1. Insertar Proyecto
+                    const { data: project, error: projErr } = await supabase
+                        .from('projects')
+                        .insert({
+                            contact_name: hf.name || 'Sin nombre',
+                            client_email: hf.email || '',
+                            client_phone: phone || null,
+                            title: projectTitle,
+                            status: 'draft',
+                            event_date: extracted.event_date || null,
+                            event_time: extracted.event_time || null,
+                            location: extracted.location || null,
+                            coverage_types: extracted.coverage_types || [],
+                            coverage_hours: extracted.coverage_hours ? parseInt(extracted.coverage_hours) : null,
+                            guests_count: extracted.guests_count ? parseInt(extracted.guests_count) : null,
+                            currency: 'USD',
+                            admin_notes: extracted.admin_notes || `Presupuesto solicitado vía WhatsApp.\nResumen original: ${hf.summary}`
+                        })
+                        .select()
+                        .single();
+
+                    if (projErr) {
+                        console.error('[AUTO-CRM] Error al insertar proyecto:', projErr.message);
+                    } else if (project) {
+                        createdProjectId = project.id;
+                        console.log(`[AUTO-CRM] Proyecto creado con ID: ${project.id}`);
+
+                        // 2. Insertar Presupuesto con precio 0 para ser completado por el administrador
+                        const itemsToInsert = (extracted.suggested_items || []).map(item => ({
+                            description: item.description,
+                            quantity: item.quantity || 1,
+                            unit_price: 0
+                        }));
+
+                        if (itemsToInsert.length > 0) {
+                            const { error: budgetErr } = await supabase
+                                .from('budgets')
+                                .insert({
+                                    project_id: project.id,
+                                    version: 1,
+                                    items: itemsToInsert,
+                                    total_price: 0,
+                                    payment_terms: '50% de seña para reservar fecha, 50% contra entrega.',
+                                    is_active: true
+                                });
+                            
+                            if (budgetErr) {
+                                console.error('[AUTO-CRM] Error al insertar presupuesto:', budgetErr.message);
+                            } else {
+                                console.log('[AUTO-CRM] Presupuesto creado con éxito.');
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("[AUTO-CRM] Error en flujo de auto-creación:", e.message);
+            }
+        }
     }
 
-    await sendDualEmail(
-        `🔥 DERIVACIÓN CRM: ${hf.name} (+${phone})`,
-        `
-            <div style="font-family: sans-serif; padding: 20px;">
-                <h2 style="color: #1a1a1a;">🚀 Nuevo Lead para NexoFilm</h2>
-                <p><strong>Cliente:</strong> ${hf.name}</p>
-                <p><strong>Teléfono:</strong> +${phone}</p>
-                <p><strong>Email:</strong> ${hf.email}</p>
-                <p><strong>Resumen IA:</strong> ${hf.summary}</p>
-                <br/>
-                <a href="https://nexofilm.com/admin/chat?phone=${phone}" style="background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 5px;">Abri el Chat en el CRM</a>
+    const emailSubject = `🔥 DERIVACIÓN CRM: ${hf.name} (+${phone})`;
+    const chatUrl = `https://nexofilm.com/admin/chat?phone=${phone}`;
+    
+    let emailHtml = `
+        <div style="font-family: sans-serif; padding: 20px; border-top: 4px solid #ccff00; background-color: #fcfcfc;">
+            <h2 style="color: #1a1a1a; margin-top: 0;">🚀 Nuevo Lead para NexoFilm</h2>
+            <p style="font-size: 14px; color: #333;"><strong>Cliente:</strong> ${hf.name}</p>
+            <p style="font-size: 14px; color: #333;"><strong>Teléfono:</strong> +${phone}</p>
+            <p style="font-size: 14px; color: #333;"><strong>Email:</strong> ${hf.email || 'No proporcionado'}</p>
+            <p style="font-size: 14px; color: #333;"><strong>Resumen IA:</strong> ${hf.summary}</p>
+            <br/>
+            <div style="margin-top: 20px;">
+                <a href="${chatUrl}" style="background-color: #000000; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; margin-right: 12px; margin-bottom: 10px;">Chatear en Vivo</a>
+    `;
+
+    if (createdProjectId) {
+        const searchUrl = `https://nexofilm.com/admin/crm?project_id=${createdProjectId}`;
+        emailHtml += `
+                <a href="${searchUrl}" style="background-color: #ccff00; color: #000000; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; border: 1px solid #000000; margin-bottom: 10px;">Ver Presupuesto en CRM</a>
+        `;
+    }
+
+    emailHtml += `
             </div>
-        `
-    );
+    `;
+
+    if (createdProjectId) {
+        emailHtml += `
+            <p style="font-size: 11px; color: #888; margin-top: 25px;">
+                El presupuesto se guardó automáticamente como Borrador en tu CRM comercial. Hacé clic en "Ver Presupuesto en CRM" para editar los precios y enviárselo al cliente en un clic.
+            </p>
+        `;
+    }
+
+    emailHtml += `
+        </div>
+    `;
+
+    await sendDualEmail(emailSubject, emailHtml);
 }
 
 // HELPERS
