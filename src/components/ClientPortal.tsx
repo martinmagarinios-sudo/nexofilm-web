@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface BudgetItem {
     description: string;
@@ -60,6 +60,12 @@ const ClientPortal: React.FC = () => {
     const [error, setError] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
 
+    const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const autocompleteRef = useRef<any>(null);
+    const mapRef = useRef<any>(null);
+    const markerRef = useRef<any>(null);
+
     // Especificaciones Form
     const [projectTitle, setProjectTitle] = useState('');
     const [eventDate, setEventDate] = useState('');
@@ -111,6 +117,181 @@ const ClientPortal: React.FC = () => {
             setLoading(false);
         }
     }, []);
+
+    // Carga dinámica de Google Maps
+    useEffect(() => {
+        const apiKey = (import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '').trim();
+        if (!apiKey) {
+            console.warn("VITE_GOOGLE_MAPS_API_KEY no configurada. Desactivando sugerencias de mapa.");
+            return;
+        }
+
+        if ((window as any).google && (window as any).google.maps) {
+            setIsGoogleLoaded(true);
+            return;
+        }
+
+        const scriptId = 'google-maps-places-script';
+        let script = document.getElementById(scriptId) as HTMLScriptElement;
+        if (!script) {
+            script = document.createElement('script');
+            script.id = scriptId;
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGoogleMapsCallback`;
+            script.async = true;
+            script.defer = true;
+
+            (window as any).initGoogleMapsCallback = () => {
+                setIsGoogleLoaded(true);
+            };
+
+            script.onerror = () => {
+                console.warn("Error cargando Google Maps. Se usará el input de texto manual.");
+            };
+
+            document.head.appendChild(script);
+        } else {
+            const interval = setInterval(() => {
+                if ((window as any).google && (window as any).google.maps) {
+                    clearInterval(interval);
+                    setIsGoogleLoaded(true);
+                }
+            }, 100);
+            return () => clearInterval(interval);
+        }
+
+        return () => {
+            if ((window as any).initGoogleMapsCallback) {
+                delete (window as any).initGoogleMapsCallback;
+            }
+        };
+    }, []);
+
+    // Inicializar Autocomplete cuando se activa la edición y Google está listo
+    useEffect(() => {
+        if (isEditingSpecs && isGoogleLoaded) {
+            const timer = setTimeout(() => {
+                initAutocomplete();
+            }, 150);
+            return () => clearTimeout(timer);
+        }
+    }, [isEditingSpecs, isGoogleLoaded]);
+
+    // Limpiar referencias al cerrar el editor de especificaciones
+    useEffect(() => {
+        if (!isEditingSpecs) {
+            mapRef.current = null;
+            markerRef.current = null;
+        }
+    }, [isEditingSpecs]);
+
+    // Actualizar el mapa cuando cambia la dirección con un breve debounce (800ms)
+    useEffect(() => {
+        if (isGoogleLoaded && location && isEditingSpecs) {
+            const timer = setTimeout(() => {
+                updateMap(location);
+            }, 800);
+            return () => clearTimeout(timer);
+        }
+    }, [location, isGoogleLoaded, isEditingSpecs]);
+
+    const initAutocomplete = () => {
+        if (!inputRef.current) return;
+        const google = (window as any).google;
+        if (!google || !google.maps || !google.maps.places) return;
+
+        try {
+            const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
+                types: ['geocode', 'establishment'],
+                fields: ['formatted_address', 'geometry', 'name']
+            });
+
+            autocomplete.addListener('place_changed', () => {
+                const place = autocomplete.getPlace();
+                if (place && place.formatted_address) {
+                    setLocation(place.formatted_address);
+                } else if (place && place.name) {
+                    setLocation(place.name);
+                }
+            });
+
+            autocompleteRef.current = autocomplete;
+        } catch (e) {
+            console.warn("Falla al inicializar Autocomplete:", e);
+        }
+    };
+
+    const updateMap = (address: string) => {
+        const google = (window as any).google;
+        if (!google || !google.maps || !address) return;
+
+        try {
+            const mapContainer = document.getElementById('map-preview');
+            if (!mapContainer) return;
+
+            if (!mapRef.current) {
+                mapRef.current = new google.maps.Map(mapContainer, {
+                    zoom: 15,
+                    disableDefaultUI: true,
+                    styles: [
+                        { elementType: "geometry", stylers: [{ color: "#1a1a1a" }] },
+                        { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+                        { elementType: "labels.text.fill", stylers: [{ color: "#888888" }] },
+                        { elementType: "labels.text.stroke", stylers: [{ color: "#1a1a1a" }] },
+                        {
+                            featureType: "administrative",
+                            elementType: "geometry",
+                            stylers: [{ color: "#555555" }]
+                        },
+                        {
+                            featureType: "poi",
+                            elementType: "geometry",
+                            stylers: [{ color: "#121212" }]
+                        },
+                        {
+                            featureType: "road",
+                            elementType: "geometry.fill",
+                            stylers: [{ color: "#252525" }]
+                        },
+                        {
+                            featureType: "road.highway",
+                            elementType: "geometry.fill",
+                            stylers: [{ color: "#333333" }]
+                        },
+                        {
+                            featureType: "water",
+                            elementType: "geometry",
+                            stylers: [{ color: "#0d0d0d" }]
+                        }
+                    ]
+                });
+
+                markerRef.current = new google.maps.Marker({
+                    map: mapRef.current,
+                    icon: {
+                        path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+                        fillColor: '#ccff00',
+                        fillOpacity: 1,
+                        strokeWeight: 1.5,
+                        strokeColor: '#000000',
+                        scale: 6
+                    }
+                });
+            }
+
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ address }, (results: any, status: any) => {
+                if (status === 'OK' && results[0] && mapRef.current) {
+                    const latLng = results[0].geometry.location;
+                    mapRef.current.setCenter(latLng);
+                    if (markerRef.current) {
+                        markerRef.current.setPosition(latLng);
+                    }
+                }
+            });
+        } catch (e) {
+            console.warn("Falla al actualizar mapa:", e);
+        }
+    };
 
     // Cargar datos del proyecto
     useEffect(() => {
@@ -923,6 +1104,7 @@ const ClientPortal: React.FC = () => {
                                 <div className="space-y-2">
                                     <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Locación / Dirección</label>
                                     <input
+                                        ref={inputRef}
                                         type="text"
                                         required
                                         value={location}
@@ -930,6 +1112,12 @@ const ClientPortal: React.FC = () => {
                                         className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
                                         placeholder="Ej: Salón Lahusen, CABA"
                                     />
+                                    {isGoogleLoaded && location && (
+                                        <div className="space-y-1 mt-2">
+                                            <div id="map-preview" className="w-full h-40 rounded border border-white/10 overflow-hidden bg-zinc-950"></div>
+                                            <p className="text-zinc-500 text-[10px] italic">📍 Mapa de referencia cargado mediante Google Maps</p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
