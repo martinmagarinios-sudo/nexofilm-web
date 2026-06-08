@@ -861,13 +861,13 @@ const CRMProjects: React.FC = () => {
                                 </div>
 
                                 {budgetItems.map((item, idx) => (
-                                    <div key={idx} className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center bg-black/40 p-3 sm:p-2 border border-white/5 rounded">
-                                        <input
-                                            type="text"
+                                    <div key={idx} className="flex flex-col sm:flex-row gap-2 items-stretch bg-black/40 p-3 sm:p-2 border border-white/5 rounded">
+                                        <textarea
                                             value={item.description}
                                             onChange={(e) => updateBudgetItem(idx, 'description', e.target.value)}
-                                            className="w-full sm:flex-1 bg-black border border-white/5 rounded px-2 py-1 text-xs text-white"
-                                            placeholder="Detalle (Ej: Jornada Rodaje)"
+                                            className="w-full sm:flex-1 bg-black border border-white/5 rounded px-2.5 py-1.5 text-xs text-white resize-y min-h-[70px] self-start"
+                                            placeholder="Detalle del servicio (admite saltos de línea para formato técnico)"
+                                            rows={3}
                                         />
                                         <div className="flex gap-2 items-center justify-between sm:justify-start w-full sm:w-auto shrink-0">
                                             <div className="flex items-center gap-1">
@@ -1198,11 +1198,11 @@ const CRMProjects: React.FC = () => {
                                                         <div className="text-xs text-zinc-400 space-y-1">
                                                             <span className="font-bold text-zinc-300">Presupuesto Activo (v{projectBudget.version}): </span>
                                                             <span className="text-white font-medium">{project.currency || 'USD'} {projectBudget.total_price.toLocaleString()}</span>
-                                                            <div className="mt-1">
+                                                            <div className="mt-1 space-y-1.5">
                                                                  {projectBudget.items.map((it, i) => (
-                                                                     <span key={i} className="inline-block bg-white/5 border border-white/5 rounded px-2 py-0.5 mr-1.5 mb-1.5">
-                                                                         {it.description} ({it.quantity}x)
-                                                                     </span>
+                                                                     <div key={i} className="bg-white/5 border border-white/5 rounded p-2.5 whitespace-pre-wrap text-left text-zinc-300">
+                                                                         <span className="text-zinc-500 font-bold mr-1">#{i + 1} ({it.quantity}x):</span> {it.description}
+                                                                     </div>
                                                                  ))}
                                                             </div>
                                                         </div>
@@ -1549,14 +1549,14 @@ const CRMProjects: React.FC = () => {
                                 </div>
 
                                 {budgetItems.map((item, idx) => (
-                                    <div key={idx} className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center bg-black/40 p-3 sm:p-2 border border-white/5 rounded">
-                                        <input
-                                            type="text"
+                                    <div key={idx} className="flex flex-col sm:flex-row gap-2 items-stretch bg-black/40 p-3 sm:p-2 border border-white/5 rounded">
+                                        <textarea
                                             required
                                             value={item.description}
                                             onChange={(e) => updateBudgetItem(idx, 'description', e.target.value)}
-                                            className="w-full sm:flex-1 bg-black border border-white/5 rounded px-2 py-1 text-xs text-white"
-                                            placeholder="Detalle (Ej: Jornada Rodaje)"
+                                            className="w-full sm:flex-1 bg-black border border-white/5 rounded px-2.5 py-1.5 text-xs text-white resize-y min-h-[70px] self-start"
+                                            placeholder="Detalle del servicio (admite saltos de línea para formato técnico)"
+                                            rows={3}
                                         />
                                         <div className="flex gap-2 items-center justify-between sm:justify-start w-full sm:w-auto shrink-0">
                                             <div className="flex items-center gap-1">

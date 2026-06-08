@@ -313,22 +313,28 @@ export default async function handler(req, res) {
                 }
 
                 const systemPrompt = `Eres un experto productor audiovisual y consultor comercial de la productora NexoFilm (Argentina).
-Tu tarea es generar el desglose de ítems comerciales y las condiciones de pago ideales para un proyecto audiovisual.
+Tu tarea es generar la propuesta comercial técnica para un proyecto audiovisual.
 
-Genera una propuesta estética, profesional y sumamente detallada (describiendo equipamiento de gama alta, cámaras Sony FX3/FX6, jornadas de edición, colorización, etc.).
-Identifica si algún servicio es típicamente un "Extra" (por ejemplo: edición en vivo, drone, operador adicional, luces de fiesta avanzadas) y colócale la propiedad "is_optional": true en el JSON de ese ítem.
+En lugar de desglosar el servicio base en múltiples filas pequeñas (como rodaje, edición, etc.), debes generar UN ÚNICO ÍTEM BASE PRINCIPAL ("is_optional": false) con una descripción detallada, formateada y estructurada usando saltos de línea (\n) y viñetas (con el caracter "o " o "• ").
+
+La descripción de este ítem base principal debe incluir obligatoriamente las siguientes secciones claramente identificadas:
+1. "Detalle del Servicio" (explicando la cobertura, el objetivo del video/fotos y la atmósfera).
+2. "Equipamiento Técnico Profesional" (aclarando cantidad de personas, tipo de cámaras como Sony Alpha/FX, lentes Sony G-Master, estabilizadores, micrófonos inalámbricos y luces).
+3. "Entregables y Plazos de Entrega" (aclarando los plazos de entrega, por ejemplo, 48 horas en un enlace de descarga, con el material seleccionado y editado).
+
+Si existen servicios opcionales recomendados (como Drone, Edición express en vivo, o Pantallas gigantes adicionales), agrégalos como ítems adicionales con la propiedad "is_optional": true.
 
 Debes responder ÚNICAMENTE con un objeto JSON válido con la siguiente estructura (no agregues texto fuera del JSON ni markdown):
 {
   "items": [
     {
-      "description": "Descripción muy profesional y técnica del servicio base (ej: Jornada de rodaje de 8hs con 2 cámaras Sony FX3, ópticas de cine, micrófonos corbateros e iluminación LED Aputure)",
+      "description": "Detalle del Servicio\no Cobertura integral en Fotografía y Video para el evento...\\n\\nEquipamiento Técnico Profesional (N personas)\\no Cámaras: Sony Alpha...\\no Ópticas: Lentes Sony G-Master...\\n\\nEntregables y Plazos de Entrega\\no N días posteriores en link para descarga...",
       "quantity": 1,
       "unit_price": 0,
       "is_optional": false
     },
     {
-      "description": "Edición en vivo / Entrega express de un resumen de 1 min durante el evento (Servicio Opcional)",
+      "description": "Servicio de Drone Opcional\\no Cobertura aérea profesional con operador certificado...",
       "quantity": 1,
       "unit_price": 0,
       "is_optional": true
@@ -337,8 +343,8 @@ Debes responder ÚNICAMENTE con un objeto JSON válido con la siguiente estructu
   "payment_terms": "Condiciones de pago profesionales redactadas en español rioplatense (voseo), aclarando plazos de entrega, anticipo del 50%, y datos de facturación."
 }`;
 
-                const userPrompt = `Proyecto: "${title}" para el cliente "${nameToUse || contact_name || 'Particular'}".
-Generame entre 2 y 4 ítems de presupuesto detallando los servicios específicos requeridos y las condiciones de pago. Si hay algún servicio complementario o adicional (ej. Drone, edición rápida en vivo), marcalo como "is_optional": true. Ajusta todos los unit_price a 0 (el productor los ingresará manualmente).`;
+                const userPrompt = `Proyecto: "${title}" para el cliente "${nameToUse || 'Particular'}".
+Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato multilínea (Detalle del Servicio, Equipamiento Técnico, Entregables) y, si aplica, 1 o 2 servicios opcionales adicionales (marcados con is_optional: true). Pon todos los unit_price a 0.`;
 
                 const chatCompletion = await groq.chat.completions.create({
                     model: 'llama-3.3-70b-versatile',

@@ -1509,7 +1509,7 @@ const ClientPortal: React.FC = () => {
                                 <tbody className="divide-y divide-white/5 text-sm text-zinc-300">
                                     {budget.items.filter(item => !item.is_optional).map((item, idx) => (
                                         <tr key={idx}>
-                                            <td className="px-6 py-4 font-medium text-white">{item.description}</td>
+                                            <td className="px-6 py-4 font-medium text-white whitespace-pre-wrap">{item.description}</td>
                                             <td className="px-6 py-4 text-center">{item.quantity}</td>
                                             <td className="px-6 py-4 text-right">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</td>
                                             <td className="px-6 py-4 text-right text-white">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</td>
@@ -1540,7 +1540,7 @@ const ClientPortal: React.FC = () => {
                                         <tbody className="divide-y divide-white/5 text-sm text-zinc-300">
                                             {budget.items.filter(item => item.is_optional).map((item, idx) => (
                                                 <tr key={idx}>
-                                                    <td className="px-6 py-3 font-medium text-white">➕ {item.description}</td>
+                                                    <td className="px-6 py-3 font-medium text-white whitespace-pre-wrap">➕ {item.description}</td>
                                                     <td className="px-6 py-3 text-center">{item.quantity}</td>
                                                     <td className="px-6 py-3 text-right">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</td>
                                                     <td className="px-6 py-3 text-right text-[#00e5ff]">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</td>
@@ -2103,7 +2103,7 @@ const ClientPortal: React.FC = () => {
                         <tbody>
                             {budget.items.filter(item => !item.is_optional).map((item, idx) => (
                                 <tr key={idx}>
-                                    <td>{item.description}</td>
+                                    <td style={{ whiteSpace: 'pre-wrap' }}>{item.description}</td>
                                     <td style={{ textAlign: 'center' }}>{item.quantity}</td>
                                     <td style={{ textAlign: 'right' }}>{project.currency || 'USD'} {item.unit_price.toLocaleString()}</td>
                                     <td style={{ textAlign: 'right' }}>{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</td>
@@ -2122,7 +2122,7 @@ const ClientPortal: React.FC = () => {
                                     </tr>
                                     {budget.items.filter(item => item.is_optional).map((item, idx) => (
                                         <tr key={idx}>
-                                            <td style={{ color: '#4b5563' }}>➕ {item.description}</td>
+                                            <td style={{ color: '#4b5563', whiteSpace: 'pre-wrap' }}>➕ {item.description}</td>
                                             <td style={{ textAlign: 'center', color: '#4b5563' }}>{item.quantity}</td>
                                             <td style={{ textAlign: 'right', color: '#4b5563' }}>{project.currency || 'USD'} {item.unit_price.toLocaleString()}</td>
                                             <td style={{ textAlign: 'right', color: '#4b5563', fontWeight: '600' }}>{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</td>
