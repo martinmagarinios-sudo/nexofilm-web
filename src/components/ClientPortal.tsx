@@ -104,6 +104,7 @@ const ClientPortal: React.FC = () => {
     // Ingesta de Documentos (IA)
     const [uploadingDoc, setUploadingDoc] = useState(false);
     const [uploadError, setUploadError] = useState('');
+    const [uploadSuccess, setUploadSuccess] = useState('');
     const [dragActive, setDragActive] = useState(false);
 
     // Extraer token de la URL
@@ -657,7 +658,7 @@ const ClientPortal: React.FC = () => {
 
         setUploadingDoc(true);
         setUploadError('');
-        setSuccessMsg('');
+        setUploadSuccess('');
 
         try {
             const reader = new FileReader();
@@ -682,7 +683,7 @@ const ClientPortal: React.FC = () => {
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.error || 'Error al procesar el documento');
 
-                    setSuccessMsg('📁 ¡Archivo adjuntado correctamente! Se ha guardado en tu solicitud.');
+                    setUploadSuccess('📁 ¡Archivo adjuntado correctamente! Se ha guardado en tu solicitud.');
                     await fetchPortalData();
                 } catch (err: any) {
                     console.error(err);
@@ -820,7 +821,7 @@ const ClientPortal: React.FC = () => {
                             Portal de Autogestión
                         </div>
                         <h2 className="text-lg md:text-3xl font-extrabold text-white tracking-tight uppercase leading-tight">
-                            Bienvenido, <span className="text-nexo-lime">{project.contact_name}{project.company_name ? ` (${project.company_name})` : ''}</span>
+                            {getWelcomeGreeting(project.contact_name)}, <span className="text-nexo-lime">{project.contact_name}{project.company_name ? ` (${project.company_name})` : ''}</span>
                         </h2>
                         {(project.status === 'draft' || !budget) ? (
                             <p className="text-zinc-400 text-xs leading-relaxed">
@@ -1239,6 +1240,31 @@ const ClientPortal: React.FC = () => {
                                 </div>
                                 {uploadError && (
                                     <p className="text-red-400 text-[11px] mt-1 font-semibold">⚠️ {uploadError}</p>
+                                )}
+                                {uploadSuccess && (
+                                    <p className="text-nexo-lime text-[11px] mt-1 font-semibold">✓ {uploadSuccess}</p>
+                                )}
+
+                                {/* Visualizador de pliego activo */}
+                                {project.ai_extracted_requirements && project.ai_extracted_requirements.filename && (
+                                    <div className="mt-4 bg-zinc-950 p-4 rounded-lg border border-white/5 flex items-center space-x-3 text-left">
+                                        <span className="text-3xl shrink-0">📄</span>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[10px] font-bold text-nexo-lime uppercase tracking-wider">Pliego Técnico Activo</p>
+                                            <p className="text-xs text-white truncate font-medium mt-0.5">{project.ai_extracted_requirements.filename}</p>
+                                            {project.ai_extracted_requirements.file_url && (
+                                                <a 
+                                                    href={project.ai_extracted_requirements.file_url} 
+                                                    target="_blank" 
+                                                    rel="noreferrer" 
+                                                    className="text-[10px] text-zinc-400 hover:text-white underline mt-1 block"
+                                                >
+                                                    Descargar archivo original
+                                                </a>
+                                            )}
+                                        </div>
+                                        <span className="text-[10px] text-green-400 font-bold bg-green-500/10 px-2 py-0.5 rounded uppercase tracking-wider shrink-0">Cargado</span>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -1914,6 +1940,34 @@ const ClientPortal: React.FC = () => {
             )}
         </div>
     );
+};
+
+const getWelcomeGreeting = (fullName: string) => {
+    if (!fullName) return 'Bienvenido';
+    const firstName = fullName.trim().split(/[\s,.-]+/)[0].toLowerCase();
+    
+    // Nombres femeninos comunes que no terminan en 'a' en español
+    const femaleExceptions = [
+        'sol', 'belen', 'belén', 'ines', 'inés', 'luz', 'flor', 'carmen', 
+        'pilar', 'mercedes', 'consuelo', 'rosario', 'rocio', 'rocío', 'abril', 
+        'azul', 'marian', 'raquel', 'ruth', 'esther', 'noemi', 'noemí', 'iris'
+    ];
+    
+    // Nombres masculinos comunes que terminan en 'a' en español
+    const maleExceptions = [
+        'luca', 'lucas', 'bautista', 'tomas', 'tomás', 'matias', 'matías', 
+        'nicolas', 'nicolás', 'elias', 'elías', 'josias', 'josías', 'zacarias', 'zacarías'
+    ];
+
+    if (maleExceptions.includes(firstName)) {
+        return 'Bienvenido';
+    }
+    
+    if (firstName.endsWith('a') || femaleExceptions.includes(firstName)) {
+        return 'Bienvenida';
+    }
+    
+    return 'Bienvenido';
 };
 
 export default ClientPortal;
