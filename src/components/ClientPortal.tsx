@@ -1575,38 +1575,74 @@ const ClientPortal: React.FC = () => {
                         </div>
 
                         {/* Desglose de ítems */}
-                        <div className="overflow-x-auto border border-white/10 rounded-lg">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="bg-zinc-800/30 text-zinc-400 text-xs tracking-wider uppercase border-b border-white/10">
-                                        <th className="px-6 py-4 font-semibold">Descripción del Concepto</th>
-                                        <th className="px-6 py-4 font-semibold w-24 text-center">Cant.</th>
-                                        <th className="px-6 py-4 font-semibold w-32 text-right">Precio Unit.</th>
-                                        <th className="px-6 py-4 font-semibold w-32 text-right">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/5 text-sm text-zinc-300">
-                                    {budget.items.filter(item => !item.is_optional).map((item, idx) => (
-                                        <tr key={idx}>
-                                            <td className="px-6 py-4 font-medium text-white whitespace-pre-wrap">{item.description}</td>
-                                            <td className="px-6 py-4 text-center">{item.quantity}</td>
-                                            <td className="px-6 py-4 text-right">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</td>
-                                            <td className="px-6 py-4 text-right text-white">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</td>
+                        <div className="space-y-4">
+                            {/* Vista Desktop (Tabla) */}
+                            <div className="hidden lg:block overflow-x-auto border border-white/10 rounded-lg">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="bg-zinc-800/30 text-zinc-400 text-xs tracking-wider uppercase border-b border-white/10">
+                                            <th className="px-6 py-4 font-semibold">Descripción del Concepto</th>
+                                            <th className="px-6 py-4 font-semibold w-24 text-center">Cant.</th>
+                                            <th className="px-6 py-4 font-semibold w-32 text-right">Precio Unit.</th>
+                                            <th className="px-6 py-4 font-semibold w-32 text-right">Subtotal</th>
                                         </tr>
-                                    ))}
-                                    <tr className="bg-zinc-850/50 font-bold text-white text-base">
-                                        <td colSpan={3} className="px-6 py-5 text-right text-zinc-400 text-sm font-normal">Valor Total de la Propuesta (Valores Finales):</td>
-                                        <td className="px-6 py-5 text-right text-nexo-lime">{project.currency || 'USD'} {budget.total_price.toLocaleString()}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5 text-sm text-zinc-300">
+                                        {budget.items.filter(item => !item.is_optional).map((item, idx) => (
+                                            <tr key={idx}>
+                                                <td className="px-6 py-4 font-medium text-white whitespace-pre-wrap">{item.description}</td>
+                                                <td className="px-6 py-4 text-center">{item.quantity}</td>
+                                                <td className="px-6 py-4 text-right">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</td>
+                                                <td className="px-6 py-4 text-right text-white">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</td>
+                                            </tr>
+                                        ))}
+                                        <tr className="bg-zinc-850/50 font-bold text-white text-base">
+                                            <td colSpan={3} className="px-6 py-5 text-right text-zinc-400 text-sm font-normal">Valor Total de la Propuesta (Valores Finales):</td>
+                                            <td className="px-6 py-5 text-right text-nexo-lime">{project.currency || 'USD'} {budget.total_price.toLocaleString()}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Vista Móvil (Tarjetas Stacked) */}
+                            <div className="block lg:hidden space-y-4">
+                                {budget.items.filter(item => !item.is_optional).map((item, idx) => (
+                                    <div key={idx} className="bg-black/40 border border-white/5 p-5 rounded-xl space-y-3 shadow-lg">
+                                        <div className="font-medium text-white text-sm whitespace-pre-wrap leading-relaxed">
+                                            {item.description}
+                                        </div>
+                                        <div className="flex justify-between items-center gap-2 pt-3 border-t border-white/5 text-xs text-zinc-400">
+                                            <div>
+                                                <span>Cant: </span>
+                                                <strong className="text-white">{item.quantity}</strong>
+                                            </div>
+                                            <div>
+                                                <span>Precio U: </span>
+                                                <strong className="text-white">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</strong>
+                                            </div>
+                                            <div className="text-right">
+                                                <span>Subtotal: </span>
+                                                <strong className="text-nexo-lime font-bold">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {/* Total en Móvil */}
+                                <div className="bg-zinc-900/60 p-5 rounded-xl border border-nexo-lime/20 flex flex-col justify-center items-center gap-2 text-center shadow-lg">
+                                    <span className="text-zinc-500 text-xs uppercase tracking-wider font-bold">Valor Total de la Propuesta (Valores Finales)</span>
+                                    <span className="text-2xl font-black text-nexo-lime">{project.currency || 'USD'} {budget.total_price.toLocaleString()}</span>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Servicios Opcionales / Extras Sugeridos */}
                         {budget.items.some(item => item.is_optional) && (
                             <div className="space-y-3">
                                 <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Adicionales recomendados (Opcionales)</h4>
-                                <div className="overflow-x-auto border border-[#00e5ff]/20 rounded-lg bg-[#00e5ff]/5">
+                                
+                                {/* Vista Desktop (Tabla) */}
+                                <div className="hidden lg:block overflow-x-auto border border-[#00e5ff]/20 rounded-lg bg-[#00e5ff]/5">
                                     <table className="w-full text-left border-collapse">
                                         <thead>
                                             <tr className="bg-zinc-800/20 text-[#00e5ff] text-xs tracking-wider uppercase border-b border-[#00e5ff]/20">
@@ -1627,6 +1663,31 @@ const ClientPortal: React.FC = () => {
                                             ))}
                                         </tbody>
                                     </table>
+                                </div>
+
+                                {/* Vista Móvil (Tarjetas Stacked) */}
+                                <div className="block lg:hidden space-y-3">
+                                    {budget.items.filter(item => item.is_optional).map((item, idx) => (
+                                        <div key={idx} className="bg-[#00e5ff]/5 border border-[#00e5ff]/20 p-5 rounded-xl space-y-3 shadow-md">
+                                            <div className="font-medium text-white text-sm whitespace-pre-wrap leading-relaxed">
+                                                ➕ {item.description}
+                                            </div>
+                                            <div className="flex justify-between items-center gap-2 pt-3 border-t border-white/5 text-xs text-zinc-400">
+                                                <div>
+                                                    <span>Cant: </span>
+                                                    <strong className="text-white">{item.quantity}</strong>
+                                                </div>
+                                                <div>
+                                                    <span>Precio U: </span>
+                                                    <strong className="text-white">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</strong>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span>Subtotal: </span>
+                                                    <strong className="text-[#00e5ff] font-bold">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         )}
