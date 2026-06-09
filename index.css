@@ -58,10 +58,10 @@ body {
 
 @media print {
     html, body {
-        background-color: #ffffff !important;
+        background-color: #000000 !important;
         background-image: none !important;
-        color: #000000 !important;
-        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+        color: #ffffff !important;
+        font-family: 'Noto Sans JP', 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
         margin: 0 !important;
         padding: 0 !important;
         -webkit-print-color-adjust: exact !important;
@@ -69,15 +69,15 @@ body {
     }
 
     /* Ocultar la app web interactiva, botones, chat, y otros modales */
-    #root, header, footer, button, .no-print, form, .status-tracker, select, input, textarea {
+    #root > div > header, #root > div > main, footer, button, .no-print, form, .status-tracker, select, input, textarea {
         display: none !important;
     }
 
     /* Mostrar el contenedor de impresión */
     #print-proposal {
         display: block !important;
-        color: #000000 !important;
-        background-color: #ffffff !important;
+        color: #ffffff !important;
+        background-color: #000000 !important;
         width: 100% !important;
         margin: 0 !important;
         padding: 40px !important;

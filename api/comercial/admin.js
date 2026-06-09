@@ -123,6 +123,7 @@ export default async function handler(req, res) {
                     title, 
                     event_date, 
                     event_time, 
+                    event_end_time,
                     location, 
                     coverage_types, 
                     coverage_hours, 
@@ -135,31 +136,49 @@ export default async function handler(req, res) {
 
                 const projectTitle = title && title.trim() !== '' ? title : 'Propuesta Comercial';
 
+                const insertPayload = {
+                    contact_name,
+                    client_email: client_email || '',
+                    client_phone: client_phone || null,
+                    company_name: company_name || null,
+                    notification_preference,
+                    title: projectTitle,
+                    status: status || 'draft',
+                    event_date: event_date || null,
+                    event_time: event_time || null,
+                    event_end_time: event_end_time || null,
+                    location: location || null,
+                    coverage_types: coverage_types || [],
+                    coverage_hours: coverage_hours ? parseInt(coverage_hours) : null,
+                    guests_count: guests_count ? parseInt(guests_count) : null,
+                    drive_folder_id: drive_folder_id || null,
+                    currency: currency || 'USD',
+                    crew_count: crew_count ? parseInt(crew_count) : null
+                };
+
                 // Insertar el proyecto
-                const { data: project, error: projErr } = await supabase
+                let { data: project, error: projErr } = await supabase
                     .from('projects')
-                    .insert({
-                        contact_name,
-                        client_email: client_email || '',
-                        client_phone: client_phone || null,
-                        company_name: company_name || null,
-                        notification_preference,
-                        title: projectTitle,
-                        status: status || 'draft',
-                        event_date: event_date || null,
-                        event_time: event_time || null,
-                        location: location || null,
-                        coverage_types: coverage_types || [],
-                        coverage_hours: coverage_hours ? parseInt(coverage_hours) : null,
-                        guests_count: guests_count ? parseInt(guests_count) : null,
-                        drive_folder_id: drive_folder_id || null,
-                        currency: currency || 'USD',
-                        crew_count: crew_count ? parseInt(crew_count) : null
-                    })
+                    .insert(insertPayload)
                     .select()
                     .single();
 
-                if (projErr) throw projErr;
+                if (projErr) {
+                    // Fallback resiliente si event_end_time no existe
+                    if (projErr.message && projErr.message.includes('event_end_time')) {
+                        console.warn("event_end_time column not found in projects table. Retrying createProject without it.");
+                        delete insertPayload.event_end_time;
+                        const retry = await supabase
+                            .from('projects')
+                            .insert(insertPayload)
+                            .select()
+                            .single();
+                        if (retry.error) throw retry.error;
+                        project = retry.data;
+                    } else {
+                        throw projErr;
+                    }
+                }
 
                 // Insertar presupuesto si se pasaron ítems iniciales
                 let budget = null;
@@ -444,35 +463,57 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                 const {
                     event_date,
                     event_time,
+                    event_end_time,
                     location,
                     coverage_hours,
                     guests_count,
                     coverage_types,
-                    admin_notes
+                    admin_notes,
+                    notification_preference
                 } = req.body;
 
-                const { data: updatedProject, error: updateErr } = await supabase
+                const updatePayload = {
+                    contact_name: contact_name || '',
+                    client_email: client_email || '',
+                    client_phone: client_phone || null,
+                    company_name: company_name || null,
+                    currency: currency || 'USD',
+                    crew_count: crew_count ? parseInt(crew_count) : null,
+                    event_date: event_date || null,
+                    event_time: event_time || null,
+                    event_end_time: event_end_time || null,
+                    location: location || null,
+                    coverage_hours: coverage_hours ? parseInt(coverage_hours) : null,
+                    guests_count: guests_count ? parseInt(guests_count) : null,
+                    coverage_types: coverage_types || null,
+                    admin_notes: admin_notes || null,
+                    notification_preference: notification_preference || 'both'
+                };
+
+                let { data: updatedProject, error: updateErr } = await supabase
                     .from('projects')
-                    .update({
-                        contact_name: contact_name || '',
-                        client_email: client_email || '',
-                        client_phone: client_phone || null,
-                        company_name: company_name || null,
-                        currency: currency || 'USD',
-                        crew_count: crew_count ? parseInt(crew_count) : null,
-                        event_date: event_date || null,
-                        event_time: event_time || null,
-                        location: location || null,
-                        coverage_hours: coverage_hours ? parseInt(coverage_hours) : null,
-                        guests_count: guests_count ? parseInt(guests_count) : null,
-                        coverage_types: coverage_types || null,
-                        admin_notes: admin_notes || null
-                    })
+                    .update(updatePayload)
                     .eq('id', project_id)
                     .select()
                     .single();
 
-                if (updateErr) throw updateErr;
+                if (updateErr) {
+                    // Fallback resiliente si event_end_time no existe
+                    if (updateErr.message && updateErr.message.includes('event_end_time')) {
+                        console.warn("event_end_time column not found in projects table. Retrying updateContact without it.");
+                        delete updatePayload.event_end_time;
+                        const retry = await supabase
+                            .from('projects')
+                            .update(updatePayload)
+                            .eq('id', project_id)
+                            .select()
+                            .single();
+                        if (retry.error) throw retry.error;
+                        updatedProject = retry.data;
+                    } else {
+                        throw updateErr;
+                    }
+                }
 
                 return res.status(200).json({
                     success: true,
@@ -658,6 +699,8 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                     return res.status(400).json({ error: 'Faltan campos project_id o items' });
                 }
 
+                const { channel } = req.body;
+
                 const calculatedTotal = items
                     .filter(item => !item.is_optional)
                     .reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0);
@@ -705,7 +748,7 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                 if (updateErr) throw updateErr;
 
                 // Notificar al cliente
-                await notifyClient(project, items, calculatedTotal, payment_terms, req.headers.host || 'nexofilm.com');
+                await notifyClient(project, items, calculatedTotal, payment_terms, req.headers.host || 'nexofilm.com', channel);
 
                 const host = req.headers.host || 'nexofilm.com';
                 const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
@@ -738,8 +781,8 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
 }
 
 // Helper para notificar al cliente por Email / WhatsApp
-async function notifyClient(project, items, total, terms, host) {
-    const preference = project.notification_preference || 'both';
+async function notifyClient(project, items, total, terms, host, forceChannel = null) {
+    const preference = forceChannel || project.notification_preference || 'both';
     const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
     const portalUrl = `${protocol}://${host}/portal?token=${project.access_token}`;
 
@@ -836,6 +879,7 @@ async function notifyClient(project, items, total, terms, host) {
             console.log(`Email de cotización enviado con éxito a: ${project.client_email}`);
         } catch (e) {
             console.error(`Error enviando email al cliente:`, e.message);
+            throw new Error(`Error al enviar Email: ${e.message}`);
         }
     }
 
@@ -869,11 +913,13 @@ async function notifyClient(project, items, total, terms, host) {
                 const resData = await response.json();
                 if (!response.ok) {
                     console.error('Error Meta API en WhatsApp de cotización:', resData.error);
+                    throw new Error(`Error de WhatsApp (Meta API): ${resData.error?.message || response.statusText}`);
                 } else {
                     console.log(`WhatsApp de cotización enviado con éxito al cliente +${cleanPhone}`);
                 }
             } catch (err) {
                 console.error('Error al enviar WhatsApp al cliente:', err.message);
+                throw new Error(`Error al enviar WhatsApp: ${err.message}`);
             }
         }
     }

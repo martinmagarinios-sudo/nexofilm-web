@@ -25,6 +25,7 @@ interface Project {
     status: 'draft' | 'sent' | 'review' | 'approved' | 'rejected' | 'production' | 'delivered';
     event_date: string | null;
     event_time: string | null;
+    event_end_time?: string | null;
     location: string | null;
     coverage_types: string[] | null;
     coverage_hours: number | null;
@@ -91,6 +92,7 @@ const ClientPortal: React.FC = () => {
     const [projectTitle, setProjectTitle] = useState('');
     const [eventDate, setEventDate] = useState('');
     const [eventTime, setEventTime] = useState('');
+    const [eventEndTime, setEventEndTime] = useState('');
     const [location, setLocation] = useState('');
     const [coverageHours, setCoverageHours] = useState<number>(4);
     const [coverageTypes, setCoverageTypes] = useState<string[]>([]);
@@ -386,6 +388,7 @@ const ClientPortal: React.FC = () => {
                 setProjectTitle(data.project.title || '');
                 setEventDate(data.project.event_date || '');
                 setEventTime(data.project.event_time || '');
+                setEventEndTime(data.project.event_end_time || '');
                 setLocation(data.project.location || '');
                 setCoverageHours(data.project.coverage_hours || 4);
                 setCoverageTypes(data.project.coverage_types || []);
@@ -397,7 +400,7 @@ const ClientPortal: React.FC = () => {
                 setClientEmail(data.project.client_email || '');
                 setNotificationPref(data.project.notification_preference || 'both');
                 setBillingInfo(data.project.client_billing_info || '');
-                setNoteText(data.project.client_notes || '');
+                setNoteText(''); // Dejar vacío por defecto para nuevas consultas
             }
         } catch (err: any) {
             console.error(err);
@@ -471,6 +474,7 @@ const ClientPortal: React.FC = () => {
                         title: projectTitle,
                         event_date: eventDate,
                         event_time: eventTime,
+                        event_end_time: eventEndTime,
                         location,
                         coverage_types: coverageTypes,
                         coverage_hours: coverageHours,
@@ -1232,7 +1236,7 @@ const ClientPortal: React.FC = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                                     <div className="space-y-2 text-zinc-400">
                                         <p>📅 <span className="font-medium text-zinc-500">Fecha tentativa:</span> <span className="text-white">{eventDate || 'A confirmar'}</span></p>
-                                        <p>⏱️ <span className="font-medium text-zinc-500">Horario de inicio:</span> <span className="text-white">{eventTime || 'A confirmar'}</span></p>
+                                        <p>⏱️ <span className="font-medium text-zinc-500">Horario:</span> <span className="text-white">{eventTime || 'A confirmar'}{eventEndTime ? ` a ${eventEndTime}` : ''}</span></p>
                                         <p>📍 <span className="font-medium text-zinc-500">Locación / Lugar:</span> <span className="text-white">{location || 'A confirmar'}</span></p>
                                     </div>
                                     <div className="space-y-2 text-zinc-400">
@@ -1292,7 +1296,7 @@ const ClientPortal: React.FC = () => {
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div className="space-y-2">
                                         <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Fecha Tentativa</label>
                                         <input
@@ -1309,7 +1313,27 @@ const ClientPortal: React.FC = () => {
                                             type="time"
                                             required
                                             value={eventTime}
-                                            onChange={(e) => setEventTime(e.target.value)}
+                                            onChange={(e) => {
+                                                const start = e.target.value;
+                                                setEventTime(start);
+                                                if (eventEndTime) {
+                                                    setCoverageHours(calculateHours(start, eventEndTime));
+                                                }
+                                            }}
+                                            className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Horario de Fin</label>
+                                        <input
+                                            type="time"
+                                            required
+                                            value={eventEndTime}
+                                            onChange={(e) => {
+                                                const end = e.target.value;
+                                                setEventEndTime(end);
+                                                setCoverageHours(calculateHours(eventTime, end));
+                                            }}
                                             className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
                                         />
                                     </div>
@@ -1400,6 +1424,7 @@ const ClientPortal: React.FC = () => {
                                             onChange={(e) => setCoverageHours(parseInt(e.target.value) || 0)}
                                             className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
                                         />
+                                        <span className="text-[10px] text-zinc-500 block mt-1">Calculado automáticamente desde el horario, o ajustable.</span>
                                     </div>
 
                                     <div className="space-y-2">
@@ -1570,7 +1595,7 @@ const ClientPortal: React.FC = () => {
                                         </tr>
                                     ))}
                                     <tr className="bg-zinc-850/50 font-bold text-white text-base">
-                                        <td colSpan={3} className="px-6 py-5 text-right text-zinc-400 text-sm font-normal">Valor Total de la Propuesta Base:</td>
+                                        <td colSpan={3} className="px-6 py-5 text-right text-zinc-400 text-sm font-normal">Valor Total de la Propuesta (Valores Finales):</td>
                                         <td className="px-6 py-5 text-right text-nexo-lime">{project.currency || 'USD'} {budget.total_price.toLocaleString()}</td>
                                     </tr>
                                 </tbody>
@@ -2077,66 +2102,85 @@ const ClientPortal: React.FC = () => {
 
             {/* CONTENEDOR DE IMPRESIÓN (OCULTO EN PANTALLA POR CSS) */}
             {budget && (
-                <div id="print-proposal">
+                <div id="print-proposal" style={{ fontFamily: "'Noto Sans JP', sans-serif", backgroundColor: '#000000', color: '#ffffff', padding: '40px', boxSizing: 'border-box' }}>
                     {/* Membrete Oficial */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #e1f937', paddingBottom: '20px', marginBottom: '30px' }}>
                         <div>
-                            <h1 style={{ fontSize: '24px', fontWeight: '900', letterSpacing: '-0.05em', margin: 0, textTransform: 'uppercase' }}>
-                                NEXOFILM
-                            </h1>
-                            <p style={{ fontSize: '12px', color: '#6b7280', fontWeight: '500', margin: '2px 0 0 0' }}>Productora Audiovisual</p>
+                            <img src="/img/logo.png" alt="NexoFilm" style={{ height: '35px', width: 'auto', filter: 'brightness(0) invert(1)' }} />
+                            <p style={{ fontSize: '11px', color: '#888888', fontWeight: '500', margin: '4px 0 0 0', textTransform: 'uppercase', letterSpacing: '2px' }}>Productora Audiovisual</p>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                            <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, textTransform: 'uppercase' }}>Propuesta Comercial</h2>
-                            <p style={{ fontSize: '12px', color: '#6b7280', margin: '2px 0 0 0' }}>Fecha: {new Date().toLocaleDateString('es-AR')}</p>
+                            <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#e1f937', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>Propuesta Comercial</h2>
+                            <p style={{ fontSize: '11px', color: '#a0a0a0', margin: '4px 0 0 0' }}>Fecha de Emisión: {new Date().toLocaleDateString('es-AR')}</p>
                         </div>
                     </div>
                     
-                    <div className="print-divider"></div>
-                    
                     {/* Información del Cliente y del Proyecto */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                        <div>
-                            <h3 className="print-section-title" style={{ margin: 0 }}>Información del Cliente</h3>
-                            <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>Contacto:</strong> {project.contact_name}</p>
-                            {project.company_name && <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>Empresa:</strong> {project.company_name}</p>}
-                            <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>Email:</strong> {project.client_email}</p>
-                            {project.client_phone && <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>WhatsApp:</strong> +{project.client_phone.replace(/^\++/, '')}</p>}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', marginBottom: '25px' }}>
+                        <div style={{ background: '#0a0a0a', border: '1px solid #222222', padding: '16px', borderRadius: '4px' }}>
+                            <h3 style={{ fontSize: '12px', fontWeight: 'bold', color: '#e1f937', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: '1px solid #222222', paddingBottom: '6px', marginTop: 0, marginBottom: '10px' }}>
+                                Datos del Cliente
+                            </h3>
+                            <p style={{ fontSize: '12px', margin: '6px 0', color: '#ffffff' }}><strong>Contacto:</strong> {project.contact_name}</p>
+                            {project.company_name && <p style={{ fontSize: '12px', margin: '6px 0', color: '#ffffff' }}><strong>Empresa:</strong> {project.company_name}</p>}
+                            <p style={{ fontSize: '12px', margin: '6px 0', color: '#a0a0a0' }}><strong>Email:</strong> {project.client_email}</p>
+                            {project.client_phone && <p style={{ fontSize: '12px', margin: '6px 0', color: '#a0a0a0' }}><strong>WhatsApp:</strong> +{project.client_phone.replace(/^\++/, '')}</p>}
                         </div>
-                        <div>
-                            <h3 className="print-section-title" style={{ margin: 0 }}>Detalles del Proyecto</h3>
-                            <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>Título:</strong> {project.title}</p>
-                            <p style={{ fontSize: '12px', margin: '4px 0' }}>
+                        <div style={{ background: '#0a0a0a', border: '1px solid #222222', padding: '16px', borderRadius: '4px' }}>
+                            <h3 style={{ fontSize: '12px', fontWeight: 'bold', color: '#e1f937', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: '1px solid #222222', paddingBottom: '6px', marginTop: 0, marginBottom: '10px' }}>
+                                Detalles de Propuesta
+                            </h3>
+                            <p style={{ fontSize: '12px', margin: '6px 0', color: '#ffffff' }}><strong>Proyecto / Evento:</strong> {project.title}</p>
+                            <p style={{ fontSize: '12px', margin: '6px 0', color: '#ffffff' }}>
                                 <strong>Estado:</strong> {
                                     project.status === 'approved' ? 'Aprobado' : 
                                     project.status === 'production' ? 'En Producción' : 
                                     project.status === 'delivered' ? 'Entregado' : 'Pendiente de Aprobación'
                                 }
                             </p>
+                            <p style={{ fontSize: '12px', margin: '6px 0', color: '#a0a0a0' }}><strong>ID Proyecto:</strong> #{project.id.slice(0, 8)}</p>
                         </div>
                     </div>
                     
                     {/* Especificaciones del Evento */}
                     {(project.event_date || project.location) && (
-                        <div>
-                            <h3 className="print-section-title">Especificaciones de la Producción</h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                        <div style={{ background: '#0a0a0a', border: '1px solid #222222', padding: '16px', borderRadius: '4px', marginBottom: '25px' }}>
+                            <h3 style={{ fontSize: '12px', fontWeight: 'bold', color: '#e1f937', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: '1px solid #222222', paddingBottom: '6px', marginTop: 0, marginBottom: '10px' }}>
+                                Especificaciones del Rodaje / Cobertura
+                            </h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
                                 <div>
-                                    {project.event_date && <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>Fecha del Evento:</strong> {project.event_date} {project.event_time || ''}</p>}
-                                    {project.location && <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>Locación:</strong> {project.location}</p>}
+                                    {project.event_date && (
+                                        <p style={{ fontSize: '12px', margin: '6px 0', color: '#ffffff' }}>
+                                            <strong>Fecha del Evento:</strong> {project.event_date}
+                                        </p>
+                                    )}
+                                    {project.event_time && (
+                                        <p style={{ fontSize: '12px', margin: '6px 0', color: '#ffffff' }}>
+                                            <strong>Horario:</strong> {project.event_time}{project.event_end_time ? ` a ${project.event_end_time}` : ''}
+                                        </p>
+                                    )}
+                                    {project.location && (
+                                        <p style={{ fontSize: '12px', margin: '6px 0', color: '#ffffff' }}>
+                                            <strong>Locación:</strong> {project.location}
+                                        </p>
+                                    )}
                                 </div>
                                 <div>
-                                    {project.coverage_hours && <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>Cobertura contratada:</strong> {project.coverage_hours} hs</p>}
+                                    {project.coverage_hours && (
+                                        <p style={{ fontSize: '12px', margin: '6px 0', color: '#ffffff' }}>
+                                            <strong>Jornada Estimada:</strong> {project.coverage_hours} horas
+                                        </p>
+                                    )}
                                     {project.coverage_types && project.coverage_types.length > 0 && (
-                                        <p style={{ fontSize: '12px', margin: '4px 0' }}>
-                                            <strong>Servicios:</strong> <span style={{ textTransform: 'capitalize' }}>{project.coverage_types.join(', ')}</span>
+                                        <p style={{ fontSize: '12px', margin: '6px 0', color: '#ffffff' }}>
+                                            <strong>Servicios Solicitados:</strong> <span style={{ textTransform: 'capitalize' }}>{project.coverage_types.join(', ')}</span>
                                         </p>
                                     )}
                                     {project.guests_count !== null && project.guests_count !== undefined && (
-                                        <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>Cantidad de Invitados:</strong> {project.guests_count} personas</p>
-                                    )}
-                                    {project.crew_count !== null && project.crew_count !== undefined && (
-                                        <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>Staff Cobertura:</strong> {project.crew_count} {project.crew_count === 1 ? 'persona' : 'personas'}</p>
+                                        <p style={{ fontSize: '12px', margin: '6px 0', color: '#ffffff' }}>
+                                            <strong>Cantidad de Invitados:</strong> {project.guests_count} personas
+                                        </p>
                                     )}
                                 </div>
                             </div>
@@ -2144,66 +2188,86 @@ const ClientPortal: React.FC = () => {
                     )}
                     
                     {/* Desglose de Presupuesto */}
-                    <h3 className="print-section-title">Presupuesto y Desglose</h3>
-                    <table className="print-table">
-                        <thead>
-                            <tr>
-                                <th>Descripción de los Servicios</th>
-                                <th style={{ textAlign: 'center', width: '80px' }}>Cant.</th>
-                                <th style={{ textAlign: 'right', width: '120px' }}>Precio Unit.</th>
-                                <th style={{ textAlign: 'right', width: '120px' }}>Subtotal</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {budget.items.filter(item => !item.is_optional).map((item, idx) => (
-                                <tr key={idx}>
-                                    <td style={{ whiteSpace: 'pre-wrap' }}>{item.description}</td>
-                                    <td style={{ textAlign: 'center' }}>{item.quantity}</td>
-                                    <td style={{ textAlign: 'right' }}>{project.currency || 'USD'} {item.unit_price.toLocaleString()}</td>
-                                    <td style={{ textAlign: 'right' }}>{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</td>
+                    <div style={{ marginBottom: '25px' }}>
+                        <h3 style={{ fontSize: '12px', fontWeight: 'bold', color: '#e1f937', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: '1px solid #222222', paddingBottom: '6px', marginTop: 0, marginBottom: '10px' }}>
+                            Presupuesto de Servicios
+                        </h3>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '2px solid #222222' }}>
+                                    <th style={{ color: '#888888', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', padding: '12px 8px', textAlign: 'left' }}>Descripción de los Servicios</th>
+                                    <th style={{ color: '#888888', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', padding: '12px 8px', textAlign: 'center', width: '80px' }}>Cant.</th>
+                                    <th style={{ color: '#888888', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', padding: '12px 8px', textAlign: 'right', width: '120px' }}>Precio Unit.</th>
+                                    <th style={{ color: '#888888', fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase', padding: '12px 8px', textAlign: 'right', width: '120px' }}>Subtotal</th>
                                 </tr>
-                            ))}
-                            <tr className="total-row">
-                                <td colSpan={3} style={{ textAlign: 'right', fontWeight: 'bold' }}>Total de la Propuesta Base:</td>
-                                <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{project.currency || 'USD'} {budget.total_price.toLocaleString()}</td>
-                            </tr>
-                            {budget.items.some(item => item.is_optional) && (
-                                <>
-                                    <tr className="print-section-header-row">
-                                        <td colSpan={4} style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '10px', color: '#4b5563', padding: '12px 0 6px 0', borderBottom: '1px solid #e5e7eb', backgroundColor: '#f9fafb' }}>
-                                            Adicionales Recomendados (Opcionales)
-                                        </td>
+                            </thead>
+                            <tbody>
+                                {budget.items.filter(item => !item.is_optional).map((item, idx) => (
+                                    <tr key={idx} style={{ borderBottom: '1px solid #111111' }}>
+                                        <td style={{ color: '#ffffff', fontSize: '12px', padding: '12px 8px', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>{item.description}</td>
+                                        <td style={{ color: '#ffffff', fontSize: '12px', padding: '12px 8px', textAlign: 'center' }}>{item.quantity}</td>
+                                        <td style={{ color: '#ffffff', fontSize: '12px', padding: '12px 8px', textAlign: 'right' }}>{project.currency || 'USD'} {item.unit_price.toLocaleString('es-AR')}</td>
+                                        <td style={{ color: '#ffffff', fontSize: '12px', padding: '12px 8px', textAlign: 'right', fontWeight: '600' }}>{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString('es-AR')}</td>
                                     </tr>
-                                    {budget.items.filter(item => item.is_optional).map((item, idx) => (
-                                        <tr key={idx}>
-                                            <td style={{ color: '#4b5563', whiteSpace: 'pre-wrap' }}>➕ {item.description}</td>
-                                            <td style={{ textAlign: 'center', color: '#4b5563' }}>{item.quantity}</td>
-                                            <td style={{ textAlign: 'right', color: '#4b5563' }}>{project.currency || 'USD'} {item.unit_price.toLocaleString()}</td>
-                                            <td style={{ textAlign: 'right', color: '#4b5563', fontWeight: '600' }}>{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</td>
+                                ))}
+                                <tr style={{ borderTop: '2px solid #e1f937', background: 'rgba(225, 249, 55, 0.02)' }}>
+                                    <td colSpan={3} style={{ color: '#ffffff', fontSize: '12px', padding: '14px 8px', textAlign: 'right', fontWeight: 'bold', textTransform: 'uppercase' }}>Total de la Propuesta (Valores Finales):</td>
+                                    <td style={{ color: '#e1f937', fontSize: '14px', padding: '14px 8px', textAlign: 'right', fontWeight: '900' }}>{project.currency || 'USD'} {budget.total_price.toLocaleString('es-AR')}</td>
+                                </tr>
+                                {budget.items.some(item => item.is_optional) && (
+                                    <>
+                                        <tr>
+                                            <td colSpan={4} style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '10px', color: '#888888', padding: '20px 8px 6px 8px', borderBottom: '1px solid #222222' }}>
+                                                Adicionales Sugeridos (Opcionales)
+                                            </td>
                                         </tr>
-                                    ))}
-                                </>
-                            )}
-                        </tbody>
-                    </table>
+                                        {budget.items.filter(item => item.is_optional).map((item, idx) => (
+                                            <tr key={idx} style={{ borderBottom: '1px solid #111111' }}>
+                                                <td style={{ color: '#a0a0a0', fontSize: '12px', padding: '12px 8px', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>➕ {item.description}</td>
+                                                <td style={{ color: '#a0a0a0', fontSize: '12px', padding: '12px 8px', textAlign: 'center' }}>{item.quantity}</td>
+                                                <td style={{ color: '#a0a0a0', fontSize: '12px', padding: '12px 8px', textAlign: 'right' }}>{project.currency || 'USD'} {item.unit_price.toLocaleString('es-AR')}</td>
+                                                <td style={{ color: '#e1f937', fontSize: '12px', padding: '12px 8px', textAlign: 'right', fontWeight: '600' }}>{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString('es-AR')}</td>
+                                            </tr>
+                                        ))}
+                                    </>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                     
                     {/* Condiciones de Pago */}
                     {budget.payment_terms && (
-                        <div style={{ marginTop: '20px' }}>
-                            <h3 className="print-section-title">Términos y Condiciones de Pago</h3>
-                            <div className="print-terms">
+                        <div style={{ marginBottom: '30px' }}>
+                            <h3 style={{ fontSize: '12px', fontWeight: 'bold', color: '#e1f937', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: '1px solid #222222', paddingBottom: '6px', marginTop: 0, marginBottom: '10px' }}>
+                                Términos y Condiciones de Pago
+                            </h3>
+                            <div style={{ borderLeft: '3px solid #e1f937', backgroundColor: '#0a0a0a', padding: '15px', borderRadius: '0 4px 4px 0', fontSize: '11px', color: '#cccccc', lineHeight: '1.6', whiteSpace: 'pre-line' }}>
                                 {budget.payment_terms}
                             </div>
                         </div>
                     )}
                     
-                    {/* Nota de Confidencialidad */}
-                    <div style={{ marginTop: '50px', borderTop: '1px solid #e5e7eb', paddingTop: '15px', textAlign: 'center' }}>
-                        <p style={{ fontSize: '9px', color: '#9ca3af', margin: 0 }}>
-                            Este documento es de carácter confidencial y para uso exclusivo del destinatario. NexoFilm Productora Audiovisual.
+                    {/* Pie de Página / Redes Sociales e Información */}
+                    <div style={{ marginTop: '50px', borderTop: '1px solid #222222', paddingTop: '20px', textAlign: 'center' }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '12px', fontSize: '11px', color: '#a0a0a0' }}>
+                            <span style={{ display: 'flex', alignItems: 'center' }}>
+                                <svg style={{ marginRight: '6px' }} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e1f937" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                                www.nexofilm.com
+                            </span>
+                            <span style={{ display: 'flex', alignItems: 'center' }}>
+                                <svg style={{ marginRight: '6px' }} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e1f937" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                                hola@nexofilm.com
+                            </span>
+                            <span style={{ display: 'flex', alignItems: 'center' }}>
+                                <svg style={{ marginRight: '6px' }} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e1f937" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                                @nexofilm.prod
+                            </span>
+                        </div>
+                        <p style={{ fontSize: '9px', color: '#666666', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                            Este documento es una cotización comercial confidencial y para uso exclusivo del destinatario.
                         </p>
-                        <p style={{ fontSize: '9px', color: '#9ca3af', margin: '2px 0 0 0' }}>
-                            hola@nexofilm.com · www.nexofilm.com · Buenos Aires, Argentina
+                        <p style={{ fontSize: '9px', color: '#666666', margin: '4px 0 0 0' }}>
+                            NexoFilm Productora Audiovisual · Buenos Aires, Argentina
                         </p>
                     </div>
                 </div>
@@ -2238,6 +2302,20 @@ const getWelcomeGreeting = (fullName: string) => {
     }
     
     return 'Bienvenido';
+};
+
+const calculateHours = (start: string, end: string): number => {
+    if (!start || !end) return 4;
+    const [startH, startM] = start.split(':').map(Number);
+    const [endH, endM] = end.split(':').map(Number);
+    if (isNaN(startH) || isNaN(startM) || isNaN(endH) || isNaN(endM)) return 4;
+    
+    let diffMs = (endH * 60 + endM) - (startH * 60 + startM);
+    if (diffMs < 0) {
+        diffMs += 24 * 60; // cruce de medianoche
+    }
+    const hours = diffMs / 60;
+    return Number(hours.toFixed(1));
 };
 
 export default ClientPortal;

@@ -427,29 +427,52 @@ export default async function handler(req, res) {
             let notificationBody = '';
 
             if (action === 'update_specifications') {
-                const { title, event_date, event_time, location, coverage_types, coverage_hours, client_phone, client_email, notification_preference, guests_count, client_notes } = specifications || {};
+                const { title, event_date, event_time, event_end_time, location, coverage_types, coverage_hours, client_phone, client_email, notification_preference, guests_count, client_notes } = specifications || {};
 
-                const { data: updatedProj, error: updateErr } = await supabase
+                const updateData = {
+                    title: title || project.title,
+                    event_date: event_date || project.event_date,
+                    event_time: event_time || project.event_time,
+                    location: location || project.location,
+                    coverage_types: coverage_types || project.coverage_types,
+                    coverage_hours: coverage_hours ? parseInt(coverage_hours) : project.coverage_hours,
+                    client_phone: client_phone || project.client_phone,
+                    client_email: client_email || project.client_email,
+                    notification_preference: notification_preference || project.notification_preference,
+                    guests_count: guests_count !== undefined ? guests_count : project.guests_count,
+                    client_notes: client_notes || project.client_notes,
+                    status: 'review'
+                };
+
+                if (event_end_time !== undefined) {
+                    updateData.event_end_time = event_end_time;
+                }
+
+                let { data: updatedProj, error: updateErr } = await supabase
                     .from('projects')
-                    .update({
-                        title: title || project.title,
-                        event_date: event_date || project.event_date,
-                        event_time: event_time || project.event_time,
-                        location: location || project.location,
-                        coverage_types: coverage_types || project.coverage_types,
-                        coverage_hours: coverage_hours ? parseInt(coverage_hours) : project.coverage_hours,
-                        client_phone: client_phone || project.client_phone,
-                        client_email: client_email || project.client_email,
-                        notification_preference: notification_preference || project.notification_preference,
-                        guests_count: guests_count !== undefined ? guests_count : project.guests_count,
-                        client_notes: client_notes || project.client_notes,
-                        status: 'review'
-                    })
+                    .update(updateData)
                     .eq('id', project.id)
                     .select()
                     .single();
 
-                if (updateErr) throw updateErr;
+                if (updateErr) {
+                    // Fallback resiliente si la columna event_end_time no existe en la base de datos
+                    if (updateErr.message && updateErr.message.includes('event_end_time')) {
+                        console.warn("event_end_time column not found in projects table. Retrying update without it.");
+                        delete updateData.event_end_time;
+                        const { data: fallbackProj, error: fallbackErr } = await supabase
+                            .from('projects')
+                            .update(updateData)
+                            .eq('id', project.id)
+                            .select()
+                            .single();
+                        if (fallbackErr) throw fallbackErr;
+                        updatedProj = fallbackProj;
+                    } else {
+                        throw updateErr;
+                    }
+                }
+
                 updatedProject = updatedProj;
                 updatedStatus = 'review';
 
