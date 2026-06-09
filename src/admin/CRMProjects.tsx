@@ -83,7 +83,7 @@ const CRMProjects: React.FC = () => {
     const [newContactName, setNewContactName] = useState('');
     const [newCompanyName, setNewCompanyName] = useState('');
     const [newClientEmail, setNewClientEmail] = useState('');
-    const [newPhoneCountryCode, setNewPhoneCountryCode] = useState('+54 9');
+    const [newPhoneCountryCode, setNewPhoneCountryCode] = useState('');
     const [newPhoneLocalNumber, setNewPhoneLocalNumber] = useState('');
     const [newProjTitle, setNewProjTitle] = useState('');
     const [newProjStatus, setNewProjStatus] = useState<'draft' | 'sent'>('draft');
@@ -95,7 +95,7 @@ const CRMProjects: React.FC = () => {
     const [editingContactName, setEditingContactName] = useState('');
     const [editingCompanyName, setEditingCompanyName] = useState('');
     const [editingClientEmail, setEditingClientEmail] = useState('');
-    const [editingPhoneCountryCode, setEditingPhoneCountryCode] = useState('+54 9');
+    const [editingPhoneCountryCode, setEditingPhoneCountryCode] = useState('');
     const [editingPhoneLocalNumber, setEditingPhoneLocalNumber] = useState('');
     const [editingCurrency, setEditingCurrency] = useState<'USD' | 'ARS'>('USD');
     const [editingCrewCount, setEditingCrewCount] = useState<number | ''>('');
@@ -278,7 +278,8 @@ const CRMProjects: React.FC = () => {
             .reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0);
 
         try {
-            const combinedNewPhone = `${newPhoneCountryCode.replace(/\s+/g, '')}${newPhoneLocalNumber.replace(/\D/g, '')}`.replace(/^\++/, '');
+            const countryPrefix = newPhoneCountryCode.trim() !== '' ? newPhoneCountryCode : '+54 9';
+            const combinedNewPhone = `${countryPrefix.replace(/\s+/g, '')}${newPhoneLocalNumber.replace(/\D/g, '')}`.replace(/^\++/, '');
 
             const res = await fetch('/api/comercial/admin', {
                 method: 'POST',
@@ -310,7 +311,7 @@ const CRMProjects: React.FC = () => {
             setNewContactName('');
             setNewCompanyName('');
             setNewClientEmail('');
-            setNewPhoneCountryCode('+54 9');
+            setNewPhoneCountryCode('');
             setNewPhoneLocalNumber('');
             setNewProjTitle('');
             setNewCurrency('USD');
@@ -550,7 +551,8 @@ const CRMProjects: React.FC = () => {
         setError('');
         setSuccessMsg('');
         try {
-            const combinedEditingPhone = `${editingPhoneCountryCode.replace(/\s+/g, '')}${editingPhoneLocalNumber.replace(/\D/g, '')}`.replace(/^\++/, '');
+            const countryPrefix = editingPhoneCountryCode.trim() !== '' ? editingPhoneCountryCode : '+54 9';
+            const combinedEditingPhone = `${countryPrefix.replace(/\s+/g, '')}${editingPhoneLocalNumber.replace(/\D/g, '')}`.replace(/^\++/, '');
 
             const res = await fetch('/api/comercial/admin', {
                 method: 'POST',
@@ -890,7 +892,7 @@ const CRMProjects: React.FC = () => {
                                             value={newPhoneCountryCode}
                                             onChange={(e) => setNewPhoneCountryCode(e.target.value)}
                                             placeholder="+54 9"
-                                            className="bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime w-[80px] shrink-0 text-center"
+                                            className="bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime w-[80px] shrink-0"
                                         />
                                         <input
                                             type="text"
@@ -1175,7 +1177,7 @@ const CRMProjects: React.FC = () => {
                                                                                     value={editingPhoneCountryCode}
                                                                                     onChange={(e) => setEditingPhoneCountryCode(e.target.value)}
                                                                                     placeholder="+54 9"
-                                                                                    className="bg-black border border-white/20 rounded px-2 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none w-[65px] shrink-0 text-center"
+                                                                                    className="bg-black border border-white/20 rounded px-2 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none w-[65px] shrink-0"
                                                                                 />
                                                                                 <input
                                                                                     type="text"

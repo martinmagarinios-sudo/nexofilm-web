@@ -96,7 +96,7 @@ const ClientPortal: React.FC = () => {
     const [coverageTypes, setCoverageTypes] = useState<string[]>([]);
     const [guestsCount, setGuestsCount] = useState<number | ''>('');
     const [clientPhone, setClientPhone] = useState('');
-    const [phoneCountryCode, setPhoneCountryCode] = useState('+54 9');
+    const [phoneCountryCode, setPhoneCountryCode] = useState('');
     const [phoneLocalNumber, setPhoneLocalNumber] = useState('');
     const [clientEmail, setClientEmail] = useState('');
     const [notificationPref, setNotificationPref] = useState<'both' | 'email' | 'whatsapp'>('both');
@@ -440,7 +440,8 @@ const ClientPortal: React.FC = () => {
         setError('');
 
         try {
-            const combinedPhone = `${phoneCountryCode.replace(/\s+/g, '')}${phoneLocalNumber.replace(/\D/g, '')}`.replace(/^\++/, '');
+            const countryPrefix = phoneCountryCode.trim() !== '' ? phoneCountryCode : '+54 9';
+            const combinedPhone = `${countryPrefix.replace(/\s+/g, '')}${phoneLocalNumber.replace(/\D/g, '')}`.replace(/^\++/, '');
             setClientPhone(combinedPhone);
 
             const res = await fetch('/api/comercial/client', {
@@ -1310,7 +1311,7 @@ const ClientPortal: React.FC = () => {
                                                 value={phoneCountryCode}
                                                 onChange={(e) => setPhoneCountryCode(e.target.value)}
                                                 placeholder="+54 9"
-                                                className="bg-black border border-white/10 rounded px-3 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime w-[80px] shrink-0 text-center"
+                                                className="bg-black border border-white/10 rounded px-3 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime w-[80px] shrink-0"
                                             />
                                             <input
                                                 type="text"
