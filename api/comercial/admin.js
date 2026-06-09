@@ -284,17 +284,13 @@ export default async function handler(req, res) {
                     if (bErr) throw bErr;
                 }
 
-                const { data: project, error: updateErr } = await supabase
+                const { data: project, error: getErr } = await supabase
                     .from('projects')
-                    .update({ status: 'sent', updated_at: new Date().toISOString() })
-                    .eq('id', project_id)
                     .select()
+                    .eq('id', project_id)
                     .single();
 
-                if (updateErr) throw updateErr;
-
-                // Notificar al cliente por Email / WhatsApp
-                await notifyClient(project, items, calculatedTotal, payment_terms, req.headers.host || 'nexofilm.com');
+                if (getErr) throw getErr;
 
                 return res.status(200).json({ 
                     success: true, 
@@ -656,6 +652,7 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                 });
             }
 
+            case 'sendBudget':
             case 'sendProactiveBudget': {
                 if (!project_id || !items) {
                     return res.status(400).json({ error: 'Faltan campos project_id o items' });

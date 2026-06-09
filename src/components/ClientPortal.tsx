@@ -1305,19 +1305,13 @@ const ClientPortal: React.FC = () => {
                                     <div className="space-y-2">
                                         <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Tu WhatsApp (para recibir avisos)</label>
                                         <div className="flex gap-2">
-                                            <select
+                                            <input
+                                                type="text"
                                                 value={phoneCountryCode}
                                                 onChange={(e) => setPhoneCountryCode(e.target.value)}
-                                                className="bg-black border border-white/10 rounded px-2 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime w-[90px] shrink-0"
-                                            >
-                                                <option value="+54 9">+54 9 (AR)</option>
-                                                <option value="+54">+54 (AR)</option>
-                                                <option value="+598">+598 (UY)</option>
-                                                <option value="+56">+56 (CL)</option>
-                                                <option value="+55">+55 (BR)</option>
-                                                <option value="+34">+34 (ES)</option>
-                                                <option value="+1">+1 (US/CA)</option>
-                                            </select>
+                                                placeholder="+54 9"
+                                                className="bg-black border border-white/10 rounded px-3 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime w-[80px] shrink-0 text-center"
+                                            />
                                             <input
                                                 type="text"
                                                 required
@@ -1327,7 +1321,7 @@ const ClientPortal: React.FC = () => {
                                                 placeholder="11 5892 2379"
                                             />
                                         </div>
-                                        <span className="text-[10px] text-zinc-500 block mt-1">Ej: 11 5892 2379</span>
+                                        <span className="text-[10px] text-zinc-500 block mt-1">Ej: Código de país (tipo +54 9) y celular (11 5892 2379)</span>
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Tu Correo Electrónico</label>

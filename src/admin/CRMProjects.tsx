@@ -434,11 +434,46 @@ const CRMProjects: React.FC = () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error al guardar presupuesto');
 
-            setSuccessMsg(`Presupuesto actualizado y enviado al cliente ${budgetingProject.contact_name} (estado cambiado a SENT).`);
+            setSuccessMsg(`Presupuesto guardado correctamente.`);
             setBudgetingProject(null);
             fetchData();
         } catch (err: any) {
             setError(err.message);
+        }
+    };
+
+    // Enviar presupuesto formal por email (cambia estado a SENT y notifica)
+    const handleSendBudgetEmail = async (projectId: string) => {
+        const project = projects.find(p => p.id === projectId);
+        const budget = budgets.find(b => b.project_id === projectId);
+        if (!project || !budget) return;
+
+        setLoading(true);
+        setError('');
+        setSuccessMsg('');
+
+        try {
+            const res = await fetch('/api/comercial/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'sendBudget',
+                    project_id: projectId,
+                    items: budget.items,
+                    payment_terms: budget.payment_terms,
+                    password
+                })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al enviar presupuesto');
+
+            setSuccessMsg(`Presupuesto enviado con éxito a ${project.contact_name}.`);
+            fetchData();
+        } catch (err: any) {
+            setError('Error al enviar: ' + err.message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -850,19 +885,13 @@ const CRMProjects: React.FC = () => {
                                 <div className="col-span-2 space-y-1">
                                     <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">WhatsApp</label>
                                     <div className="flex gap-2">
-                                        <select
+                                        <input
+                                            type="text"
                                             value={newPhoneCountryCode}
                                             onChange={(e) => setNewPhoneCountryCode(e.target.value)}
-                                            className="bg-black border border-white/10 rounded px-2 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime w-[90px] shrink-0"
-                                        >
-                                            <option value="+54 9">+54 9 (AR)</option>
-                                            <option value="+54">+54 (AR)</option>
-                                            <option value="+598">+598 (UY)</option>
-                                            <option value="+56">+56 (CL)</option>
-                                            <option value="+55">+55 (BR)</option>
-                                            <option value="+34">+34 (ES)</option>
-                                            <option value="+1">+1 (US/CA)</option>
-                                        </select>
+                                            placeholder="+54 9"
+                                            className="bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime w-[80px] shrink-0 text-center"
+                                        />
                                         <input
                                             type="text"
                                             value={newPhoneLocalNumber}
@@ -871,7 +900,7 @@ const CRMProjects: React.FC = () => {
                                             placeholder="11 5892 2379"
                                         />
                                     </div>
-                                    <span className="text-[10px] text-zinc-500 block mt-1">Ej: 11 5892 2379</span>
+                                    <span className="text-[10px] text-zinc-500 block mt-1">Ej: Código de país (tipo +54 9) y celular (11 5892 2379)</span>
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Moneda</label>
@@ -1141,19 +1170,13 @@ const CRMProjects: React.FC = () => {
                                                                         <input type="email" value={editingClientEmail} onChange={(e) => setEditingClientEmail(e.target.value)} placeholder="Email" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
                                                                         <div className="flex flex-col gap-1">
                                                                             <div className="flex gap-1.5">
-                                                                                <select
+                                                                                <input
+                                                                                    type="text"
                                                                                     value={editingPhoneCountryCode}
                                                                                     onChange={(e) => setEditingPhoneCountryCode(e.target.value)}
-                                                                                    className="bg-black border border-white/20 rounded px-1.5 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none w-[75px] shrink-0"
-                                                                                >
-                                                                                    <option value="+54 9">+54 9</option>
-                                                                                    <option value="+54">+54</option>
-                                                                                    <option value="+598">+598</option>
-                                                                                    <option value="+56">+56</option>
-                                                                                    <option value="+55">+55</option>
-                                                                                    <option value="+34">+34</option>
-                                                                                    <option value="+1">+1</option>
-                                                                                </select>
+                                                                                    placeholder="+54 9"
+                                                                                    className="bg-black border border-white/20 rounded px-2 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none w-[65px] shrink-0 text-center"
+                                                                                />
                                                                                 <input
                                                                                     type="text"
                                                                                     value={editingPhoneLocalNumber}
@@ -1162,7 +1185,7 @@ const CRMProjects: React.FC = () => {
                                                                                     className="flex-1 min-w-0 bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none"
                                                                                 />
                                                                             </div>
-                                                                            <span className="text-[9px] text-zinc-500 block">Ej: 11 5892 2379</span>
+                                                                            <span className="text-[9px] text-zinc-500 block">Ej: +54 9 / 11 5892 2379</span>
                                                                         </div>
                                                                         <select value={editingCurrency} onChange={(e) => setEditingCurrency(e.target.value as 'USD' | 'ARS')} className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none">
                                                                             <option value="USD">USD (Dólares)</option>
@@ -1256,16 +1279,67 @@ const CRMProjects: React.FC = () => {
                                                         >
                                                             🔄 Rotar Token
                                                         </button>
+                                                        {projectBudget && (
+                                                             <>
+                                                                 {/* Botón de Enviar por Email */}
+                                                                 {project.status === 'draft' || project.status === 'review' ? (
+                                                                     <button
+                                                                         onClick={() => handleSendBudgetEmail(project.id)}
+                                                                         className="text-xs bg-nexo-lime text-black font-bold px-3 py-1.5 rounded hover:bg-white transition-colors flex items-center justify-center gap-1.5"
+                                                                         title="Enviar presupuesto formal por Email"
+                                                                     >
+                                                                         ✉️ Enviar por Email
+                                                                     </button>
+                                                                 ) : (
+                                                                     <button
+                                                                         onClick={() => {
+                                                                             if (confirm('Este presupuesto ya fue enviado por email. ¿Querés volver a enviarlo?')) {
+                                                                                 handleSendBudgetEmail(project.id);
+                                                                             }
+                                                                         }}
+                                                                         className="text-xs bg-zinc-800 hover:bg-zinc-700 border border-white/10 text-zinc-400 px-3 py-1.5 rounded transition-colors flex items-center justify-center gap-1.5 font-bold"
+                                                                         title="El presupuesto ya fue enviado por Email. Clic para reenviar."
+                                                                     >
+                                                                         ✉️ Presupuesto Enviado
+                                                                     </button>
+                                                                 )}
+                                                             </>
+                                                         )}
                                                         {project.client_phone && (
                                                             <>
                                                                 <a
                                                                     href={`https://wa.me/${project.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(`🎥 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla directamente desde tu portal seguro haciendo clic en el siguiente enlace:\n👉 ${window.location.origin}/portal?token=${project.access_token}`)}`}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
-                                                                    className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-1.5 rounded transition-colors flex items-center justify-center gap-1"
+                                                                    className={`text-xs font-bold px-3 py-1.5 rounded transition-colors flex items-center justify-center gap-1 ${
+                                                                        project.status === 'draft' || project.status === 'review'
+                                                                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                                                                            : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-400 border border-white/10'
+                                                                    }`}
                                                                     title="Enviar presupuesto por WhatsApp"
+                                                                    onClick={async () => {
+                                                                        if (project.status === 'draft' || project.status === 'review') {
+                                                                            try {
+                                                                                await fetch('/api/comercial/admin', {
+                                                                                    method: 'POST',
+                                                                                    headers: { 'Content-Type': 'application/json' },
+                                                                                    body: JSON.stringify({
+                                                                                        action: 'updateStatus',
+                                                                                        project_id: project.id,
+                                                                                        status: 'sent',
+                                                                                        password
+                                                                                    })
+                                                                                });
+                                                                                fetchData();
+                                                                            } catch (e) {
+                                                                                console.error("Error updating status to sent", e);
+                                                                            }
+                                                                        }
+                                                                    }}
                                                                 >
-                                                                    💬 Enviar Presupuesto
+                                                                    {project.status === 'draft' || project.status === 'review'
+                                                                        ? '💬 Enviar Presupuesto'
+                                                                        : '💬 Presupuesto Enviado'}
                                                                 </a>
                                                                 {(project.status === 'draft' || project.status === 'review') && (
                                                                     <a
