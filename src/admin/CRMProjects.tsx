@@ -47,6 +47,8 @@ interface Project {
     admin_notes?: string | null;
     currency?: 'USD' | 'ARS' | null;
     crew_count?: number | null;
+    client_tax_certificate_url?: string | null;
+    invoice_sent?: boolean | null;
     created_at: string;
 }
 
@@ -484,6 +486,39 @@ const CRMProjects: React.FC = () => {
         }
     };
 
+    // Enviar notificación de factura por email/whatsapp (cambia invoice_sent a true)
+    const handleSendInvoiceNotification = async (projectId: string, channel: 'email' | 'whatsapp') => {
+        const project = projects.find(p => p.id === projectId);
+        if (!project) return;
+
+        setLoading(true);
+        setError('');
+        setSuccessMsg('');
+
+        try {
+            const res = await fetch('/api/comercial/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'sendInvoiceNotification',
+                    project_id: projectId,
+                    channel,
+                    password
+                })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al enviar notificación de factura');
+
+            setSuccessMsg(`Factura enviada por ${channel === 'email' ? 'Mail' : 'WhatsApp'} a ${project.contact_name}.`);
+            fetchData();
+        } catch (err: any) {
+            setError('Error al enviar: ' + err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Agregar fila de presupuesto (Creación)
     const addNewBudgetItem = () => {
         setNewBudgetItems([...newBudgetItems, { description: '', quantity: 1, unit_price: 0 }]);
@@ -758,7 +793,7 @@ const CRMProjects: React.FC = () => {
     // Abrir Modal de Facturación
     const openInvoiceModal = (proj: Project) => {
         setSelectedProject(proj);
-        setBankDetails(proj.bank_details || 'BANCO: Santander\nCBU: 0720000000000000000000\nALIAS: nexofilm.estudio\nTITULAR: Martín Magariños');
+        setBankDetails(proj.bank_details || 'Banco: Galicia\nCBU: 0070069630004029241915\nAlias: tincho.maga.gl\nTitular: Martin Magariños\nDNI: 23.657.817');
         setInvoiceUrl(proj.invoice_url || '');
         setInvoiceType(proj.invoice_type || 'deposit_50');
         setInvoiceAmount(proj.invoice_amount || 0);
@@ -1335,7 +1370,22 @@ const CRMProjects: React.FC = () => {
                                                                  const isEmailPreferred = pref === 'email' || pref === 'both';
                                                                  const isDraftOrReview = project.status === 'draft' || project.status === 'review';
                                                                  
-                                                                 if (isDraftOrReview) {
+                                                                 if (project.status === 'approved' || project.status === 'production' || project.status === 'delivered') {
+                                                                     const isSent = project.invoice_sent;
+                                                                     return (
+                                                                         <button
+                                                                             onClick={() => handleSendInvoiceNotification(project.id, 'email')}
+                                                                             className={`text-xs font-black px-3 py-1.5 rounded transition-all flex items-center justify-center gap-1.5 ${
+                                                                                 !isSent 
+                                                                                     ? 'bg-nexo-lime text-black hover:bg-white shadow-[0_0_15px_rgba(204,255,0,0.2)]'
+                                                                                     : 'bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-500 font-bold'
+                                                                             }`}
+                                                                             title={!isSent ? 'Enviar Factura por Mail' : 'Reenviar Factura por Mail'}
+                                                                         >
+                                                                             {!isSent ? '✉️ Enviar Factura' : '✉️ Reenviar Factura'}
+                                                                         </button>
+                                                                     );
+                                                                 } else if (isDraftOrReview) {
                                                                      return (
                                                                          <button
                                                                              onClick={() => handleSendBudgetEmail(project.id, 'email')}
@@ -1371,9 +1421,32 @@ const CRMProjects: React.FC = () => {
                                                                  const pref = project.notification_preference || 'both';
                                                                  const isWhatsappPreferred = pref === 'whatsapp' || pref === 'both';
                                                                  const isDraftOrReview = project.status === 'draft' || project.status === 'review';
-                                                                 const waUrl = `https://wa.me/${project.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(`🎥 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla en tu portal seguro haciendo clic en el siguiente enlace:\n👉 ${window.location.origin}/portal?token=${project.access_token}`)}`;
-
-                                                                 if (isDraftOrReview) {
+                                                                 
+                                                                 if (project.status === 'approved' || project.status === 'production' || project.status === 'delivered') {
+                                                                     const isSent = project.invoice_sent;
+                                                                     const invoiceWaUrl = `https://wa.me/${project.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(
+                                                                         `🧾 *NexoFilm - Facturación y Pago*\n\n¡Hola ${project.contact_name}! Ya registramos tu pago o preparamos tu factura para el proyecto "${project.title}".\n\nPodés ver los datos de transferencia Galicia, descargar tu factura y seguir el estado desde tu portal seguro:\n👉 ${window.location.origin}/portal?token=${project.access_token}`
+                                                                     )}`;
+                                                                     return (
+                                                                         <a
+                                                                             href={invoiceWaUrl}
+                                                                             target="_blank"
+                                                                             rel="noopener noreferrer"
+                                                                             onClick={async () => {
+                                                                                 await handleSendInvoiceNotification(project.id, 'whatsapp');
+                                                                             }}
+                                                                             className={`text-xs font-black px-3 py-1.5 rounded transition-all flex items-center justify-center gap-1 ${
+                                                                                 !isSent
+                                                                                     ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.2)]'
+                                                                                     : 'bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-500 font-bold'
+                                                                             }`}
+                                                                             title={!isSent ? 'Enviar Factura por WhatsApp' : 'Reenviar Factura por WhatsApp'}
+                                                                         >
+                                                                             {!isSent ? '💬 Enviar Factura' : '💬 Reenviar Factura'}
+                                                                         </a>
+                                                                     );
+                                                                 } else if (isDraftOrReview) {
+                                                                     const waUrl = `https://wa.me/${project.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(`🎥 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla en tu portal seguro haciendo clic en el siguiente enlace:\n👉 ${window.location.origin}/portal?token=${project.access_token}`)}`;
                                                                      return (
                                                                          <div className="flex gap-2">
                                                                              <a
@@ -1404,6 +1477,7 @@ const CRMProjects: React.FC = () => {
                                                                          </div>
                                                                      );
                                                                  } else {
+                                                                     const waUrl = `https://wa.me/${project.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(`🎥 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla en tu portal seguro haciendo clic en el siguiente enlace:\n👉 ${window.location.origin}/portal?token=${project.access_token}`)}`;
                                                                      return (
                                                                          <a
                                                                              href={waUrl}
@@ -1489,10 +1563,27 @@ const CRMProjects: React.FC = () => {
                                                                 <p className="text-zinc-400 italic bg-black/40 p-2.5 rounded">"{project.client_notes}"</p>
                                                             </div>
                                                         )}
-                                                        {project.client_billing_info && (
-                                                            <div className="border-t border-white/5 pt-2">
-                                                                <span className="font-bold text-amber-400 block mb-1">🧾 Datos de Facturación cargados por el Cliente:</span>
-                                                                <pre className="font-mono text-[10px] whitespace-pre-wrap leading-relaxed text-zinc-300 bg-black/40 p-2.5 rounded">{project.client_billing_info}</pre>
+                                                        {(project.client_billing_info || project.client_tax_certificate_url) && (
+                                                            <div className="border-t border-white/5 pt-2 space-y-2">
+                                                                {project.client_billing_info && (
+                                                                    <>
+                                                                        <span className="font-bold text-amber-400 block mb-1">🧾 Datos de Facturación cargados por el Cliente:</span>
+                                                                        <pre className="font-mono text-[10px] whitespace-pre-wrap leading-relaxed text-zinc-300 bg-black/40 p-2.5 rounded">{project.client_billing_info}</pre>
+                                                                    </>
+                                                                )}
+                                                                {project.client_tax_certificate_url && (
+                                                                    <div className="mt-2 bg-black/40 p-2.5 rounded border border-[#00e5ff]/20 flex justify-between items-center">
+                                                                        <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">📄 Constancia de CUIT/CUIL adjunta</span>
+                                                                        <a 
+                                                                            href={project.client_tax_certificate_url} 
+                                                                            target="_blank" 
+                                                                            rel="noopener noreferrer"
+                                                                            className="text-xs bg-[#00e5ff] text-black font-black px-3 py-1.5 rounded hover:bg-white transition-colors uppercase tracking-widest text-[9px]"
+                                                                        >
+                                                                            Descargar
+                                                                        </a>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         )}
                                                     </div>

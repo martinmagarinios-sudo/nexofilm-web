@@ -41,6 +41,8 @@ interface Project {
     admin_notes?: string | null;
     currency?: 'USD' | 'ARS' | null;
     crew_count?: number | null;
+    client_tax_certificate_url?: string | null;
+    invoice_sent?: boolean | null;
 }
 
 interface DriveFile {
@@ -106,12 +108,15 @@ const ClientPortal: React.FC = () => {
     
     // Estados adicionales de facturación y observaciones
     const [billingInfo, setBillingInfo] = useState('');
+    const [taxCertificateUrl, setTaxCertificateUrl] = useState('');
     const [noteText, setNoteText] = useState('');
     const [sendingAction, setSendingAction] = useState(false);
+    const [uploadingCertificate, setUploadingCertificate] = useState(false);
 
     // Acciones de presupuesto
     const [feedbackText, setFeedbackText] = useState('');
-    const [actionView, setActionView] = useState<'normal' | 'feedback' | 'reject'>('normal');
+    const [actionView, setActionView] = useState<'normal' | 'feedback' | 'reject' | 'approve_confirm'>('normal');
+    const [selectedOptionals, setSelectedOptionals] = useState<number[]>([]);
 
     // Drive Bridge
     const [driveFiles, setDriveFiles] = useState<DriveFile[]>([]);
@@ -400,6 +405,7 @@ const ClientPortal: React.FC = () => {
                 setClientEmail(data.project.client_email || '');
                 setNotificationPref(data.project.notification_preference || 'both');
                 setBillingInfo(data.project.client_billing_info || '');
+                setTaxCertificateUrl(data.project.client_tax_certificate_url || '');
                 setNoteText(''); // Dejar vacío por defecto para nuevas consultas
             }
         } catch (err: any) {
@@ -600,10 +606,27 @@ const ClientPortal: React.FC = () => {
         }
     };
 
-    // Aprobar Presupuesto
-    const handleApproveBudget = async () => {
+    const handlePrintPDF = () => {
+        const originalTitle = document.title;
+        const eventName = project?.title || 'Evento';
+        const clientName = project?.contact_name || 'Cliente';
+        document.title = `Propuesta Comercial - ${clientName} - ${eventName} - NexoFilm`;
+        window.print();
+        document.title = originalTitle;
+    };
+
+    // Aprobar Presupuesto - Muestra el panel interactivo de aprobación
+    const handleApproveBudget = () => {
+        setSelectedOptionals([]);
+        setActionView('approve_confirm');
+    };
+
+    // Confirmación final de la aprobación con opcionales y facturación
+    const handleConfirmApproval = async (e: React.FormEvent) => {
+        e.preventDefault();
         setLoading(true);
         setError('');
+        setSuccessMsg('');
 
         try {
             const res = await fetch('/api/comercial/client', {
@@ -612,13 +635,20 @@ const ClientPortal: React.FC = () => {
                     'Content-Type': 'application/json',
                     'x-client-token': token || ''
                 },
-                body: JSON.stringify({ token, action: 'approve' })
+                body: JSON.stringify({ 
+                    token, 
+                    action: 'approve',
+                    billing_info: billingInfo,
+                    tax_certificate_url: taxCertificateUrl,
+                    selected_optional_indices: selectedOptionals
+                })
             });
 
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error al aprobar presupuesto');
 
             setSuccessMsg('¡Presupuesto Aprobado con éxito! Gracias por confiar en NexoFilm. En breve nos pondremos en contacto.');
+            setActionView('normal');
             fetchPortalData();
         } catch (err: any) {
             setError(err.message);
@@ -724,6 +754,59 @@ const ClientPortal: React.FC = () => {
             setError(err.message || 'Error al enviar feedback');
         } finally {
             setSendingAction(false);
+        }
+    };
+
+    const handleTaxCertificateUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 5 * 1024 * 1024) {
+            alert('El archivo es demasiado grande (máximo 5MB).');
+            return;
+        }
+
+        setUploadingCertificate(true);
+        setError('');
+        setSuccessMsg('');
+
+        try {
+            const reader = new FileReader();
+            reader.onload = async () => {
+                const base64String = (reader.result as string).split(',')[1];
+                
+                try {
+                    const res = await fetch('/api/comercial/client', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'x-client-token': token || ''
+                        },
+                        body: JSON.stringify({
+                            token,
+                            action: 'upload_tax_certificate',
+                            fileBase64: base64String,
+                            filename: file.name
+                        })
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'Error al procesar el archivo');
+
+                    setSuccessMsg('¡Constancia de CUIT/CUIL adjuntada correctamente!');
+                    fetchPortalData();
+                } catch (err: any) {
+                    console.error(err);
+                    setError(err.message || 'Error al subir constancia.');
+                } finally {
+                    setUploadingCertificate(false);
+                }
+            };
+            reader.readAsDataURL(file);
+        } catch (err: any) {
+            console.error(err);
+            setError('Error al leer el archivo.');
+            setUploadingCertificate(false);
         }
     };
 
@@ -860,6 +943,149 @@ const ClientPortal: React.FC = () => {
             </div>
         );
     }
+
+    const renderBudgetSection = () => {
+        if (!budget) return null;
+
+        return (
+            <div className="bg-zinc-900/40 border border-white/5 p-6 md:p-8 rounded-xl shadow-2xl space-y-8 no-print mt-6">
+                <div className="space-y-2 border-b border-white/5 pb-4">
+                    <h2 className="text-xl font-bold text-white uppercase tracking-tight">Presupuesto de Servicios Detallado</h2>
+                    <p className="text-zinc-400 text-xs">
+                        Desglose del presupuesto comercial y las condiciones de pago acordadas.
+                    </p>
+                </div>
+
+                {/* Desglose de ítems */}
+                <div className="space-y-4">
+                    {/* Vista Desktop (Tabla) */}
+                    <div className="hidden lg:block overflow-x-auto border border-white/10 rounded-lg">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-zinc-800/30 text-zinc-400 text-xs tracking-wider uppercase border-b border-white/10">
+                                    <th className="px-6 py-4 font-semibold">Descripción del Concepto</th>
+                                    <th className="px-6 py-4 font-semibold w-24 text-center">Cant.</th>
+                                    <th className="px-6 py-4 font-semibold w-32 text-right">Precio Unit.</th>
+                                    <th className="px-6 py-4 font-semibold w-32 text-right">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5 text-sm text-zinc-300">
+                                {budget.items.filter(item => !item.is_optional).map((item, idx) => (
+                                    <tr key={idx}>
+                                        <td className="px-6 py-4 font-medium text-white whitespace-pre-wrap">{item.description}</td>
+                                        <td className="px-6 py-4 text-center">{item.quantity}</td>
+                                        <td className="px-6 py-4 text-right">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</td>
+                                        <td className="px-6 py-4 text-right text-white">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</td>
+                                    </tr>
+                                ))}
+                                <tr className="bg-zinc-850/50 font-bold text-white text-base">
+                                    <td colSpan={3} className="px-6 py-5 text-right text-zinc-400 text-sm font-normal">Valor Total de la Propuesta (Valores Finales):</td>
+                                    <td className="px-6 py-5 text-right text-nexo-lime">{project.currency || 'USD'} {budget.total_price.toLocaleString()}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Vista Móvil (Tarjetas Stacked) */}
+                    <div className="block lg:hidden space-y-4">
+                        {budget.items.filter(item => !item.is_optional).map((item, idx) => (
+                            <div key={idx} className="bg-black/40 border border-white/5 p-5 rounded-xl space-y-3 shadow-lg">
+                                <div className="font-medium text-white text-sm whitespace-pre-wrap leading-relaxed">
+                                    {item.description}
+                                </div>
+                                <div className="flex justify-between items-center gap-2 pt-3 border-t border-white/5 text-xs text-zinc-400">
+                                    <div>
+                                        <span>Cant: </span>
+                                        <strong className="text-white">{item.quantity}</strong>
+                                    </div>
+                                    <div>
+                                        <span>Precio U: </span>
+                                        <strong className="text-white">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</strong>
+                                    </div>
+                                    <div className="text-right">
+                                        <span>Subtotal: </span>
+                                        <strong className="text-nexo-lime font-bold">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+
+                        {/* Total en Móvil */}
+                        <div className="bg-zinc-900/60 p-5 rounded-xl border border-nexo-lime/20 flex flex-col justify-center items-center gap-2 text-center shadow-lg">
+                            <span className="text-zinc-500 text-xs uppercase tracking-wider font-bold">Valor Total de la Propuesta (Valores Finales)</span>
+                            <span className="text-2xl font-black text-nexo-lime">{project.currency || 'USD'} {budget.total_price.toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Servicios Opcionales / Extras Sugeridos */}
+                {budget.items.some(item => item.is_optional) && (
+                    <div className="space-y-3">
+                        <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Adicionales recomendados (Opcionales)</h4>
+                        
+                        {/* Vista Desktop (Tabla) */}
+                        <div className="hidden lg:block overflow-x-auto border border-[#00e5ff]/20 rounded-lg bg-[#00e5ff]/5">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-zinc-800/20 text-[#00e5ff] text-xs tracking-wider uppercase border-b border-[#00e5ff]/20">
+                                        <th className="px-6 py-3 font-semibold">Servicio Opcional</th>
+                                        <th className="px-6 py-3 font-semibold w-24 text-center">Cant.</th>
+                                        <th className="px-6 py-3 font-semibold w-32 text-right">Precio Unit.</th>
+                                        <th className="px-6 py-3 font-semibold w-32 text-right">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5 text-sm text-zinc-300">
+                                    {budget.items.filter(item => item.is_optional).map((item, idx) => (
+                                        <tr key={idx}>
+                                            <td className="px-6 py-3 font-medium text-white whitespace-pre-wrap">➕ {item.description}</td>
+                                            <td className="px-6 py-3 text-center">{item.quantity}</td>
+                                            <td className="px-6 py-3 text-right">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</td>
+                                            <td className="px-6 py-3 text-right text-[#00e5ff]">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Vista Móvil (Tarjetas Stacked) */}
+                        <div className="block lg:hidden space-y-3">
+                            {budget.items.filter(item => item.is_optional).map((item, idx) => (
+                                <div key={idx} className="bg-[#00e5ff]/5 border border-[#00e5ff]/20 p-5 rounded-xl space-y-3 shadow-md">
+                                    <div className="font-medium text-white text-sm whitespace-pre-wrap leading-relaxed">
+                                        ➕ {item.description}
+                                    </div>
+                                    <div className="flex justify-between items-center gap-2 pt-3 border-t border-white/5 text-xs text-zinc-400">
+                                        <div>
+                                            <span>Cant: </span>
+                                            <strong className="text-white">{item.quantity}</strong>
+                                        </div>
+                                        <div>
+                                            <span>Precio U: </span>
+                                            <strong className="text-white">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</strong>
+                                        </div>
+                                        <div className="text-right">
+                                            <span>Subtotal: </span>
+                                            <strong className="text-[#00e5ff] font-bold">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Condiciones de Pago */}
+                {budget.payment_terms && (
+                    <div className="bg-black/30 p-5 rounded-lg border border-white/5 space-y-2">
+                        <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Términos de Pago y Condiciones</h4>
+                        <p className="text-xs text-zinc-300 whitespace-pre-line leading-relaxed">
+                            {budget.payment_terms}
+                        </p>
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     if (!project) return null;
 
@@ -1566,238 +1792,220 @@ const ClientPortal: React.FC = () => {
 
                 {/* ESTADO 2: SENT (PRESUPUESTO RECIBIDO, PENDIENTE APROBACIÓN) */}
                 {project.status === 'sent' && budget && (
-                    <div className="bg-zinc-900/40 border border-white/5 p-6 md:p-8 rounded-xl shadow-2xl space-y-8">
-                        <div className="space-y-2 border-b border-white/5 pb-4">
-                            <h2 className="text-xl font-bold text-white uppercase tracking-tight">Propuesta Comercial</h2>
-                            <p className="text-zinc-400 text-xs">
-                                Revisá el desglose del presupuesto comercial y las condiciones del servicio.
-                            </p>
-                        </div>
-
-                        {/* Desglose de ítems */}
-                        <div className="space-y-4">
-                            {/* Vista Desktop (Tabla) */}
-                            <div className="hidden lg:block overflow-x-auto border border-white/10 rounded-lg">
-                                <table className="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr className="bg-zinc-800/30 text-zinc-400 text-xs tracking-wider uppercase border-b border-white/10">
-                                            <th className="px-6 py-4 font-semibold">Descripción del Concepto</th>
-                                            <th className="px-6 py-4 font-semibold w-24 text-center">Cant.</th>
-                                            <th className="px-6 py-4 font-semibold w-32 text-right">Precio Unit.</th>
-                                            <th className="px-6 py-4 font-semibold w-32 text-right">Subtotal</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-white/5 text-sm text-zinc-300">
-                                        {budget.items.filter(item => !item.is_optional).map((item, idx) => (
-                                            <tr key={idx}>
-                                                <td className="px-6 py-4 font-medium text-white whitespace-pre-wrap">{item.description}</td>
-                                                <td className="px-6 py-4 text-center">{item.quantity}</td>
-                                                <td className="px-6 py-4 text-right">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</td>
-                                                <td className="px-6 py-4 text-right text-white">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</td>
-                                            </tr>
-                                        ))}
-                                        <tr className="bg-zinc-850/50 font-bold text-white text-base">
-                                            <td colSpan={3} className="px-6 py-5 text-right text-zinc-400 text-sm font-normal">Valor Total de la Propuesta (Valores Finales):</td>
-                                            <td className="px-6 py-5 text-right text-nexo-lime">{project.currency || 'USD'} {budget.total_price.toLocaleString()}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {/* Vista Móvil (Tarjetas Stacked) */}
-                            <div className="block lg:hidden space-y-4">
-                                {budget.items.filter(item => !item.is_optional).map((item, idx) => (
-                                    <div key={idx} className="bg-black/40 border border-white/5 p-5 rounded-xl space-y-3 shadow-lg">
-                                        <div className="font-medium text-white text-sm whitespace-pre-wrap leading-relaxed">
-                                            {item.description}
-                                        </div>
-                                        <div className="flex justify-between items-center gap-2 pt-3 border-t border-white/5 text-xs text-zinc-400">
-                                            <div>
-                                                <span>Cant: </span>
-                                                <strong className="text-white">{item.quantity}</strong>
-                                            </div>
-                                            <div>
-                                                <span>Precio U: </span>
-                                                <strong className="text-white">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</strong>
-                                            </div>
-                                            <div className="text-right">
-                                                <span>Subtotal: </span>
-                                                <strong className="text-nexo-lime font-bold">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {/* Total en Móvil */}
-                                <div className="bg-zinc-900/60 p-5 rounded-xl border border-nexo-lime/20 flex flex-col justify-center items-center gap-2 text-center shadow-lg">
-                                    <span className="text-zinc-500 text-xs uppercase tracking-wider font-bold">Valor Total de la Propuesta (Valores Finales)</span>
-                                    <span className="text-2xl font-black text-nexo-lime">{project.currency || 'USD'} {budget.total_price.toLocaleString()}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Servicios Opcionales / Extras Sugeridos */}
-                        {budget.items.some(item => item.is_optional) && (
-                            <div className="space-y-3">
-                                <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Adicionales recomendados (Opcionales)</h4>
-                                
-                                {/* Vista Desktop (Tabla) */}
-                                <div className="hidden lg:block overflow-x-auto border border-[#00e5ff]/20 rounded-lg bg-[#00e5ff]/5">
-                                    <table className="w-full text-left border-collapse">
-                                        <thead>
-                                            <tr className="bg-zinc-800/20 text-[#00e5ff] text-xs tracking-wider uppercase border-b border-[#00e5ff]/20">
-                                                <th className="px-6 py-3 font-semibold">Servicio Opcional</th>
-                                                <th className="px-6 py-3 font-semibold w-24 text-center">Cant.</th>
-                                                <th className="px-6 py-3 font-semibold w-32 text-right">Precio Unit.</th>
-                                                <th className="px-6 py-3 font-semibold w-32 text-right">Subtotal</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-white/5 text-sm text-zinc-300">
-                                            {budget.items.filter(item => item.is_optional).map((item, idx) => (
-                                                <tr key={idx}>
-                                                    <td className="px-6 py-3 font-medium text-white whitespace-pre-wrap">➕ {item.description}</td>
-                                                    <td className="px-6 py-3 text-center">{item.quantity}</td>
-                                                    <td className="px-6 py-3 text-right">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</td>
-                                                    <td className="px-6 py-3 text-right text-[#00e5ff]">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                {/* Vista Móvil (Tarjetas Stacked) */}
-                                <div className="block lg:hidden space-y-3">
-                                    {budget.items.filter(item => item.is_optional).map((item, idx) => (
-                                        <div key={idx} className="bg-[#00e5ff]/5 border border-[#00e5ff]/20 p-5 rounded-xl space-y-3 shadow-md">
-                                            <div className="font-medium text-white text-sm whitespace-pre-wrap leading-relaxed">
-                                                ➕ {item.description}
-                                            </div>
-                                            <div className="flex justify-between items-center gap-2 pt-3 border-t border-white/5 text-xs text-zinc-400">
-                                                <div>
-                                                    <span>Cant: </span>
-                                                    <strong className="text-white">{item.quantity}</strong>
-                                                </div>
-                                                <div>
-                                                    <span>Precio U: </span>
-                                                    <strong className="text-white">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</strong>
-                                                </div>
-                                                <div className="text-right">
-                                                    <span>Subtotal: </span>
-                                                    <strong className="text-[#00e5ff] font-bold">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</strong>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Condiciones de Pago */}
-                        {budget.payment_terms && (
-                            <div className="bg-black/30 p-5 rounded-lg border border-white/5 space-y-2">
-                                <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Términos de Pago y Condiciones</h4>
-                                <p className="text-xs text-zinc-300 whitespace-pre-line leading-relaxed">
-                                    {budget.payment_terms}
+                    actionView === 'approve_confirm' ? (
+                        <form onSubmit={handleConfirmApproval} className="bg-zinc-900/40 border border-white/5 p-6 md:p-8 rounded-xl shadow-2xl space-y-6 no-print">
+                            <div className="space-y-2 border-b border-white/5 pb-4">
+                                <h3 className="text-xl font-bold text-white uppercase tracking-tight">🧾 Confirmación de Aprobación</h3>
+                                <p className="text-zinc-400 text-xs">
+                                    Antes de confirmar, seleccioná si querés incluir algún servicio opcional y cargá tus datos de facturación.
                                 </p>
                             </div>
-                        )}
 
-                        {/* Acciones Comerciales */}
-                        {actionView === 'normal' && (
-                            <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-white/5">
+                            {/* Opcionales con checkboxes */}
+                            {budget.items.some(item => item.is_optional) && (
+                                <div className="space-y-3 bg-black/30 p-5 rounded-lg border border-white/5">
+                                    <h4 className="text-zinc-300 text-xs font-bold uppercase tracking-wider block mb-2 text-left">Servicios Opcionales Disponibles:</h4>
+                                    <div className="space-y-2.5">
+                                        {budget.items.filter(item => item.is_optional).map((item, idx) => {
+                                            const isChecked = selectedOptionals.includes(idx);
+                                            return (
+                                                <label key={idx} className="flex items-start gap-3 p-3 rounded-lg border border-white/5 bg-zinc-950/40 hover:border-nexo-lime/20 cursor-pointer select-none transition-all text-left">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={isChecked}
+                                                        onChange={() => {
+                                                            if (isChecked) {
+                                                                setSelectedOptionals(selectedOptionals.filter(i => i !== idx));
+                                                            } else {
+                                                                setSelectedOptionals([...selectedOptionals, idx]);
+                                                            }
+                                                        }}
+                                                        className="mt-0.5 accent-nexo-lime w-4 h-4 shrink-0"
+                                                    />
+                                                    <div className="text-xs">
+                                                        <span className="font-bold text-white block">➕ {item.description}</span>
+                                                        <span className="text-zinc-400 mt-1 block">Cantidad: {item.quantity} · Subtotal: {project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</span>
+                                                    </div>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Recálculo de Total en Tiempo Real */}
+                            {(() => {
+                                const optionalItems = budget.items.filter(item => item.is_optional);
+                                const selectedOptionalsTotal = optionalItems
+                                    .filter((_, idx) => selectedOptionals.includes(idx))
+                                    .reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+                                const finalCalculatedTotal = budget.total_price + selectedOptionalsTotal;
+
+                                return (
+                                    <div className="bg-nexo-lime/5 border border-nexo-lime/20 p-5 rounded-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-center sm:text-left">
+                                        <div className="text-left">
+                                            <span className="text-zinc-400 text-[10px] uppercase tracking-wider block font-bold">Total Final Aprobado (Valores Finales):</span>
+                                            <span className="text-2xl font-black text-nexo-lime mt-1 block">{project.currency || 'USD'} {finalCalculatedTotal.toLocaleString()}</span>
+                                        </div>
+                                        <div className="text-xs text-zinc-500 max-w-xs leading-relaxed sm:text-right">
+                                            Recalculado con {selectedOptionals.length} adicionales seleccionados.
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
+                            {/* Datos de Facturación (Opcional) */}
+                            <div className="space-y-4 bg-black/20 p-5 rounded-lg border border-white/5 text-left">
+                                <h4 className="text-zinc-300 text-xs font-bold uppercase tracking-wider block">🧾 Datos de Facturación (Opcionales)</h4>
+                                <p className="text-[11px] text-zinc-500 leading-normal">
+                                    Si necesitás factura A o B, ingresá los datos fiscales y la constancia de CUIT/CUIL a continuación:
+                                </p>
+                                <textarea
+                                    value={billingInfo}
+                                    onChange={(e) => setBillingInfo(e.target.value)}
+                                    className="w-full bg-black border border-white/10 rounded px-4 py-3 text-xs text-white focus:outline-none focus:border-nexo-lime h-24"
+                                    placeholder="Ej: Razón Social: Empresa S.A.&#10;CUIT: 30-12345678-9&#10;Dirección: Av. de Mayo 123, CABA"
+                                />
+                                <div className="space-y-2 border-t border-white/5 pt-3">
+                                    <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider block">Adjuntar Constancia de CUIT/CUIL (Opcional - PDF, JPG, PNG)</label>
+                                    <input
+                                        type="file"
+                                        onChange={handleTaxCertificateUpload}
+                                        className="w-full text-xs text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-zinc-800 file:text-white hover:file:bg-zinc-700 cursor-pointer"
+                                        accept=".pdf,.jpg,.jpeg,.png"
+                                    />
+                                    {uploadingCertificate && (
+                                        <p className="text-[10px] text-nexo-lime animate-pulse mt-1">Subiendo archivo...</p>
+                                    )}
+                                    {project.client_tax_certificate_url && (
+                                        <p className="text-[10px] text-nexo-lime font-bold mt-1 flex items-center gap-1">
+                                            <span>✓ Archivo cargado correctamente:</span>
+                                            <a href={project.client_tax_certificate_url} target="_blank" rel="noreferrer" className="underline hover:text-white">Ver archivo actual</a>
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Botones de acción */}
+                            <div className="flex gap-4 pt-4 border-t border-white/5">
                                 <button
-                                    onClick={handleApproveBudget}
-                                    className="flex-1 bg-nexo-lime text-black font-black text-xs uppercase tracking-widest py-4 rounded hover:bg-white transition-colors shadow-[0_0_15px_rgba(204,255,0,0.2)]"
+                                    type="submit"
+                                    disabled={sendingAction || uploadingCertificate}
+                                    className="flex-1 bg-nexo-lime text-black font-black text-xs uppercase tracking-widest py-4 rounded hover:bg-white transition-colors shadow-[0_0_15px_rgba(204,255,0,0.2)] disabled:opacity-50"
                                 >
-                                    Aprobar Propuesta
+                                    {sendingAction ? 'Aprobando...' : 'Confirmar y Aprobar Propuesta'}
                                 </button>
                                 <button
-                                    onClick={() => setActionView('feedback')}
-                                    className="flex-1 bg-zinc-900 border border-white/10 hover:border-white/20 text-white font-bold text-xs uppercase tracking-widest py-4 rounded transition-all"
+                                    type="button"
+                                    onClick={() => setActionView('normal')}
+                                    className="flex-1 bg-zinc-950 border border-white/10 hover:border-white/20 text-white font-bold text-xs uppercase tracking-widest py-4 rounded transition-all"
                                 >
-                                    Solicitar Modificaciones
-                                </button>
-                                <button
-                                    onClick={() => window.print()}
-                                    className="flex-1 bg-zinc-900 border border-white/10 hover:border-white/20 text-white font-bold text-xs uppercase tracking-widest py-4 rounded transition-all flex items-center justify-center gap-2"
-                                >
-                                    📄 Guardar PDF
-                                </button>
-                                <button
-                                    onClick={() => setActionView('reject')}
-                                    className="text-zinc-500 hover:text-red-400 text-xs font-bold uppercase py-4 transition-colors px-2"
-                                >
-                                    Rechazar
+                                    Volver
                                 </button>
                             </div>
-                        )}
+                        </form>
+                    ) : (
+                        <div className="space-y-6">
+                            {renderBudgetSection()}
+                            
+                            {/* Acciones Comerciales */}
+                            {actionView === 'normal' && (
+                                <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-white/5 no-print">
+                                    <button
+                                        onClick={handleApproveBudget}
+                                        className="flex-1 bg-nexo-lime text-black font-black text-xs uppercase tracking-widest py-4 rounded hover:bg-white transition-colors shadow-[0_0_15px_rgba(204,255,0,0.2)]"
+                                    >
+                                        Aprobar Propuesta
+                                    </button>
+                                    <button
+                                        onClick={() => setActionView('feedback')}
+                                        className="flex-1 bg-zinc-900 border border-white/10 hover:border-white/20 text-white font-bold text-xs uppercase tracking-widest py-4 rounded transition-all"
+                                    >
+                                        Solicitar Modificaciones
+                                    </button>
+                                    <button
+                                        onClick={handlePrintPDF}
+                                        className="flex-1 bg-zinc-900 border border-white/10 hover:border-white/20 text-white font-bold text-xs uppercase tracking-widest py-4 rounded transition-all flex items-center justify-center gap-2"
+                                    >
+                                        📄 Guardar PDF
+                                    </button>
+                                    <button
+                                        onClick={() => setActionView('reject')}
+                                        className="text-zinc-500 hover:text-red-400 text-xs font-bold uppercase py-4 transition-colors px-2"
+                                    >
+                                        Rechazar
+                                    </button>
+                                </div>
+                            )}
 
-                        {/* Formulario de Solicitud de Cambios */}
-                        {actionView === 'feedback' && (
-                            <form onSubmit={handleFeedbackBudget} className="space-y-4 pt-4 border-t border-white/5">
-                                <div className="space-y-2">
-                                    <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider block">Indicanos qué modificaciones necesitás:</label>
-                                    <textarea
-                                        required
-                                        value={feedbackText}
-                                        onChange={(e) => setFeedbackText(e.target.value)}
-                                        className="w-full bg-black border border-white/10 rounded px-4 py-3 text-xs text-white focus:outline-none focus:border-nexo-lime h-28"
-                                        placeholder="Ej: Necesitaría agregar 2 horas más de cobertura y cambiar el horario a las 18 hs..."
-                                    />
-                                </div>
-                                <div className="flex gap-4">
-                                    <button
-                                        type="submit"
-                                        className="bg-nexo-lime text-black font-bold text-xs uppercase tracking-wider px-6 py-2.5 rounded hover:bg-white transition-colors"
-                                    >
-                                        Enviar Solicitud
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setActionView('normal')}
-                                        className="text-zinc-400 hover:text-white text-xs font-bold px-4"
-                                    >
-                                        Cancelar
-                                    </button>
-                                </div>
-                            </form>
-                        )}
+                            {/* Formulario de Solicitud de Cambios */}
+                            {actionView === 'feedback' && (
+                                <form onSubmit={handleFeedbackBudget} className="space-y-4 pt-4 border-t border-white/5 no-print">
+                                    <div className="space-y-2 text-left">
+                                        <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider block">Indicanos qué modificaciones necesitás:</label>
+                                        <textarea
+                                            required
+                                            value={feedbackText}
+                                            onChange={(e) => setFeedbackText(e.target.value)}
+                                            className="w-full bg-black border border-white/10 rounded px-4 py-3 text-xs text-white focus:outline-none focus:border-nexo-lime h-28"
+                                            placeholder="Ej: Necesitaría agregar 2 horas más de cobertura y cambiar el horario a las 18 hs..."
+                                        />
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <button
+                                            type="submit"
+                                            className="bg-nexo-lime text-black font-bold text-xs uppercase tracking-wider px-6 py-2.5 rounded hover:bg-white transition-colors"
+                                        >
+                                            Enviar Solicitud
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setActionView('normal')}
+                                            className="text-zinc-400 hover:text-white text-xs font-bold px-4"
+                                        >
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
 
-                        {/* Formulario de Rechazo */}
-                        {actionView === 'reject' && (
-                            <form onSubmit={handleRejectBudget} className="space-y-4 pt-4 border-t border-white/5">
-                                <div className="space-y-2">
-                                    <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider block">¿Nos podrías dejar el motivo del rechazo para mejorar? (Opcional):</label>
-                                    <textarea
-                                        value={feedbackText}
-                                        onChange={(e) => setFeedbackText(e.target.value)}
-                                        className="w-full bg-black border border-white/10 rounded px-4 py-3 text-xs text-white focus:outline-none focus:border-nexo-lime h-20"
-                                        placeholder="Escribe tu motivo aquí..."
-                                    />
-                                </div>
-                                <div className="flex gap-4">
-                                    <button
-                                        type="submit"
-                                        className="bg-red-500/20 text-red-400 border border-red-500/30 font-bold text-xs uppercase tracking-wider px-6 py-2.5 rounded hover:bg-red-500 hover:text-white transition-colors"
-                                    >
-                                        Confirmar Rechazo
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setActionView('normal')}
-                                        className="text-zinc-400 hover:text-white text-xs font-bold px-4"
-                                    >
-                                        Cancelar
-                                    </button>
-                                </div>
-                            </form>
-                        )}
-                    </div>
+                            {/* Formulario de Rechazo */}
+                            {actionView === 'reject' && (
+                                <form onSubmit={handleRejectBudget} className="space-y-4 pt-4 border-t border-white/5 no-print text-left">
+                                    <div className="space-y-2">
+                                        <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider block">¿Nos podrías dejar el motivo del rechazo para mejorar? (Opcional):</label>
+                                        <textarea
+                                            value={feedbackText}
+                                            onChange={(e) => setFeedbackText(e.target.value)}
+                                            className="w-full bg-black border border-white/10 rounded px-4 py-3 text-xs text-white focus:outline-none focus:border-nexo-lime h-20"
+                                            placeholder="Escribe tu motivo aquí..."
+                                        />
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <button
+                                            type="submit"
+                                            className="bg-red-500/20 text-red-400 border border-red-500/30 font-bold text-xs uppercase tracking-wider px-6 py-2.5 rounded hover:bg-red-500 hover:text-white transition-colors"
+                                        >
+                                            Confirmar Rechazo
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setActionView('normal')}
+                                            className="text-zinc-400 hover:text-white text-xs font-bold px-4"
+                                        >
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
+                        </div>
+                    )
                 )}
 
                 {/* ESTADO 3: APPROVED O PRODUCTION (PROYECTO APROBADO, EN PROCESO DE PAGO Y RODAJE) */}
                 {(project.status === 'approved' || project.status === 'production') && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="space-y-8">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         
                         {/* Tarjeta de estado de producción y datos de facturación */}
                         <div className="md:col-span-2 space-y-6">
@@ -1821,7 +2029,7 @@ const ClientPortal: React.FC = () => {
                                         <p className="mt-1">Locación: <span className="text-zinc-300 font-bold">{project.location || 'A confirmar'}</span></p>
                                     </div>
                                     <button
-                                        onClick={() => window.print()}
+                                        onClick={handlePrintPDF}
                                         className="bg-zinc-800 hover:bg-zinc-700 border border-white/10 text-white font-bold text-xs uppercase py-2 px-4 rounded transition-colors no-print flex items-center gap-1.5"
                                     >
                                         📄 PDF
@@ -1842,10 +2050,28 @@ const ClientPortal: React.FC = () => {
                                         className="w-full bg-black border border-white/10 rounded px-4 py-3 text-xs text-white focus:outline-none focus:border-nexo-lime h-28"
                                         placeholder="Ej: Razón Social: Empresa S.A.&#10;CUIT: 30-12345678-9&#10;Dirección: Av. de Mayo 123, CABA&#10;Tipo de Factura: Factura A o Factura B"
                                     />
+                                    <div className="space-y-2 bg-black/20 p-4 rounded-lg border border-white/5">
+                                        <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider block">Adjuntar Constancia de CUIT/CUIL (Opcional - PDF, JPG, PNG)</label>
+                                        <input
+                                            type="file"
+                                            onChange={handleTaxCertificateUpload}
+                                            className="w-full text-xs text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-zinc-850 file:text-white hover:file:bg-zinc-800 cursor-pointer"
+                                            accept=".pdf,.jpg,.jpeg,.png"
+                                        />
+                                        {uploadingCertificate && (
+                                            <p className="text-[10px] text-nexo-lime animate-pulse mt-1">Subiendo archivo...</p>
+                                        )}
+                                        {project.client_tax_certificate_url && (
+                                            <p className="text-[10px] text-nexo-lime font-bold mt-1.5 flex items-center gap-1">
+                                                <span>✓ Constancia cargada:</span>
+                                                <a href={project.client_tax_certificate_url} target="_blank" rel="noreferrer" className="underline hover:text-white">Ver archivo actual</a>
+                                            </p>
+                                        )}
+                                    </div>
                                     <button
                                         type="submit"
                                         disabled={sendingAction}
-                                        className="bg-nexo-lime hover:bg-white text-black font-bold text-xs uppercase py-2.5 px-6 rounded transition-all disabled:opacity-50"
+                                        className="bg-nexo-lime hover:bg-white text-black font-bold text-xs uppercase py-2.5 px-6 rounded transition-all disabled:opacity-50 cursor-pointer"
                                     >
                                         {sendingAction ? 'Guardando...' : 'Guardar y Enviar Datos'}
                                     </button>
@@ -1906,8 +2132,9 @@ const ClientPortal: React.FC = () => {
                                 )}
                             </div>
                         </div>
-
+                        {renderBudgetSection()}
                     </div>
+                </div>
                 )}
 
                 {/* ESTADO 4: DELIVERED (ENTREGA FINAL DE MATERIALES - INTEGRACION GOOGLE DRIVE) */}
@@ -2083,6 +2310,7 @@ const ClientPortal: React.FC = () => {
                                 <p className="text-zinc-400 text-xs mt-1">Valoramos muchísimo tu tiempo y nos alegra haber compartido este proyecto con vos.</p>
                             </div>
                         )}
+                        {renderBudgetSection()}
                     </div>
                 )}
 
@@ -2116,7 +2344,7 @@ const ClientPortal: React.FC = () => {
             </main>
 
             {/* Caja de Consultas Continuas (Siempre visible si el proyecto está cargado y activo) */}
-            {viewMode === 'detail' && project && project.status !== 'rejected' && project.status !== 'delivered' && (
+            {viewMode === 'detail' && project && !['rejected', 'delivered', 'approved', 'production'].includes(project.status) && (
                 <div className="container mx-auto px-6 pb-12 max-w-4xl no-print">
                     <div className="bg-zinc-900/40 border border-white/5 p-6 md:p-8 rounded-xl shadow-2xl space-y-4">
                         <h3 className="text-lg font-bold text-white uppercase tracking-tight">📩 ¿Tenés alguna duda o comentario?</h3>
@@ -2311,18 +2539,18 @@ const ClientPortal: React.FC = () => {
                     {/* Pie de Página / Redes Sociales e Información */}
                     <div style={{ marginTop: '50px', borderTop: '1px solid #222222', paddingTop: '20px', textAlign: 'center' }}>
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: '12px', fontSize: '11px', color: '#a0a0a0' }}>
-                            <span style={{ display: 'flex', alignItems: 'center' }}>
+                            <a href="https://www.nexofilm.com" target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', color: '#a0a0a0', textDecoration: 'none' }}>
                                 <svg style={{ marginRight: '6px' }} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e1f937" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                                 www.nexofilm.com
-                            </span>
-                            <span style={{ display: 'flex', alignItems: 'center' }}>
+                            </a>
+                            <a href="mailto:hola@nexofilm.com" style={{ display: 'flex', alignItems: 'center', color: '#a0a0a0', textDecoration: 'none' }}>
                                 <svg style={{ marginRight: '6px' }} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e1f937" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                                 hola@nexofilm.com
-                            </span>
-                            <span style={{ display: 'flex', alignItems: 'center' }}>
+                            </a>
+                            <a href="https://instagram.com/nexofilm.co" target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', color: '#a0a0a0', textDecoration: 'none' }}>
                                 <svg style={{ marginRight: '6px' }} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e1f937" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-                                @nexofilm.prod
-                            </span>
+                                @nexofilm.co
+                            </a>
                         </div>
                         <p style={{ fontSize: '9px', color: '#666666', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>
                             Este documento es una cotización comercial confidencial y para uso exclusivo del destinatario.

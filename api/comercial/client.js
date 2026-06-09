@@ -539,27 +539,106 @@ export default async function handler(req, res) {
                 });
 
             } else if (action === 'approve') {
-                const { data: updatedProj, error: updateErr } = await supabase
+                const { selected_optional_indices, billing_info, tax_certificate_url } = req.body;
+
+                // 1. Obtener presupuesto activo
+                const { data: activeBudget, error: getBudgErr } = await supabase
+                    .from('budgets')
+                    .select('*')
+                    .eq('project_id', project.id)
+                    .eq('is_active', true)
+                    .maybeSingle();
+
+                if (getBudgErr) throw getBudgErr;
+                if (!activeBudget) {
+                    return res.status(404).json({ error: 'No se encontró una propuesta activa para aprobar' });
+                }
+
+                // 2. Procesar ítems y calcular total
+                const finalItems = [];
+                let calculatedTotal = 0;
+                let optionalIndexCounter = 0;
+                let approvedOptionalCount = 0;
+
+                for (const item of activeBudget.items) {
+                    if (!item.is_optional) {
+                        finalItems.push(item);
+                        calculatedTotal += item.quantity * item.unit_price;
+                    } else {
+                        const isSelected = Array.isArray(selected_optional_indices) && selected_optional_indices.includes(optionalIndexCounter);
+                        if (isSelected) {
+                            const cleanedItem = { ...item, is_optional: false };
+                            finalItems.push(cleanedItem);
+                            calculatedTotal += item.quantity * item.unit_price;
+                            approvedOptionalCount++;
+                        }
+                        optionalIndexCounter++;
+                    }
+                }
+
+                // 3. Guardar el presupuesto limpio final
+                const { error: saveBudgErr } = await supabase
+                    .from('budgets')
+                    .update({
+                        items: finalItems,
+                        total_price: calculatedTotal,
+                        client_feedback: 'Aprobado por el cliente'
+                    })
+                    .eq('id', activeBudget.id);
+
+                if (saveBudgErr) throw saveBudgErr;
+
+                // 4. Actualizar el proyecto (estado, facturación, constancia)
+                const projectUpdateData = {
+                    status: 'approved',
+                    client_billing_info: billing_info || project.client_billing_info
+                };
+
+                if (tax_certificate_url) {
+                    projectUpdateData.client_tax_certificate_url = tax_certificate_url;
+                }
+
+                let { data: updatedProj, error: updateErr } = await supabase
                     .from('projects')
-                    .update({ status: 'approved' })
+                    .update(projectUpdateData)
                     .eq('id', project.id)
                     .select()
                     .single();
 
-                if (updateErr) throw updateErr;
-
-                await supabase
-                    .from('budgets')
-                    .update({ client_feedback: 'Aprobado por el cliente' })
-                    .eq('project_id', project.id)
-                    .eq('is_active', true);
+                if (updateErr) {
+                    if (updateErr.message && updateErr.message.includes('client_tax_certificate_url')) {
+                        delete projectUpdateData.client_tax_certificate_url;
+                        if (tax_certificate_url) {
+                            projectUpdateData.client_billing_info = (projectUpdateData.client_billing_info || '') + `\n[Constancia CUIT/CUIL: ${tax_certificate_url}]`;
+                        }
+                        const { data: fallbackProj, error: fallbackErr } = await supabase
+                            .from('projects')
+                            .update(projectUpdateData)
+                            .eq('id', project.id)
+                            .select()
+                            .single();
+                        if (fallbackErr) throw fallbackErr;
+                        updatedProj = fallbackProj;
+                    } else {
+                        throw updateErr;
+                    }
+                }
 
                 updatedProject = updatedProj;
                 updatedStatus = 'approved';
 
+                let itemsListHtml = '';
+                finalItems.forEach(it => {
+                    itemsListHtml += `<li><strong>${it.description}</strong> (Cant: ${it.quantity}) - ${project.currency || 'USD'} ${(it.quantity * it.unit_price).toLocaleString()}</li>`;
+                });
+
                 notificationSubject = `✅ Presupuesto Aprobado: ${project.contact_name}`;
                 notificationBody = `¡Excelente noticia! El cliente <strong>${project.contact_name}</strong> ha aprobado el presupuesto para el proyecto "<strong>${project.title}</strong>".<br/><br/>
-                Ya podés subir la factura PDF y cargar los datos de transferencia en tu panel de administración.`;
+                <strong>Total Final Aprobado:</strong> ${project.currency || 'USD'} ${calculatedTotal.toLocaleString()} (incluye ${approvedOptionalCount} opcionales aprobados).<br/>
+                <strong>Detalle de ítems acordados:</strong>
+                <ul>${itemsListHtml}</ul>
+                <strong>Datos de facturación:</strong><br/>
+                <pre style="background:#111; padding:10px; border-radius:4px; color:#fff; font-family:monospace; border:1px solid #222;">${projectUpdateData.client_billing_info || 'No completó datos de facturación'}</pre>`;
 
             } else if (action === 'reject') {
                 const { data: updatedProj, error: updateErr } = await supabase
@@ -702,6 +781,72 @@ export default async function handler(req, res) {
                 return res.status(200).json({
                     success: true,
                     project: updatedProject
+                });
+            } else if (action === 'upload_tax_certificate') {
+                if (!fileBase64 || !filename) {
+                    return res.status(400).json({ error: 'Faltan parámetros: fileBase64 o filename' });
+                }
+
+                const fileBuffer = Buffer.from(fileBase64, 'base64');
+                const fileExt = filename.split('.').pop() || '';
+                const storagePath = `cuit_certificates/project_${project.id}_${Date.now()}.${fileExt}`;
+                let mimeType = 'application/octet-stream';
+                if (filename.toLowerCase().endsWith('.pdf')) {
+                    mimeType = 'application/pdf';
+                } else if (filename.toLowerCase().endsWith('.jpg') || filename.toLowerCase().endsWith('.jpeg')) {
+                    mimeType = 'image/jpeg';
+                } else if (filename.toLowerCase().endsWith('.png')) {
+                    mimeType = 'image/png';
+                }
+
+                let publicUrl = null;
+                try {
+                    const { data: uploadData, error: uploadErr } = await supabase.storage
+                        .from('invoices')
+                        .upload(storagePath, fileBuffer, {
+                            contentType: mimeType,
+                            upsert: true
+                        });
+
+                    if (uploadErr) throw uploadErr;
+
+                    const { data: { publicUrl: fetchedUrl } } = supabase.storage
+                        .from('invoices')
+                        .getPublicUrl(storagePath);
+                    publicUrl = fetchedUrl;
+                } catch (storeErr) {
+                    console.error('Error uploading certificate to storage:', storeErr);
+                    return res.status(500).json({ error: 'Error al subir la constancia a Supabase Storage: ' + storeErr.message });
+                }
+
+                let updatedProj;
+                try {
+                    const { data, error: upErr } = await supabase
+                        .from('projects')
+                        .update({ client_tax_certificate_url: publicUrl })
+                        .eq('id', project.id)
+                        .select()
+                        .single();
+
+                    if (upErr) throw upErr;
+                    updatedProj = data;
+                } catch (upErr) {
+                    console.warn('client_tax_certificate_url update failed, using fallback:', upErr);
+                    const fallbackBilling = (project.client_billing_info || '') + `\n[Constancia CUIT/CUIL: ${publicUrl}]`;
+                    const { data: fallbackProj, error: fallbackErr } = await supabase
+                        .from('projects')
+                        .update({ client_billing_info: fallbackBilling })
+                        .eq('id', project.id)
+                        .select()
+                        .single();
+
+                    if (fallbackErr) throw fallbackErr;
+                    updatedProj = fallbackProj;
+                }
+
+                return res.status(200).json({
+                    success: true,
+                    project: updatedProj
                 });
             } else {
                 return res.status(400).json({ error: 'Acción no soportada.' });

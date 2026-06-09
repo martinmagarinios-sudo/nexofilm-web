@@ -303,13 +303,34 @@ export default async function handler(req, res) {
                     if (bErr) throw bErr;
                 }
 
-                const { data: project, error: getErr } = await supabase
+                const updatePayload = {
+                    status: 'review',
+                    invoice_sent: false,
+                    updated_at: new Date().toISOString()
+                };
+
+                let { data: project, error: getErr } = await supabase
                     .from('projects')
-                    .select()
+                    .update(updatePayload)
                     .eq('id', project_id)
+                    .select()
                     .single();
 
-                if (getErr) throw getErr;
+                if (getErr) {
+                    if (getErr.message && getErr.message.includes('invoice_sent')) {
+                        delete updatePayload.invoice_sent;
+                        const retry = await supabase
+                            .from('projects')
+                            .update(updatePayload)
+                            .eq('id', project_id)
+                            .select()
+                            .single();
+                        if (retry.error) throw retry.error;
+                        project = retry.data;
+                    } else {
+                        throw getErr;
+                    }
+                }
 
                 return res.status(200).json({ 
                     success: true, 
@@ -393,19 +414,36 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                     return res.status(400).json({ error: 'El ID del proyecto es requerido' });
                 }
 
-                const { data: updatedProject, error: updateErr } = await supabase
+                const updatePayload = {
+                    invoice_url: invoice_url || null,
+                    invoice_type: invoice_type || null,
+                    invoice_amount: invoice_amount ? parseFloat(invoice_amount) : null,
+                    bank_details: bank_details || null,
+                    invoice_sent: false
+                };
+
+                let { data: updatedProject, error: updateErr } = await supabase
                     .from('projects')
-                    .update({
-                        invoice_url: invoice_url || null,
-                        invoice_type: invoice_type || null,
-                        invoice_amount: invoice_amount ? parseFloat(invoice_amount) : null,
-                        bank_details: bank_details || null
-                    })
+                    .update(updatePayload)
                     .eq('id', project_id)
                     .select()
                     .single();
 
-                if (updateErr) throw updateErr;
+                if (updateErr) {
+                    if (updateErr.message && updateErr.message.includes('invoice_sent')) {
+                        delete updatePayload.invoice_sent;
+                        const retry = await supabase
+                            .from('projects')
+                            .update(updatePayload)
+                            .eq('id', project_id)
+                            .select()
+                            .single();
+                        if (retry.error) throw retry.error;
+                        updatedProject = retry.data;
+                    } else {
+                        throw updateErr;
+                    }
+                }
 
                 return res.status(200).json({
                     success: true,
@@ -770,6 +808,45 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                 });
             }
 
+            case 'sendInvoiceNotification': {
+                if (!project_id) {
+                    return res.status(400).json({ error: 'El ID del proyecto es requerido' });
+                }
+
+                const { channel } = req.body;
+
+                const { data: project, error: getErr } = await supabase
+                    .from('projects')
+                    .select('*')
+                    .eq('id', project_id)
+                    .single();
+
+                if (getErr) throw getErr;
+
+                await notifyClientInvoice(project, req.headers.host || 'nexofilm.com', channel);
+
+                let updatedProject;
+                try {
+                    const { data: upProj, error: upErr } = await supabase
+                        .from('projects')
+                        .update({ invoice_sent: true })
+                        .eq('id', project_id)
+                        .select()
+                        .single();
+
+                    if (upErr) throw upErr;
+                    updatedProject = upProj;
+                } catch (upErr) {
+                    console.warn('invoice_sent update failed (missing column?), skipping:', upErr);
+                    updatedProject = project;
+                }
+
+                return res.status(200).json({
+                    success: true,
+                    project: updatedProject
+                });
+            }
+
             default:
                 return res.status(400).json({ error: 'Acción inválida' });
         }
@@ -920,6 +997,122 @@ async function notifyClient(project, items, total, terms, host, forceChannel = n
             } catch (err) {
                 console.error('Error al enviar WhatsApp al cliente:', err.message);
                 throw new Error(`Error al enviar WhatsApp: ${err.message}`);
+            }
+        }
+    }
+}
+
+// Helper para notificar factura al cliente por Email / WhatsApp
+async function notifyClientInvoice(project, host, forceChannel = null) {
+    const preference = forceChannel || project.notification_preference || 'both';
+    const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
+    const portalUrl = `${protocol}://${host}/portal?token=${project.access_token}`;
+
+    const subject = `🧾 Factura disponible / Datos de Pago: ${project.title} - NexoFilm`;
+    const currencySymbol = project.currency || 'USD';
+    const amountStr = project.invoice_amount ? `${currencySymbol} ${project.invoice_amount.toLocaleString()}` : 'a confirmar';
+    const concept = project.invoice_type === 'deposit_50' ? '50% Seña' : project.invoice_type === 'total' ? '100% Total' : 'Concepto Asignado';
+
+    // 1. Enviar Email
+    if ((preference === 'email' || preference === 'both') && project.client_email && process.env.RESEND_API_KEY) {
+        try {
+            await resend.emails.send({
+                from: 'NexoFilm <hola@nexofilm.com>',
+                to: [project.client_email],
+                subject: subject,
+                html: `
+                    <div style="font-family: sans-serif; padding: 24px; border-top: 4px solid #ccff00; background-color: #0d0d0d; color: #ffffff; max-width: 600px; margin: 0 auto; border-radius: 8px;">
+                        <div style="text-align: center; margin-bottom: 24px;">
+                            <img src="https://nexofilm.com/favicon.png" alt="NexoFilm" style="height: 40px; filter: brightness(0) invert(1);" />
+                            <h1 style="color: #ccff00; font-size: 22px; margin: 15px 0 0 0; text-transform: uppercase; letter-spacing: 1px;">Facturación y Pago</h1>
+                        </div>
+                        <div style="background-color: #1a1a1a; padding: 20px; border-radius: 6px; border: 1px solid #333; line-height: 1.6;">
+                            <p style="font-size: 16px; margin: 0 0 10px 0; color: #ffffff;">Hola <strong>${project.contact_name}</strong>,</p>
+                            <p style="font-size: 14px; margin: 0 0 20px 0; color: #e0e0e0;">
+                                Ya se encuentra disponible la información de facturación para tu proyecto "<strong>${project.title}</strong>".
+                            </p>
+                            
+                            <div style="background-color: #0d0d0d; border: 1px solid #ccff00; border-radius: 6px; padding: 16px; margin-bottom: 20px;">
+                                <p style="margin: 0; font-size: 12px; color: #888; text-transform: uppercase;">Monto solicitado:</p>
+                                <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 900; color: #ccff00;">${amountStr} <span style="font-size: 11px; font-weight: normal; color: #a0a0a0; margin-left: 6px;">(${concept})</span></p>
+                            </div>
+
+                            \${project.bank_details ? \`
+                            <h3 style="color: #ffffff; font-size: 14px; margin: 20px 0 10px 0; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #333; padding-bottom: 5px;">Datos de Transferencia Galicia:</h3>
+                            <pre style="background:#0d0d0d; padding:12px; border-radius:4px; color:#e0e0e0; font-family:monospace; font-size:12px; border:1px solid #222; margin-bottom: 20px; white-space: pre-wrap; line-height: 1.5;">\${project.bank_details}</pre>
+                            \` : ''}
+
+                            \${project.invoice_url ? \`
+                            <p style="font-size: 14px; margin: 20px 0 20px 0; color: #e0e0e0;">
+                                Podés descargar la factura oficial desde aquí:
+                            </p>
+                            <div style="margin-bottom: 20px;">
+                                <a href="\${project.invoice_url}" target="_blank" style="background-color: #ffffff; color: #000000; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 12px; text-transform: uppercase; display: inline-block;">
+                                    Descargar Factura PDF 🧾
+                                </a>
+                            </div>
+                            \` : ''}
+
+                            <p style="font-size: 14px; margin: 20px 0 20px 0; color: #e0e0e0;">
+                                Para ver los detalles completos de tu presupuesto, adjuntar constancias o seguir el progreso, ingresá a tu portal seguro:
+                            </p>
+                            <div style="text-align: center; margin-top: 20px; margin-bottom: 10px;">
+                                <a href="\${portalUrl}" style="background-color: #ccff00; color: #000000; padding: 14px 28px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 13px; text-transform: uppercase; display: inline-block; box-shadow: 0 4px 10px rgba(204,255,0,0.2);">
+                                    Ingresar al Portal de Clientes
+                                </a>
+                            </div>
+                        </div>
+                        <p style="font-size: 10px; color: #666; text-align: center; margin-top: 24px; line-height: 1.4;">
+                            Este enlace es único y seguro para tu proyecto. No lo compartas con terceros.<br/>
+                            NexoFilm Productora Audiovisual · Buenos Aires, Argentina.
+                        </p>
+                    </div>
+                \`
+            });
+            console.log(\`Email de factura enviado con éxito a: \${project.client_email}\`);
+        } catch (e) {
+            console.error(\`Error enviando email de factura al cliente:\`, e.message);
+            throw new Error(\`Error al enviar Email de Factura: \${e.message}\`);
+        }
+    }
+
+    // 2. Enviar WhatsApp
+    if ((preference === 'whatsapp' || preference === 'both') && project.client_phone) {
+        const token = process.env.WHATSAPP_TOKEN?.trim();
+        const phoneNumberId = process.env.WHATSAPP_PHONE_ID?.trim();
+        
+        if (token && phoneNumberId) {
+            let cleanPhone = project.client_phone.replace(/\\D/g, '');
+            if (!cleanPhone.startsWith('54') && cleanPhone.length === 10) {
+                cleanPhone = '54' + cleanPhone;
+            }
+            
+            const messageText = \`🧾 *NexoFilm - Facturación y Pago*\\n\\n¡Hola \${project.contact_name}! Ya registramos tu pago o preparamos tu factura para el proyecto "\${project.title}".\\n\\nMonto solicitado: \${amountStr} (\${concept})\\n\\nPodés ver los datos de transferencia Galicia, descargar tu factura y seguir el estado desde tu portal seguro:\\n👉 \${portalUrl}\`;
+
+            try {
+                const response = await fetch(\`https://graph.facebook.com/v21.0/\${phoneNumberId}/messages\`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': \`Bearer \${token}\`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        messaging_product: 'whatsapp',
+                        to: cleanPhone,
+                        type: 'text',
+                        text: { body: messageText }
+                    })
+                });
+                const resData = await response.json();
+                if (!response.ok) {
+                    console.error('Error Meta API en WhatsApp de factura:', resData.error);
+                    throw new Error(\`Error de WhatsApp (Meta API): \${resData.error?.message || response.statusText}\`);
+                } else {
+                    console.log(\`WhatsApp de factura enviado con éxito al cliente +\${cleanPhone}\`);
+                }
+            } catch (err) {
+                console.error('Error al enviar WhatsApp de factura al cliente:', err.message);
+                throw new Error(\`Error al enviar WhatsApp de Factura: \${err.message}\`);
             }
         }
     }
