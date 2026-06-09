@@ -36,3 +36,5 @@ create_og.*
 *.txt
 !robots.txt
 *.ps1
+
+.env*

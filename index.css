@@ -151,4 +151,40 @@ body {
     .print-card, tr, .print-terms {
         page-break-inside: avoid !important;
     }
+}
+
+/* --- Google Maps Autocomplete (Dark Theme) --- */
+.pac-container {
+    background-color: #0c0c0c !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 6px !important;
+    font-family: "Noto Sans JP", sans-serif !important;
+    z-index: 9999 !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+    margin-top: 4px !important;
+}
+
+.pac-item {
+    border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+    padding: 10px 14px !important;
+    color: #ffffff !important;
+    font-size: 13px !important;
+    cursor: pointer;
+}
+
+.pac-item:hover {
+    background-color: rgba(225, 249, 55, 0.1) !important;
+}
+
+.pac-item-query {
+    color: #e1f937 !important;
+    font-size: 13px !important;
+}
+
+.pac-matched {
+    font-weight: bold;
+}
+
+.hdpi .pac-icon {
+    filter: invert(1) brightness(2);
 }

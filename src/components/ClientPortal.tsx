@@ -233,10 +233,23 @@ const ClientPortal: React.FC = () => {
 
             autocomplete.addListener('place_changed', () => {
                 const place = autocomplete.getPlace();
+                let newAddr = '';
                 if (place && place.formatted_address) {
-                    setLocation(place.formatted_address);
+                    newAddr = place.formatted_address;
                 } else if (place && place.name) {
-                    setLocation(place.name);
+                    newAddr = place.name;
+                }
+
+                if (newAddr) {
+                    setLocation(newAddr);
+                    if (place.geometry && place.geometry.location && mapRef.current) {
+                        mapRef.current.setCenter(place.geometry.location);
+                        if (markerRef.current) {
+                            markerRef.current.setPosition(place.geometry.location);
+                        }
+                    } else {
+                        updateMap(newAddr);
+                    }
                 }
             });
 
@@ -256,6 +269,7 @@ const ClientPortal: React.FC = () => {
 
             if (!mapRef.current) {
                 mapRef.current = new google.maps.Map(mapContainer, {
+                    center: { lat: -34.6037, lng: -58.3816 },
                     zoom: 15,
                     disableDefaultUI: true,
                     styles: [
