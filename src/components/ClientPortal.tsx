@@ -52,6 +52,27 @@ interface DriveFile {
     size: string | null;
 }
 
+const parsePhone = (phoneStr: string) => {
+    if (!phoneStr) return { country: '+54 9', local: '' };
+    const cleaned = phoneStr.trim();
+    if (cleaned.startsWith('+549')) return { country: '+54 9', local: cleaned.substring(4) };
+    if (cleaned.startsWith('+54')) return { country: '+54', local: cleaned.substring(3) };
+    if (cleaned.startsWith('549')) return { country: '+54 9', local: cleaned.substring(3) };
+    if (cleaned.startsWith('54')) return { country: '+54', local: cleaned.substring(2) };
+    if (cleaned.startsWith('+598')) return { country: '+598', local: cleaned.substring(4) };
+    if (cleaned.startsWith('598')) return { country: '+598', local: cleaned.substring(3) };
+    if (cleaned.startsWith('+56')) return { country: '+56', local: cleaned.substring(3) };
+    if (cleaned.startsWith('56')) return { country: '+56', local: cleaned.substring(2) };
+    if (cleaned.startsWith('+55')) return { country: '+55', local: cleaned.substring(3) };
+    if (cleaned.startsWith('55')) return { country: '+55', local: cleaned.substring(2) };
+    if (cleaned.startsWith('+34')) return { country: '+34', local: cleaned.substring(3) };
+    if (cleaned.startsWith('34')) return { country: '+34', local: cleaned.substring(2) };
+    if (cleaned.startsWith('+1')) return { country: '+1', local: cleaned.substring(2) };
+    if (cleaned.startsWith('1')) return { country: '+1', local: cleaned.substring(1) };
+    if (cleaned.startsWith('+')) return { country: cleaned.substring(0, 4), local: cleaned.substring(4) };
+    return { country: '+54 9', local: cleaned };
+};
+
 const ClientPortal: React.FC = () => {
     const [token, setToken] = useState<string | null>(null);
     const [project, setProject] = useState<Project | null>(null);
@@ -75,6 +96,8 @@ const ClientPortal: React.FC = () => {
     const [coverageTypes, setCoverageTypes] = useState<string[]>([]);
     const [guestsCount, setGuestsCount] = useState<number | ''>('');
     const [clientPhone, setClientPhone] = useState('');
+    const [phoneCountryCode, setPhoneCountryCode] = useState('+54 9');
+    const [phoneLocalNumber, setPhoneLocalNumber] = useState('');
     const [clientEmail, setClientEmail] = useState('');
     const [notificationPref, setNotificationPref] = useState<'both' | 'email' | 'whatsapp'>('both');
     const [isEditingSpecs, setIsEditingSpecs] = useState(false);
@@ -354,6 +377,9 @@ const ClientPortal: React.FC = () => {
                 setCoverageTypes(data.project.coverage_types || []);
                 setGuestsCount(data.project.guests_count || '');
                 setClientPhone(data.project.client_phone || '');
+                const parsed = parsePhone(data.project.client_phone || '');
+                setPhoneCountryCode(parsed.country);
+                setPhoneLocalNumber(parsed.local);
                 setClientEmail(data.project.client_email || '');
                 setNotificationPref(data.project.notification_preference || 'both');
                 setBillingInfo(data.project.client_billing_info || '');
@@ -414,6 +440,9 @@ const ClientPortal: React.FC = () => {
         setError('');
 
         try {
+            const combinedPhone = `${phoneCountryCode.replace(/\s+/g, '')}${phoneLocalNumber.replace(/\D/g, '')}`.replace(/^\++/, '');
+            setClientPhone(combinedPhone);
+
             const res = await fetch('/api/comercial/client', {
                 method: 'POST',
                 headers: { 
@@ -430,7 +459,7 @@ const ClientPortal: React.FC = () => {
                         location,
                         coverage_types: coverageTypes,
                         coverage_hours: coverageHours,
-                        client_phone: clientPhone,
+                        client_phone: combinedPhone,
                         client_email: clientEmail,
                         notification_preference: notificationPref,
                         guests_count: guestsCount === '' ? null : Number(guestsCount),
@@ -1127,7 +1156,7 @@ const ClientPortal: React.FC = () => {
                     {project.status !== 'draft' && project.status !== 'review' && (
                         <div className="border-t border-white/5 pt-4 text-[10px] text-zinc-500 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 no-print">
                             <span>🔔 Notificaciones activas vía: <strong className="text-nexo-lime font-bold uppercase">{project.notification_preference === 'both' ? 'WhatsApp y Email' : project.notification_preference === 'whatsapp' ? 'WhatsApp' : 'Email'}</strong></span>
-                            <span>Contacto: <strong className="text-zinc-300">+{project.client_phone} · {project.client_email}</strong></span>
+                            <span>Contacto: <strong className="text-zinc-300">+{project.client_phone?.replace(/^\++/, '')} · {project.client_email}</strong></span>
                         </div>
                     )}
                 </div>
@@ -1177,7 +1206,7 @@ const ClientPortal: React.FC = () => {
                                 </p>
                                 <p className="text-zinc-400 text-xs leading-relaxed">
                                     Te enviaremos una notificación automática en cuanto el presupuesto esté listo para revisar en este portal.
-                                    {clientPhone && <span className="block mt-1">WhatsApp de contacto: <strong className="text-zinc-300">+{clientPhone}</strong></span>}
+                                    {clientPhone && <span className="block mt-1">WhatsApp de contacto: <strong className="text-zinc-300">+{clientPhone.replace(/^\++/, '')}</strong></span>}
                                     <span className="block">Email registrado: <strong className="text-zinc-300">{project.client_email}</strong></span>
                                 </p>
                             </div>
@@ -1275,14 +1304,30 @@ const ClientPortal: React.FC = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-white/5 pt-6">
                                     <div className="space-y-2">
                                         <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Tu WhatsApp (para recibir avisos)</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={clientPhone}
-                                            onChange={(e) => setClientPhone(e.target.value)}
-                                            className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                            placeholder="Ej: 5491158804711"
-                                        />
+                                        <div className="flex gap-2">
+                                            <select
+                                                value={phoneCountryCode}
+                                                onChange={(e) => setPhoneCountryCode(e.target.value)}
+                                                className="bg-black border border-white/10 rounded px-2 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime w-[90px] shrink-0"
+                                            >
+                                                <option value="+54 9">+54 9 (AR)</option>
+                                                <option value="+54">+54 (AR)</option>
+                                                <option value="+598">+598 (UY)</option>
+                                                <option value="+56">+56 (CL)</option>
+                                                <option value="+55">+55 (BR)</option>
+                                                <option value="+34">+34 (ES)</option>
+                                                <option value="+1">+1 (US/CA)</option>
+                                            </select>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={phoneLocalNumber}
+                                                onChange={(e) => setPhoneLocalNumber(e.target.value)}
+                                                className="flex-1 min-w-0 bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                                placeholder="11 5892 2379"
+                                            />
+                                        </div>
+                                        <span className="text-[10px] text-zinc-500 block mt-1">Ej: 11 5892 2379</span>
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Tu Correo Electrónico</label>
@@ -2047,7 +2092,7 @@ const ClientPortal: React.FC = () => {
                             <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>Contacto:</strong> {project.contact_name}</p>
                             {project.company_name && <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>Empresa:</strong> {project.company_name}</p>}
                             <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>Email:</strong> {project.client_email}</p>
-                            {project.client_phone && <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>WhatsApp:</strong> +{project.client_phone}</p>}
+                            {project.client_phone && <p style={{ fontSize: '12px', margin: '4px 0' }}><strong>WhatsApp:</strong> +{project.client_phone.replace(/^\++/, '')}</p>}
                         </div>
                         <div>
                             <h3 className="print-section-title" style={{ margin: 0 }}>Detalles del Proyecto</h3>

@@ -49,6 +49,27 @@ interface Project {
     created_at: string;
 }
 
+const parsePhone = (phoneStr: string) => {
+    if (!phoneStr) return { country: '+54 9', local: '' };
+    const cleaned = phoneStr.trim();
+    if (cleaned.startsWith('+549')) return { country: '+54 9', local: cleaned.substring(4) };
+    if (cleaned.startsWith('+54')) return { country: '+54', local: cleaned.substring(3) };
+    if (cleaned.startsWith('549')) return { country: '+54 9', local: cleaned.substring(3) };
+    if (cleaned.startsWith('54')) return { country: '+54', local: cleaned.substring(2) };
+    if (cleaned.startsWith('+598')) return { country: '+598', local: cleaned.substring(4) };
+    if (cleaned.startsWith('598')) return { country: '+598', local: cleaned.substring(3) };
+    if (cleaned.startsWith('+56')) return { country: '+56', local: cleaned.substring(3) };
+    if (cleaned.startsWith('56')) return { country: '+56', local: cleaned.substring(2) };
+    if (cleaned.startsWith('+55')) return { country: '+55', local: cleaned.substring(3) };
+    if (cleaned.startsWith('55')) return { country: '+55', local: cleaned.substring(2) };
+    if (cleaned.startsWith('+34')) return { country: '+34', local: cleaned.substring(3) };
+    if (cleaned.startsWith('34')) return { country: '+34', local: cleaned.substring(2) };
+    if (cleaned.startsWith('+1')) return { country: '+1', local: cleaned.substring(2) };
+    if (cleaned.startsWith('1')) return { country: '+1', local: cleaned.substring(1) };
+    if (cleaned.startsWith('+')) return { country: cleaned.substring(0, 4), local: cleaned.substring(4) };
+    return { country: '+54 9', local: cleaned };
+};
+
 const CRMProjects: React.FC = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(() => sessionStorage.getItem('admin_auth') === 'true');
     const [password, setPassword] = useState(() => sessionStorage.getItem('admin_pass') || '');
@@ -62,7 +83,8 @@ const CRMProjects: React.FC = () => {
     const [newContactName, setNewContactName] = useState('');
     const [newCompanyName, setNewCompanyName] = useState('');
     const [newClientEmail, setNewClientEmail] = useState('');
-    const [newClientPhone, setNewClientPhone] = useState('');
+    const [newPhoneCountryCode, setNewPhoneCountryCode] = useState('+54 9');
+    const [newPhoneLocalNumber, setNewPhoneLocalNumber] = useState('');
     const [newProjTitle, setNewProjTitle] = useState('');
     const [newProjStatus, setNewProjStatus] = useState<'draft' | 'sent'>('draft');
     const [newCurrency, setNewCurrency] = useState<'USD' | 'ARS'>('USD');
@@ -73,7 +95,8 @@ const CRMProjects: React.FC = () => {
     const [editingContactName, setEditingContactName] = useState('');
     const [editingCompanyName, setEditingCompanyName] = useState('');
     const [editingClientEmail, setEditingClientEmail] = useState('');
-    const [editingClientPhone, setEditingClientPhone] = useState('');
+    const [editingPhoneCountryCode, setEditingPhoneCountryCode] = useState('+54 9');
+    const [editingPhoneLocalNumber, setEditingPhoneLocalNumber] = useState('');
     const [editingCurrency, setEditingCurrency] = useState<'USD' | 'ARS'>('USD');
     const [editingCrewCount, setEditingCrewCount] = useState<number | ''>('');
     const [editingAdminNotes, setEditingAdminNotes] = useState('');
@@ -251,6 +274,8 @@ const CRMProjects: React.FC = () => {
             .reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0);
 
         try {
+            const combinedNewPhone = `${newPhoneCountryCode.replace(/\s+/g, '')}${newPhoneLocalNumber.replace(/\D/g, '')}`.replace(/^\++/, '');
+
             const res = await fetch('/api/comercial/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -259,7 +284,7 @@ const CRMProjects: React.FC = () => {
                     contact_name: newContactName,
                     company_name: newCompanyName || null,
                     client_email: newClientEmail,
-                    client_phone: newClientPhone,
+                    client_phone: combinedNewPhone || null,
                     notification_preference: 'both',
                     title: newProjTitle,
                     status: newProjStatus,
@@ -281,7 +306,8 @@ const CRMProjects: React.FC = () => {
             setNewContactName('');
             setNewCompanyName('');
             setNewClientEmail('');
-            setNewClientPhone('');
+            setNewPhoneCountryCode('+54 9');
+            setNewPhoneLocalNumber('');
             setNewProjTitle('');
             setNewCurrency('USD');
             setNewCrewCount('');
@@ -454,6 +480,8 @@ const CRMProjects: React.FC = () => {
         setError('');
         setSuccessMsg('');
         try {
+            const combinedEditingPhone = `${editingPhoneCountryCode.replace(/\s+/g, '')}${editingPhoneLocalNumber.replace(/\D/g, '')}`.replace(/^\++/, '');
+
             const res = await fetch('/api/comercial/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -463,7 +491,7 @@ const CRMProjects: React.FC = () => {
                     contact_name: editingContactName,
                     company_name: editingCompanyName || null,
                     client_email: editingClientEmail,
-                    client_phone: editingClientPhone || null,
+                    client_phone: combinedEditingPhone || null,
                     currency: editingCurrency,
                     crew_count: editingCrewCount === '' ? null : Number(editingCrewCount),
                     admin_notes: editingAdminNotes || null,
@@ -779,13 +807,29 @@ const CRMProjects: React.FC = () => {
                             <div className="grid grid-cols-3 gap-3">
                                 <div className="col-span-2 space-y-1">
                                     <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">WhatsApp</label>
-                                    <input
-                                        type="text"
-                                        value={newClientPhone}
-                                        onChange={(e) => setNewClientPhone(e.target.value)}
-                                        className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                        placeholder="5491158804711"
-                                    />
+                                    <div className="flex gap-2">
+                                        <select
+                                            value={newPhoneCountryCode}
+                                            onChange={(e) => setNewPhoneCountryCode(e.target.value)}
+                                            className="bg-black border border-white/10 rounded px-2 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime w-[90px] shrink-0"
+                                        >
+                                            <option value="+54 9">+54 9 (AR)</option>
+                                            <option value="+54">+54 (AR)</option>
+                                            <option value="+598">+598 (UY)</option>
+                                            <option value="+56">+56 (CL)</option>
+                                            <option value="+55">+55 (BR)</option>
+                                            <option value="+34">+34 (ES)</option>
+                                            <option value="+1">+1 (US/CA)</option>
+                                        </select>
+                                        <input
+                                            type="text"
+                                            value={newPhoneLocalNumber}
+                                            onChange={(e) => setNewPhoneLocalNumber(e.target.value)}
+                                            className="flex-1 min-w-0 bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                            placeholder="11 5892 2379"
+                                        />
+                                    </div>
+                                    <span className="text-[10px] text-zinc-500 block mt-1">Ej: 11 5892 2379</span>
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Moneda</label>
@@ -1053,7 +1097,31 @@ const CRMProjects: React.FC = () => {
                                                                         <input type="text" value={editingContactName} onChange={(e) => setEditingContactName(e.target.value)} placeholder="Nombre contacto" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
                                                                         <input type="text" value={editingCompanyName} onChange={(e) => setEditingCompanyName(e.target.value)} placeholder="Empresa (Opcional)" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
                                                                         <input type="email" value={editingClientEmail} onChange={(e) => setEditingClientEmail(e.target.value)} placeholder="Email" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
-                                                                        <input type="text" value={editingClientPhone} onChange={(e) => setEditingClientPhone(e.target.value)} placeholder="WhatsApp (ej: 549...)" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
+                                                                        <div className="flex flex-col gap-1">
+                                                                            <div className="flex gap-1.5">
+                                                                                <select
+                                                                                    value={editingPhoneCountryCode}
+                                                                                    onChange={(e) => setEditingPhoneCountryCode(e.target.value)}
+                                                                                    className="bg-black border border-white/20 rounded px-1.5 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none w-[75px] shrink-0"
+                                                                                >
+                                                                                    <option value="+54 9">+54 9</option>
+                                                                                    <option value="+54">+54</option>
+                                                                                    <option value="+598">+598</option>
+                                                                                    <option value="+56">+56</option>
+                                                                                    <option value="+55">+55</option>
+                                                                                    <option value="+34">+34</option>
+                                                                                    <option value="+1">+1</option>
+                                                                                </select>
+                                                                                <input
+                                                                                    type="text"
+                                                                                    value={editingPhoneLocalNumber}
+                                                                                    onChange={(e) => setEditingPhoneLocalNumber(e.target.value)}
+                                                                                    placeholder="11 5892 2379"
+                                                                                    className="flex-1 min-w-0 bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none"
+                                                                                />
+                                                                            </div>
+                                                                            <span className="text-[9px] text-zinc-500 block">Ej: 11 5892 2379</span>
+                                                                        </div>
                                                                         <select value={editingCurrency} onChange={(e) => setEditingCurrency(e.target.value as 'USD' | 'ARS')} className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none">
                                                                             <option value="USD">USD (Dólares)</option>
                                                                             <option value="ARS">ARS (Pesos)</option>
@@ -1095,7 +1163,7 @@ const CRMProjects: React.FC = () => {
                                                                     <span>Contacto: <strong className="text-white">{project.contact_name}</strong></span>
                                                                     {project.company_name && <span>Empresa: <strong className="text-white">{project.company_name}</strong></span>}
                                                                     <span>Email: <strong className="text-white">{project.client_email}</strong></span>
-                                                                    {project.client_phone && <span>WhatsApp: <strong className="text-white">+{project.client_phone}</strong></span>}
+                                                                    {project.client_phone && <span>WhatsApp: <strong className="text-white">+{project.client_phone.replace(/^\++/, '')}</strong></span>}
                                                                     <span>Moneda: <strong className="text-white">{project.currency || 'USD'}</strong></span>
                                                                     {project.crew_count && <span>Personal: <strong className="text-white">{project.crew_count} {project.crew_count === 1 ? 'persona' : 'personas'}</strong></span>}
                                                                 </div>
@@ -1105,7 +1173,9 @@ const CRMProjects: React.FC = () => {
                                                                         setEditingContactName(project.contact_name);
                                                                         setEditingCompanyName(project.company_name || '');
                                                                         setEditingClientEmail(project.client_email || '');
-                                                                        setEditingClientPhone(project.client_phone || '');
+                                                                        const parsed = parsePhone(project.client_phone || '');
+                                                                        setEditingPhoneCountryCode(parsed.country);
+                                                                        setEditingPhoneLocalNumber(parsed.local);
                                                                         setEditingCurrency(project.currency || 'USD');
                                                                         setEditingCrewCount(project.crew_count || '');
                                                                         setEditingAdminNotes(project.admin_notes || '');
