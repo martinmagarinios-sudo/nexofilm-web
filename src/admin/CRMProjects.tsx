@@ -106,9 +106,13 @@ const CRMProjects: React.FC = () => {
     const [editingCoverageHours, setEditingCoverageHours] = useState<number | ''>('');
     const [editingGuestsCount, setEditingGuestsCount] = useState<number | ''>('');
     
-    // Formulario de presupuesto
-    const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([{ description: '', quantity: 1, unit_price: 0 }]);
-    const [paymentTerms, setPaymentTerms] = useState('50% de seña para reservar fecha, 50% contra entrega.');
+    // Formulario de presupuesto (Creación)
+    const [newBudgetItems, setNewBudgetItems] = useState<BudgetItem[]>([{ description: '', quantity: 1, unit_price: 0 }]);
+    const [newPaymentTerms, setNewPaymentTerms] = useState('50% de seña para reservar fecha, 50% contra entrega.');
+
+    // Formulario de presupuesto (Edición)
+    const [editingBudgetItems, setEditingBudgetItems] = useState<BudgetItem[]>([{ description: '', quantity: 1, unit_price: 0 }]);
+    const [editingPaymentTerms, setEditingPaymentTerms] = useState('50% de seña para reservar fecha, 50% contra entrega.');
     const [aiLoading, setAiLoading] = useState(false);
 
     // Estado del proyecto seleccionado para facturación
@@ -269,7 +273,7 @@ const CRMProjects: React.FC = () => {
         setSuccessMsg('');
 
         // Excluir opcionales de la suma total
-        const totalPrice = budgetItems
+        const totalPrice = newBudgetItems
             .filter(item => !item.is_optional)
             .reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0);
 
@@ -290,9 +294,9 @@ const CRMProjects: React.FC = () => {
                     status: newProjStatus,
                     currency: newCurrency,
                     crew_count: newCrewCount === '' ? null : Number(newCrewCount),
-                    items: budgetItems,
+                    items: newBudgetItems,
                     total_price: totalPrice,
-                    payment_terms: paymentTerms,
+                    payment_terms: newPaymentTerms,
                     password
                 })
             });
@@ -311,7 +315,8 @@ const CRMProjects: React.FC = () => {
             setNewProjTitle('');
             setNewCurrency('USD');
             setNewCrewCount('');
-            setBudgetItems([{ description: '', quantity: 1, unit_price: 0 }]);
+            setNewBudgetItems([{ description: '', quantity: 1, unit_price: 0 }]);
+            setNewPaymentTerms('50% de seña para reservar fecha, 50% contra entrega.');
             
             fetchData();
         } catch (err: any) {
@@ -348,11 +353,20 @@ const CRMProjects: React.FC = () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error al generar propuesta');
 
-            if (data.items && data.items.length > 0) {
-                setBudgetItems(data.items);
-            }
-            if (data.payment_terms) {
-                setPaymentTerms(data.payment_terms);
+            if (budgetingProject) {
+                if (data.items && data.items.length > 0) {
+                    setEditingBudgetItems(data.items);
+                }
+                if (data.payment_terms) {
+                    setEditingPaymentTerms(data.payment_terms);
+                }
+            } else {
+                if (data.items && data.items.length > 0) {
+                    setNewBudgetItems(data.items);
+                }
+                if (data.payment_terms) {
+                    setNewPaymentTerms(data.payment_terms);
+                }
             }
 
             setSuccessMsg('✨ ¡Propuesta sugerida! Podés editar las descripciones, poner tus precios y ajustar lo que necesités.');
@@ -368,11 +382,11 @@ const CRMProjects: React.FC = () => {
         setBudgetingProject(proj);
         const activeBudget = budgets.find(b => b.project_id === proj.id);
         if (activeBudget) {
-            setBudgetItems(activeBudget.items || [{ description: '', quantity: 1, unit_price: 0 }]);
-            setPaymentTerms(activeBudget.payment_terms || '50% de seña para reservar fecha, 50% contra entrega.');
+            setEditingBudgetItems(activeBudget.items || [{ description: '', quantity: 1, unit_price: 0 }]);
+            setEditingPaymentTerms(activeBudget.payment_terms || '50% de seña para reservar fecha, 50% contra entrega.');
         } else {
-            setBudgetItems([{ description: '', quantity: 1, unit_price: 0 }]);
-            setPaymentTerms('50% de seña para reservar fecha, 50% contra entrega.');
+            setEditingBudgetItems([{ description: '', quantity: 1, unit_price: 0 }]);
+            setEditingPaymentTerms('50% de seña para reservar fecha, 50% contra entrega.');
         }
     };
 
@@ -399,7 +413,7 @@ const CRMProjects: React.FC = () => {
         setSuccessMsg('');
 
         // Excluir opcionales de la suma total
-        const totalPrice = budgetItems
+        const totalPrice = editingBudgetItems
             .filter(item => !item.is_optional)
             .reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0);
 
@@ -410,9 +424,9 @@ const CRMProjects: React.FC = () => {
                 body: JSON.stringify({
                     action: 'updateBudget',
                     project_id: budgetingProject.id,
-                    items: budgetItems,
+                    items: editingBudgetItems,
                     total_price: totalPrice,
-                    payment_terms: paymentTerms,
+                    payment_terms: editingPaymentTerms,
                     password
                 })
             });
@@ -428,14 +442,14 @@ const CRMProjects: React.FC = () => {
         }
     };
 
-    // Agregar fila de presupuesto
-    const addBudgetItem = () => {
-        setBudgetItems([...budgetItems, { description: '', quantity: 1, unit_price: 0 }]);
+    // Agregar fila de presupuesto (Creación)
+    const addNewBudgetItem = () => {
+        setNewBudgetItems([...newBudgetItems, { description: '', quantity: 1, unit_price: 0 }]);
     };
 
-    // Modificar fila de presupuesto
-    const updateBudgetItem = (index: number, field: keyof BudgetItem, val: any) => {
-        const newItems = [...budgetItems];
+    // Modificar fila de presupuesto (Creación)
+    const updateNewBudgetItem = (index: number, field: keyof BudgetItem, val: any) => {
+        const newItems = [...newBudgetItems];
         if (field === 'quantity') {
             newItems[index].quantity = parseInt(val) || 0;
         } else if (field === 'unit_price') {
@@ -446,7 +460,28 @@ const CRMProjects: React.FC = () => {
             // @ts-ignore
             newItems[index].description = val;
         }
-        setBudgetItems(newItems);
+        setNewBudgetItems(newItems);
+    };
+
+    // Agregar fila de presupuesto (Edición)
+    const addEditingBudgetItem = () => {
+        setEditingBudgetItems([...editingBudgetItems, { description: '', quantity: 1, unit_price: 0 }]);
+    };
+
+    // Modificar fila de presupuesto (Edición)
+    const updateEditingBudgetItem = (index: number, field: keyof BudgetItem, val: any) => {
+        const newItems = [...editingBudgetItems];
+        if (field === 'quantity') {
+            newItems[index].quantity = parseInt(val) || 0;
+        } else if (field === 'unit_price') {
+            newItems[index].unit_price = parseFloat(val) || 0;
+        } else if (field === 'is_optional') {
+            newItems[index].is_optional = !!val;
+        } else {
+            // @ts-ignore
+            newItems[index].description = val;
+        }
+        setEditingBudgetItems(newItems);
     };
 
     // Rotar token de acceso
@@ -514,10 +549,17 @@ const CRMProjects: React.FC = () => {
         }
     };
 
-    // Eliminar fila de presupuesto
-    const removeBudgetItem = (index: number) => {
-        if (budgetItems.length > 1) {
-            setBudgetItems(budgetItems.filter((_, i) => i !== index));
+    // Eliminar fila de presupuesto (Creación)
+    const removeNewBudgetItem = (index: number) => {
+        if (newBudgetItems.length > 1) {
+            setNewBudgetItems(newBudgetItems.filter((_, i) => i !== index));
+        }
+    };
+
+    // Eliminar fila de presupuesto (Edición)
+    const removeEditingBudgetItem = (index: number) => {
+        if (editingBudgetItems.length > 1) {
+            setEditingBudgetItems(editingBudgetItems.filter((_, i) => i !== index));
         }
     };
 
@@ -896,7 +938,7 @@ const CRMProjects: React.FC = () => {
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={addBudgetItem}
+                                            onClick={addNewBudgetItem}
                                             className="text-[10px] bg-white/5 hover:bg-white/10 px-2 py-1 rounded border border-white/10"
                                         >
                                             + Añadir Fila
@@ -904,11 +946,11 @@ const CRMProjects: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {budgetItems.map((item, idx) => (
+                                {newBudgetItems.map((item, idx) => (
                                     <div key={idx} className="flex flex-col sm:flex-row gap-2 items-stretch bg-black/40 p-3 sm:p-2 border border-white/5 rounded">
                                         <textarea
                                             value={item.description}
-                                            onChange={(e) => updateBudgetItem(idx, 'description', e.target.value)}
+                                            onChange={(e) => updateNewBudgetItem(idx, 'description', e.target.value)}
                                             className="w-full sm:flex-1 bg-black border border-white/5 rounded px-2.5 py-1.5 text-xs text-white resize-y min-h-[70px] self-start"
                                             placeholder="Detalle del servicio (admite saltos de línea para formato técnico)"
                                             rows={3}
@@ -920,7 +962,7 @@ const CRMProjects: React.FC = () => {
                                                     type="number"
                                                     min="1"
                                                     value={item.quantity}
-                                                    onChange={(e) => updateBudgetItem(idx, 'quantity', e.target.value)}
+                                                    onChange={(e) => updateNewBudgetItem(idx, 'quantity', e.target.value)}
                                                     className="w-12 bg-black border border-white/5 rounded px-1 py-1 text-xs text-center text-white"
                                                     placeholder="Cant"
                                                 />
@@ -931,7 +973,7 @@ const CRMProjects: React.FC = () => {
                                                     type="number"
                                                     min="0"
                                                     value={item.unit_price}
-                                                    onChange={(e) => updateBudgetItem(idx, 'unit_price', e.target.value)}
+                                                    onChange={(e) => updateNewBudgetItem(idx, 'unit_price', e.target.value)}
                                                     className="w-20 bg-black border border-white/5 rounded px-2 py-1 text-xs text-right text-white"
                                                     placeholder="Precio U."
                                                 />
@@ -940,16 +982,16 @@ const CRMProjects: React.FC = () => {
                                                 <input
                                                     type="checkbox"
                                                     checked={!!item.is_optional}
-                                                    onChange={(e) => updateBudgetItem(idx, 'is_optional', e.target.checked)}
+                                                    onChange={(e) => updateNewBudgetItem(idx, 'is_optional', e.target.checked)}
                                                     className="accent-nexo-lime h-3.5 w-3.5 bg-black border border-white/10 rounded cursor-pointer"
                                                     title="Marcar como Extra / Opcional"
                                                 />
                                                 <span className="text-[10px] text-zinc-400">Extra</span>
                                             </div>
-                                            {budgetItems.length > 1 && (
+                                            {newBudgetItems.length > 1 && (
                                                 <button
                                                     type="button"
-                                                    onClick={() => removeBudgetItem(idx)}
+                                                    onClick={() => removeNewBudgetItem(idx)}
                                                     className="text-red-500 hover:text-red-400 font-bold px-2 py-1 text-sm bg-red-950/20 border border-red-500/10 rounded sm:bg-transparent sm:border-0 sm:p-0"
                                                 >
                                                     ×
@@ -963,14 +1005,14 @@ const CRMProjects: React.FC = () => {
                                     <div>
                                         <span className="text-zinc-500">Total Principal: </span>
                                         <span className="font-bold text-nexo-lime">
-                                            {newCurrency} {budgetItems.filter(i => !i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
+                                            {newCurrency} {newBudgetItems.filter(i => !i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
                                         </span>
                                     </div>
-                                    {budgetItems.some(i => i.is_optional) && (
+                                    {newBudgetItems.some(i => i.is_optional) && (
                                         <div>
                                             <span className="text-zinc-500">Extras Sugeridos: </span>
                                             <span className="font-bold text-[#00e5ff]">
-                                                + {newCurrency} {budgetItems.filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
+                                                + {newCurrency} {newBudgetItems.filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
                                             </span>
                                         </div>
                                     )}
@@ -980,8 +1022,8 @@ const CRMProjects: React.FC = () => {
                             <div className="space-y-2 border-t border-white/5 pt-4">
                                 <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Términos de Pago</label>
                                 <textarea
-                                    value={paymentTerms}
-                                    onChange={(e) => setPaymentTerms(e.target.value)}
+                                    value={newPaymentTerms}
+                                    onChange={(e) => setNewPaymentTerms(e.target.value)}
                                     className="w-full bg-black border border-white/10 rounded px-4 py-2 text-xs text-white focus:outline-none focus:border-nexo-lime h-20 resize-none"
                                 />
                             </div>
@@ -1613,7 +1655,7 @@ const CRMProjects: React.FC = () => {
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={addBudgetItem}
+                                            onClick={addEditingBudgetItem}
                                             className="text-[10px] bg-white/5 hover:bg-white/10 px-2 py-1 rounded border border-white/10"
                                         >
                                             + Añadir Fila
@@ -1621,12 +1663,12 @@ const CRMProjects: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {budgetItems.map((item, idx) => (
+                                {editingBudgetItems.map((item, idx) => (
                                     <div key={idx} className="flex flex-col sm:flex-row gap-2 items-stretch bg-black/40 p-3 sm:p-2 border border-white/5 rounded">
                                         <textarea
                                             required
                                             value={item.description}
-                                            onChange={(e) => updateBudgetItem(idx, 'description', e.target.value)}
+                                            onChange={(e) => updateEditingBudgetItem(idx, 'description', e.target.value)}
                                             className="w-full sm:flex-1 bg-black border border-white/5 rounded px-2.5 py-1.5 text-xs text-white resize-y min-h-[70px] self-start"
                                             placeholder="Detalle del servicio (admite saltos de línea para formato técnico)"
                                             rows={3}
@@ -1639,7 +1681,7 @@ const CRMProjects: React.FC = () => {
                                                     required
                                                     min="1"
                                                     value={item.quantity}
-                                                    onChange={(e) => updateBudgetItem(idx, 'quantity', e.target.value)}
+                                                    onChange={(e) => updateEditingBudgetItem(idx, 'quantity', e.target.value)}
                                                     className="w-12 bg-black border border-white/5 rounded px-1 py-1 text-xs text-center text-white"
                                                     placeholder="Cant"
                                                 />
@@ -1651,7 +1693,7 @@ const CRMProjects: React.FC = () => {
                                                     required
                                                     min="0"
                                                     value={item.unit_price}
-                                                    onChange={(e) => updateBudgetItem(idx, 'unit_price', e.target.value)}
+                                                    onChange={(e) => updateEditingBudgetItem(idx, 'unit_price', e.target.value)}
                                                     className="w-20 bg-black border border-white/5 rounded px-2 py-1 text-xs text-right text-white"
                                                     placeholder="Precio U."
                                                 />
@@ -1660,16 +1702,16 @@ const CRMProjects: React.FC = () => {
                                                 <input
                                                     type="checkbox"
                                                     checked={!!item.is_optional}
-                                                    onChange={(e) => updateBudgetItem(idx, 'is_optional', e.target.checked)}
+                                                    onChange={(e) => updateEditingBudgetItem(idx, 'is_optional', e.target.checked)}
                                                     className="accent-nexo-lime h-3.5 w-3.5 bg-black border border-white/10 rounded cursor-pointer"
                                                     title="Marcar como Extra / Opcional"
                                                 />
                                                 <span className="text-[10px] text-zinc-400">Extra</span>
                                             </div>
-                                            {budgetItems.length > 1 && (
+                                            {editingBudgetItems.length > 1 && (
                                                 <button
                                                     type="button"
-                                                    onClick={() => removeBudgetItem(idx)}
+                                                    onClick={() => removeEditingBudgetItem(idx)}
                                                     className="text-red-500 hover:text-red-400 font-bold px-2 py-1 text-sm bg-red-950/20 border border-red-500/10 rounded sm:bg-transparent sm:border-0 sm:p-0"
                                                 >
                                                     ×
@@ -1683,14 +1725,14 @@ const CRMProjects: React.FC = () => {
                                     <div>
                                         <span className="text-zinc-500">Total Principal: </span>
                                         <span className="font-bold text-nexo-lime">
-                                            {budgetingProject?.currency || 'USD'} {budgetItems.filter(i => !i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
+                                            {budgetingProject?.currency || 'USD'} {editingBudgetItems.filter(i => !i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
                                         </span>
                                     </div>
-                                    {budgetItems.some(i => i.is_optional) && (
+                                    {editingBudgetItems.some(i => i.is_optional) && (
                                         <div>
                                             <span className="text-zinc-500">Extras Sugeridos: </span>
                                             <span className="font-bold text-[#00e5ff]">
-                                                + {budgetingProject?.currency || 'USD'} {budgetItems.filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
+                                                + {budgetingProject?.currency || 'USD'} {editingBudgetItems.filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
                                             </span>
                                         </div>
                                     )}
@@ -1701,8 +1743,8 @@ const CRMProjects: React.FC = () => {
                                 <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Términos de Pago</label>
                                 <textarea
                                     required
-                                    value={paymentTerms}
-                                    onChange={(e) => setPaymentTerms(e.target.value)}
+                                    value={editingPaymentTerms}
+                                    onChange={(e) => setEditingPaymentTerms(e.target.value)}
                                     className="w-full bg-black border border-white/10 rounded px-4 py-2 text-xs text-white focus:outline-none focus:border-nexo-lime h-24 resize-none"
                                 />
                             </div>
