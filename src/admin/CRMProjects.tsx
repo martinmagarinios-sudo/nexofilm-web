@@ -1014,7 +1014,7 @@ const CRMProjects: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="divide-y divide-white/5">
+                            <div className="space-y-6 p-6">
                                 {loading ? (
                                     <div className="p-12 text-center text-zinc-500">Cargando proyectos...</div>
                                 ) : filteredAndSortedProjects.length === 0 ? (
@@ -1035,7 +1035,7 @@ const CRMProjects: React.FC = () => {
                                         };
 
                                         return (
-                                            <div key={project.id} className="p-6 hover:bg-white/[0.01] transition-colors space-y-4">
+                                            <div key={project.id} className="bg-zinc-950/40 border border-white/5 hover:border-nexo-lime/25 rounded-xl p-6 transition-all space-y-4 shadow-xl">
                                                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                                     <div>
                                                         <div className="flex items-center gap-3">
