@@ -1264,20 +1264,23 @@ const CRMProjects: React.FC = () => {
 
                                                 {/* Detalle de Presupuesto Activo y Feedback */}
                                                 {projectBudget && (
-                                                    <div className="bg-black/30 p-4 border border-white/5 rounded-lg flex flex-col md:flex-row justify-between gap-4">
-                                                        <div className="text-xs text-zinc-400 space-y-1">
-                                                            <span className="font-bold text-zinc-300">Presupuesto Activo (v{projectBudget.version}): </span>
-                                                            <span className="text-white font-medium">{project.currency || 'USD'} {projectBudget.total_price.toLocaleString()}</span>
-                                                            <div className="mt-1 space-y-1.5">
-                                                                 {projectBudget.items.map((it, i) => (
-                                                                     <div key={i} className="bg-white/5 border border-white/5 rounded p-2.5 whitespace-pre-wrap text-left text-zinc-300">
-                                                                         <span className="text-zinc-500 font-bold mr-1">#{i + 1} ({it.quantity}x):</span> {it.description}
-                                                                     </div>
-                                                                 ))}
-                                                            </div>
+                                                    <div className="bg-black/30 p-4 border border-white/5 rounded-lg">
+                                                        <span className="font-bold text-zinc-300">Presupuesto Activo </span>
+                                                        <span className="text-zinc-500 text-[10px] font-semibold mr-2">(Versión {projectBudget.version}): </span>
+                                                        <span className="text-white font-medium">{project.currency || 'USD'} {projectBudget.total_price.toLocaleString()}</span>
+                                                        <div className="mt-2 space-y-2">
+                                                            {projectBudget.items.map((it, i) => (
+                                                                <div key={i} className="bg-black/20 border border-white/5 rounded-lg p-3 text-left text-zinc-300">
+                                                                    <div className="flex justify-between items-center border-b border-white/5 pb-1.5 mb-2 text-[9px] text-zinc-500 font-bold uppercase tracking-wider">
+                                                                        <span>Concepto #{i + 1} {it.is_optional && <span className="text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded text-[8px] ml-1">Opcional</span>}</span>
+                                                                        <span>Cantidad: {it.quantity}</span>
+                                                                    </div>
+                                                                    <div className="whitespace-pre-wrap leading-relaxed text-[13px]">{it.description}</div>
+                                                                </div>
+                                                            ))}
                                                         </div>
                                                         {projectBudget.client_feedback && (
-                                                            <div className="bg-zinc-900/80 border border-white/10 p-3 rounded text-xs max-w-xs h-fit self-center">
+                                                            <div className="bg-zinc-900/80 border border-white/10 p-3 rounded text-xs max-w-xs h-fit mt-3">
                                                                 <span className="font-bold text-amber-400 block mb-1">Feedback del Cliente:</span>
                                                                 <span className="text-zinc-300 italic">"{projectBudget.client_feedback}"</span>
                                                             </div>
