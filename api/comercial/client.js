@@ -16,9 +16,12 @@ import { createRequire } from 'module';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { fileURLToPath } from 'url';
 
 const require = createRequire(import.meta.url);
 const AdmZip = require('adm-zip');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.VITE_SUPABASE_KEY;
@@ -315,26 +318,54 @@ export default async function handler(req, res) {
 
             // GET Acción: Render HTML con OG Tags Dinámicos
             if (action === 'render') {
-                let title = "Portal de Autogestión";
+                let title = "Portal de Clientes - NexoFilm";
                 let description = "Accedé al portal para gestionar tu propuesta comercial.";
 
                 if (project) {
+                    if (project.title) {
+                        title = `${project.title} - NexoFilm`;
+                    }
                     const contactName = project.contact_name || '';
                     if (contactName) {
-                        description = `¡Hola ${contactName}! Ingresá aquí para completar los datos de tu solicitud.`;
+                        description = `¡Hola ${contactName}! Ingresá a tu portal para revisar el presupuesto, ver el estado o solicitar cambios.`;
                     }
                 }
 
                 try {
-                    const filePath = path.join(process.cwd(), 'dist', 'index.html');
+                    // Buscar index.html de forma robusta en ambientes serverless
+                    const searchPaths = [
+                        path.join(process.cwd(), 'dist', 'index.html'),
+                        path.join(process.cwd(), 'index.html'),
+                        path.join(__dirname, '..', '..', 'dist', 'index.html'),
+                        path.join(__dirname, '..', 'dist', 'index.html'),
+                        path.join(__dirname, 'dist', 'index.html')
+                    ];
+                    let filePath = searchPaths[0];
+                    for (const p of searchPaths) {
+                        if (fs.existsSync(p)) {
+                            filePath = p;
+                            break;
+                        }
+                    }
+
                     let html = fs.readFileSync(filePath, 'utf8');
 
+                    // Definir URLs absolutas dinámicas para la imagen OG y la URL de la página
+                    const host = req.headers.host || 'nexofilm.com';
+                    const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
+                    const imageUrl = `${protocol}://${host}/logo-whatsapp.jpg`;
+                    const portalUrl = `${protocol}://${host}/portal?token=${token}`;
+
+                    // Reemplazos de SEO/OG Tags soportando saltos de línea con [\s\r\n]+
                     html = html.replace(/<title>[^<]*<\/title>/g, `<title>${title}</title>`);
-                    html = html.replace(/<meta\s+name="description"\s+content="[^"]*"/g, `<meta name="description" content="${description}"`);
-                    html = html.replace(/<meta\s+property="og:title"\s+content="[^"]*"/g, `<meta property="og:title" content="${title}"`);
-                    html = html.replace(/<meta\s+property="og:description"\s+content="[^"]*"/g, `<meta property="og:description" content="${description}"`);
-                    html = html.replace(/<meta\s+property="twitter:title"\s+content="[^"]*"/g, `<meta property="twitter:title" content="${title}"`);
-                    html = html.replace(/<meta\s+property="twitter:description"\s+content="[^"]*"/g, `<meta property="twitter:description" content="${description}"`);
+                    html = html.replace(/<meta[\s\r\n]+name="description"[\s\r\n]+content="[^"]*"/g, `<meta name="description" content="${description}"`);
+                    html = html.replace(/<meta[\s\r\n]+property="og:title"[\s\r\n]+content="[^"]*"/g, `<meta property="og:title" content="${title}"`);
+                    html = html.replace(/<meta[\s\r\n]+property="og:description"[\s\r\n]+content="[^"]*"/g, `<meta property="og:description" content="${description}"`);
+                    html = html.replace(/<meta[\s\r\n]+property="og:image"[\s\r\n]+content="[^"]*"/g, `<meta property="og:image" content="${imageUrl}"`);
+                    html = html.replace(/<meta[\s\r\n]+property="og:url"[\s\r\n]+content="[^"]*"/g, `<meta property="og:url" content="${portalUrl}"`);
+                    html = html.replace(/<meta[\s\r\n]+property="twitter:title"[\s\r\n]+content="[^"]*"/g, `<meta property="twitter:title" content="${title}"`);
+                    html = html.replace(/<meta[\s\r\n]+property="twitter:description"[\s\r\n]+content="[^"]*"/g, `<meta property="twitter:description" content="${description}"`);
+                    html = html.replace(/<meta[\s\r\n]+property="twitter:image"[\s\r\n]+content="[^"]*"/g, `<meta property="twitter:image" content="${imageUrl}"`);
 
                     res.setHeader('Content-Type', 'text/html; charset=utf-8');
                     return res.status(200).send(html);
