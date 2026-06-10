@@ -1037,27 +1037,27 @@ async function notifyClientInvoice(project, host, forceChannel = null) {
                                 <p style="margin: 4px 0 0 0; font-size: 24px; font-weight: 900; color: #ccff00;">${amountStr} <span style="font-size: 11px; font-weight: normal; color: #a0a0a0; margin-left: 6px;">(${concept})</span></p>
                             </div>
 
-                            \${project.bank_details ? \`
+                            ${project.bank_details ? `
                             <h3 style="color: #ffffff; font-size: 14px; margin: 20px 0 10px 0; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #333; padding-bottom: 5px;">Datos de Transferencia Galicia:</h3>
-                            <pre style="background:#0d0d0d; padding:12px; border-radius:4px; color:#e0e0e0; font-family:monospace; font-size:12px; border:1px solid #222; margin-bottom: 20px; white-space: pre-wrap; line-height: 1.5;">\${project.bank_details}</pre>
-                            \` : ''}
+                            <pre style="background:#0d0d0d; padding:12px; border-radius:4px; color:#e0e0e0; font-family:monospace; font-size:12px; border:1px solid #222; margin-bottom: 20px; white-space: pre-wrap; line-height: 1.5;">${project.bank_details}</pre>
+                            ` : ''}
 
-                            \${project.invoice_url ? \`
+                            ${project.invoice_url ? `
                             <p style="font-size: 14px; margin: 20px 0 20px 0; color: #e0e0e0;">
                                 Podés descargar la factura oficial desde aquí:
                             </p>
                             <div style="margin-bottom: 20px;">
-                                <a href="\${project.invoice_url}" target="_blank" style="background-color: #ffffff; color: #000000; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 12px; text-transform: uppercase; display: inline-block;">
+                                <a href="${project.invoice_url}" target="_blank" style="background-color: #ffffff; color: #000000; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 12px; text-transform: uppercase; display: inline-block;">
                                     Descargar Factura PDF 🧾
                                 </a>
                             </div>
-                            \` : ''}
+                            ` : ''}
 
                             <p style="font-size: 14px; margin: 20px 0 20px 0; color: #e0e0e0;">
                                 Para ver los detalles completos de tu presupuesto, adjuntar constancias o seguir el progreso, ingresá a tu portal seguro:
                             </p>
                             <div style="text-align: center; margin-top: 20px; margin-bottom: 10px;">
-                                <a href="\${portalUrl}" style="background-color: #ccff00; color: #000000; padding: 14px 28px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 13px; text-transform: uppercase; display: inline-block; box-shadow: 0 4px 10px rgba(204,255,0,0.2);">
+                                <a href="${portalUrl}" style="background-color: #ccff00; color: #000000; padding: 14px 28px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 13px; text-transform: uppercase; display: inline-block; box-shadow: 0 4px 10px rgba(204,255,0,0.2);">
                                     Ingresar al Portal de Clientes
                                 </a>
                             </div>
@@ -1067,12 +1067,12 @@ async function notifyClientInvoice(project, host, forceChannel = null) {
                             NexoFilm Productora Audiovisual · Buenos Aires, Argentina.
                         </p>
                     </div>
-                \`
+                `
             });
-            console.log(\`Email de factura enviado con éxito a: \${project.client_email}\`);
+            console.log(`Email de factura enviado con éxito a: ${project.client_email}`);
         } catch (e) {
-            console.error(\`Error enviando email de factura al cliente:\`, e.message);
-            throw new Error(\`Error al enviar Email de Factura: \${e.message}\`);
+            console.error(`Error enviando email de factura al cliente:`, e.message);
+            throw new Error(`Error al enviar Email de Factura: ${e.message}`);
         }
     }
 
@@ -1082,18 +1082,18 @@ async function notifyClientInvoice(project, host, forceChannel = null) {
         const phoneNumberId = process.env.WHATSAPP_PHONE_ID?.trim();
         
         if (token && phoneNumberId) {
-            let cleanPhone = project.client_phone.replace(/\\D/g, '');
+            let cleanPhone = project.client_phone.replace(/\D/g, '');
             if (!cleanPhone.startsWith('54') && cleanPhone.length === 10) {
                 cleanPhone = '54' + cleanPhone;
             }
             
-            const messageText = \`🧾 *NexoFilm - Facturación y Pago*\\n\\n¡Hola \${project.contact_name}! Ya registramos tu pago o preparamos tu factura para el proyecto "\${project.title}".\\n\\nMonto solicitado: \${amountStr} (\${concept})\\n\\nPodés ver los datos de transferencia Galicia, descargar tu factura y seguir el estado desde tu portal seguro:\\n👉 \${portalUrl}\`;
+            const messageText = `🧾 *NexoFilm - Facturación y Pago*\n\n¡Hola ${project.contact_name}! Ya registramos tu pago o preparamos tu factura para el proyecto "${project.title}".\n\nMonto solicitado: ${amountStr} (${concept})\n\nPodés ver los datos de transferencia Galicia, descargar tu factura y seguir el estado desde tu portal seguro:\n👉 ${portalUrl}`;
 
             try {
-                const response = await fetch(\`https://graph.facebook.com/v21.0/\${phoneNumberId}/messages\`, {
+                const response = await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': \`Bearer \${token}\`,
+                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
@@ -1106,13 +1106,13 @@ async function notifyClientInvoice(project, host, forceChannel = null) {
                 const resData = await response.json();
                 if (!response.ok) {
                     console.error('Error Meta API en WhatsApp de factura:', resData.error);
-                    throw new Error(\`Error de WhatsApp (Meta API): \${resData.error?.message || response.statusText}\`);
+                    throw new Error(`Error de WhatsApp (Meta API): ${resData.error?.message || response.statusText}`);
                 } else {
-                    console.log(\`WhatsApp de factura enviado con éxito al cliente +\${cleanPhone}\`);
+                    console.log(`WhatsApp de factura enviado con éxito al cliente +${cleanPhone}`);
                 }
             } catch (err) {
                 console.error('Error al enviar WhatsApp de factura al cliente:', err.message);
-                throw new Error(\`Error al enviar WhatsApp de Factura: \${err.message}\`);
+                throw new Error(`Error al enviar WhatsApp de Factura: ${err.message}`);
             }
         }
     }
