@@ -1032,7 +1032,16 @@ const ClientPortal: React.FC = () => {
                 {/* Servicios Opcionales / Extras Sugeridos */}
                 {budget.items.some(item => item.is_optional) && (
                     <div className="space-y-3">
-                        <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Adicionales recomendados (Opcionales)</h4>
+                        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
+                            <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider">
+                                Adicionales recomendados / pedidos (Opcionales)
+                            </h4>
+                            {isEditable && (
+                                <span className="text-[10px] text-zinc-500 font-medium italic">
+                                    *(Tildá o destildá para incluir o excluir del presupuesto)
+                                </span>
+                            )}
+                        </div>
                         
                         {/* Vista Desktop (Tabla) */}
                         <div className="hidden lg:block overflow-x-auto border border-[#00e5ff]/20 rounded-lg bg-[#00e5ff]/5">
@@ -2122,7 +2131,7 @@ const ClientPortal: React.FC = () => {
                             <div className="space-y-4">
                                 <h3 className="text-sm font-bold text-white uppercase tracking-wider border-b border-white/5 pb-2">Facturación y Pago</h3>
                                 
-                                {project.bank_details ? (
+                                {project.bank_details && project.invoice_sent ? (
                                     <div className="space-y-4">
                                         <div className="bg-black p-4 border border-white/10 rounded text-[11px] leading-relaxed font-mono text-zinc-300">
                                             <p className="font-bold text-nexo-lime mb-1.5 uppercase">DATOS DE TRANSFERENCIA:</p>
@@ -2141,14 +2150,14 @@ const ClientPortal: React.FC = () => {
                                     </div>
                                 ) : (
                                     <p className="text-xs text-zinc-500 italic">
-                                        Aguardá a que el administrador asocie los datos de transferencia.
+                                        La factura y los datos de pago se habilitarán una vez que el productor emita el comprobante.
                                     </p>
                                 )}
                             </div>
 
                             {/* Botón de Descarga de Factura AFIP */}
                             <div>
-                                {project.invoice_url ? (
+                                {project.invoice_url && project.invoice_sent ? (
                                     <a
                                         href={project.invoice_url}
                                         target="_blank"
@@ -2164,8 +2173,8 @@ const ClientPortal: React.FC = () => {
                                 )}
                             </div>
                         </div>
-                        {renderBudgetSection()}
                     </div>
+                    {renderBudgetSection()}
                 </div>
                 )}
 
