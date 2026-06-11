@@ -441,7 +441,8 @@ export default async function handler(req, res) {
                     notification_preference: notification_preference || project.notification_preference,
                     guests_count: guests_count !== undefined ? guests_count : project.guests_count,
                     client_notes: client_notes || project.client_notes,
-                    status: 'review'
+                    status: 'review',
+                    admin_action_required: true
                 };
 
                 if (event_end_time !== undefined) {
@@ -456,10 +457,11 @@ export default async function handler(req, res) {
                     .single();
 
                 if (updateErr) {
-                    // Fallback resiliente si la columna event_end_time no existe en la base de datos
-                    if (updateErr.message && updateErr.message.includes('event_end_time')) {
-                        console.warn("event_end_time column not found in projects table. Retrying update without it.");
+                    // Fallback resiliente si la columna event_end_time o admin_action_required no existe en la base de datos
+                    if (updateErr.message && (updateErr.message.includes('event_end_time') || updateErr.message.includes('admin_action_required'))) {
+                        console.warn("event_end_time or admin_action_required column not found in projects table. Retrying update without them.");
                         delete updateData.event_end_time;
+                        delete updateData.admin_action_required;
                         const { data: fallbackProj, error: fallbackErr } = await supabase
                             .from('projects')
                             .update(updateData)
@@ -499,16 +501,35 @@ export default async function handler(req, res) {
 
             } else if (action === 'submit_notes') {
                 const { notes } = req.body;
-                const { data: updatedProj, error: updateErr } = await supabase
+                
+                const updateData = {
+                    client_notes: notes || null,
+                    admin_action_required: true
+                };
+
+                let { data: updatedProj, error: updateErr } = await supabase
                     .from('projects')
-                    .update({
-                        client_notes: notes || null
-                    })
+                    .update(updateData)
                     .eq('id', project.id)
                     .select()
                     .single();
 
-                if (updateErr) throw updateErr;
+                if (updateErr) {
+                    if (updateErr.message && updateErr.message.includes('admin_action_required')) {
+                        delete updateData.admin_action_required;
+                        const retry = await supabase
+                            .from('projects')
+                            .update(updateData)
+                            .eq('id', project.id)
+                            .select()
+                            .single();
+                        if (retry.error) throw retry.error;
+                        updatedProj = retry.data;
+                    } else {
+                        throw updateErr;
+                    }
+                }
+
                 updatedProject = updatedProj;
 
                 notificationSubject = `💬 Nueva consulta de ${project.contact_name}`;
@@ -664,14 +685,33 @@ export default async function handler(req, res) {
                 Motivo/Feedback: <em>"${client_feedback || 'Sin comentarios'}"</em>`;
 
             } else if (action === 'feedback') {
-                const { data: updatedProj, error: updateErr } = await supabase
+                const updateData = { 
+                    status: 'review',
+                    admin_action_required: true
+                };
+                
+                let { data: updatedProj, error: updateErr } = await supabase
                     .from('projects')
-                    .update({ status: 'review' })
+                    .update(updateData)
                     .eq('id', project.id)
                     .select()
                     .single();
 
-                if (updateErr) throw updateErr;
+                if (updateErr) {
+                    if (updateErr.message && updateErr.message.includes('admin_action_required')) {
+                        delete updateData.admin_action_required;
+                        const retry = await supabase
+                            .from('projects')
+                            .update(updateData)
+                            .eq('id', project.id)
+                            .select()
+                            .single();
+                        if (retry.error) throw retry.error;
+                        updatedProj = retry.data;
+                    } else {
+                        throw updateErr;
+                    }
+                }
 
                 await supabase
                     .from('budgets')

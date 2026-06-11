@@ -153,7 +153,8 @@ export default async function handler(req, res) {
                     guests_count: guests_count ? parseInt(guests_count) : null,
                     drive_folder_id: drive_folder_id || null,
                     currency: currency || 'USD',
-                    crew_count: crew_count ? parseInt(crew_count) : null
+                    crew_count: crew_count ? parseInt(crew_count) : null,
+                    admin_action_required: req.body.admin_action_required !== undefined ? req.body.admin_action_required : false
                 };
 
                 // Insertar el proyecto
@@ -164,10 +165,11 @@ export default async function handler(req, res) {
                     .single();
 
                 if (projErr) {
-                    // Fallback resiliente si event_end_time no existe
-                    if (projErr.message && projErr.message.includes('event_end_time')) {
-                        console.warn("event_end_time column not found in projects table. Retrying createProject without it.");
+                    // Fallback resiliente si event_end_time o admin_action_required no existe
+                    if (projErr.message && (projErr.message.includes('event_end_time') || projErr.message.includes('admin_action_required'))) {
+                        console.warn("event_end_time or admin_action_required column not found in projects table. Retrying createProject without them.");
                         delete insertPayload.event_end_time;
+                        delete insertPayload.admin_action_required;
                         const retry = await supabase
                             .from('projects')
                             .insert(insertPayload)
@@ -306,6 +308,7 @@ export default async function handler(req, res) {
                 const updatePayload = {
                     status: 'review',
                     invoice_sent: false,
+                    admin_action_required: false,
                     updated_at: new Date().toISOString()
                 };
 
@@ -317,8 +320,10 @@ export default async function handler(req, res) {
                     .single();
 
                 if (getErr) {
-                    if (getErr.message && getErr.message.includes('invoice_sent')) {
+                    // Fallback si invoice_sent o admin_action_required no existen
+                    if (getErr.message && (getErr.message.includes('invoice_sent') || getErr.message.includes('admin_action_required'))) {
                         delete updatePayload.invoice_sent;
+                        delete updatePayload.admin_action_required;
                         const retry = await supabase
                             .from('projects')
                             .update(updatePayload)
@@ -507,7 +512,8 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                     guests_count,
                     coverage_types,
                     admin_notes,
-                    notification_preference
+                    notification_preference,
+                    admin_action_required
                 } = req.body;
 
                 const updatePayload = {
@@ -525,7 +531,8 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                     guests_count: guests_count ? parseInt(guests_count) : null,
                     coverage_types: coverage_types || null,
                     admin_notes: admin_notes || null,
-                    notification_preference: notification_preference || 'both'
+                    notification_preference: notification_preference || 'both',
+                    admin_action_required: admin_action_required !== undefined ? admin_action_required : false
                 };
 
                 let { data: updatedProject, error: updateErr } = await supabase
@@ -536,10 +543,11 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                     .single();
 
                 if (updateErr) {
-                    // Fallback resiliente si event_end_time no existe
-                    if (updateErr.message && updateErr.message.includes('event_end_time')) {
-                        console.warn("event_end_time column not found in projects table. Retrying updateContact without it.");
+                    // Fallback resiliente si event_end_time o admin_action_required no existe
+                    if (updateErr.message && (updateErr.message.includes('event_end_time') || updateErr.message.includes('admin_action_required'))) {
+                        console.warn("event_end_time or admin_action_required column not found in projects table. Retrying updateContact without them.");
                         delete updatePayload.event_end_time;
+                        delete updatePayload.admin_action_required;
                         const retry = await supabase
                             .from('projects')
                             .update(updatePayload)
@@ -829,7 +837,10 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                 try {
                     const { data: upProj, error: upErr } = await supabase
                         .from('projects')
-                        .update({ invoice_sent: true })
+                        .update({ 
+                            invoice_sent: true,
+                            admin_action_required: false
+                        })
                         .eq('id', project_id)
                         .select()
                         .single();
@@ -837,8 +848,19 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                     if (upErr) throw upErr;
                     updatedProject = upProj;
                 } catch (upErr) {
-                    console.warn('invoice_sent update failed (missing column?), skipping:', upErr);
-                    updatedProject = project;
+                    console.warn('invoice_sent or admin_action_required update failed, trying fallback:', upErr);
+                    try {
+                        const { data: upProj2, error: upErr2 } = await supabase
+                            .from('projects')
+                            .update({ invoice_sent: true })
+                            .eq('id', project_id)
+                            .select()
+                            .single();
+                        if (upErr2) throw upErr2;
+                        updatedProject = upProj2;
+                    } catch (e) {
+                        updatedProject = project;
+                    }
                 }
 
                 return res.status(200).json({
