@@ -18,6 +18,14 @@ interface BudgetItem {
     is_optional?: boolean;
 }
 
+interface InvoiceHistoryEntry {
+    fc_number: string | null;
+    amount: number | null;
+    type: 'total' | 'deposit_50' | 'custom' | null;
+    date_sent: string;
+    invoice_url: string;
+}
+
 interface Project {
     id: string;
     contact_name: string;
@@ -39,6 +47,8 @@ interface Project {
     invoice_url: string | null;
     invoice_type: 'total' | 'deposit_50' | 'custom' | null;
     invoice_amount: number | null;
+    invoice_fc_number?: string | null;
+    invoices_history?: InvoiceHistoryEntry[] | null;
     client_phone?: string | null;
     notification_preference?: 'both' | 'email' | 'whatsapp' | null;
     guests_count?: number | null;
@@ -129,6 +139,7 @@ const CRMProjects: React.FC = () => {
     const [bankDetails, setBankDetails] = useState('');
     const [invoiceType, setInvoiceType] = useState<'total' | 'deposit_50' | 'custom'>('deposit_50');
     const [invoiceAmount, setInvoiceAmount] = useState<number>(0);
+    const [invoiceFcNumber, setInvoiceFcNumber] = useState('');
     const [invoiceUrl, setInvoiceUrl] = useState('');
     const [uploading, setUploading] = useState(false);
 
@@ -789,6 +800,7 @@ const CRMProjects: React.FC = () => {
                     invoice_url: invoiceUrl,
                     invoice_type: invoiceType,
                     invoice_amount: invoiceAmount,
+                    invoice_fc_number: invoiceFcNumber,
                     bank_details: bankDetails,
                     password
                 })
@@ -797,9 +809,10 @@ const CRMProjects: React.FC = () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error al guardar factura');
 
-            setSuccessMsg(`Facturación registrada para ${selectedProject.contact_name}. El cliente ya puede verla.`);
+            setSuccessMsg(`Factura ${invoiceFcNumber ? `N° ${invoiceFcNumber} ` : ''}registrada para ${selectedProject.contact_name}. El cliente ya puede verla.`);
             setSelectedProject(null);
             setInvoiceUrl('');
+            setInvoiceFcNumber('');
             setBankDetails('');
             fetchData();
         } catch (err: any) {
@@ -814,6 +827,7 @@ const CRMProjects: React.FC = () => {
         setInvoiceUrl(proj.invoice_url || '');
         setInvoiceType(proj.invoice_type || 'deposit_50');
         setInvoiceAmount(proj.invoice_amount || 0);
+        setInvoiceFcNumber(proj.invoice_fc_number || '');
     };
 
     const copyClientLink = (token: string) => {
@@ -1983,7 +1997,81 @@ const CRMProjects: React.FC = () => {
                         </div>
 
                         <form onSubmit={handleSendInvoice} className="space-y-6">
-                            
+
+                            {/* Historial de facturas emitidas para este proyecto */}
+                            {(() => {
+                                const history = selectedProject.invoices_history;
+                                const projectBudget = budgets.find(b => b.project_id === selectedProject.id);
+                                const totalBudget = projectBudget?.total_price || 0;
+                                const totalInvoiced = Array.isArray(history) 
+                                    ? history.reduce((sum, inv) => sum + (inv.amount || 0), 0)
+                                    : 0;
+                                const remaining = totalBudget - totalInvoiced;
+                                const currency = selectedProject.currency || 'USD';
+
+                                return (
+                                    <div className="bg-black/40 border border-white/5 rounded-lg p-4 space-y-3">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Resumen de Facturación</span>
+                                            {totalBudget > 0 && (
+                                                <span className="text-[10px] text-zinc-500">Total cotizado: <span className="text-zinc-300 font-bold">{currency} {totalBudget.toLocaleString()}</span></span>
+                                            )}
+                                        </div>
+
+                                        {Array.isArray(history) && history.length > 0 ? (
+                                            <div className="space-y-1.5">
+                                                {history.map((inv, idx) => (
+                                                    <div key={idx} className="flex items-center justify-between text-[11px] py-1 border-b border-white/5 last:border-0">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-zinc-500">#{idx + 1}</span>
+                                                            {inv.fc_number && <span className="font-mono text-nexo-lime font-bold">FC {inv.fc_number}</span>}
+                                                            <span className="text-zinc-400">
+                                                                {inv.type === 'deposit_50' ? '50% Seña' : inv.type === 'total' ? '100% Total' : 'Custom'}
+                                                            </span>
+                                                            <span className="text-zinc-500">{new Date(inv.date_sent).toLocaleDateString('es-AR')}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-white font-bold">{currency} {(inv.amount || 0).toLocaleString()}</span>
+                                                            {inv.invoice_url && (
+                                                                <a href={inv.invoice_url} target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-nexo-lime text-[9px] font-bold uppercase tracking-wide">↗ PDF</a>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                <div className="flex justify-between items-center pt-2">
+                                                    <span className="text-[10px] font-bold uppercase text-zinc-400">Total facturado:</span>
+                                                    <span className="text-white font-black text-sm">{currency} {totalInvoiced.toLocaleString()}</span>
+                                                </div>
+                                                {totalBudget > 0 && (
+                                                    <div className={`flex justify-between items-center rounded px-3 py-2 ${remaining > 0 ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-emerald-500/10 border border-emerald-500/20'}`}>
+                                                        <span className={`text-[10px] font-bold uppercase ${remaining > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                                                            {remaining > 0 ? '⏳ Saldo pendiente a facturar:' : '✅ Totalmente facturado'}
+                                                        </span>
+                                                        {remaining > 0 && (
+                                                            <span className="text-amber-300 font-black text-sm">{currency} {remaining.toLocaleString()}</span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <p className="text-zinc-600 text-[11px] italic">Sin facturas emitidas aún para este proyecto.</p>
+                                        )}
+                                    </div>
+                                );
+                            })()}
+
+                            {/* Número de factura AFIP */}
+                            <div className="space-y-2">
+                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">N° de Comprobante AFIP <span className="text-zinc-600 normal-case font-normal">(opcional)</span></label>
+                                <input
+                                    type="text"
+                                    value={invoiceFcNumber}
+                                    onChange={(e) => setInvoiceFcNumber(e.target.value)}
+                                    placeholder="Ej: 0001-00001234"
+                                    className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm text-white font-mono focus:outline-none focus:border-nexo-lime"
+                                />
+                            </div>
+
                             {/* Datos de cuenta */}
                             <div className="space-y-2">
                                 <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Datos Bancarios para Transferir</label>
@@ -1995,6 +2083,7 @@ const CRMProjects: React.FC = () => {
                                     placeholder="Banco, CBU, Alias, CUIT..."
                                 />
                             </div>
+
 
                             {/* Tipo de Facturación */}
                             <div className="space-y-2">
