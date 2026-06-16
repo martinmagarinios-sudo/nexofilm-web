@@ -1185,11 +1185,21 @@ const ClientPortal: React.FC = () => {
 
             <main className="container mx-auto px-4 md:px-6 py-6 md:py-10 max-w-4xl space-y-5 md:space-y-8">
                 
-                {/* Alertas */}
+                {/* Alertas Premium Toast */}
                 {successMsg && (
-                    <div className="bg-nexo-lime/10 border border-nexo-lime/20 text-nexo-lime p-4 rounded-lg flex items-start gap-3">
-                        <span className="text-lg">✓</span>
-                        <p className="text-sm font-medium">{successMsg}</p>
+                    <div className="fixed bottom-6 right-6 z-[100] animate-fade-in">
+                        <div className="bg-gradient-to-r from-zinc-900 to-black border border-nexo-lime/30 p-5 rounded-xl flex items-center gap-4 shadow-[0_10px_40px_-10px_rgba(206,255,26,0.3)]">
+                            <div className="w-10 h-10 rounded-full bg-nexo-lime/10 border border-nexo-lime/20 flex items-center justify-center shrink-0">
+                                <span className="text-xl text-nexo-lime">✓</span>
+                            </div>
+                            <p className="text-sm font-medium text-white max-w-sm">{successMsg}</p>
+                            <button 
+                                onClick={() => setSuccessMsg('')} 
+                                className="ml-2 text-zinc-500 hover:text-white transition-colors"
+                            >
+                                ✕
+                            </button>
+                        </div>
                     </div>
                 )}
 

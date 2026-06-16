@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-    --color-nexo-lime: #e1f937;
+    --color-nexo-lime: #bfe023;
     --color-nexo-lime-dark: #ccdf2d;
     --color-nexo-gray: #808080;
     --color-nexo-dark: #000000;
@@ -21,6 +21,10 @@ body {
     background-color: #000000;
     color: #ffffff;
     -webkit-font-smoothing: antialiased;
+}
+
+select {
+    background-color: #0a0a0a;
 }
 
 .glass {

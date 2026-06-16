@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { HERO_SLIDES } from '../constants';
+import { CONFIG } from '../data/config';
 
 const Hero: React.FC = () => {
   const { t } = useTranslation();
@@ -10,7 +10,7 @@ const Hero: React.FC = () => {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % HERO_SLIDES.length);
+      setCurrent((prev) => (prev + 1) % CONFIG.heroSlides.length);
     }, 8000);
 
     const handleScroll = () => {
@@ -34,7 +34,7 @@ const Hero: React.FC = () => {
         </p>
       </div>
 
-      {HERO_SLIDES.map((slide, idx) => (
+      {CONFIG.heroSlides.map((slide, idx) => (
         <div
           key={slide.id}
           className={`absolute inset-0 transition-opacity duration-1500 ${idx === current ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
@@ -165,7 +165,7 @@ const Hero: React.FC = () => {
       {/* Indicadores de Slide Minimalistas */}
       <div className="absolute bottom-12 left-6 md:left-24 flex items-center gap-10 z-40">
         <div className="flex items-center gap-3">
-          {HERO_SLIDES.map((_, idx) => (
+          {CONFIG.heroSlides.map((_, idx) => (
             <button
               key={idx}
               onClick={() => setCurrent(idx)}
@@ -175,7 +175,7 @@ const Hero: React.FC = () => {
           ))}
         </div>
         <div className="text-[10px] font-bold text-white/20 tracking-widest uppercase">
-          0{current + 1} / 0{HERO_SLIDES.length}
+          0{current + 1} / 0{CONFIG.heroSlides.length}
         </div>
       </div>
     </section>

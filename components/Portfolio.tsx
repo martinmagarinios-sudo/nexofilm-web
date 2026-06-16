@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CONFIG } from '../data/config';
 import ProjectCard from './ProjectCard';
@@ -7,6 +7,17 @@ const Portfolio: React.FC = () => {
   const { t } = useTranslation();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [activeVideo, setActiveVideo] = useState<string | null>(null);
+
+  useEffect(() => {
+    const pendingProjectId = window.sessionStorage.getItem('open_project_id');
+    if (pendingProjectId) {
+      const project = CONFIG.projects.find(p => p.id === pendingProjectId);
+      if (project) {
+        setActiveVideo(project.embedUrl || project.videoUrl || null);
+      }
+      window.sessionStorage.removeItem('open_project_id');
+    }
+  }, []);
 
   const handleCopyLink = (url: string, id: string) => {
     navigator.clipboard.writeText(url);

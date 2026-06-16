@@ -1,6 +1,8 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { CONFIG } from '../data/config';
+
 const ValueProp: React.FC = () => {
   const { t } = useTranslation();
 
@@ -46,7 +48,7 @@ const ValueProp: React.FC = () => {
               {/* CTA Secundario */}
               <div className="pt-8 flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                 <a
-                  href={`https://wa.me/541158804711?text=${encodeURIComponent(t('whatsapp.prefilled'))}`}
+                  href={`https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(CONFIG.whatsappMessage)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group inline-flex items-center gap-3 bg-nexo-lime text-black font-black uppercase tracking-widest text-[11px] px-6 py-4 rounded-sm hover:bg-white transition-all duration-300 hover:shadow-[0_0_30px_rgba(225,249,55,0.25)]"
