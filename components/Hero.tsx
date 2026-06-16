@@ -79,33 +79,7 @@ const Hero: React.FC = () => {
             )}
           </div>
 
-          {/* 2. CAPA DE IMÁGENES FUNDIDAS (Visuales grandes de fondo) */}
-          <div className="absolute inset-0 z-0 flex items-end justify-center pointer-events-none">
-            <div className="container mx-auto px-6 h-full flex items-center justify-around gap-4 opacity-30">
-              {slide.gallery.map((img, i) => (
-                <div
-                  key={i}
-                  className={`relative w-full h-[60%] overflow-hidden transition-all duration-[2000ms] ease-out ${idx === current ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-20 opacity-0 scale-110'
-                    }`}
-                  style={{
-                    transitionDelay: `${800 + i * 300}ms`,
-                    // Efecto de máscara para fundir las imágenes con el fondo negro
-                    maskImage: 'linear-gradient(to bottom, transparent, black 20%, black 80%, transparent)',
-                    WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 20%, black 80%, transparent)'
-                  }}
-                >
-                  <img
-                    src={img}
-                    className="w-full h-full object-cover grayscale brightness-75"
-                    alt={`${t(`hero.slides.${idx}.title`)} - imagen ${i + 1} de galería NexoFilm`}
-                    loading="lazy"
-                  />
-                  {/* Overlay de color sutil */}
-                  <div className="absolute inset-0 bg-black/20"></div>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* 2. CAPA DE IMÁGENES FUNDIDAS - Eliminada por preferencia del cliente para mantener el diseño limpio solo con el video */}
 
           {/* 3. CONTENIDO (Primer plano) */}
           <div className="relative h-full container mx-auto px-6 flex flex-col justify-center items-center md:items-start text-center md:text-left z-20">
