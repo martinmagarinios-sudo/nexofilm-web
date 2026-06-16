@@ -1996,6 +1996,17 @@ const CRMProjects: React.FC = () => {
                             </button>
                         </div>
 
+                        {error && (
+                            <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-xs p-3 rounded">
+                                {error}
+                            </div>
+                        )}
+                        {successMsg && (
+                            <div className="bg-nexo-lime/10 border border-nexo-lime/20 text-nexo-lime text-xs p-3 rounded">
+                                {successMsg}
+                            </div>
+                        )}
+
                         <form onSubmit={handleSendInvoice} className="space-y-6">
 
                             {/* Historial de facturas emitidas para este proyecto */}
