@@ -10,7 +10,7 @@
     "rewrites": [
         { "source": "/portal/login", "destination": "/index.html" },
         { "source": "/portal", "destination": "/api/comercial/client?action=render" },
-        { "source": "/portfolio/(?<id>[^/]+)", "destination": "/api/portfolio?id=$id" },
+        { "source": "/portfolio/:id", "destination": "/api/portfolio" },
         { "source": "/api/(.*)", "destination": "/api/$1" },
         { "source": "/((?!api/).*)", "destination": "/index.html" }
     ],
