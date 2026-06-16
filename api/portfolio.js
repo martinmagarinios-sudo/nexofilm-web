@@ -5,20 +5,32 @@ module.exports = async (req, res) => {
     try {
         const { id } = req.query;
         
-        // We can't easily require ts files in this plain js vercel function, so we'll just mock the config grab
-        // or better yet, since it's just meta tags, we'll try to extract them from a compiled config or fetch them
-        // For simplicity and safety (since Vite compiles data/config.ts), we will use generic OG tags but with the project ID
-        
         const indexPath = path.join(process.cwd(), 'dist', 'index.html');
         if (!fs.existsSync(indexPath)) {
              return res.redirect('/');
         }
         let html = fs.readFileSync(indexPath, 'utf8');
 
-        // Prepare SEO/OG Data (Fallback logic)
-        const title = `Proyecto ${id.toUpperCase()} | NexoFilm Portfolio`;
-        const description = `Mira el proyecto ${id.toUpperCase()} producido por NexoFilm. Producción audiovisual corporativa, comercial y streaming en Latam.`;
-        const imageUrl = `https://nexofilm.com/logo-whatsapp.jpg`; // Default fallback until we can read the specific image
+        // Mapa de proyectos para previsualización rica en WhatsApp
+        const projectsData = {
+          "1": { title: "Copa Airlines", cat: "Video Comercial", img: "/logo-whatsapp.jpg" },
+          "2": { title: "Bahia Principe", cat: "Video Institucional", img: "/logo-whatsapp.jpg" },
+          "3": { title: "Cerámica San Lorenzo", cat: "Video Comercial", img: "/logo-whatsapp.jpg" },
+          "4": { title: "Droguería del Sud", cat: "Video Comercial", img: "/logo-whatsapp.jpg" },
+          "5": { title: "GEA", cat: "Video Institucional", img: "/logo-whatsapp.jpg" },
+          "6": { title: "Namida Nikkei", cat: "Foto Producto", img: "/img/portfolio/Namida Nikkei/Namida.Nikkei-10.jpg" },
+          "7": { title: "TS Tour Operador", cat: "Video Comercial", img: "/logo-whatsapp.jpg" },
+          "8": { title: "Vista Sol", cat: "Video Institucional", img: "/logo-whatsapp.jpg" },
+          "9": { title: "Droguería del Sud", cat: "Video Comercial", img: "/logo-whatsapp.jpg" },
+          "10": { title: "Expo Delicatessen & Vinos", cat: "Cobertura de Evento", img: "/logo-whatsapp.jpg" }
+        };
+
+        const project = projectsData[id] || { title: `Proyecto ${id}`, cat: "Portfolio", img: "/logo-whatsapp.jpg" };
+
+        // Prepare SEO/OG Data
+        const title = `${project.title} | NexoFilm`;
+        const description = `Mira el proyecto audiovisual de ${project.title} (${project.cat}) producido por NexoFilm. Producción corporativa y cinematográfica en Latam.`;
+        const imageUrl = `https://nexofilm.com${project.img.replace(/ /g, '%20')}`;
         const url = `https://nexofilm.com/portfolio/${id}`;
 
         // Inject Meta Tags dynamically
