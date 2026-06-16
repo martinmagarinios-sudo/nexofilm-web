@@ -424,7 +424,9 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                     invoice_type: invoice_type || null,
                     invoice_amount: invoice_amount ? parseFloat(invoice_amount) : null,
                     bank_details: bank_details || null,
-                    invoice_sent: false
+                    // Si hay invoice_url, la factura queda visible para el cliente de inmediato.
+                    // invoice_sent: false solo si NO hay URL (solo se guardaron datos bancarios sin PDF aún)
+                    invoice_sent: invoice_url ? true : false
                 };
 
                 let { data: updatedProject, error: updateErr } = await supabase

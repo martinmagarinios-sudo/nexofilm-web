@@ -2063,11 +2063,33 @@ const CRMProjects: React.FC = () => {
                                 />
                             </div>
 
+                            {/* Indicador de estado: ¿El cliente podrá ver la factura? */}
+                            {invoiceUrl ? (
+                                <div className="flex items-start gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded p-3">
+                                    <span className="text-emerald-400 text-base leading-none mt-0.5">✅</span>
+                                    <p className="text-emerald-400 text-[11px] leading-relaxed">
+                                        <strong>La factura quedará visible para el cliente al guardar.</strong><br />
+                                        El botón "Descargar Factura PDF" aparecerá en su portal inmediatamente.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded p-3">
+                                    <span className="text-amber-400 text-base leading-none mt-0.5">⚠️</span>
+                                    <p className="text-amber-400 text-[11px] leading-relaxed">
+                                        <strong>Sin PDF adjunto:</strong> el cliente verá los datos bancarios pero <strong>no podrá descargar la factura</strong>. Subí el PDF antes de guardar.
+                                    </p>
+                                </div>
+                            )}
+
                             <button
                                 type="submit"
-                                className="w-full bg-nexo-lime text-black font-black text-xs uppercase tracking-widest py-3 rounded hover:bg-white transition-colors"
+                                className={`w-full font-black text-xs uppercase tracking-widest py-3 rounded transition-colors ${
+                                    invoiceUrl
+                                        ? 'bg-nexo-lime text-black hover:bg-white'
+                                        : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
+                                }`}
                             >
-                                Registrar y Habilitar Cobro
+                                {invoiceUrl ? '🧾 Guardar y Habilitar Descarga al Cliente' : 'Guardar Datos (Sin PDF aún)'}
                             </button>
                         </form>
                     </div>
