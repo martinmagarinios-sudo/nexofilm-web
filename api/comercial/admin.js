@@ -411,7 +411,8 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                 const { 
                     invoice_url, 
                     invoice_type, 
-                    invoice_amount, 
+                    invoice_amount,
+                    invoice_fc_number,
                     bank_details
                 } = req.body;
 
@@ -419,14 +420,47 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                     return res.status(400).json({ error: 'El ID del proyecto es requerido' });
                 }
 
+                // Leer proyecto actual para obtener historial previo
+                const { data: currentProject, error: readErr } = await supabase
+                    .from('projects')
+                    .select('invoices_history, invoice_url, invoice_amount, invoice_type')
+                    .eq('id', project_id)
+                    .single();
+
+                if (readErr) throw readErr;
+
+                // Construir la nueva entrada del historial
+                const parsedAmount = invoice_amount ? parseFloat(invoice_amount) : null;
+                const newHistoryEntry = invoice_url ? {
+                    fc_number: invoice_fc_number || null,
+                    amount: parsedAmount,
+                    type: invoice_type || null,
+                    date_sent: new Date().toISOString(),
+                    invoice_url: invoice_url
+                } : null;
+
+                // Obtener historial existente y agregar nueva entrada
+                let currentHistory = [];
+                try {
+                    currentHistory = Array.isArray(currentProject?.invoices_history) 
+                        ? currentProject.invoices_history 
+                        : [];
+                } catch(e) { currentHistory = []; }
+
+                const updatedHistory = newHistoryEntry 
+                    ? [...currentHistory, newHistoryEntry]
+                    : currentHistory;
+
                 const updatePayload = {
                     invoice_url: invoice_url || null,
                     invoice_type: invoice_type || null,
-                    invoice_amount: invoice_amount ? parseFloat(invoice_amount) : null,
+                    invoice_amount: parsedAmount,
+                    invoice_fc_number: invoice_fc_number || null,
                     bank_details: bank_details || null,
                     // Si hay invoice_url, la factura queda visible para el cliente de inmediato.
-                    // invoice_sent: false solo si NO hay URL (solo se guardaron datos bancarios sin PDF aún)
-                    invoice_sent: invoice_url ? true : false
+                    invoice_sent: invoice_url ? true : false,
+                    // Historial acumulativo de facturas emitidas
+                    invoices_history: updatedHistory.length > 0 ? updatedHistory : null
                 };
 
                 let { data: updatedProject, error: updateErr } = await supabase
@@ -437,19 +471,22 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                     .single();
 
                 if (updateErr) {
-                    if (updateErr.message && updateErr.message.includes('invoice_sent')) {
-                        delete updatePayload.invoice_sent;
-                        const retry = await supabase
-                            .from('projects')
-                            .update(updatePayload)
-                            .eq('id', project_id)
-                            .select()
-                            .single();
-                        if (retry.error) throw retry.error;
-                        updatedProject = retry.data;
-                    } else {
-                        throw updateErr;
-                    }
+                    // Fallback: si columnas nuevas no existen aún, intentar sin ellas
+                    const fallbackPayload = {
+                        invoice_url: invoice_url || null,
+                        invoice_type: invoice_type || null,
+                        invoice_amount: parsedAmount,
+                        bank_details: bank_details || null,
+                        invoice_sent: invoice_url ? true : false,
+                    };
+                    const retry = await supabase
+                        .from('projects')
+                        .update(fallbackPayload)
+                        .eq('id', project_id)
+                        .select()
+                        .single();
+                    if (retry.error) throw retry.error;
+                    updatedProject = retry.data;
                 }
 
                 return res.status(200).json({
