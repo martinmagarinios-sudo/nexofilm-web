@@ -5,6 +5,9 @@
             "includeFiles": "dist/index.html",
             "maxDuration": 30
         },
+        "api/portfolio.js": {
+            "includeFiles": "dist/index.html"
+        },
         "api/comercial/admin.js": { "maxDuration": 30 }
     },
     "rewrites": [
