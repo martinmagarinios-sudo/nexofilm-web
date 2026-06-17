@@ -443,7 +443,7 @@ const PublicRequestForm: React.FC = () => {
                         <div className="border-t border-white/5 pt-6 space-y-3">
                             <h3 className="text-zinc-400 text-xs font-bold uppercase tracking-wider block">⚡ ¿Ya tenés tu solicitud armada?</h3>
                             <p className="text-zinc-500 text-[11px]">
-                                Subí tu pliego, briefing técnico o documento en formato PDF o Word para adjuntarlo a tu solicitud. Nuestra IA lo procesará.
+                                Subí tu pliego, briefing técnico o documento en formato PDF o Word para adjuntarlo a tu solicitud.
                             </p>
                             
                             <div 
