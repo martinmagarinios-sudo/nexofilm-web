@@ -61,6 +61,7 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
             { name: t('navbar.portfolio'), href: '#portfolio' },
             { name: t('navbar.clients'), href: '#clientes' },
             { name: t('navbar.reviews'), href: '#reviews' },
+            { name: t('navbar.contact'), href: '#contacto' },
           ].map((item) => (
             <a
               key={item.name}
@@ -86,7 +87,7 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
                 : 'border-white/20 text-white hover:border-nexo-lime hover:text-nexo-lime'
                 }`}
             >
-              {t('navbar.contact')}
+              {t('navbar.quote', 'ARMÁ TU PRESUPUESTO')}
             </a>
             <LanguageSwitcher />
           </div>
@@ -116,8 +117,8 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
             { name: t('navbar.about'), href: '#historia' },
             { name: t('navbar.portfolio'), href: '#portfolio' },
             { name: t('navbar.clients'), href: '#clientes' },
-            { name: t('navbar.reviews'), href: '#reviews' },
-            { name: t('navbar.contact'), href: '/presupuesto' },
+            { name: t('navbar.contact'), href: '#contacto' },
+            { name: t('navbar.quote', 'ARMÁ TU PRESUPUESTO'), href: '/presupuesto' },
             { name: t('navbar.login'), href: '/portal/login' },
           ].map((item, idx) => (
             <a

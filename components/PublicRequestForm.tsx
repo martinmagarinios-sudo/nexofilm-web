@@ -29,6 +29,11 @@ const PublicRequestForm: React.FC = () => {
     const [formStatus, setFormStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
     const [errorMsg, setErrorMsg] = useState('');
 
+    const [dragActive, setDragActive] = useState(false);
+    const [uploadError, setUploadError] = useState('');
+    const [uploadSuccess, setUploadSuccess] = useState('');
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
     const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const autocompleteRef = useRef<any>(null);
@@ -107,6 +112,75 @@ const PublicRequestForm: React.FC = () => {
         setCoverageTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]);
     };
 
+    const handleFileSelect = (file: File) => {
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+            setUploadError('El archivo es demasiado grande (máximo 5MB).');
+            return;
+        }
+        
+        const allowedExtensions = ['.pdf', '.doc', '.docx'];
+        const extension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+        if (!allowedExtensions.includes(extension)) {
+            setUploadError('Formato no soportado. Por favor, subí un archivo PDF o Word (.docx).');
+            return;
+        }
+
+        setUploadError('');
+        setSelectedFile(file);
+        setUploadSuccess('Archivo seleccionado: ' + file.name);
+    };
+
+    const handleDrag = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.type === "dragenter" || e.type === "dragover") {
+            setDragActive(true);
+        } else if (e.type === "dragleave") {
+            setDragActive(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleFileSelect(e.dataTransfer.files[0]);
+        }
+    };
+
+    const handleFileUpload = async (file: File, token: string) => {
+        return new Promise<void>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = async () => {
+                const base64String = (reader.result as string).split(',')[1];
+                try {
+                    const res = await fetch('/api/comercial/client', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'x-client-token': token
+                        },
+                        body: JSON.stringify({
+                            token,
+                            action: 'upload_document',
+                            fileBase64: base64String,
+                            filename: file.name
+                        })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'Error al procesar el documento');
+                    resolve();
+                } catch (err: any) {
+                    reject(err);
+                }
+            };
+            reader.onerror = () => reject(new Error('Error al leer el archivo'));
+            reader.readAsDataURL(file);
+        });
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setFormStatus('sending');
@@ -140,6 +214,15 @@ const PublicRequestForm: React.FC = () => {
             const data = await res.json();
             if (!res.ok) {
                 throw new Error(data.error || 'Error al enviar la solicitud');
+            }
+
+            if (selectedFile && data.project && data.project.access_token) {
+                try {
+                    await handleFileUpload(selectedFile, data.project.access_token);
+                } catch (uploadErr) {
+                    console.error("Error al subir el archivo:", uploadErr);
+                    // Seguimos igual para mostrar éxito del lead, aunque falló el archivo.
+                }
             }
 
             setFormStatus('success');
@@ -354,6 +437,54 @@ const PublicRequestForm: React.FC = () => {
                                 className="w-full bg-black border border-white/10 rounded px-4 py-3 text-sm text-white focus:outline-none focus:border-nexo-lime h-24 resize-none"
                                 placeholder="Cualquier información adicional que nos ayude a armar la cotización ideal..."
                             ></textarea>
+                        </div>
+
+                        {/* Zona de Ingesta de Documentos */}
+                        <div className="border-t border-white/5 pt-6 space-y-3">
+                            <h3 className="text-zinc-400 text-xs font-bold uppercase tracking-wider block">⚡ ¿Ya tenés tu solicitud armada?</h3>
+                            <p className="text-zinc-500 text-[11px]">
+                                Subí tu pliego, briefing técnico o documento en formato PDF o Word para adjuntarlo a tu solicitud. Nuestra IA lo procesará.
+                            </p>
+                            
+                            <div 
+                                onDragEnter={handleDrag}
+                                onDragOver={handleDrag}
+                                onDragLeave={handleDrag}
+                                onDrop={handleDrop}
+                                className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-all ${
+                                    dragActive 
+                                        ? 'border-nexo-lime bg-nexo-lime/5 shadow-[0_0_15px_rgba(204,255,0,0.1)]' 
+                                        : 'border-white/10 hover:border-white/20 bg-black/20'
+                                }`}
+                            >
+                                <div className="space-y-3">
+                                    <div className="text-3xl opacity-50 mb-2">📄</div>
+                                    <p className="text-sm text-white font-medium">
+                                        Arrastrá tu archivo acá o{' '}
+                                        <label className="text-nexo-lime hover:underline cursor-pointer">
+                                            examiná
+                                            <input 
+                                                type="file" 
+                                                className="hidden" 
+                                                accept=".pdf,.doc,.docx"
+                                                onChange={(e) => {
+                                                    if (e.target.files && e.target.files[0]) {
+                                                        handleFileSelect(e.target.files[0]);
+                                                    }
+                                                }}
+                                            />
+                                        </label>
+                                    </p>
+                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest">PDF, DOC, DOCX (Max 5MB)</p>
+                                </div>
+                            </div>
+                            
+                            {uploadError && (
+                                <p className="text-red-400 text-xs text-center mt-2">{uploadError}</p>
+                            )}
+                            {uploadSuccess && (
+                                <p className="text-nexo-lime text-xs text-center mt-2">{uploadSuccess}</p>
+                            )}
                         </div>
 
                         <div className="pt-4">
