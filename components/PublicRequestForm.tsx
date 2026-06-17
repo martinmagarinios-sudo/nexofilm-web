@@ -10,6 +10,26 @@ const calculateHours = (start: string, end: string) => {
     return Math.max(1, Math.round(diff));
 };
 
+const COUNTRY_CODES = [
+    { name: 'Argentina', code: '+54 9' },
+    { name: 'Uruguay', code: '+598' },
+    { name: 'Chile', code: '+56' },
+    { name: 'Brasil', code: '+55' },
+    { name: 'Colombia', code: '+57' },
+    { name: 'México', code: '+52' },
+    { name: 'Perú', code: '+51' },
+    { name: 'Paraguay', code: '+595' },
+    { name: 'Bolivia', code: '+591' },
+    { name: 'Ecuador', code: '+593' },
+    { name: 'Venezuela', code: '+58' },
+    { name: 'Estados Unidos', code: '+1' },
+    { name: 'España', code: '+34' },
+    { name: 'Italia', code: '+39' },
+    { name: 'Reino Unido', code: '+44' },
+    { name: 'Alemania', code: '+49' },
+    { name: 'Francia', code: '+33' }
+];
+
 const PublicRequestForm: React.FC = () => {
     const { t } = useTranslation();
     const [projectTitle, setProjectTitle] = useState('');
@@ -37,6 +57,11 @@ const PublicRequestForm: React.FC = () => {
     const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const autocompleteRef = useRef<any>(null);
+    const mapRef = useRef<any>(null);
+    const markerRef = useRef<any>(null);
+
+    const [showPhoneDropdown, setShowPhoneDropdown] = useState(false);
+    const [phoneSearch, setPhoneSearch] = useState('');
 
     // Carga dinámica de Google Maps
     useEffect(() => {
@@ -84,7 +109,8 @@ const PublicRequestForm: React.FC = () => {
             try {
                 const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
                     types: ['geocode', 'establishment'],
-                    fields: ['formatted_address', 'name']
+                    fields: ['formatted_address', 'geometry', 'name'],
+                    componentRestrictions: { country: 'ar' }
                 });
 
                 autocomplete.addListener('place_changed', () => {
@@ -98,6 +124,14 @@ const PublicRequestForm: React.FC = () => {
 
                     if (newAddr) {
                         setLocation(newAddr);
+                        if (place.geometry && place.geometry.location && mapRef.current) {
+                            mapRef.current.setCenter(place.geometry.location);
+                            if (markerRef.current) {
+                                markerRef.current.setPosition(place.geometry.location);
+                            }
+                        } else {
+                            updateMap(newAddr);
+                        }
                     }
                 });
 
@@ -107,6 +141,89 @@ const PublicRequestForm: React.FC = () => {
             }
         }
     }, [isGoogleLoaded]);
+
+    useEffect(() => {
+        if (isGoogleLoaded && location) {
+            const timer = setTimeout(() => {
+                updateMap(location);
+            }, 800);
+            return () => clearTimeout(timer);
+        }
+    }, [location, isGoogleLoaded]);
+
+    const updateMap = (address: string) => {
+        const google = (window as any).google;
+        if (!google || !google.maps || !address) return;
+
+        try {
+            const mapContainer = document.getElementById('map-preview');
+            if (!mapContainer) return;
+
+            if (!mapRef.current) {
+                mapRef.current = new google.maps.Map(mapContainer, {
+                    center: { lat: -34.6037, lng: -58.3816 },
+                    zoom: 15,
+                    disableDefaultUI: true,
+                    styles: [
+                        { elementType: "geometry", stylers: [{ color: "#1a1a1a" }] },
+                        { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+                        { elementType: "labels.text.fill", stylers: [{ color: "#888888" }] },
+                        { elementType: "labels.text.stroke", stylers: [{ color: "#1a1a1a" }] },
+                        {
+                            featureType: "administrative",
+                            elementType: "geometry",
+                            stylers: [{ color: "#555555" }]
+                        },
+                        {
+                            featureType: "poi",
+                            elementType: "geometry",
+                            stylers: [{ color: "#121212" }]
+                        },
+                        {
+                            featureType: "road",
+                            elementType: "geometry.fill",
+                            stylers: [{ color: "#252525" }]
+                        },
+                        {
+                            featureType: "road.highway",
+                            elementType: "geometry.fill",
+                            stylers: [{ color: "#333333" }]
+                        },
+                        {
+                            featureType: "water",
+                            elementType: "geometry",
+                            stylers: [{ color: "#0d0d0d" }]
+                        }
+                    ]
+                });
+
+                markerRef.current = new google.maps.Marker({
+                    map: mapRef.current,
+                    icon: {
+                        path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+                        fillColor: '#ccff00',
+                        fillOpacity: 1,
+                        strokeWeight: 1.5,
+                        strokeColor: '#000000',
+                        scale: 6
+                    }
+                });
+            }
+
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ address }, (results: any, status: any) => {
+                if (status === 'OK' && results[0] && mapRef.current) {
+                    const latLng = results[0].geometry.location;
+                    mapRef.current.setCenter(latLng);
+                    if (markerRef.current) {
+                        markerRef.current.setPosition(latLng);
+                    }
+                }
+            });
+        } catch (e) {
+            console.warn("Falla al actualizar mapa:", e);
+        }
+    };
 
     const toggleCoverageType = (type: string) => {
         setCoverageTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]);
@@ -312,14 +429,50 @@ const PublicRequestForm: React.FC = () => {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Tu WhatsApp <span className="text-nexo-lime">*</span></label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        value={phoneCountryCode}
-                                        onChange={(e) => setPhoneCountryCode(e.target.value)}
-                                        placeholder="+54 9"
-                                        className="bg-black border border-white/10 rounded px-3 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime w-[80px] shrink-0"
-                                    />
+                                <div className="flex gap-2 relative">
+                                    <div className="relative shrink-0">
+                                        <div 
+                                            onClick={() => setShowPhoneDropdown(!showPhoneDropdown)}
+                                            className="bg-black border border-white/10 rounded px-3 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime w-[90px] flex items-center justify-between cursor-pointer"
+                                        >
+                                            <span className={phoneCountryCode ? "text-white" : "text-zinc-500"}>{phoneCountryCode || 'Cód.'}</span>
+                                            <span className="text-[10px] text-zinc-500">▼</span>
+                                        </div>
+                                        
+                                        {showPhoneDropdown && (
+                                            <>
+                                                <div className="fixed inset-0 z-40" onClick={() => setShowPhoneDropdown(false)}></div>
+                                                <div className="absolute top-full left-0 mt-1 w-[200px] bg-zinc-900 border border-white/10 rounded-lg shadow-xl z-50 overflow-hidden">
+                                                    <div className="p-2 border-b border-white/10 relative z-50">
+                                                        <input 
+                                                            type="text" 
+                                                            placeholder="Buscar país o cód..." 
+                                                            value={phoneSearch}
+                                                            onChange={(e) => setPhoneSearch(e.target.value)}
+                                                            className="w-full bg-black border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-nexo-lime"
+                                                            autoFocus
+                                                        />
+                                                    </div>
+                                                    <div className="max-h-48 overflow-y-auto relative z-50">
+                                                        {COUNTRY_CODES.filter(c => c.name.toLowerCase().includes(phoneSearch.toLowerCase()) || c.code.includes(phoneSearch)).map((country, idx) => (
+                                                            <div 
+                                                                key={idx}
+                                                                onClick={() => {
+                                                                    setPhoneCountryCode(country.code);
+                                                                    setShowPhoneDropdown(false);
+                                                                    setPhoneSearch('');
+                                                                }}
+                                                                className="px-3 py-2 text-xs text-zinc-300 hover:bg-nexo-lime hover:text-black cursor-pointer flex justify-between items-center"
+                                                            >
+                                                                <span>{country.name}</span>
+                                                                <span className="font-bold opacity-70">{country.code}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
                                     <input
                                         type="text"
                                         required
@@ -382,6 +535,12 @@ const PublicRequestForm: React.FC = () => {
                                 className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
                                 placeholder="Ej: Salón Lahusen, CABA (Opcional si no lo tenés definido)"
                             />
+                            {/* Mapa Preview */}
+                            <div className={`mt-2 rounded-xl overflow-hidden border transition-all duration-500 ${location ? 'h-[200px] border-white/10' : 'h-0 border-transparent'}`}>
+                                <div id="map-preview" className="w-full h-full bg-zinc-900/50 flex items-center justify-center">
+                                    <span className="text-zinc-600 text-sm">Buscando locación...</span>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
