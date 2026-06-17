@@ -130,9 +130,6 @@ export default async function handler(req, res) {
                     guests_count 
                 } = req.body;
 
-                if (!contact_name) {
-                    return res.status(400).json({ error: 'Falta campo obligatorio: Nombre de contacto' });
-                }
 
                 const projectTitle = title && title.trim() !== '' ? title : 'Propuesta Comercial';
 
