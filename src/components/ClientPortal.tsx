@@ -92,6 +92,7 @@ const ClientPortal: React.FC = () => {
 
     // Especificaciones Form
     const [projectTitle, setProjectTitle] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
     const [contactName, setContactName] = useState('');
     const [eventDate, setEventDate] = useState('');
     const [eventTime, setEventTime] = useState('');
@@ -396,7 +397,7 @@ const ClientPortal: React.FC = () => {
             
             // Cargar specs si existen
             if (data.project) {
-                setProjectTitle(data.project.title || '');
+                setProjectTitle(data.project.title === 'Propuesta Comercial' ? '' : (data.project.title || ''));
                 setContactName(data.project.contact_name || '');
                 setEventDate(data.project.event_date || '');
                 setEventTime(data.project.event_time || '');
@@ -1240,11 +1241,20 @@ const ClientPortal: React.FC = () => {
 
                         {/* Listado de Proyectos */}
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                 <h3 className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Mis Proyectos & Presupuestos</h3>
-                                <span className="text-[9px] md:text-[10px] text-zinc-500 font-bold bg-zinc-900 px-2.5 py-1 rounded border border-white/5 uppercase">
-                                    Total: {1 + otherProjects.length} {1 + otherProjects.length === 1 ? 'proyecto' : 'proyectos'}
-                                </span>
+                                <div className="flex items-center gap-3 w-full sm:w-auto">
+                                    <input 
+                                        type="text" 
+                                        placeholder="Buscar proyecto, locación, fecha..." 
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="bg-zinc-900/80 border border-white/10 rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-nexo-lime w-full sm:w-64"
+                                    />
+                                    <span className="text-[9px] md:text-[10px] text-zinc-500 font-bold bg-zinc-900 px-2.5 py-1.5 rounded border border-white/5 uppercase whitespace-nowrap">
+                                        Total: {1 + otherProjects.length}
+                                    </span>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -1256,6 +1266,7 @@ const ClientPortal: React.FC = () => {
                                             access_token: token || '',
                                             status: project.status,
                                             event_date: project.event_date,
+                                            location: project.location,
                                             company_name: project.company_name,
                                             created_at: (project as any).created_at || new Date().toISOString()
                                         },
@@ -1265,6 +1276,7 @@ const ClientPortal: React.FC = () => {
                                             access_token: p.access_token,
                                             status: p.status,
                                             event_date: p.event_date,
+                                            location: p.location,
                                             company_name: p.company_name,
                                             created_at: p.created_at || new Date().toISOString()
                                         }))
@@ -1272,7 +1284,16 @@ const ClientPortal: React.FC = () => {
 
                                     const sorted = [...allProjects].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-                                    return sorted.map((proj) => {
+                                    const filtered = sorted.filter(p => {
+                                        const term = searchTerm.toLowerCase();
+                                        return (p.title?.toLowerCase() || '').includes(term) ||
+                                               (p.company_name?.toLowerCase() || '').includes(term) ||
+                                               (p.location?.toLowerCase() || '').includes(term) ||
+                                               (p.event_date?.toLowerCase() || '').includes(term) ||
+                                               (p.status?.toLowerCase() || '').includes(term);
+                                    });
+
+                                    return filtered.map((proj) => {
                                         let badgeColor = "bg-zinc-800 text-zinc-400 border-zinc-700/50";
                                         let statusText = proj.status;
 
@@ -1310,17 +1331,18 @@ const ClientPortal: React.FC = () => {
                                                         <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[8px] md:text-[9px] font-black uppercase tracking-wider border ${badgeColor}`}>
                                                             {statusText}
                                                         </span>
-                                                        <span className="text-[10px] text-zinc-500 font-semibold">
-                                                            {proj.event_date ? new Date(proj.event_date + 'T00:00:00').toLocaleDateString('es-AR') : 'A confirmar'}
+                                                        <span className="text-[10px] text-zinc-500 font-semibold truncate max-w-[120px]" title={proj.location || ''}>
+                                                            {proj.location ? proj.location : 'Sin locación'}
                                                         </span>
                                                     </div>
                                                     <div className="space-y-1">
-                                                        <h4 className="font-extrabold text-sm md:text-base text-white group-hover:text-nexo-lime transition-colors uppercase tracking-tight line-clamp-2">
+                                                        <h4 className="font-extrabold text-sm md:text-base text-white group-hover:text-nexo-lime transition-colors uppercase tracking-tight line-clamp-2" title={proj.title}>
                                                             {proj.title}
                                                         </h4>
-                                                        {proj.company_name && (
-                                                            <p className="text-zinc-500 text-xs font-semibold">{proj.company_name}</p>
-                                                        )}
+                                                        <div className="flex justify-between items-center text-xs text-zinc-400">
+                                                            <span className="font-semibold truncate max-w-[150px]" title={proj.company_name || ''}>{proj.company_name || '-'}</span>
+                                                            <span className="font-bold whitespace-nowrap text-nexo-lime/80">{proj.event_date ? new Date(proj.event_date + 'T00:00:00').toLocaleDateString('es-AR') : 'Fecha a conf.'}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -2443,14 +2465,23 @@ const ClientPortal: React.FC = () => {
 
             {/* Solicitar nuevo presupuesto */}
             {viewMode === 'detail' && project && (
-                <div className="flex justify-center pb-12 no-print">
-                    <button
-                        type="button"
+                <div className="flex justify-center pb-12 no-print max-w-xl mx-auto px-6">
+                    <div
                         onClick={handleRequestNewProject}
-                        className="text-zinc-500 hover:text-nexo-lime text-xs font-bold uppercase tracking-wider transition-colors"
+                        className="w-full border-2 border-dashed border-white/10 hover:border-nexo-lime/40 bg-zinc-950/25 hover:bg-zinc-950/50 rounded-xl p-5 md:p-6 flex flex-col items-center justify-center text-center transition-all cursor-pointer group min-h-[120px] space-y-3"
                     >
-                        ➕ Solicitar otro presupuesto nuevo
-                    </button>
+                        <div className="w-10 h-10 rounded-full bg-zinc-900 border border-white/5 text-zinc-400 group-hover:text-nexo-lime group-hover:border-nexo-lime/20 flex items-center justify-center text-lg transition-all">
+                            ➕
+                        </div>
+                        <div className="space-y-1">
+                            <h4 className="font-bold text-xs md:text-sm text-zinc-300 group-hover:text-white transition-colors uppercase tracking-wider">
+                                Solicitar Nuevo Presupuesto
+                            </h4>
+                            <p className="text-zinc-500 text-[10px] md:text-[11px] max-w-[220px] mx-auto leading-relaxed">
+                                ¿Tenés otro evento o producción en mente? Iniciá una propuesta borrador aquí.
+                            </p>
+                        </div>
+                    </div>
                 </div>
             )}
 
