@@ -41,7 +41,7 @@ const PublicRequestForm: React.FC = () => {
     const [coverageHours, setCoverageHours] = useState<number>(4);
     const [coverageTypes, setCoverageTypes] = useState<string[]>([]);
     const [guestsCount, setGuestsCount] = useState<number | ''>('');
-    const [phoneCountryCode, setPhoneCountryCode] = useState('+54 9');
+    const [phoneCountryCode, setPhoneCountryCode] = useState('');
     const [phoneLocalNumber, setPhoneLocalNumber] = useState('');
     const [clientEmail, setClientEmail] = useState('');
     const [clientNotes, setClientNotes] = useState('');

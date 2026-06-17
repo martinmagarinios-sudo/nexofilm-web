@@ -56,7 +56,7 @@ interface DriveFile {
 }
 
 const parsePhone = (phoneStr: string) => {
-    if (!phoneStr) return { country: '+54 9', local: '' };
+    if (!phoneStr) return { country: '', local: '' };
     const cleaned = phoneStr.trim();
     if (cleaned.startsWith('+549')) return { country: '+54 9', local: cleaned.substring(4) };
     if (cleaned.startsWith('+54')) return { country: '+54', local: cleaned.substring(3) };
