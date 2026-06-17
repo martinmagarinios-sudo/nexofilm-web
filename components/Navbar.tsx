@@ -80,7 +80,7 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
               {t('navbar.login')}
             </a>
             <a
-              href="#contacto"
+              href="/presupuesto"
               className={`px-8 py-2.5 text-[10px] font-black tracking-[0.4em] uppercase transition-all duration-500 rounded-sm border ${isScrolled
                 ? 'bg-nexo-lime text-black border-nexo-lime hover:bg-white hover:border-white shadow-[0_0_20px_rgba(191,224,35,0.2)]'
                 : 'border-white/20 text-white hover:border-nexo-lime hover:text-nexo-lime'
@@ -117,7 +117,7 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
             { name: t('navbar.portfolio'), href: '#portfolio' },
             { name: t('navbar.clients'), href: '#clientes' },
             { name: t('navbar.reviews'), href: '#reviews' },
-            { name: t('navbar.contact'), href: '#contacto' },
+            { name: t('navbar.contact'), href: '/presupuesto' },
             { name: t('navbar.login'), href: '/portal/login' },
           ].map((item, idx) => (
             <a

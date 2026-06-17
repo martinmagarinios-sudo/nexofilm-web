@@ -10,6 +10,7 @@ const AdminChat = React.lazy(() => import('./src/admin/AdminChat'));
 const CRMProjects = React.lazy(() => import('./src/admin/CRMProjects'));
 const ClientPortal = React.lazy(() => import('./src/components/ClientPortal'));
 const PortalLogin = React.lazy(() => import('./src/components/PortalLogin'));
+const PublicRequestForm = React.lazy(() => import('./components/PublicRequestForm'));
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -24,6 +25,7 @@ const isPortfolio = path === '/portfolio';
 const isPortal = path === '/portal';
 const isPortalLogin = path === '/portal/login';
 const isCrm = path === '/admin/crm';
+const isPresupuesto = path === '/presupuesto';
 
 let initialPhone = null;
 if (isChat) {
@@ -69,6 +71,7 @@ root.render(
         isDashboard ? <Suspense fallback={<LoadingScreen />}><Dashboard /></Suspense> : 
           isPortal ? <Suspense fallback={<LoadingScreen />}><ClientPortal /></Suspense> :
             isPortalLogin ? <Suspense fallback={<LoadingScreen />}><PortalLogin /></Suspense> :
-              isCrm ? <Suspense fallback={<LoadingScreen />}><CRMProjects /></Suspense> : <App />}
+              isCrm ? <Suspense fallback={<LoadingScreen />}><CRMProjects /></Suspense> :
+                isPresupuesto ? <Suspense fallback={<LoadingScreen />}><PublicRequestForm /></Suspense> : <App />}
   </React.StrictMode>
 );

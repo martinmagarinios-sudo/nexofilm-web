@@ -220,6 +220,38 @@ export default async function handler(req, res) {
         }
     }
 
+    // --- ACCIÓN DE CREAR LEAD PÚBLICO (POST, NO REQUIERE TOKEN PREVIO) ---
+    if (method === 'POST' && req.body.action === 'create_public_lead') {
+        const { specifications } = req.body;
+        if (!specifications || !specifications.title || !specifications.contact_name || !specifications.client_email) {
+            return res.status(400).json({ error: 'Faltan datos obligatorios (Título, Nombre, Email)' });
+        }
+
+        try {
+            const newToken = crypto.randomBytes(32).toString('hex');
+            const { data: newLead, error: insertErr } = await supabase
+                .from('projects')
+                .insert([{
+                    title: specifications.title,
+                    contact_name: specifications.contact_name,
+                    client_email: specifications.client_email,
+                    access_token: newToken,
+                    status: 'review',
+                    admin_action_required: true,
+                    specifications: specifications
+                }])
+                .select('*')
+                .single();
+
+            if (insertErr) throw insertErr;
+
+            return res.status(200).json({ success: true, project: newLead });
+        } catch (error) {
+            console.error('Error creando Public Lead:', error);
+            return res.status(500).json({ error: error.message });
+        }
+    }
+
     // --- CUALQUIER OTRA ACCIÓN REQUIERE UN TOKEN VÁLIDO ---
     if (!token) {
         return res.status(401).json({ error: 'Token de acceso requerido' });

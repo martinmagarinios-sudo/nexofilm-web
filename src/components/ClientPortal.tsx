@@ -1623,7 +1623,6 @@ const ClientPortal: React.FC = () => {
                                         <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Fecha Tentativa</label>
                                         <input
                                             type="date"
-                                            required
                                             value={eventDate}
                                             onChange={(e) => setEventDate(e.target.value)}
                                             className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
@@ -1633,7 +1632,6 @@ const ClientPortal: React.FC = () => {
                                         <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Horario de Inicio</label>
                                         <input
                                             type="time"
-                                            required
                                             value={eventTime}
                                             onChange={(e) => {
                                                 const start = e.target.value;
@@ -1649,7 +1647,6 @@ const ClientPortal: React.FC = () => {
                                         <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Horario de Fin</label>
                                         <input
                                             type="time"
-                                            required
                                             value={eventEndTime}
                                             onChange={(e) => {
                                                 const end = e.target.value;
@@ -1721,7 +1718,6 @@ const ClientPortal: React.FC = () => {
                                     <input
                                         ref={inputRef}
                                         type="text"
-                                        required
                                         value={location}
                                         onChange={(e) => setLocation(e.target.value)}
                                         className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
@@ -1736,17 +1732,19 @@ const ClientPortal: React.FC = () => {
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Horas de Cobertura Estimadas</label>
+                                    <div className="space-y-2 bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+                                        <label className="text-amber-500 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                                            <span>⏱️</span> Horas de Cobertura Estimadas
+                                        </label>
                                         <input
                                             type="number"
                                             required
                                             min="1"
                                             value={coverageHours}
                                             onChange={(e) => setCoverageHours(parseInt(e.target.value) || 0)}
-                                            className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                            className="w-full bg-black/50 border border-amber-500/50 rounded px-4 py-2.5 text-lg font-bold text-amber-400 focus:outline-none focus:border-amber-400 shadow-inner"
                                         />
-                                        <span className="text-[10px] text-zinc-500 block mt-1">Calculado automáticamente desde el horario, o ajustable.</span>
+                                        <span className="text-[10px] text-amber-500/70 block mt-1 leading-tight">Obligatorio. Podés estimarlo e ir ajustándolo luego.</span>
                                     </div>
 
                                     <div className="space-y-2">

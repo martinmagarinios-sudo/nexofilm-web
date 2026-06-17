@@ -59,7 +59,7 @@ const ValueProp: React.FC = () => {
                   {t('value_prop.cta_whatsapp')}
                 </a>
                 <a
-                  href="#contacto"
+                  href="/presupuesto"
                   className="group inline-flex items-center gap-3 border border-white/15 bg-white/5 text-white font-bold uppercase tracking-widest text-[11px] px-6 py-4 rounded-sm hover:border-nexo-lime/40 hover:text-nexo-lime transition-all duration-300"
                 >
                   {t('value_prop.cta_primary')}

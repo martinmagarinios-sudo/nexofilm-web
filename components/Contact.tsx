@@ -74,15 +74,7 @@ const Contact: React.FC = () => {
                 <input id="contact-email" name="email" type="email" required className="w-full bg-white/5 border border-white/10 rounded-lg p-4 focus:outline-none focus:border-nexo-lime transition-all font-light" placeholder={t('contact.form.email_placeholder')} />
               </div>
             </div>
-            <div className="space-y-2">
-              <label htmlFor="contact-project" className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">{t('contact.form.project_type')}</label>
-              <select id="contact-project" name="project_type" className="w-full bg-white/5 border border-white/10 rounded-lg p-4 focus:outline-none focus:border-nexo-lime transition-all appearance-none text-zinc-300 font-light">
-                <option value="commercial">{t('contact.form.options.commercial')}</option>
-                <option value="streaming">{t('contact.form.options.streaming')}</option>
-                <option value="photography">{t('contact.form.options.photography')}</option>
-                <option value="social">{t('contact.form.options.social')}</option>
-              </select>
-            </div>
+
             <div className="space-y-2">
               <label htmlFor="contact-message" className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">{t('contact.form.message')}</label>
               <textarea id="contact-message" name="message" required className="w-full bg-white/5 border border-white/10 rounded-lg p-4 focus:outline-none focus:border-nexo-lime transition-all h-32 resize-none text-zinc-200 placeholder:text-zinc-700 font-light" placeholder={t('contact.form.message_placeholder')}></textarea>
