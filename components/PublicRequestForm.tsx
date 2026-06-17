@@ -374,10 +374,10 @@ const PublicRequestForm: React.FC = () => {
             <div className="w-full max-w-3xl">
                 <div className="mb-10 text-center">
                     <h1 className="text-4xl md:text-5xl font-bold text-white uppercase tracking-tighter mb-4">
-                        Armá tu presupuesto a medida
+                        CONTANOS TU IDEA Y LA COTIZAMOS
                     </h1>
                     <p className="text-zinc-400 max-w-xl mx-auto">
-                        Completá los detalles de tu evento o producción para que el equipo de NexoFilm prepare tu cotización.
+                        Completá esta breve información y nosotros armamos un presupuesto detallado para tu próximo evento
                     </p>
                 </div>
 

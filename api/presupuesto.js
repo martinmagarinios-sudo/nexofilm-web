@@ -10,8 +10,8 @@ export default async function(req, res) {
         let html = fs.readFileSync(indexPath, 'utf8');
 
         // Prepare SEO/OG Data
-        const title = `Armá tu presupuesto a medida | NexoFilm`;
-        const description = `Completá los detalles de tu evento o producción para que el equipo de NexoFilm prepare tu cotización a medida.`;
+        const title = `Cotizá tu Producción Audiovisual | NexoFilm`;
+        const description = `Completá esta breve información y nosotros armamos un presupuesto detallado para tu próximo evento.`;
         const imageUrl = `https://nexofilm.com/logo-whatsapp.jpg`;
         const url = `https://nexofilm.com/presupuesto`;
 
