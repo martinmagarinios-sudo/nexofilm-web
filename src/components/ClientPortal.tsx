@@ -398,6 +398,9 @@ const ClientPortal: React.FC = () => {
             // Cargar specs si existen
             if (data.project) {
                 setProjectTitle(data.project.title === 'Propuesta Comercial' ? '' : (data.project.title || ''));
+                if (data.project.status === 'draft') {
+                    setIsEditingSpecs(true);
+                }
                 setContactName(data.project.contact_name || '');
                 setEventDate(data.project.event_date || '');
                 setEventTime(data.project.event_time || '');
@@ -1431,28 +1434,37 @@ const ClientPortal: React.FC = () => {
                             <h2 className="text-zinc-500 text-[9px] uppercase tracking-widest font-black">{project.contact_name}{project.company_name ? ` (${project.company_name})` : ''}</h2>
                             <h1 className="text-2xl md:text-4xl font-extrabold uppercase tracking-tighter text-white leading-tight">{project.title}</h1>
                         </div>
-                        {otherProjects.length > 0 && (
-                            <div className="flex items-center gap-2 bg-black/40 px-3 py-2 rounded-lg border border-white/5 shrink-0 self-start md:self-center no-print">
-                                <span className="text-zinc-500 text-[10px] uppercase tracking-wider font-bold">Cambiar Proyecto:</span>
-                                <select 
-                                    onChange={(e) => {
-                                        const selectedToken = e.target.value;
-                                        if (selectedToken) {
-                                            window.location.href = `/portal?token=${selectedToken}`;
-                                        }
-                                    }}
-                                    className="bg-black border border-white/10 rounded px-2.5 py-1 text-xs text-nexo-lime font-bold focus:outline-none focus:border-nexo-lime cursor-pointer"
-                                    defaultValue=""
-                                >
-                                    <option value="" disabled>Ver otro proyecto...</option>
-                                    {otherProjects.map((p: any) => (
-                                        <option key={p.id} value={p.access_token}>
-                                            {p.title} ({p.status.toUpperCase()})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 no-print mt-2 md:mt-0">
+                            <button
+                                type="button"
+                                onClick={handleRequestNewProject}
+                                className="bg-nexo-lime/10 hover:bg-nexo-lime/20 border border-nexo-lime/30 text-nexo-lime text-[10px] font-bold uppercase tracking-wider py-2 px-4 rounded-lg transition-colors flex items-center gap-1.5 shrink-0"
+                            >
+                                <span>➕</span> Nuevo Presupuesto
+                            </button>
+                            {otherProjects.length > 0 && (
+                                <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 shrink-0 w-full sm:w-auto">
+                                    <span className="text-zinc-500 text-[10px] uppercase tracking-wider font-bold whitespace-nowrap">Cambiar Proyecto:</span>
+                                    <select 
+                                        onChange={(e) => {
+                                            const selectedToken = e.target.value;
+                                            if (selectedToken) {
+                                                window.location.href = `/portal?token=${selectedToken}`;
+                                            }
+                                        }}
+                                        className="bg-black border border-white/10 rounded px-2 py-1 text-xs text-zinc-300 focus:outline-none focus:border-nexo-lime cursor-pointer flex-1"
+                                        defaultValue=""
+                                    >
+                                        <option value="" disabled>Ver otro proyecto...</option>
+                                        {otherProjects.map((p: any) => (
+                                            <option key={p.id} value={p.access_token}>
+                                                {p.title} ({p.status.toUpperCase()})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Barra de progreso de estados */}
@@ -1599,7 +1611,8 @@ const ClientPortal: React.FC = () => {
                             <div className="space-y-2 border-b border-white/5 pb-4">
                                 <h2 className="text-xl font-bold text-white uppercase tracking-tight">Formulario de Especificaciones</h2>
                                 <p className="text-zinc-400 text-xs leading-relaxed">
-                                    Contanos los detalles de tu evento/producción para que el equipo arme la cotización a medida.
+                                    Contanos los detalles de tu evento/producción para que el equipo arme la cotización a medida. <br />
+                                    <span className="text-nexo-lime font-medium mt-1 inline-block">* Los campos marcados con asterisco son obligatorios.</span>
                                 </p>
                             </div>
 
@@ -2463,27 +2476,7 @@ const ClientPortal: React.FC = () => {
                 </div>
             )}
 
-            {/* Solicitar nuevo presupuesto */}
-            {viewMode === 'detail' && project && (
-                <div className="flex justify-center pb-12 no-print max-w-xl mx-auto px-6">
-                    <div
-                        onClick={handleRequestNewProject}
-                        className="w-full border-2 border-dashed border-white/10 hover:border-nexo-lime/40 bg-zinc-950/25 hover:bg-zinc-950/50 rounded-xl p-5 md:p-6 flex flex-col items-center justify-center text-center transition-all cursor-pointer group min-h-[120px] space-y-3"
-                    >
-                        <div className="w-10 h-10 rounded-full bg-zinc-900 border border-white/5 text-zinc-400 group-hover:text-nexo-lime group-hover:border-nexo-lime/20 flex items-center justify-center text-lg transition-all">
-                            ➕
-                        </div>
-                        <div className="space-y-1">
-                            <h4 className="font-bold text-xs md:text-sm text-zinc-300 group-hover:text-white transition-colors uppercase tracking-wider">
-                                Solicitar Nuevo Presupuesto
-                            </h4>
-                            <p className="text-zinc-500 text-[10px] md:text-[11px] max-w-[220px] mx-auto leading-relaxed">
-                                ¿Tenés otro evento o producción en mente? Iniciá una propuesta borrador aquí.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            )}
+
 
             {/* CONTENEDOR DE IMPRESIÓN (OCULTO EN PANTALLA POR CSS) */}
             {budget && (
