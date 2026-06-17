@@ -92,6 +92,7 @@ const ClientPortal: React.FC = () => {
 
     // Especificaciones Form
     const [projectTitle, setProjectTitle] = useState('');
+    const [contactName, setContactName] = useState('');
     const [eventDate, setEventDate] = useState('');
     const [eventTime, setEventTime] = useState('');
     const [eventEndTime, setEventEndTime] = useState('');
@@ -396,6 +397,7 @@ const ClientPortal: React.FC = () => {
             // Cargar specs si existen
             if (data.project) {
                 setProjectTitle(data.project.title || '');
+                setContactName(data.project.contact_name || '');
                 setEventDate(data.project.event_date || '');
                 setEventTime(data.project.event_time || '');
                 setEventEndTime(data.project.event_end_time || '');
@@ -483,6 +485,7 @@ const ClientPortal: React.FC = () => {
                     action: 'update_specifications',
                     specifications: {
                         title: projectTitle,
+                        contact_name: contactName,
                         event_date: eventDate,
                         event_time: eventTime,
                         event_end_time: eventEndTime,
@@ -1590,16 +1593,29 @@ const ClientPortal: React.FC = () => {
                             )}
 
                             <form onSubmit={handleUpdateSpecifications} className="space-y-6">
-                                <div className="space-y-2">
-                                    <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Nombre / Título del Evento</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={projectTitle}
-                                        onChange={(e) => setProjectTitle(e.target.value)}
-                                        className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                        placeholder="Ej: Boda de Sofía y Lucas / Lanzamiento Marca X"
-                                    />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Tu Nombre / Contacto</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={contactName}
+                                            onChange={(e) => setContactName(e.target.value)}
+                                            className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                            placeholder="Ej: Sofía o Juan"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Nombre / Título del Evento</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={projectTitle}
+                                            onChange={(e) => setProjectTitle(e.target.value)}
+                                            className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                            placeholder="Ej: Boda de Sofía y Lucas / Lanzamiento Marca X"
+                                        />
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -297,11 +297,6 @@ const CRMProjects: React.FC = () => {
         setError('');
         setSuccessMsg('');
 
-        if (!newProjTitle.trim()) {
-            setError('Falta campo obligatorio: Título del proyecto es requerido.');
-            return;
-        }
-
         // Excluir opcionales de la suma total
         const totalPrice = newBudgetItems
             .filter(item => !item.is_optional)
@@ -1016,10 +1011,9 @@ const CRMProjects: React.FC = () => {
                             {/* Fila 1: Contacto + Empresa */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-1">
-                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Contacto *</label>
+                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Contacto</label>
                                     <input
                                         type="text"
-                                        required
                                         value={newContactName}
                                         onChange={(e) => setNewContactName(e.target.value)}
                                         className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
@@ -1088,10 +1082,9 @@ const CRMProjects: React.FC = () => {
                             {/* Fila 4: Título + Personal */}
                             <div className="grid grid-cols-3 gap-3">
                                 <div className="col-span-2 space-y-1">
-                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Título proyecto *</label>
+                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Título proyecto</label>
                                     <input
                                         type="text"
-                                        required
                                         value={newProjTitle}
                                         onChange={(e) => setNewProjTitle(e.target.value)}
                                         className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"

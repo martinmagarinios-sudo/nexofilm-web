@@ -427,10 +427,11 @@ export default async function handler(req, res) {
             let notificationBody = '';
 
             if (action === 'update_specifications') {
-                const { title, event_date, event_time, event_end_time, location, coverage_types, coverage_hours, client_phone, client_email, notification_preference, guests_count, client_notes } = specifications || {};
+                const { title, contact_name, event_date, event_time, event_end_time, location, coverage_types, coverage_hours, client_phone, client_email, notification_preference, guests_count, client_notes } = specifications || {};
 
                 const updateData = {
                     title: title || project.title,
+                    contact_name: contact_name || project.contact_name,
                     event_date: event_date || project.event_date,
                     event_time: event_time || project.event_time,
                     location: location || project.location,
