@@ -1773,13 +1773,46 @@ const CRMProjects: React.FC = () => {
                                                             </div>
                                                         </div>
 
-                                                        {/* Detalle de Presupuesto Activo y Feedback */}
+                                                        {/* Detalle de Presupuesto Activo, Facturación y Feedback */}
                                                         {projectBudget && (
                                                             <div className="bg-black/30 p-4 border border-white/5 rounded-lg">
-                                                                <span className="font-bold text-zinc-300">Presupuesto Activo </span>
-                                                                <span className="text-zinc-500 text-[10px] font-semibold mr-2">(Versión {projectBudget.version}): </span>
-                                                                <span className="text-white font-medium">{project.currency || 'USD'} {projectBudget.total_price.toLocaleString()}</span>
-                                                                <div className="mt-2 space-y-2">
+                                                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
+                                                                    <div>
+                                                                        <span className="font-bold text-zinc-300">Presupuesto Activo </span>
+                                                                        <span className="text-zinc-500 text-[10px] font-semibold mr-2">(Versión {projectBudget.version}): </span>
+                                                                        <span className="text-white font-medium">{project.currency || 'ARS'} {projectBudget.total_price.toLocaleString()}</span>
+                                                                    </div>
+                                                                    
+                                                                    {/* Resumen Facturado / Pendiente */}
+                                                                    {(() => {
+                                                                        const history = project.invoices_history;
+                                                                        const totalBudget = projectBudget.total_price || 0;
+                                                                        const totalInvoiced = Array.isArray(history) 
+                                                                            ? history.reduce((sum, inv) => sum + (inv.amount || 0), 0)
+                                                                            : 0;
+                                                                        const remaining = totalBudget - totalInvoiced;
+                                                                        const currency = project.currency || 'ARS';
+                                                                        
+                                                                        if (totalInvoiced > 0 || remaining > 0) {
+                                                                            return (
+                                                                                <div className="flex items-center gap-3 bg-black/40 border border-white/10 px-3 py-1.5 rounded-lg shrink-0">
+                                                                                    <div className="flex flex-col">
+                                                                                        <span className="text-[9px] uppercase tracking-wider text-zinc-500 font-bold">Facturado</span>
+                                                                                        <span className="text-white text-xs font-bold">{currency} {totalInvoiced.toLocaleString()}</span>
+                                                                                    </div>
+                                                                                    <div className="w-px h-6 bg-white/10"></div>
+                                                                                    <div className="flex flex-col">
+                                                                                        <span className={`text-[9px] uppercase tracking-wider font-bold ${remaining > 0 ? 'text-amber-500/80' : 'text-emerald-500/80'}`}>Pendiente</span>
+                                                                                        <span className={`text-xs font-bold ${remaining > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>{currency} {remaining.toLocaleString()}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            );
+                                                                        }
+                                                                        return null;
+                                                                    })()}
+                                                                </div>
+
+                                                                <div className="space-y-2">
                                                                     {projectBudget.items.map((it, i) => (
                                                                         <div key={i} className="bg-black/20 border border-white/5 rounded-lg p-3 text-left text-zinc-300">
                                                                             <div className="flex justify-between items-center border-b border-white/5 pb-1.5 mb-2 text-[9px] text-zinc-500 font-bold uppercase tracking-wider">
