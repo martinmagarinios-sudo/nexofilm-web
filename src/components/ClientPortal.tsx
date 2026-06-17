@@ -237,7 +237,8 @@ const ClientPortal: React.FC = () => {
         try {
             const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
                 types: ['geocode', 'establishment'],
-                fields: ['formatted_address', 'geometry', 'name']
+                fields: ['formatted_address', 'geometry', 'name'],
+                componentRestrictions: { country: 'ar' }
             });
 
             autocomplete.addListener('place_changed', () => {
@@ -1630,7 +1631,7 @@ const ClientPortal: React.FC = () => {
                             <form onSubmit={handleUpdateSpecifications} className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Tu Nombre / Contacto</label>
+                                        <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Tu Nombre / Contacto *</label>
                                         <input
                                             type="text"
                                             required
@@ -1641,7 +1642,7 @@ const ClientPortal: React.FC = () => {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Nombre / Título del Evento</label>
+                                        <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Nombre / Título del Evento *</label>
                                         <input
                                             type="text"
                                             required
@@ -1696,7 +1697,7 @@ const ClientPortal: React.FC = () => {
                                 {/* Contacto y Preferencias de Notificación */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-white/5 pt-6">
                                     <div className="space-y-2">
-                                        <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Tu WhatsApp (para recibir avisos)</label>
+                                        <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Tu WhatsApp (para recibir avisos) *</label>
                                         <div className="flex gap-2">
                                             <input
                                                 type="text"
@@ -1717,7 +1718,7 @@ const ClientPortal: React.FC = () => {
                                         <span className="text-[10px] text-zinc-500 block mt-1">Ej: Código de país (tipo +54 9) y celular (11 5892 2379)</span>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Tu Correo Electrónico</label>
+                                        <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Tu Correo Electrónico *</label>
                                         <input
                                             type="email"
                                             required
