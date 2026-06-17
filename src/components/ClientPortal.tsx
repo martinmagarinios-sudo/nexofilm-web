@@ -175,7 +175,7 @@ const ClientPortal: React.FC = () => {
         }
     }, []);
 
-    // Carga dinámica de Google Maps
+    // Carga dinámica de Google Maps - usa polling para evitar conflictos con otros componentes
     useEffect(() => {
         const apiKey = (import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '').trim();
         if (!apiKey) {
@@ -183,61 +183,51 @@ const ClientPortal: React.FC = () => {
             return;
         }
 
-        if ((window as any).google && (window as any).google.maps) {
+        // Si ya está cargado, setear directamente
+        if ((window as any).google && (window as any).google.maps && (window as any).google.maps.places) {
             setIsGoogleLoaded(true);
             return;
         }
 
-        const scriptId = 'google-maps-places-script';
+        // Cargar el script si no existe todavía
+        const scriptId = 'google-maps-places-script-portal';
         let script = document.getElementById(scriptId) as HTMLScriptElement;
         if (!script) {
             script = document.createElement('script');
             script.id = scriptId;
-            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGoogleMapsCallback`;
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
             script.async = true;
             script.defer = true;
-
-            (window as any).initGoogleMapsCallback = () => {
-                setIsGoogleLoaded(true);
-            };
-
-            script.onerror = () => {
-                console.warn("Error cargando Google Maps. Se usará el input de texto manual.");
-            };
-
             document.head.appendChild(script);
-        } else {
-            const interval = setInterval(() => {
-                if ((window as any).google && (window as any).google.maps) {
-                    clearInterval(interval);
-                    setIsGoogleLoaded(true);
-                }
-            }, 100);
-            return () => clearInterval(interval);
         }
 
-        return () => {
-            if ((window as any).initGoogleMapsCallback) {
-                delete (window as any).initGoogleMapsCallback;
+        // Polling hasta que google.maps.places esté disponible
+        const interval = setInterval(() => {
+            if ((window as any).google && (window as any).google.maps && (window as any).google.maps.places) {
+                clearInterval(interval);
+                setIsGoogleLoaded(true);
             }
-        };
+        }, 100);
+
+        return () => clearInterval(interval);
     }, []);
 
     // Inicializar Autocomplete cuando se activa la edición y Google está listo
     useEffect(() => {
-        if (isEditingSpecs && isGoogleLoaded) {
+        if (isEditingSpecs && isGoogleLoaded && viewMode === 'detail') {
             const timer = setTimeout(() => {
                 initAutocomplete();
             }, 150);
             return () => clearTimeout(timer);
         }
-    }, [isEditingSpecs, isGoogleLoaded]);
+    }, [isEditingSpecs, isGoogleLoaded, viewMode]);
 
     // Limpiar referencias al cerrar el editor de especificaciones
     useEffect(() => {
         if (!isEditingSpecs) {
             mapRef.current = null;
             markerRef.current = null;
+            autocompleteRef.current = null; // limpiar para que se re-inicialice al volver
         }
     }, [isEditingSpecs]);
 
@@ -256,8 +246,16 @@ const ClientPortal: React.FC = () => {
         const google = (window as any).google;
         if (!google || !google.maps || !google.maps.places) return;
 
+        // Si ya fue inicializado, no hacer nada
+        if (autocompleteRef.current) return;
+
         try {
-            const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
+            // Importante: No usar value controlado en el input.
+            // El autocomplete de Google necesita manejar el DOM directamente.
+            // Sincronizamos via el evento 'input' del elemento.
+            const inputEl = inputRef.current;
+
+            const autocomplete = new google.maps.places.Autocomplete(inputEl, {
                 types: ['geocode', 'establishment'],
                 fields: ['formatted_address', 'geometry', 'name'],
                 componentRestrictions: { country: 'ar' }
@@ -274,10 +272,15 @@ const ClientPortal: React.FC = () => {
 
                 if (newAddr) {
                     setLocation(newAddr);
-                    if (place.geometry && place.geometry.location && mapRef.current) {
-                        mapRef.current.setCenter(place.geometry.location);
-                        if (markerRef.current) {
-                            markerRef.current.setPosition(place.geometry.location);
+                    if (place.geometry && place.geometry.location) {
+                        if (mapRef.current) {
+                            mapRef.current.setCenter(place.geometry.location);
+                            mapRef.current.setZoom(15);
+                            if (markerRef.current) {
+                                markerRef.current.setPosition(place.geometry.location);
+                            }
+                        } else {
+                            updateMap(newAddr);
                         }
                     } else {
                         updateMap(newAddr);
@@ -420,7 +423,7 @@ const ClientPortal: React.FC = () => {
             
             // Cargar specs si existen
             if (data.project) {
-                setProjectTitle(data.project.title === 'Propuesta Comercial' ? '' : (data.project.title || ''));
+                setProjectTitle(['Propuesta Comercial', 'Nueva Propuesta Comercial'].includes(data.project.title) ? '' : (data.project.title || ''));
                 if (data.project.status === 'draft') {
                     setIsEditingSpecs(true);
                 }
@@ -1359,31 +1362,68 @@ const ClientPortal: React.FC = () => {
                                             <div
                                                 key={proj.id}
                                                 onClick={() => enterProjectDetail(proj.access_token)}
-                                                className="bg-zinc-900/30 border border-white/5 hover:border-nexo-lime/30 rounded-xl p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between hover:shadow-[0_0_20px_rgba(204,255,0,0.02)] transition-all cursor-pointer group relative overflow-hidden gap-4"
+                                                className={`border rounded-xl p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between transition-all cursor-pointer group relative overflow-hidden gap-4 ${
+                                                    proj.status === 'sent'
+                                                        ? 'bg-[#00e5ff]/5 border-[#00e5ff]/30 hover:border-[#00e5ff]/60 shadow-[0_0_15px_rgba(0,229,255,0.05)]'
+                                                        : proj.status === 'approved' || proj.status === 'production'
+                                                        ? 'bg-nexo-lime/5 border-nexo-lime/20 hover:border-nexo-lime/50 shadow-[0_0_15px_rgba(204,255,0,0.04)]'
+                                                        : proj.status === 'delivered'
+                                                        ? 'bg-green-500/5 border-green-500/20 hover:border-green-500/40'
+                                                        : proj.status === 'rejected'
+                                                        ? 'bg-red-500/5 border-red-500/20 hover:border-red-500/40'
+                                                        : 'bg-zinc-900/30 border-white/5 hover:border-nexo-lime/30'
+                                                }`}
                                             >
-                                                <div className="flex-1 space-y-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border ${badgeColor}`}>
+                                                {/* Accent strip on the left */}
+                                                <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-xl ${
+                                                    proj.status === 'sent' ? 'bg-[#00e5ff]' :
+                                                    proj.status === 'approved' ? 'bg-emerald-400' :
+                                                    proj.status === 'production' ? 'bg-nexo-lime' :
+                                                    proj.status === 'delivered' ? 'bg-green-400' :
+                                                    proj.status === 'rejected' ? 'bg-red-400' :
+                                                    proj.status === 'review' ? 'bg-amber-400' :
+                                                    'bg-zinc-700'
+                                                }`}></div>
+
+                                                <div className="flex-1 space-y-2 pl-2">
+                                                    {/* Row 1: Status badge + date */}
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${badgeColor}`}>
                                                             {statusText}
                                                         </span>
-                                                        <span className="text-[10px] text-zinc-500 font-semibold truncate max-w-[200px]" title={proj.location || ''}>
-                                                            📍 {proj.location ? proj.location : 'Sin locación'}
-                                                        </span>
-                                                        <span className="text-[10px] font-bold text-nexo-lime/80 ml-auto md:ml-0">
-                                                            {proj.event_date ? new Date(proj.event_date + 'T00:00:00').toLocaleDateString('es-AR') : 'Fecha a conf.'}
-                                                        </span>
+                                                        {proj.event_date && (
+                                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-nexo-lime/90 bg-nexo-lime/10 border border-nexo-lime/20 px-2 py-0.5 rounded-full">
+                                                                📅 {new Date(proj.event_date + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                            </span>
+                                                        )}
+                                                        {!proj.event_date && (
+                                                            <span className="inline-flex items-center gap-1 text-[10px] text-zinc-600 border border-zinc-800 px-2 py-0.5 rounded-full">
+                                                                📅 Fecha a confirmar
+                                                            </span>
+                                                        )}
                                                     </div>
-                                                    <h4 className="font-extrabold text-sm md:text-base text-white group-hover:text-nexo-lime transition-colors uppercase tracking-tight truncate" title={proj.title}>
-                                                        {proj.title} <span className="text-zinc-500 text-xs font-normal normal-case ml-2">{proj.company_name ? `(${proj.company_name})` : ''}</span>
+                                                    {/* Row 2: Title */}
+                                                    <h4 className="font-extrabold text-sm md:text-base text-white group-hover:text-nexo-lime transition-colors uppercase tracking-tight" title={proj.title}>
+                                                        {proj.title}
+                                                        {proj.company_name && <span className="text-zinc-500 text-xs font-normal normal-case ml-2">({proj.company_name})</span>}
                                                     </h4>
+                                                    {/* Row 3: Location */}
+                                                    {proj.location ? (
+                                                        <p className="text-[10px] text-zinc-400 flex items-center gap-1 truncate" title={proj.location}>
+                                                            📍 <span className="truncate max-w-xs">{proj.location}</span>
+                                                        </p>
+                                                    ) : (
+                                                        <p className="text-[10px] text-zinc-600 italic">📍 Locación sin definir</p>
+                                                    )}
                                                 </div>
 
-                                                <div className="flex items-center shrink-0 border-t md:border-t-0 border-white/5 pt-3 md:pt-0 mt-2 md:mt-0">
-                                                    <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-black mr-4 md:hidden">
-                                                        {proj.status === 'sent' ? 'Acción Requerida' : 'Gestionar'}
-                                                    </span>
-                                                    <span className="text-xs text-nexo-lime font-black uppercase tracking-wider group-hover:translate-x-1 transition-transform flex items-center gap-1 bg-nexo-lime/10 px-4 py-2 rounded-lg border border-nexo-lime/20">
-                                                        {proj.status === 'sent' ? 'Ver Propuesta' : proj.status === 'delivered' ? 'Ver Entregas' : 'Ingresar'} →
+                                                <div className="flex items-center shrink-0 border-t md:border-t-0 border-white/5 pt-3 md:pt-0 mt-1 md:mt-0">
+                                                    <span className={`text-xs font-black uppercase tracking-wider group-hover:translate-x-1 transition-transform flex items-center gap-1.5 px-4 py-2 rounded-lg border ${
+                                                        proj.status === 'sent'
+                                                            ? 'bg-[#00e5ff]/10 text-[#00e5ff] border-[#00e5ff]/30'
+                                                            : 'bg-nexo-lime/10 text-nexo-lime border-nexo-lime/20'
+                                                    }`}>
+                                                        {proj.status === 'sent' ? '⚡ Ver Propuesta' : proj.status === 'delivered' ? '📦 Ver Entregas' : 'Ingresar →'}
                                                     </span>
                                                 </div>
                                             </div>
@@ -1802,15 +1842,15 @@ const ClientPortal: React.FC = () => {
                                         type="text"
                                         value={location}
                                         onChange={(e) => setLocation(e.target.value)}
+                                        autoComplete="off"
                                         className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
                                         placeholder="Ej: Salón Lahusen, CABA"
                                     />
-                                    {isGoogleLoaded && location && (
-                                        <div className="space-y-1 mt-2">
-                                            <div id="map-preview" className="w-full h-40 rounded border border-white/10 overflow-hidden bg-zinc-950"></div>
-                                            <p className="text-zinc-500 text-[10px] italic">📍 Mapa de referencia cargado mediante Google Maps</p>
-                                        </div>
-                                    )}
+                                    {/* Mapa: siempre renderizado para que Google Maps pueda inicializar */}
+                                    <div className={`space-y-1 mt-2 ${isGoogleLoaded ? '' : 'hidden'}`}>
+                                        <div id="map-preview" className="w-full h-44 rounded border border-white/10 overflow-hidden bg-zinc-950"></div>
+                                        <p className="text-zinc-500 text-[10px] italic">📍 Mapa de referencia cargado mediante Google Maps</p>
+                                    </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

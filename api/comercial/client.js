@@ -229,21 +229,52 @@ export default async function handler(req, res) {
 
         try {
             const newToken = crypto.randomBytes(32).toString('hex');
-            const { data: newLead, error: insertErr } = await supabase
+            let newLeadData = {
+                title: specifications.title,
+                contact_name: specifications.contact_name,
+                client_email: specifications.client_email,
+                client_phone: specifications.client_phone || null,
+                location: specifications.location || null,
+                event_date: specifications.event_date || null,
+                event_time: specifications.event_time || null,
+                coverage_types: specifications.coverage_types || [],
+                coverage_hours: specifications.coverage_hours || null,
+                guests_count: specifications.guests_count || null,
+                client_notes: specifications.client_notes || null,
+                access_token: newToken,
+                status: 'review',
+                admin_action_required: true,
+                currency: 'ARS'
+            };
+
+            let newLead;
+            const { data: lead1, error: insertErr } = await supabase
                 .from('projects')
-                .insert([{
-                    title: specifications.title,
-                    contact_name: specifications.contact_name,
-                    client_email: specifications.client_email,
-                    access_token: newToken,
-                    status: 'review',
-                    admin_action_required: true,
-                    specifications: specifications
-                }])
+                .insert([newLeadData])
                 .select('*')
                 .single();
 
-            if (insertErr) throw insertErr;
+            if (insertErr) {
+                console.warn('Fallo el insert principal, intentando con fallback seguro:', insertErr.message || insertErr);
+                const safeData = { ...newLeadData };
+                const newColumns = ['admin_action_required', 'client_notes', 'client_phone', 'guests_count', 'contact_name'];
+                newColumns.forEach(col => delete safeData[col]);
+                
+                if (newLeadData.contact_name) {
+                    safeData.client_name = newLeadData.contact_name;
+                }
+
+                const { data: lead2, error: fallbackErr } = await supabase
+                    .from('projects')
+                    .insert([safeData])
+                    .select('*')
+                    .single();
+
+                if (fallbackErr) throw fallbackErr;
+                newLead = lead2;
+            } else {
+                newLead = lead1;
+            }
 
             return res.status(200).json({ success: true, project: newLead });
         } catch (error) {
@@ -433,7 +464,7 @@ export default async function handler(req, res) {
             if (project.client_email) {
                 const { data: others } = await supabase
                     .from('projects')
-                    .select('id, title, access_token, status, event_date, company_name, created_at')
+                    .select('id, title, access_token, status, event_date, location, company_name, created_at')
                     .eq('client_email', project.client_email)
                     .neq('id', project.id)
                     .order('created_at', { ascending: false });
@@ -462,18 +493,18 @@ export default async function handler(req, res) {
                 const { title, contact_name, event_date, event_time, event_end_time, location, coverage_types, coverage_hours, client_phone, client_email, notification_preference, guests_count, client_notes } = specifications || {};
 
                 const updateData = {
-                    title: title || project.title,
-                    contact_name: contact_name || project.contact_name,
-                    event_date: event_date || project.event_date,
-                    event_time: event_time || project.event_time,
-                    location: location || project.location,
-                    coverage_types: coverage_types || project.coverage_types,
+                    title: (title && title.trim() !== '') ? title.trim() : project.title,
+                    contact_name: (contact_name && contact_name.trim() !== '') ? contact_name.trim() : project.contact_name,
+                    event_date: (event_date && event_date.trim() !== '') ? event_date : project.event_date,
+                    event_time: (event_time && event_time.trim() !== '') ? event_time : project.event_time,
+                    location: (location !== undefined && location !== null) ? location : project.location,
+                    coverage_types: coverage_types ?? project.coverage_types,
                     coverage_hours: coverage_hours ? parseInt(coverage_hours) : project.coverage_hours,
-                    client_phone: client_phone || project.client_phone,
-                    client_email: client_email || project.client_email,
+                    client_phone: (client_phone && client_phone.trim() !== '') ? client_phone : project.client_phone,
+                    client_email: (client_email && client_email.trim() !== '') ? client_email.trim() : project.client_email,
                     notification_preference: notification_preference || project.notification_preference,
                     guests_count: guests_count !== undefined ? guests_count : project.guests_count,
-                    client_notes: client_notes || project.client_notes,
+                    client_notes: client_notes ?? project.client_notes,
                     status: 'review',
                     admin_action_required: true
                 };
@@ -490,42 +521,88 @@ export default async function handler(req, res) {
                     .single();
 
                 if (updateErr) {
-                    // Fallback resiliente si la columna event_end_time o admin_action_required no existe en la base de datos
-                    if (updateErr.message && (updateErr.message.includes('event_end_time') || updateErr.message.includes('admin_action_required'))) {
-                        console.warn("event_end_time or admin_action_required column not found in projects table. Retrying update without them.");
-                        delete updateData.event_end_time;
-                        delete updateData.admin_action_required;
-                        const { data: fallbackProj, error: fallbackErr } = await supabase
-                            .from('projects')
-                            .update(updateData)
-                            .eq('id', project.id)
-                            .select()
-                            .single();
-                        if (fallbackErr) throw fallbackErr;
-                        updatedProj = fallbackProj;
-                    } else {
-                        throw updateErr;
+                    // Fallback: si falla la actualización, probablemente es porque faltan columnas nuevas en la base de datos.
+                    // Eliminamos todas las columnas que no estaban en el schema original y volvemos a intentar.
+                    console.warn("Fallo el update principal, intentando con fallback seguro:", updateErr.message || updateErr);
+                    
+                    const safeData = { ...updateData };
+                    const newColumns = ['admin_action_required', 'event_end_time', 'client_notes', 'notification_preference', 'client_phone', 'guests_count', 'contact_name'];
+                    newColumns.forEach(col => delete safeData[col]);
+                    
+                    // Asegurarnos de usar client_name si eliminamos contact_name
+                    if (updateData.contact_name) {
+                        safeData.client_name = updateData.contact_name;
                     }
+
+                    const { data: fallbackProj, error: fallbackErr } = await supabase
+                        .from('projects')
+                        .update(safeData)
+                        .eq('id', project.id)
+                        .select()
+                        .single();
+                        
+                    if (fallbackErr) throw fallbackErr;
+                    updatedProj = fallbackProj;
                 }
 
                 updatedProject = updatedProj;
                 updatedStatus = 'review';
 
-                notificationSubject = `📝 Datos completados: ${project.contact_name}`;
-                notificationBody = `El cliente <strong>${project.contact_name}</strong> ha actualizado las especificaciones de su proyecto "<strong>${updatedProject.title}</strong>" y pasó a estado de Revisión comercial.`;
+                notificationSubject = `📝 Especificaciones actualizadas: ${updatedProject.contact_name || project.contact_name}`;
+                notificationBody = `El cliente <strong>${updatedProject.contact_name || project.contact_name}</strong> ha completado/actualizado las especificaciones de su proyecto "<strong>${updatedProject.title}</strong>".<br/><br/>
+                <strong>Título:</strong> ${updatedProject.title}<br/>
+                <strong>Locación:</strong> ${updatedProject.location || 'No especificada'}<br/>
+                <strong>Fecha:</strong> ${updatedProject.event_date || 'No especificada'}<br/>
+                <strong>Estado:</strong> En Revisión comercial`;
+
+                // Enviar notificación inmediatamente para esta acción
+                try {
+                    const rawText = `🔔 NEXOFILM CRM\n\n${notificationSubject}\n\nProyecto: ${updatedProject.title}\nLocación: ${updatedProject.location || 'Sin especificar'}\nFecha: ${updatedProject.event_date || 'Sin especificar'}\nEstado: REVISIÓN\n\nVer en Admin:\nhttps://nexofilm.com/admin`;
+                    await notifyMartinWhatsApp(rawText);
+                    await notifyMartinEmail(notificationSubject, notificationBody);
+                } catch (notifErr) {
+                    console.warn('Error enviando notificación de update_specifications:', notifErr.message);
+                }
+
+                return res.status(200).json({
+                    success: true,
+                    project: updatedProject
+                });
 
             } else if (action === 'submit_billing_info') {
                 const { billing_info } = req.body;
-                const { data: updatedProj, error: updateErr } = await supabase
-                    .from('projects')
-                    .update({
-                        client_billing_info: billing_info || null
-                    })
-                    .eq('id', project.id)
-                    .select()
-                    .single();
+                
+                let updatedProj;
+                let dataToUpdate = { client_billing_info: billing_info || null };
 
-                if (updateErr) throw updateErr;
+                while (true) {
+                    const { data: resultProj, error: updateErr } = await supabase
+                        .from('projects')
+                        .update(dataToUpdate)
+                        .eq('id', project.id)
+                        .select()
+                        .single();
+
+                    if (updateErr) {
+                        const match1 = updateErr.message && updateErr.message.match(/Could not find the '([^']+)' column/i);
+                        const match2 = updateErr.message && updateErr.message.match(/column "([^"]+)" of relation/i);
+                        const missingColumn = (match1 && match1[1]) || (match2 && match2[1]);
+
+                        if (missingColumn && dataToUpdate[missingColumn] !== undefined) {
+                            console.warn(`Columna '${missingColumn}' no existe en la BD para billing_info. Usando bank_details.`);
+                            delete dataToUpdate[missingColumn];
+                            if (missingColumn === 'client_billing_info') {
+                                dataToUpdate.bank_details = billing_info; // Fallback al schema original
+                            }
+                            continue;
+                        } else {
+                            throw updateErr;
+                        }
+                    }
+                    updatedProj = resultProj;
+                    break;
+                }
+
                 updatedProject = updatedProj;
 
                 notificationSubject = `🧾 Datos de Facturación: ${project.contact_name}`;
@@ -579,7 +656,8 @@ export default async function handler(req, res) {
                         company_name: project.company_name,
                         notification_preference: project.notification_preference || 'both',
                         title: 'Nueva Propuesta Comercial',
-                        status: 'draft'
+                        status: 'draft',
+                        currency: 'ARS'
                     })
                     .select()
                     .single();
