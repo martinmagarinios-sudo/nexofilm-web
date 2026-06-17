@@ -76,6 +76,26 @@ const parsePhone = (phoneStr: string) => {
     return { country: '+54 9', local: cleaned };
 };
 
+const COUNTRY_CODES = [
+    { name: 'Argentina', code: '+54 9' },
+    { name: 'Uruguay', code: '+598' },
+    { name: 'Chile', code: '+56' },
+    { name: 'Brasil', code: '+55' },
+    { name: 'Colombia', code: '+57' },
+    { name: 'México', code: '+52' },
+    { name: 'Perú', code: '+51' },
+    { name: 'Paraguay', code: '+595' },
+    { name: 'Bolivia', code: '+591' },
+    { name: 'Ecuador', code: '+593' },
+    { name: 'Venezuela', code: '+58' },
+    { name: 'Estados Unidos', code: '+1' },
+    { name: 'España', code: '+34' },
+    { name: 'Italia', code: '+39' },
+    { name: 'Reino Unido', code: '+44' },
+    { name: 'Alemania', code: '+49' },
+    { name: 'Francia', code: '+33' }
+];
+
 const ClientPortal: React.FC = () => {
     const [token, setToken] = useState<string | null>(null);
     const [project, setProject] = useState<Project | null>(null);
@@ -104,6 +124,8 @@ const ClientPortal: React.FC = () => {
     const [clientPhone, setClientPhone] = useState('');
     const [phoneCountryCode, setPhoneCountryCode] = useState('');
     const [phoneLocalNumber, setPhoneLocalNumber] = useState('');
+    const [showPhoneDropdown, setShowPhoneDropdown] = useState(false);
+    const [phoneSearch, setPhoneSearch] = useState('');
     const [clientEmail, setClientEmail] = useState('');
     const [notificationPref, setNotificationPref] = useState<'both' | 'email' | 'whatsapp'>('both');
     const [isEditingSpecs, setIsEditingSpecs] = useState(false);
@@ -1698,14 +1720,50 @@ const ClientPortal: React.FC = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-white/5 pt-6">
                                     <div className="space-y-2">
                                         <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Tu WhatsApp (para recibir avisos) *</label>
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                value={phoneCountryCode}
-                                                onChange={(e) => setPhoneCountryCode(e.target.value)}
-                                                placeholder="+54 9"
-                                                className="bg-black border border-white/10 rounded px-3 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime w-[80px] shrink-0"
-                                            />
+                                        <div className="flex gap-2 relative">
+                                            <div className="relative shrink-0">
+                                                <div 
+                                                    onClick={() => setShowPhoneDropdown(!showPhoneDropdown)}
+                                                    className="bg-black border border-white/10 rounded px-3 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime w-[90px] flex items-center justify-between cursor-pointer"
+                                                >
+                                                    <span className={phoneCountryCode ? "text-white" : "text-zinc-500"}>{phoneCountryCode || 'Cód.'}</span>
+                                                    <span className="text-[10px] text-zinc-500">▼</span>
+                                                </div>
+                                                
+                                                {showPhoneDropdown && (
+                                                    <>
+                                                        <div className="fixed inset-0 z-40" onClick={() => setShowPhoneDropdown(false)}></div>
+                                                        <div className="absolute top-full left-0 mt-1 w-[200px] bg-zinc-900 border border-white/10 rounded-lg shadow-xl z-50 overflow-hidden">
+                                                            <div className="p-2 border-b border-white/10 relative z-50">
+                                                                <input 
+                                                                    type="text" 
+                                                                    placeholder="Buscar país o cód..." 
+                                                                    value={phoneSearch}
+                                                                    onChange={(e) => setPhoneSearch(e.target.value)}
+                                                                    className="w-full bg-black border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-nexo-lime"
+                                                                    autoFocus
+                                                                />
+                                                            </div>
+                                                            <div className="max-h-48 overflow-y-auto relative z-50">
+                                                                {COUNTRY_CODES.filter(c => c.name.toLowerCase().includes(phoneSearch.toLowerCase()) || c.code.includes(phoneSearch)).map((country, idx) => (
+                                                                    <div 
+                                                                        key={idx}
+                                                                        onClick={() => {
+                                                                            setPhoneCountryCode(country.code);
+                                                                            setShowPhoneDropdown(false);
+                                                                            setPhoneSearch('');
+                                                                        }}
+                                                                        className="px-3 py-2 text-xs text-zinc-300 hover:bg-nexo-lime hover:text-black cursor-pointer flex justify-between items-center"
+                                                                    >
+                                                                        <span>{country.name}</span>
+                                                                        <span className="font-bold opacity-70">{country.code}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
                                             <input
                                                 type="text"
                                                 required
