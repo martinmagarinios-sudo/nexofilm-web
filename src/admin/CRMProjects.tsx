@@ -103,7 +103,7 @@ const CRMProjects: React.FC = () => {
     const [newPhoneLocalNumber, setNewPhoneLocalNumber] = useState('');
     const [newProjTitle, setNewProjTitle] = useState('');
     const [newProjStatus, setNewProjStatus] = useState<'draft' | 'sent'>('draft');
-    const [newCurrency, setNewCurrency] = useState<'USD' | 'ARS'>('USD');
+    const [newCurrency, setNewCurrency] = useState<'USD' | 'ARS'>('ARS');
     const [newCrewCount, setNewCrewCount] = useState<number | ''>('');
     const [newNotificationPreference, setNewNotificationPreference] = useState<'both' | 'email' | 'whatsapp'>('both');
 
@@ -114,7 +114,7 @@ const CRMProjects: React.FC = () => {
     const [editingClientEmail, setEditingClientEmail] = useState('');
     const [editingPhoneCountryCode, setEditingPhoneCountryCode] = useState('');
     const [editingPhoneLocalNumber, setEditingPhoneLocalNumber] = useState('');
-    const [editingCurrency, setEditingCurrency] = useState<'USD' | 'ARS'>('USD');
+    const [editingCurrency, setEditingCurrency] = useState<'USD' | 'ARS'>('ARS');
     const [editingCrewCount, setEditingCrewCount] = useState<number | ''>('');
     const [editingAdminNotes, setEditingAdminNotes] = useState('');
     const [editingEventDate, setEditingEventDate] = useState('');
@@ -339,7 +339,7 @@ const CRMProjects: React.FC = () => {
             setNewPhoneCountryCode('');
             setNewPhoneLocalNumber('');
             setNewProjTitle('');
-            setNewCurrency('USD');
+            setNewCurrency('ARS');
             setNewCrewCount('');
             setNewNotificationPreference('both');
             setNewBudgetItems([{ description: '', quantity: 1, unit_price: 0 }]);
@@ -1420,7 +1420,7 @@ const CRMProjects: React.FC = () => {
                                                         <div className="text-right">
                                                             <span className="text-zinc-500 text-[9px] block font-bold uppercase tracking-wider">Presupuesto</span>
                                                             <div className="font-mono font-bold text-sm text-nexo-lime">
-                                                                {project.currency || 'USD'} {projectBudget ? projectBudget.total_price.toLocaleString() : '0'}
+                                                                {project.currency || 'ARS'} {projectBudget ? projectBudget.total_price.toLocaleString() : '0'}
                                                             </div>
                                                         </div>
 
@@ -1561,7 +1561,7 @@ const CRMProjects: React.FC = () => {
                                                                             {project.company_name && <span>Empresa: <strong className="text-white">{project.company_name}</strong></span>}
                                                                             <span>Email: <strong className="text-white">{project.client_email}</strong></span>
                                                                             {project.client_phone && <span>WhatsApp: <strong className="text-white">+{project.client_phone.replace(/^\++/, '')}</strong></span>}
-                                                                            <span>Moneda: <strong className="text-white">{project.currency || 'USD'}</strong></span>
+                                                                            <span>Moneda: <strong className="text-white">{project.currency || 'ARS'}</strong></span>
                                                                             {project.crew_count && <span>Personal: <strong className="text-white">{project.crew_count} {project.crew_count === 1 ? 'persona' : 'personas'}</strong></span>}
                                                                             <span>Preferencia: <strong className="text-nexo-lime capitalize">{project.notification_preference === 'both' ? 'Mail y WhatsApp' : project.notification_preference === 'email' ? 'Sólo Mail' : 'Sólo WhatsApp'}</strong></span>
                                                                         </div>
@@ -1574,7 +1574,7 @@ const CRMProjects: React.FC = () => {
                                                                                 const parsed = parsePhone(project.client_phone || '');
                                                                                 setEditingPhoneCountryCode(parsed.country);
                                                                                 setEditingPhoneLocalNumber(parsed.local);
-                                                                                setEditingCurrency(project.currency || 'USD');
+                                                                                setEditingCurrency(project.currency || 'ARS');
                                                                                 setEditingCrewCount(project.crew_count || '');
                                                                                 setEditingAdminNotes(project.admin_notes || '');
                                                                                 setEditingEventDate(project.event_date || '');
@@ -2044,7 +2044,7 @@ const CRMProjects: React.FC = () => {
                                     ? history.reduce((sum, inv) => sum + (inv.amount || 0), 0)
                                     : 0;
                                 const remaining = totalBudget - totalInvoiced;
-                                const currency = selectedProject.currency || 'USD';
+                                const currency = selectedProject.currency || 'ARS';
 
                                 return (
                                     <div className="bg-black/40 border border-white/5 rounded-lg p-4 space-y-3">
@@ -2152,7 +2152,7 @@ const CRMProjects: React.FC = () => {
 
                             {/* Monto de Factura */}
                             <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Monto a Transferir ({selectedProject?.currency || 'USD'})</label>
+                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Monto a Transferir ({selectedProject?.currency || 'ARS'})</label>
                                 <input
                                     type="number"
                                     required
@@ -2354,14 +2354,14 @@ const CRMProjects: React.FC = () => {
                                     <div>
                                         <span className="text-zinc-500">Total Principal: </span>
                                         <span className="font-bold text-nexo-lime">
-                                            {budgetingProject?.currency || 'USD'} {editingBudgetItems.filter(i => !i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
+                                            {budgetingProject?.currency || 'ARS'} {editingBudgetItems.filter(i => !i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
                                         </span>
                                     </div>
                                     {editingBudgetItems.some(i => i.is_optional) && (
                                         <div>
                                             <span className="text-zinc-500">Extras Sugeridos: </span>
                                             <span className="font-bold text-[#00e5ff]">
-                                                + {budgetingProject?.currency || 'USD'} {editingBudgetItems.filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
+                                                + {budgetingProject?.currency || 'ARS'} {editingBudgetItems.filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
                                             </span>
                                         </div>
                                     )}

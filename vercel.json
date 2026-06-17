@@ -8,11 +8,15 @@
         "api/portfolio.js": {
             "includeFiles": "dist/index.html"
         },
+        "api/presupuesto.js": {
+            "includeFiles": "dist/index.html"
+        },
         "api/comercial/admin.js": { "maxDuration": 30 }
     },
     "rewrites": [
         { "source": "/portal/login", "destination": "/index.html" },
         { "source": "/portal", "destination": "/api/comercial/client?action=render" },
+        { "source": "/presupuesto", "destination": "/api/presupuesto" },
         { "source": "/portfolio/:id", "destination": "/api/portfolio" },
         { "source": "/api/(.*)", "destination": "/api/$1" },
         { "source": "/((?!api/).*)", "destination": "/index.html" }
