@@ -257,12 +257,8 @@ export default async function handler(req, res) {
             if (insertErr) {
                 console.warn('Fallo el insert principal, intentando con fallback seguro:', insertErr.message || insertErr);
                 const safeData = { ...newLeadData };
-                const newColumns = ['admin_action_required', 'client_notes', 'client_phone', 'guests_count', 'contact_name'];
+                const newColumns = ['admin_action_required', 'client_notes', 'guests_count'];
                 newColumns.forEach(col => delete safeData[col]);
-                
-                if (newLeadData.contact_name) {
-                    safeData.client_name = newLeadData.contact_name;
-                }
 
                 const { data: lead2, error: fallbackErr } = await supabase
                     .from('projects')
@@ -526,13 +522,9 @@ export default async function handler(req, res) {
                     console.warn("Fallo el update principal, intentando con fallback seguro:", updateErr.message || updateErr);
                     
                     const safeData = { ...updateData };
-                    const newColumns = ['admin_action_required', 'event_end_time', 'client_notes', 'notification_preference', 'client_phone', 'guests_count', 'contact_name'];
+                    // Removing ONLY the columns that might not exist yet. contact_name, client_phone and notification_preference are confirmed to exist.
+                    const newColumns = ['admin_action_required', 'event_end_time', 'client_notes', 'guests_count'];
                     newColumns.forEach(col => delete safeData[col]);
-                    
-                    // Asegurarnos de usar client_name si eliminamos contact_name
-                    if (updateData.contact_name) {
-                        safeData.client_name = updateData.contact_name;
-                    }
 
                     const { data: fallbackProj, error: fallbackErr } = await supabase
                         .from('projects')
