@@ -1268,7 +1268,16 @@ const ClientPortal: React.FC = () => {
                         {/* Listado de Proyectos */}
                         <div className="space-y-4">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                <h3 className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Mis Proyectos & Presupuestos</h3>
+                                <div className="flex items-center gap-3">
+                                    <h3 className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Mis Proyectos & Presupuestos</h3>
+                                    <button
+                                        type="button"
+                                        onClick={handleRequestNewProject}
+                                        className="bg-nexo-lime/10 hover:bg-nexo-lime/20 border border-nexo-lime/30 text-nexo-lime text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-lg transition-colors flex items-center gap-1.5"
+                                    >
+                                        <span>➕</span> Nuevo Presupuesto
+                                    </button>
+                                </div>
                                 <div className="flex items-center gap-3 w-full sm:w-auto">
                                     <input 
                                         type="text" 
@@ -1283,7 +1292,7 @@ const ClientPortal: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                            <div className="flex flex-col gap-4">
                                 {(() => {
                                     const allProjects = [
                                         {
@@ -1350,33 +1359,30 @@ const ClientPortal: React.FC = () => {
                                             <div
                                                 key={proj.id}
                                                 onClick={() => enterProjectDetail(proj.access_token)}
-                                                className="bg-zinc-900/30 border border-white/5 hover:border-nexo-lime/30 rounded-xl p-5 md:p-6 flex flex-col justify-between hover:shadow-[0_0_20px_rgba(204,255,0,0.02)] transition-all cursor-pointer group relative overflow-hidden"
+                                                className="bg-zinc-900/30 border border-white/5 hover:border-nexo-lime/30 rounded-xl p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between hover:shadow-[0_0_20px_rgba(204,255,0,0.02)] transition-all cursor-pointer group relative overflow-hidden gap-4"
                                             >
-                                                <div className="space-y-3">
-                                                    <div className="flex justify-between items-start gap-2">
-                                                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[8px] md:text-[9px] font-black uppercase tracking-wider border ${badgeColor}`}>
+                                                <div className="flex-1 space-y-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border ${badgeColor}`}>
                                                             {statusText}
                                                         </span>
-                                                        <span className="text-[10px] text-zinc-500 font-semibold truncate max-w-[120px]" title={proj.location || ''}>
-                                                            {proj.location ? proj.location : 'Sin locación'}
+                                                        <span className="text-[10px] text-zinc-500 font-semibold truncate max-w-[200px]" title={proj.location || ''}>
+                                                            📍 {proj.location ? proj.location : 'Sin locación'}
+                                                        </span>
+                                                        <span className="text-[10px] font-bold text-nexo-lime/80 ml-auto md:ml-0">
+                                                            {proj.event_date ? new Date(proj.event_date + 'T00:00:00').toLocaleDateString('es-AR') : 'Fecha a conf.'}
                                                         </span>
                                                     </div>
-                                                    <div className="space-y-1">
-                                                        <h4 className="font-extrabold text-sm md:text-base text-white group-hover:text-nexo-lime transition-colors uppercase tracking-tight line-clamp-2" title={proj.title}>
-                                                            {proj.title}
-                                                        </h4>
-                                                        <div className="flex justify-between items-center text-xs text-zinc-400">
-                                                            <span className="font-semibold truncate max-w-[150px]" title={proj.company_name || ''}>{proj.company_name || '-'}</span>
-                                                            <span className="font-bold whitespace-nowrap text-nexo-lime/80">{proj.event_date ? new Date(proj.event_date + 'T00:00:00').toLocaleDateString('es-AR') : 'Fecha a conf.'}</span>
-                                                        </div>
-                                                    </div>
+                                                    <h4 className="font-extrabold text-sm md:text-base text-white group-hover:text-nexo-lime transition-colors uppercase tracking-tight truncate" title={proj.title}>
+                                                        {proj.title} <span className="text-zinc-500 text-xs font-normal normal-case ml-2">{proj.company_name ? `(${proj.company_name})` : ''}</span>
+                                                    </h4>
                                                 </div>
 
-                                                <div className="border-t border-white/5 pt-4 mt-4 flex items-center justify-between">
-                                                    <span className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">
+                                                <div className="flex items-center shrink-0 border-t md:border-t-0 border-white/5 pt-3 md:pt-0 mt-2 md:mt-0">
+                                                    <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-black mr-4 md:hidden">
                                                         {proj.status === 'sent' ? 'Acción Requerida' : 'Gestionar'}
                                                     </span>
-                                                    <span className="text-xs text-nexo-lime font-black uppercase tracking-wider group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                                                    <span className="text-xs text-nexo-lime font-black uppercase tracking-wider group-hover:translate-x-1 transition-transform flex items-center gap-1 bg-nexo-lime/10 px-4 py-2 rounded-lg border border-nexo-lime/20">
                                                         {proj.status === 'sent' ? 'Ver Propuesta' : proj.status === 'delivered' ? 'Ver Entregas' : 'Ingresar'} →
                                                     </span>
                                                 </div>
@@ -1384,24 +1390,6 @@ const ClientPortal: React.FC = () => {
                                         );
                                     });
                                 })()}
-
-                                {/* Tarjeta de creación rápida */}
-                                <div
-                                    onClick={handleRequestNewProject}
-                                    className="border-2 border-dashed border-white/10 hover:border-nexo-lime/40 bg-zinc-950/25 hover:bg-zinc-950/50 rounded-xl p-5 md:p-6 flex flex-col items-center justify-center text-center transition-all cursor-pointer group min-h-[150px] space-y-3"
-                                >
-                                    <div className="w-10 h-10 rounded-full bg-zinc-900 border border-white/5 text-zinc-400 group-hover:text-nexo-lime group-hover:border-nexo-lime/20 flex items-center justify-center text-lg transition-all">
-                                        ➕
-                                    </div>
-                                    <div className="space-y-1">
-                                        <h4 className="font-bold text-xs md:text-sm text-zinc-300 group-hover:text-white transition-colors uppercase tracking-wider">
-                                            Solicitar Nuevo Presupuesto
-                                        </h4>
-                                        <p className="text-zinc-500 text-[10px] md:text-[11px] max-w-[220px] mx-auto leading-relaxed">
-                                            ¿Tenés otro evento o producción en mente? Iniciá una propuesta borrador aquí.
-                                        </p>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -2358,7 +2346,7 @@ const ClientPortal: React.FC = () => {
                                                 <p className="text-xs text-zinc-500 mt-1 capitalize">
                                                     {isFolder ? 'Carpeta de Archivos' : `${file.mimeType.split('/')[1] || 'Archivo'} · ${formatBytes(file.size)}`}
                                                 </p>
-                                                <div className="flex gap-3 mt-2">
+                                                <div className="flex gap-3 mt-2 flex-wrap">
                                                     <a
                                                         href={file.webViewLink}
                                                         target="_blank"
@@ -2377,6 +2365,19 @@ const ClientPortal: React.FC = () => {
                                                             Descargar
                                                         </a>
                                                     )}
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            navigator.clipboard.writeText(file.webViewLink);
+                                                            const btn = e.currentTarget;
+                                                            const originalText = btn.innerHTML;
+                                                            btn.innerHTML = '¡Copiado!';
+                                                            setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+                                                        }}
+                                                        className="text-[10px] font-bold text-[#00e5ff] hover:text-white hover:underline"
+                                                    >
+                                                        Copiar Link
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
