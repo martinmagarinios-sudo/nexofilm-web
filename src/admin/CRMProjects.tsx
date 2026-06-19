@@ -1465,6 +1465,9 @@ const CRMProjects: React.FC = () => {
                                                                                     <span className="bg-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]">✅ 100% Cobrado</span>
                                                                                 ) : (
                                                                                     <>
+                                                                                        {totalPaid > 0 && (
+                                                                                            <span className="bg-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-emerald-500/30">✅ Cobrado: {project.currency || 'ARS'} {totalPaid.toLocaleString()}</span>
+                                                                                        )}
                                                                                         {remainingToCollect > 0 && (
                                                                                             <span className="bg-amber-500/20 text-amber-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-amber-500/30">⏳ A Cobrar: {project.currency || 'ARS'} {remainingToCollect.toLocaleString()}</span>
                                                                                         )}
