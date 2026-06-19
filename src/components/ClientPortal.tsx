@@ -44,6 +44,7 @@ interface Project {
     client_tax_certificate_url?: string | null;
     invoice_sent?: boolean | null;
     drive_folder_id?: string | null;
+    invoices_history?: any[] | null;
 }
 
 interface DriveFile {
@@ -1002,11 +1003,21 @@ const ClientPortal: React.FC = () => {
 
         return (
             <div className="bg-zinc-900/40 border border-white/5 p-6 md:p-8 rounded-xl shadow-2xl space-y-8 no-print mt-6">
-                <div className="space-y-2 border-b border-white/5 pb-4">
-                    <h2 className="text-xl font-bold text-white uppercase tracking-tight">Presupuesto de Servicios Detallado</h2>
-                    <p className="text-zinc-400 text-xs">
-                        Desglose del presupuesto comercial y las condiciones de pago acordadas.
-                    </p>
+                <div className="space-y-2 border-b border-white/5 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 className="text-xl font-bold text-white uppercase tracking-tight">Presupuesto de Servicios Detallado</h2>
+                        <p className="text-zinc-400 text-xs mt-1">
+                            Desglose del presupuesto comercial y las condiciones de pago acordadas.
+                        </p>
+                    </div>
+                    {project.status !== 'draft' && project.status !== 'review' && (
+                        <button
+                            onClick={handlePrintPDF}
+                            className="bg-zinc-800 hover:bg-zinc-700 border border-white/10 text-white font-bold text-xs uppercase py-2.5 px-5 rounded transition-colors no-print flex items-center gap-2 shrink-0"
+                        >
+                            📄 Descargar PDF
+                        </button>
+                    )}
                 </div>
 
                 {/* Desglose de ítems */}
@@ -2198,8 +2209,8 @@ const ClientPortal: React.FC = () => {
                     )
                 )}
 
-                {/* ESTADO 3 O 4: APPROVED, PRODUCTION O DELIVERED (PROYECTO APROBADO, EN PROCESO DE PAGO Y RODAJE, O ENTREGADO) */}
-                {(project.status === 'approved' || project.status === 'production' || project.status === 'delivered') && (
+                {/* ESTADO 3: APPROVED O PRODUCTION (PROYECTO APROBADO, EN PROCESO DE PAGO Y RODAJE) */}
+                {(project.status === 'approved' || project.status === 'production') && (
                     <div className="space-y-8">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         
@@ -2226,12 +2237,6 @@ const ClientPortal: React.FC = () => {
                                         <p>Fecha del evento: <span className="text-zinc-300 font-bold">{project.event_date ? formatDateAR(project.event_date) : 'A confirmar'}</span></p>
                                         <p className="mt-1">Locación: <span className="text-zinc-300 font-bold">{project.location || 'A confirmar'}</span></p>
                                     </div>
-                                    <button
-                                        onClick={handlePrintPDF}
-                                        className="bg-zinc-800 hover:bg-zinc-700 border border-white/10 text-white font-bold text-xs uppercase py-2 px-4 rounded transition-colors no-print flex items-center gap-1.5"
-                                    >
-                                        📄 PDF
-                                    </button>
                                 </div>
                             </div>
 
@@ -2337,65 +2342,66 @@ const ClientPortal: React.FC = () => {
 
                 {/* ESTADO 4: DELIVERED (ENTREGA FINAL DE MATERIALES - INTEGRACION GOOGLE DRIVE) */}
                 {project.status === 'delivered' && (
-                    <div className="bg-zinc-900/40 border border-white/5 p-6 md:p-8 rounded-xl shadow-2xl space-y-8">
-                        <div className="space-y-2 border-b border-white/5 pb-4 flex justify-between items-center">
-                            <div>
-                                <h2 className="text-xl font-bold text-white uppercase tracking-tight">Material Final Finalizado</h2>
-                                <p className="text-zinc-400 text-xs">
-                                    Previsualizá y descargá el material multimedia de tu producción directamente desde tu portal oficial.
-                                </p>
-                            </div>
-                            <span className="text-2xl">🎉</span>
-                        </div>
-
-                        {/* Módulo de descargas directas */}
-                        {project.drive_folder_id ? (
-                            <div className="bg-nexo-lime/5 border border-nexo-lime/20 hover:border-nexo-lime/50 rounded-xl p-6 md:p-8 flex flex-col sm:flex-row gap-6 items-center group transition-all text-center sm:text-left">
-                                <div className="w-20 h-20 rounded-full bg-nexo-lime/10 flex-shrink-0 flex items-center justify-center relative shadow-[0_0_15px_rgba(204,255,0,0.1)]">
-                                    <span className="text-4xl">📁</span>
-                                </div>
-                                <div className="flex-1 space-y-3">
-                                    <h4 className="font-extrabold text-xl text-white group-hover:text-nexo-lime transition-colors">
-                                        Carpeta Principal de Entregas
-                                    </h4>
-                                    <p className="text-xs md:text-sm text-zinc-400 max-w-2xl leading-relaxed">
-                                        Aquí vas a encontrar todo el material final (videos, fotos, recursos) organizado en subcarpetas. Podés ingresar para <strong>previsualizar</strong> los archivos, <strong>descargarlos</strong> directamente o <strong>compartir este enlace</strong> con tu equipo y clientes.
+                    <div className="space-y-8">
+                        {/* 1. Módulo de descargas directas (Material Finalizado) */}
+                        <div className="bg-zinc-900/40 border border-white/5 p-6 md:p-8 rounded-xl shadow-2xl space-y-6">
+                            <div className="space-y-2 border-b border-white/5 pb-4 flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-xl font-bold text-white uppercase tracking-tight">Material Final Finalizado</h2>
+                                    <p className="text-zinc-400 text-xs">
+                                        Previsualizá y descargá el material multimedia de tu producción directamente desde tu portal oficial.
                                     </p>
-                                    <div className="flex flex-wrap gap-3 mt-4 justify-center sm:justify-start">
-                                        <a
-                                            href={`https://drive.google.com/drive/folders/${project.drive_folder_id}?usp=drive_link`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="bg-nexo-lime text-black font-extrabold uppercase tracking-widest text-[10px] md:text-xs px-6 py-3 rounded-lg hover:bg-[#b3ff00] hover:scale-105 transition-all shadow-[0_0_15px_rgba(204,255,0,0.2)]"
-                                        >
-                                            🔗 Abrir Carpeta en Drive
-                                        </a>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                navigator.clipboard.writeText(`https://drive.google.com/drive/folders/${project.drive_folder_id}?usp=drive_link`);
-                                                const btn = e.currentTarget;
-                                                const originalText = btn.innerHTML;
-                                                btn.innerHTML = '¡Enlace Copiado!';
-                                                setTimeout(() => { btn.innerHTML = originalText; }, 2000);
-                                            }}
-                                            className="bg-white/5 border border-white/10 text-white font-bold uppercase tracking-wider text-[10px] md:text-xs px-6 py-3 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all"
-                                        >
-                                            Copiar Enlace
-                                        </button>
+                                </div>
+                                <span className="text-2xl">🎉</span>
+                            </div>
+                            {project.drive_folder_id ? (
+                                <div className="bg-nexo-lime/5 border border-nexo-lime/20 hover:border-nexo-lime/50 rounded-xl p-6 md:p-8 flex flex-col sm:flex-row gap-6 items-center group transition-all text-center sm:text-left">
+                                    <div className="w-20 h-20 rounded-full bg-nexo-lime/10 flex-shrink-0 flex items-center justify-center relative shadow-[0_0_15px_rgba(204,255,0,0.1)]">
+                                        <span className="text-4xl">📁</span>
+                                    </div>
+                                    <div className="flex-1 space-y-3">
+                                        <h4 className="font-extrabold text-xl text-white group-hover:text-nexo-lime transition-colors">
+                                            Carpeta Principal de Entregas
+                                        </h4>
+                                        <p className="text-xs md:text-sm text-zinc-400 max-w-2xl leading-relaxed">
+                                            Aquí vas a encontrar todo el material final (videos, fotos, recursos) organizado en subcarpetas. Podés ingresar para <strong>previsualizar</strong> los archivos, <strong>descargarlos</strong> directamente o <strong>compartir este enlace</strong> con tu equipo y clientes.
+                                        </p>
+                                        <div className="flex flex-wrap gap-3 mt-4 justify-center sm:justify-start">
+                                            <a
+                                                href={`https://drive.google.com/drive/folders/${project.drive_folder_id}?usp=drive_link`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="bg-nexo-lime text-black font-extrabold uppercase tracking-widest text-[10px] md:text-xs px-6 py-3 rounded-lg hover:bg-[#b3ff00] hover:scale-105 transition-all shadow-[0_0_15px_rgba(204,255,0,0.2)]"
+                                            >
+                                                🔗 Abrir Carpeta en Drive
+                                            </a>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    navigator.clipboard.writeText(`https://drive.google.com/drive/folders/${project.drive_folder_id}?usp=drive_link`);
+                                                    const btn = e.currentTarget;
+                                                    const originalText = btn.innerHTML;
+                                                    btn.innerHTML = '¡Enlace Copiado!';
+                                                    setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+                                                }}
+                                                className="bg-white/5 border border-white/10 text-white font-bold uppercase tracking-wider text-[10px] md:text-xs px-6 py-3 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all"
+                                            >
+                                                Copiar Enlace
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="text-center py-12 text-zinc-500 text-xs font-bold uppercase tracking-wider border border-white/5 bg-black/20 rounded-xl">
-                                📭 Aún no se ha vinculado la carpeta de entrega para este proyecto.
-                            </div>
-                        )}
+                            ) : (
+                                <div className="text-center py-12 text-zinc-500 text-xs font-bold uppercase tracking-wider border border-white/5 bg-black/20 rounded-xl">
+                                    📭 Aún no se ha vinculado la carpeta de entrega para este proyecto.
+                                </div>
+                            )}
+                        </div>
 
-                        {/* Módulo de Encuesta de Satisfacción Opcional */}
-                        {!hasReviewed && !surveySuccess ? (
-                            <div className="border-t border-white/5 pt-8 mt-8 space-y-6">
-                                <div className="space-y-2">
+                        {/* 2. Módulo de Encuesta de Satisfacción Opcional (Oculto si ya respondió) */}
+                        {!hasReviewed && !surveySuccess && (
+                            <div className="bg-zinc-900/40 border border-white/5 p-6 md:p-8 rounded-xl shadow-2xl space-y-6">
+                                <div className="space-y-2 border-b border-white/5 pb-4">
                                     <h3 className="text-lg font-bold text-white uppercase tracking-tight">⭐ Tu opinión nos ayuda a mejorar</h3>
                                     <p className="text-xs text-zinc-400 max-w-2xl leading-relaxed">
                                         ¡Gracias por confiar en NexoFilm! Tu feedback nos ayuda a seguir perfeccionando nuestras producciones. Esta encuesta es totalmente opcional y te llevará menos de un minuto.
@@ -2469,13 +2475,115 @@ const ClientPortal: React.FC = () => {
                                     </button>
                                 </form>
                             </div>
-                        ) : (
-                            <div className="border-t border-white/5 pt-8 mt-8 text-center py-6 bg-nexo-lime/5 border border-nexo-lime/10 rounded-lg">
-                                <span className="text-2xl block mb-2">💚</span>
-                                <h4 className="font-bold text-nexo-lime text-sm uppercase tracking-wider">¡Gracias por tu opinión!</h4>
-                                <p className="text-zinc-400 text-xs mt-1">Valoramos muchísimo tu tiempo y nos alegra haber compartido este proyecto con vos.</p>
-                            </div>
                         )}
+
+                        {/* 3. Módulo de Facturación, Saldos y Datos de Pago */}
+                        <div className="bg-zinc-900/40 border border-white/5 p-6 md:p-8 rounded-xl shadow-2xl space-y-6">
+                            <div className="space-y-2 border-b border-white/5 pb-4">
+                                <h3 className="text-xl font-bold text-white uppercase tracking-tight">Estado de Facturación y Pago</h3>
+                                <p className="text-xs text-zinc-400">
+                                    Resumen de las facturas emitidas, saldos pendientes y datos para realizar transferencias.
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {/* Historial de Facturas y Saldos */}
+                                <div className="space-y-4">
+                                    <h4 className="text-sm font-bold text-white uppercase tracking-wider">Historial y Saldos</h4>
+                                    
+                                    {(() => {
+                                        const totalBudget = budget ? budget.total_price : 0;
+                                        const history = project.invoices_history || [];
+                                        
+                                        // Support legacy invoice if history is empty but there's a main invoice
+                                        const displayInvoices = history.length > 0 ? history : (
+                                            project.invoice_url ? [{
+                                                amount: project.invoice_amount || 0,
+                                                type: project.invoice_type || 'custom',
+                                                invoice_url: project.invoice_url,
+                                                date_sent: new Date().toISOString()
+                                            }] : []
+                                        );
+
+                                        const totalInvoiced = displayInvoices.reduce((sum: number, inv: any) => sum + (inv.amount || 0), 0);
+                                        const remaining = Math.max(0, totalBudget - totalInvoiced);
+                                        const currency = project.currency || 'ARS';
+
+                                        return (
+                                            <div className="bg-black/40 border border-white/5 rounded-lg p-4 space-y-3">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Resumen de Cuenta</span>
+                                                    {totalBudget > 0 && (
+                                                        <span className="text-[10px] text-zinc-500">Cotización Total: <span className="text-zinc-300 font-bold">{currency} {totalBudget.toLocaleString()}</span></span>
+                                                    )}
+                                                </div>
+
+                                                {displayInvoices.length > 0 ? (
+                                                    <div className="space-y-2">
+                                                        {displayInvoices.map((inv: any, idx: number) => (
+                                                            <div key={idx} className="flex items-center justify-between text-[11px] py-1.5 border-b border-white/5 last:border-0">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-zinc-500">#{idx + 1}</span>
+                                                                    {inv.fc_number && <span className="font-mono text-nexo-lime font-bold">FC {inv.fc_number}</span>}
+                                                                    <span className="text-zinc-400">
+                                                                        {inv.type === 'deposit_50' ? '50% Seña' : inv.type === 'total' ? '100% Total' : 'Concepto Asignado'}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex items-center gap-3">
+                                                                    <span className="text-white font-bold">{currency} {(inv.amount || 0).toLocaleString()}</span>
+                                                                    {inv.invoice_url && (
+                                                                        <a href={inv.invoice_url} target="_blank" rel="noopener noreferrer" className="bg-zinc-800 hover:bg-zinc-700 text-white border border-white/10 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wide transition-colors">
+                                                                            📄 Descargar PDF
+                                                                        </a>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                        
+                                                        <div className="flex justify-between items-center pt-3 mt-2 border-t border-white/10">
+                                                            <span className="text-[10px] font-bold uppercase text-zinc-400">Total facturado:</span>
+                                                            <span className="text-white font-black text-sm">{currency} {totalInvoiced.toLocaleString()}</span>
+                                                        </div>
+                                                        
+                                                        {totalBudget > 0 && (
+                                                            <div className={`flex justify-between items-center rounded px-3 py-2 mt-2 ${remaining > 0 ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-emerald-500/10 border border-emerald-500/20'}`}>
+                                                                <span className={`text-[10px] font-bold uppercase ${remaining > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                                                                    {remaining > 0 ? '⏳ Saldo pendiente a facturar:' : '✅ Totalmente facturado'}
+                                                                </span>
+                                                                {remaining > 0 && (
+                                                                    <span className="text-amber-300 font-black text-sm">{currency} {remaining.toLocaleString()}</span>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <div className="text-center py-6 text-zinc-500 text-xs italic border border-white/5 rounded">
+                                                        Aún no se han emitido facturas.
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+
+                                {/* Datos Bancarios y de Pago */}
+                                <div className="space-y-4">
+                                    <h4 className="text-sm font-bold text-white uppercase tracking-wider">Datos para Pagos</h4>
+                                    {project.bank_details ? (
+                                        <div className="bg-black p-4 border border-white/10 rounded text-xs leading-relaxed font-mono text-zinc-300">
+                                            <p className="font-bold text-nexo-lime mb-2 uppercase tracking-wider">Datos de transferencia:</p>
+                                            <div className="whitespace-pre-wrap">{project.bank_details}</div>
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs text-zinc-500 italic bg-black/40 p-4 rounded border border-white/5">
+                                            Los datos bancarios no han sido especificados o la factura está en preparación.
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 4. Presupuesto Detallado */}
                         {renderBudgetSection()}
                     </div>
                 )}
