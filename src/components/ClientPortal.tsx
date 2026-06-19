@@ -95,6 +95,14 @@ const COUNTRY_CODES = [
     { name: 'Alemania', code: '+49' },
     { name: 'Francia', code: '+33' }
 ];
+const formatDateAR = (dateStr: string | null) => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return dateStr;
+};
 
 const ClientPortal: React.FC = () => {
     const [token, setToken] = useState<string | null>(null);
@@ -1393,7 +1401,7 @@ const ClientPortal: React.FC = () => {
                                                         </span>
                                                         {proj.event_date && (
                                                             <span className="inline-flex items-center gap-1 text-[10px] font-bold text-nexo-lime/90 bg-nexo-lime/10 border border-nexo-lime/20 px-2 py-0.5 rounded-full">
-                                                                📅 {new Date(proj.event_date + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                                📅 {formatDateAR(proj.event_date)}
                                                             </span>
                                                         )}
                                                         {!proj.event_date && (
@@ -1543,7 +1551,7 @@ const ClientPortal: React.FC = () => {
                         <div className="border-t border-white/5 pt-4 grid grid-cols-1 md:grid-cols-4 gap-4 text-xs text-zinc-400 no-print">
                             <div>
                                 <span className="text-zinc-500 font-bold block uppercase tracking-wider text-[9px]">📅 Fecha y Hora</span>
-                                <span className="text-zinc-300 font-semibold">{project.event_date || 'A confirmar'} {project.event_time || ''}</span>
+                                <span className="text-zinc-300 font-semibold">{project.event_date ? formatDateAR(project.event_date) : 'A confirmar'} {project.event_time || ''}</span>
                             </div>
                             <div>
                                 <span className="text-zinc-500 font-bold block uppercase tracking-wider text-[9px]">📍 Locación</span>
@@ -1629,7 +1637,7 @@ const ClientPortal: React.FC = () => {
                                 <h3 className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Detalles de la producción solicitada:</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                                     <div className="space-y-2 text-zinc-400">
-                                        <p>📅 <span className="font-medium text-zinc-500">Fecha tentativa:</span> <span className="text-white">{eventDate || 'A confirmar'}</span></p>
+                                        <p>📅 <span className="font-medium text-zinc-500">Fecha tentativa:</span> <span className="text-white">{eventDate ? formatDateAR(eventDate) : 'A confirmar'}</span></p>
                                         <p>⏱️ <span className="font-medium text-zinc-500">Horario:</span> <span className="text-white">{eventTime || 'A confirmar'}{eventEndTime ? ` a ${eventEndTime}` : ''}</span></p>
                                         <p>📍 <span className="font-medium text-zinc-500">Locación / Lugar:</span> <span className="text-white">{location || 'A confirmar'}</span></p>
                                     </div>
@@ -2212,7 +2220,7 @@ const ClientPortal: React.FC = () => {
                                 
                                 <div className="border-t border-white/5 pt-4 text-xs text-zinc-500 flex justify-between items-center">
                                     <div>
-                                        <p>Fecha del evento: <span className="text-zinc-300 font-bold">{project.event_date || 'A confirmar'}</span></p>
+                                        <p>Fecha del evento: <span className="text-zinc-300 font-bold">{project.event_date ? formatDateAR(project.event_date) : 'A confirmar'}</span></p>
                                         <p className="mt-1">Locación: <span className="text-zinc-300 font-bold">{project.location || 'A confirmar'}</span></p>
                                     </div>
                                     <button
@@ -2630,7 +2638,7 @@ const ClientPortal: React.FC = () => {
                                 <div>
                                     {project.event_date && (
                                         <p style={{ fontSize: '12px', margin: '6px 0', color: '#ffffff' }}>
-                                            <strong>Fecha del Evento:</strong> {project.event_date}
+                                            <strong>Fecha del Evento:</strong> {formatDateAR(project.event_date)}
                                         </p>
                                     )}
                                     {project.event_time && (

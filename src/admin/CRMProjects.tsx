@@ -1839,7 +1839,7 @@ const CRMProjects: React.FC = () => {
                                                                     <div>
                                                                         <span className="font-bold text-nexo-lime block mb-1">📝 Especificaciones del Cliente:</span>
                                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-zinc-400">
-                                                                            <p>📅 Fecha: <span className="text-white font-medium">{project.event_date} {project.event_time || ''}</span></p>
+                                                                            <p>📅 Fecha: <span className="text-white font-medium">{project.event_date ? formatDate(project.event_date) : ''} {project.event_time || ''}</span></p>
                                                                             <p>📍 Locación: <span className="text-white font-medium">{project.location}</span></p>
                                                                             <p>⏱️ Cobertura: <span className="text-white font-medium">{project.coverage_hours ? `${project.coverage_hours} hs` : '-'}</span></p>
                                                                             <p>🎥 Servicios: <span className="text-white font-medium capitalize">{project.coverage_types?.join(', ') || '-'}</span></p>
@@ -1931,7 +1931,7 @@ const CRMProjects: React.FC = () => {
                                                                             <div>
                                                                                 <h4 className="font-bold text-white mb-1">Datos Básicos</h4>
                                                                                 <ul className="space-y-1 list-disc list-inside">
-                                                                                    <li>Fecha: {project.ai_extracted_requirements.basic_data?.event_date || 'No especificada'}</li>
+                                                                                    <li>Fecha: {project.ai_extracted_requirements.basic_data?.event_date ? formatDate(project.ai_extracted_requirements.basic_data.event_date) : 'No especificada'}</li>
                                                                                     <li>Lugar: {project.ai_extracted_requirements.basic_data?.location || 'No especificado'}</li>
                                                                                     <li>Horas: {project.ai_extracted_requirements.basic_data?.coverage_hours || 'No especificadas'}</li>
                                                                                 </ul>
@@ -2251,7 +2251,7 @@ const CRMProjects: React.FC = () => {
                                 <div>
                                     <span className="font-bold text-nexo-lime block mb-1">📋 Requerimientos del Cliente:</span>
                                     <div className="grid grid-cols-2 gap-2 text-zinc-300">
-                                        <p>📅 Fecha: <span className="text-white font-semibold">{budgetingProject.event_date} {budgetingProject.event_time}</span></p>
+                                        <p>📅 Fecha: <span className="text-white font-semibold">{budgetingProject.event_date ? formatDate(budgetingProject.event_date) : ''} {budgetingProject.event_time}</span></p>
                                         <p>📍 Lugar: <span className="text-white font-semibold">{budgetingProject.location}</span></p>
                                         <p>⏱️ Duración: <span className="text-white font-semibold">{budgetingProject.coverage_hours} horas</span></p>
                                         <p>🎥 Combo: <span className="text-white font-semibold capitalize">{budgetingProject.coverage_types?.join(', ')}</span></p>
