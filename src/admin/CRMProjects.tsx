@@ -1810,7 +1810,14 @@ const CRMProjects: React.FC = () => {
                                                                         <div key={i} className="bg-black/20 border border-white/5 rounded-lg p-3 text-left text-zinc-300">
                                                                             <div className="flex justify-between items-center border-b border-white/5 pb-1.5 mb-2 text-[9px] text-zinc-500 font-bold uppercase tracking-wider">
                                                                                 <span>Concepto #{i + 1} {it.is_optional && <span className="text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded text-[8px] ml-1">Opcional</span>}</span>
-                                                                                <span>Cantidad: {it.quantity}</span>
+                                                                                <div className="flex gap-4">
+                                                                                    <span>Cantidad: {it.quantity}</span>
+                                                                                    {it.unit_price > 0 && (
+                                                                                        <span className={it.is_optional ? "text-amber-500" : "text-white"}>
+                                                                                            {project.currency || 'ARS'} {(it.quantity * it.unit_price).toLocaleString()}
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
                                                                             </div>
                                                                             <div className="whitespace-pre-wrap leading-relaxed text-[13px]">{it.description}</div>
                                                                         </div>
