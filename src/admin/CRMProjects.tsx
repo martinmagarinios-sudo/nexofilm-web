@@ -242,7 +242,21 @@ const CRMProjects: React.FC = () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error al conectar con la API');
 
-            setProjects(data.projects || []);
+            const mappedProjects = (data.projects || []).map((proj: Project) => {
+                if (proj.status === 'approved' && proj.event_date) {
+                    try {
+                        const eventDate = new Date(proj.event_date);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        eventDate.setMinutes(eventDate.getMinutes() + eventDate.getTimezoneOffset());
+                        if (eventDate <= today) {
+                            return { ...proj, status: 'production' as any };
+                        }
+                    } catch(e) {}
+                }
+                return proj;
+            });
+            setProjects(mappedProjects);
             setBudgets(data.budgets || []);
 
             // Inicializar inputs de carpetas de drive

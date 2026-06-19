@@ -405,7 +405,24 @@ const ClientPortal: React.FC = () => {
                 throw new Error(data.error || 'Falla al conectar con el servidor');
             }
 
-            setProject(data.project);
+            let proj = data.project;
+            if (proj && proj.status === 'approved' && proj.event_date) {
+                try {
+                    const eventDate = new Date(proj.event_date);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    // Adjust for timezone if the date string is YYYY-MM-DD
+                    eventDate.setMinutes(eventDate.getMinutes() + eventDate.getTimezoneOffset());
+                    
+                    if (eventDate <= today) {
+                        proj = { ...proj, status: 'production' };
+                    }
+                } catch (e) {
+                    console.error('Error parsing event_date:', e);
+                }
+            }
+
+            setProject(proj);
             setBudget(data.budget);
             if (data.budget && data.budget.items) {
                 const optionalItemsCount = data.budget.items.filter((item: any) => item.is_optional).length;
