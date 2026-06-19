@@ -506,6 +506,30 @@ const CRMProjects: React.FC = () => {
     };
 
     // Enviar notificación de factura por email/whatsapp (cambia invoice_sent a true)
+    const handleToggleInvoicePaid = async (projectId: string, invoiceIndex: number, isPaid: boolean) => {
+        try {
+            const res = await fetch('/api/comercial/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    password,
+                    action: 'markInvoicePaid',
+                    project_id: projectId,
+                    invoice_index: invoiceIndex,
+                    is_paid: isPaid
+                })
+            });
+            const data = await res.json();
+            if (data.success && data.project) {
+                setProjects(projects.map(p => p.id === projectId ? data.project : p));
+                if (selectedProject?.id === projectId) {
+                    setSelectedProject(data.project);
+                }
+            }
+        } catch (error) {
+            console.error('Error marking invoice as paid:', error);
+        }
+    };
     const handleSendInvoiceNotification = async (projectId: string, channel: 'email' | 'whatsapp') => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
@@ -1416,12 +1440,44 @@ const CRMProjects: React.FC = () => {
                                                     {/* Columna 2: Importe, Estado y Acción Pendiente */}
                                                     <div className="flex items-center gap-4 shrink-0 justify-between lg:justify-end">
                                                         
-                                                        {/* Importe Total */}
-                                                        <div className="text-right">
-                                                            <span className="text-zinc-500 text-[9px] block font-bold uppercase tracking-wider">Presupuesto</span>
-                                                            <div className="font-mono font-bold text-sm text-nexo-lime">
-                                                                {project.currency || 'ARS'} {projectBudget ? projectBudget.total_price.toLocaleString() : '0'}
-                                                            </div>
+                                                        {/* Importe Total y Saldos */}
+                                                        <div className="text-right flex flex-col justify-center min-w-[120px]">
+                                                            {(() => {
+                                                                const history = project.invoices_history || [];
+                                                                const displayInvoices = history.length > 0 ? history : (
+                                                                    project.invoice_url ? [{ amount: project.invoice_amount || 0, type: project.invoice_type || 'custom', invoice_url: project.invoice_url, paid: project.invoice_paid || false }] : []
+                                                                );
+                                                                const totalInvoiced = displayInvoices.reduce((sum: number, inv: any) => sum + (inv.amount || 0), 0);
+                                                                const totalPaid = displayInvoices.reduce((sum: number, inv: any) => sum + (inv.paid ? (inv.amount || 0) : 0), 0);
+                                                                const totalBudgetVal = projectBudget ? projectBudget.total_price : 0;
+                                                                const remainingToInvoice = Math.max(0, totalBudgetVal - totalInvoiced);
+                                                                const remainingToCollect = Math.max(0, totalInvoiced - totalPaid);
+                                                                
+                                                                return (
+                                                                    <>
+                                                                        <span className="text-zinc-500 text-[9px] block font-bold uppercase tracking-wider">Presupuesto</span>
+                                                                        <div className="font-mono font-bold text-sm text-white">
+                                                                            {project.currency || 'ARS'} {totalBudgetVal.toLocaleString()}
+                                                                        </div>
+                                                                        {totalInvoiced > 0 && (
+                                                                            <div className="mt-1.5 flex flex-col items-end gap-1">
+                                                                                {remainingToCollect === 0 && remainingToInvoice === 0 ? (
+                                                                                    <span className="bg-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]">✅ 100% Cobrado</span>
+                                                                                ) : (
+                                                                                    <>
+                                                                                        {remainingToCollect > 0 && (
+                                                                                            <span className="bg-amber-500/20 text-amber-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-amber-500/30">⏳ A Cobrar: {project.currency || 'ARS'} {remainingToCollect.toLocaleString()}</span>
+                                                                                        )}
+                                                                                        {remainingToInvoice > 0 && (
+                                                                                            <span className="bg-zinc-800 text-zinc-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-white/5">A Facturar: {project.currency || 'ARS'} {remainingToInvoice.toLocaleString()}</span>
+                                                                                        )}
+                                                                                    </>
+                                                                                )}
+                                                                            </div>
+                                                                        )}
+                                                                    </>
+                                                                );
+                                                            })()}
                                                         </div>
 
                                                         {/* Estado Badge */}
@@ -2076,6 +2132,17 @@ const CRMProjects: React.FC = () => {
                                                         </div>
                                                         <div className="flex items-center gap-2">
                                                             <span className="text-white font-bold">{currency} {(inv.amount || 0).toLocaleString()}</span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => { e.preventDefault(); handleToggleInvoicePaid(selectedProject.id, idx, !inv.paid); }}
+                                                                className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide transition-colors cursor-pointer ${
+                                                                    inv.paid 
+                                                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30' 
+                                                                        : 'bg-zinc-800 text-zinc-400 border border-white/10 hover:bg-zinc-700 hover:text-white'
+                                                                }`}
+                                                            >
+                                                                {inv.paid ? '✅ Pagada' : '⏳ Cobrar'}
+                                                            </button>
                                                             {inv.invoice_url && (
                                                                 <a href={inv.invoice_url} target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-nexo-lime text-[9px] font-bold uppercase tracking-wide">↗ PDF</a>
                                                             )}
@@ -2085,6 +2152,10 @@ const CRMProjects: React.FC = () => {
                                                 <div className="flex justify-between items-center pt-2">
                                                     <span className="text-[10px] font-bold uppercase text-zinc-400">Total facturado:</span>
                                                     <span className="text-white font-black text-sm">{currency} {totalInvoiced.toLocaleString()}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center pb-2 border-b border-white/5 mt-1">
+                                                    <span className="text-[10px] font-bold uppercase text-zinc-400">Total cobrado:</span>
+                                                    <span className="text-emerald-400 font-black text-sm">{currency} {(Array.isArray(history) ? history.reduce((sum, inv) => sum + (inv.paid ? (inv.amount || 0) : 0), 0) : 0).toLocaleString()}</span>
                                                 </div>
                                                 {totalBudget > 0 && (
                                                     <div className={`flex justify-between items-center rounded px-3 py-2 ${remaining > 0 ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-emerald-500/10 border border-emerald-500/20'}`}>

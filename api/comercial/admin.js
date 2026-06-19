@@ -492,6 +492,42 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                 });
             }
 
+            case 'markInvoicePaid': {
+                const { invoice_index, is_paid } = req.body;
+                if (!project_id) {
+                    return res.status(400).json({ error: 'El ID del proyecto es requerido' });
+                }
+
+                const { data: currentProject, error: readErr } = await supabase
+                    .from('projects')
+                    .select('invoices_history')
+                    .eq('id', project_id)
+                    .single();
+
+                if (readErr) throw readErr;
+
+                let history = currentProject.invoices_history || [];
+                if (!Array.isArray(history) || history.length <= invoice_index) {
+                    return res.status(400).json({ error: 'Índice de factura inválido' });
+                }
+
+                history[invoice_index].paid = is_paid;
+
+                const { data: updatedProject, error: updateErr } = await supabase
+                    .from('projects')
+                    .update({ invoices_history: history })
+                    .eq('id', project_id)
+                    .select()
+                    .single();
+
+                if (updateErr) throw updateErr;
+
+                return res.status(200).json({
+                    success: true,
+                    project: updatedProject
+                });
+            }
+
             case 'deleteProject': {
                 if (!project_id) {
                     return res.status(400).json({ error: 'El ID del proyecto es requerido' });
