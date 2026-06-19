@@ -43,6 +43,7 @@ interface Project {
     crew_count?: number | null;
     client_tax_certificate_url?: string | null;
     invoice_sent?: boolean | null;
+    drive_folder_id?: string | null;
 }
 
 interface DriveFile {
@@ -2346,91 +2347,46 @@ const ClientPortal: React.FC = () => {
                         </div>
 
                         {/* Módulo de descargas directas */}
-                        {loadingDrive ? (
-                            <div className="text-center py-12 text-zinc-500 space-y-3">
-                                <div className="w-8 h-8 border-4 border-nexo-lime border-t-transparent rounded-full animate-spin mx-auto"></div>
-                                <p className="text-xs uppercase tracking-widest font-bold">Obteniendo archivos de entrega...</p>
-                            </div>
-                        ) : driveError ? (
-                            <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 p-4 rounded-lg text-xs leading-relaxed">
-                                <p className="font-bold">Aviso sobre descargas:</p>
-                                <p className="mt-1">
-                                    No pudimos cargar la grilla interactiva directamente en la página ({driveError}).
-                                </p>
-                                <p className="mt-2">
-                                    Podés descargar tus archivos de forma segura haciendo clic en el enlace del productor.
-                                </p>
-                            </div>
-                        ) : driveFiles.length === 0 ? (
-                            <div className="text-center py-12 text-zinc-500 text-xs font-bold uppercase tracking-wider">
-                                📭 No hay archivos visibles en la carpeta de entrega en este momento.
+                        {project.drive_folder_id ? (
+                            <div className="bg-nexo-lime/5 border border-nexo-lime/20 hover:border-nexo-lime/50 rounded-xl p-6 md:p-8 flex flex-col sm:flex-row gap-6 items-center group transition-all text-center sm:text-left">
+                                <div className="w-20 h-20 rounded-full bg-nexo-lime/10 flex-shrink-0 flex items-center justify-center relative shadow-[0_0_15px_rgba(204,255,0,0.1)]">
+                                    <span className="text-4xl">📁</span>
+                                </div>
+                                <div className="flex-1 space-y-3">
+                                    <h4 className="font-extrabold text-xl text-white group-hover:text-nexo-lime transition-colors">
+                                        Carpeta Principal de Entregas
+                                    </h4>
+                                    <p className="text-xs md:text-sm text-zinc-400 max-w-2xl leading-relaxed">
+                                        Aquí vas a encontrar todo el material final (videos, fotos, recursos) organizado en subcarpetas. Podés ingresar para <strong>previsualizar</strong> los archivos, <strong>descargarlos</strong> directamente o <strong>compartir este enlace</strong> con tu equipo y clientes.
+                                    </p>
+                                    <div className="flex flex-wrap gap-3 mt-4 justify-center sm:justify-start">
+                                        <a
+                                            href={`https://drive.google.com/drive/folders/${project.drive_folder_id}?usp=drive_link`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="bg-nexo-lime text-black font-extrabold uppercase tracking-widest text-[10px] md:text-xs px-6 py-3 rounded-lg hover:bg-[#b3ff00] hover:scale-105 transition-all shadow-[0_0_15px_rgba(204,255,0,0.2)]"
+                                        >
+                                            🔗 Abrir Carpeta en Drive
+                                        </a>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigator.clipboard.writeText(`https://drive.google.com/drive/folders/${project.drive_folder_id}?usp=drive_link`);
+                                                const btn = e.currentTarget;
+                                                const originalText = btn.innerHTML;
+                                                btn.innerHTML = '¡Enlace Copiado!';
+                                                setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+                                            }}
+                                            className="bg-white/5 border border-white/10 text-white font-bold uppercase tracking-wider text-[10px] md:text-xs px-6 py-3 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all"
+                                        >
+                                            Copiar Enlace
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {driveFiles.map((file) => {
-                                    const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
-                                    const isVideo = file.mimeType.includes('video/');
-
-                                    return (
-                                        <div key={file.id} className="bg-black/50 border border-white/10 hover:border-nexo-lime/40 rounded-lg p-4 flex gap-4 items-center group transition-all">
-                                            {/* Thumbnail o Icono */}
-                                            <div className="w-16 h-16 rounded overflow-hidden bg-zinc-900 border border-white/5 flex-shrink-0 flex items-center justify-center relative">
-                                                {file.thumbnailLink && !isFolder ? (
-                                                    <img src={file.thumbnailLink} alt={file.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                                                ) : isFolder ? (
-                                                    <span className="text-3xl text-amber-500">📁</span>
-                                                ) : isVideo ? (
-                                                    <span className="text-3xl text-blue-500">🎬</span>
-                                                ) : (
-                                                    <span className="text-3xl text-zinc-600">📄</span>
-                                                )}
-                                            </div>
-
-                                            {/* Detalles y descarga */}
-                                            <div className="flex-1 min-w-0">
-                                                <h4 className="font-bold text-sm text-white truncate group-hover:text-nexo-lime transition-colors" title={file.name}>
-                                                    {file.name}
-                                                </h4>
-                                                <p className="text-xs text-zinc-500 mt-1 capitalize">
-                                                    {isFolder ? 'Carpeta de Archivos' : `${file.mimeType.split('/')[1] || 'Archivo'} · ${formatBytes(file.size)}`}
-                                                </p>
-                                                <div className="flex gap-3 mt-2 flex-wrap">
-                                                    <a
-                                                        href={file.webViewLink}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-[10px] font-bold text-nexo-lime hover:underline"
-                                                    >
-                                                        {isFolder ? 'Abrir Carpeta' : 'Previsualizar'}
-                                                    </a>
-                                                    {file.webContentLink && !isFolder && (
-                                                        <a
-                                                            href={file.webContentLink}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-[10px] font-bold text-zinc-400 hover:text-white hover:underline"
-                                                        >
-                                                            Descargar
-                                                        </a>
-                                                    )}
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            navigator.clipboard.writeText(file.webViewLink);
-                                                            const btn = e.currentTarget;
-                                                            const originalText = btn.innerHTML;
-                                                            btn.innerHTML = '¡Copiado!';
-                                                            setTimeout(() => { btn.innerHTML = originalText; }, 2000);
-                                                        }}
-                                                        className="text-[10px] font-bold text-[#00e5ff] hover:text-white hover:underline"
-                                                    >
-                                                        Copiar Link
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                            <div className="text-center py-12 text-zinc-500 text-xs font-bold uppercase tracking-wider border border-white/5 bg-black/20 rounded-xl">
+                                📭 Aún no se ha vinculado la carpeta de entrega para este proyecto.
                             </div>
                         )}
 
