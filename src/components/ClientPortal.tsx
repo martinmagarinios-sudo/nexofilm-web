@@ -2198,8 +2198,8 @@ const ClientPortal: React.FC = () => {
                     )
                 )}
 
-                {/* ESTADO 3: APPROVED O PRODUCTION (PROYECTO APROBADO, EN PROCESO DE PAGO Y RODAJE) */}
-                {(project.status === 'approved' || project.status === 'production') && (
+                {/* ESTADO 3 O 4: APPROVED, PRODUCTION O DELIVERED (PROYECTO APROBADO, EN PROCESO DE PAGO Y RODAJE, O ENTREGADO) */}
+                {(project.status === 'approved' || project.status === 'production' || project.status === 'delivered') && (
                     <div className="space-y-8">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         
@@ -2215,7 +2215,9 @@ const ClientPortal: React.FC = () => {
                                         El equipo de producción de NexoFilm ya tiene agendado tu proyecto. 
                                         {project.status === 'approved' 
                                             ? ' Aguardamos la confirmación del pago inicial de la seña para comenzar.' 
-                                            : ' ¡Ya estamos trabajando en el rodaje y edición de tus materiales multimedia!'}
+                                            : project.status === 'production' 
+                                                ? ' ¡Ya estamos trabajando en el rodaje y edición de tus materiales multimedia!'
+                                                : ' El material ya ha sido finalizado y entregado.'}
                                     </p>
                                 </div>
                                 
