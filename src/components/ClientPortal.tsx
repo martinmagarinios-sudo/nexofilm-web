@@ -1058,22 +1058,22 @@ const ClientPortal: React.FC = () => {
                                         <td className="px-6 py-4 text-right text-white">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</td>
                                     </tr>
                                 ))}
-                                <tr className="bg-zinc-900/60 font-bold text-white text-base border-t-2 border-white/10">
-                                    <td colSpan={3} className="px-6 py-4 text-right text-zinc-400 text-sm font-normal">Valor Total de la Propuesta (base):</td>
-                                    <td className="px-6 py-4 text-right text-nexo-lime text-lg font-black">{project.currency || 'USD'} {budget.total_price.toLocaleString()}</td>
+                                <tr className="bg-zinc-900/60 border-t-2 border-white/10">
+                                    <td colSpan={3} className="px-6 py-3 text-right text-zinc-400 text-xs font-normal">Valor Total de la Propuesta (base):</td>
+                                    <td className="px-6 py-3 text-right text-nexo-lime text-sm font-black whitespace-nowrap">{project.currency || 'USD'} {budget.total_price.toLocaleString()}</td>
                                 </tr>
                                 {optionalItems.length > 0 && (
                                     <tr className="bg-[#00e5ff]/5">
-                                        <td colSpan={3} className="px-6 py-3 text-right text-zinc-400 text-sm font-normal">Adicionales seleccionados:</td>
-                                        <td className="px-6 py-3 text-right text-[#00e5ff] text-base font-black">
+                                        <td colSpan={3} className="px-6 py-2.5 text-right text-zinc-400 text-xs font-normal">Adicionales seleccionados:</td>
+                                        <td className="px-6 py-2.5 text-right text-[#00e5ff] text-sm font-black whitespace-nowrap">
                                             {selectedOptionalsTotal > 0 ? `+ ${project.currency || 'USD'} ${selectedOptionalsTotal.toLocaleString()}` : `${project.currency || 'USD'} 0`}
                                         </td>
                                     </tr>
                                 )}
                                 {selectedOptionalsTotal > 0 && (
                                     <tr className="bg-white/5 border-t-2 border-white/20">
-                                        <td colSpan={3} className="px-6 py-5 text-right text-zinc-200 text-sm font-bold uppercase tracking-wide">🎯 Total con adicionales incluidos:</td>
-                                        <td className="px-6 py-5 text-right text-white text-xl font-black">{project.currency || 'USD'} {finalCalculatedTotal.toLocaleString()}</td>
+                                        <td colSpan={3} className="px-6 py-3 text-right text-zinc-300 text-xs font-semibold uppercase tracking-wide">🎯 Total con adicionales incluidos:</td>
+                                        <td className="px-6 py-3 text-right text-white text-sm font-black whitespace-nowrap">{project.currency || 'USD'} {finalCalculatedTotal.toLocaleString()}</td>
                                     </tr>
                                 )}
                             </tbody>
@@ -1105,23 +1105,23 @@ const ClientPortal: React.FC = () => {
                         ))}
 
                         {/* Totales en Móvil */}
-                        <div className="bg-zinc-900/60 p-5 rounded-xl border border-nexo-lime/20 flex flex-col gap-3 shadow-lg">
-                            <div className="flex justify-between items-center">
-                                <span className="text-zinc-400 text-xs uppercase tracking-wider font-bold">Valor Total de la Propuesta (base)</span>
-                                <span className="text-xl font-black text-nexo-lime">{project.currency || 'USD'} {budget.total_price.toLocaleString()}</span>
+                        <div className="bg-zinc-900/60 p-4 rounded-xl border border-nexo-lime/20 flex flex-col gap-2.5 shadow-lg">
+                            <div className="flex justify-between items-center gap-4">
+                                <span className="text-zinc-400 text-[10px] uppercase tracking-wider font-bold shrink-0">Total base</span>
+                                <span className="text-sm font-black text-nexo-lime whitespace-nowrap">{project.currency || 'USD'} {budget.total_price.toLocaleString()}</span>
                             </div>
                             {optionalItems.length > 0 && (
-                                <div className="flex justify-between items-center border-t border-white/5 pt-3">
-                                    <span className="text-zinc-400 text-xs uppercase tracking-wider font-bold">Adicionales seleccionados</span>
-                                    <span className="text-lg font-black text-[#00e5ff]">
+                                <div className="flex justify-between items-center gap-4 border-t border-white/5 pt-2.5">
+                                    <span className="text-zinc-400 text-[10px] uppercase tracking-wider font-bold shrink-0">Adicionales</span>
+                                    <span className="text-sm font-black text-[#00e5ff] whitespace-nowrap">
                                         {selectedOptionalsTotal > 0 ? `+ ${project.currency || 'USD'} ${selectedOptionalsTotal.toLocaleString()}` : `${project.currency || 'USD'} 0`}
                                     </span>
                                 </div>
                             )}
                             {selectedOptionalsTotal > 0 && (
-                                <div className="flex justify-between items-center border-t-2 border-white/20 pt-3">
-                                    <span className="text-zinc-200 text-xs uppercase tracking-wider font-black">🎯 Total con adicionales</span>
-                                    <span className="text-2xl font-black text-white">{project.currency || 'USD'} {finalCalculatedTotal.toLocaleString()}</span>
+                                <div className="flex justify-between items-center gap-4 border-t-2 border-white/20 pt-2.5">
+                                    <span className="text-zinc-200 text-[10px] uppercase tracking-wider font-black shrink-0">🎯 Total final</span>
+                                    <span className="text-base font-black text-white whitespace-nowrap">{project.currency || 'USD'} {finalCalculatedTotal.toLocaleString()}</span>
                                 </div>
                             )}
                         </div>
