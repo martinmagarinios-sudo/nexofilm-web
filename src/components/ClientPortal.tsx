@@ -425,9 +425,8 @@ const ClientPortal: React.FC = () => {
             setProject(proj);
             setBudget(data.budget);
             if (data.budget && data.budget.items) {
-                const optionalItemsCount = data.budget.items.filter((item: any) => item.is_optional).length;
-                const indices = Array.from({ length: optionalItemsCount }, (_, idx) => idx);
-                setSelectedOptionals(indices);
+                // Los opcionales arrancan SIN seleccionar: el cliente elige cuáles agregar
+                setSelectedOptionals([]);
             }
             setHasReviewed(data.hasReviewed || false);
             setOtherProjects(data.otherProjects || []);

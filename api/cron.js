@@ -19,11 +19,52 @@ export default async function handler(req, res) {
       }
   }
 
-  const results = { status: 'HEALTHY', pings: [] };
+  const results = { status: 'HEALTHY', pings: [], autoTransitions: [] };
 
   if (!supabase && !supabaseStaging) {
     return res.status(500).json({ error: 'Ningún Supabase (Prod/Staging) está configurado', status: 'PAUSED' });
   }
+
+  // ─── AUTO-TRANSICIÓN: approved → production ──────────────────────────────
+  // Busca proyectos aprobados cuya fecha de evento ya llegó y los pasa a producción.
+  // Se ejecuta todos los días a las 12hs (configurado en vercel.json).
+  if (supabase) {
+    try {
+      const todayStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+      const { data: toTransition, error: fetchErr } = await supabase
+        .from('projects')
+        .select('id, title, contact_name, event_date')
+        .eq('status', 'approved')
+        .lte('event_date', todayStr); // event_date <= hoy
+
+      if (fetchErr) throw fetchErr;
+
+      if (toTransition && toTransition.length > 0) {
+        const ids = toTransition.map(p => p.id);
+
+        const { error: updateErr } = await supabase
+          .from('projects')
+          .update({ status: 'production' })
+          .in('id', ids);
+
+        if (updateErr) throw updateErr;
+
+        const transitioned = toTransition.map(p => `${p.contact_name} — "${p.title}" (${p.event_date})`);
+        console.log(`✅ Auto-transición a producción: ${transitioned.join(', ')}`);
+        results.autoTransitions = transitioned;
+      } else {
+        console.log('ℹ️ No hay proyectos para pasar a producción hoy.');
+        results.autoTransitions = [];
+      }
+    } catch (err) {
+      console.error('Error en auto-transición approved→production:', err);
+      results.autoTransitions = [`ERROR: ${err.message}`];
+      results.status = 'DEGRADED';
+    }
+  }
+
+  // ─── PING SALUD ──────────────────────────────────────────────────────────
 
   // Ping a Producción
   if (supabase) {
