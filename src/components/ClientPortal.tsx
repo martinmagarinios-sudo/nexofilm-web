@@ -523,17 +523,8 @@ const ClientPortal: React.FC = () => {
     // Enviar especificaciones refinadas
     const handleUpdateSpecifications = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError('');
-
-        // Validación: al menos un servicio debe estar seleccionado
-        if (coverageTypes.length === 0) {
-            setError('⚠️ Por favor seleccioná al menos un tipo de servicio (Foto, Video o Streaming) para poder cotizarte correctamente.');
-            // Scroll suave al error
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            return;
-        }
-
         setLoading(true);
+        setError('');
 
         try {
             const countryPrefix = phoneCountryCode.trim() !== '' ? phoneCountryCode : '+54 9';
@@ -1927,40 +1918,20 @@ const ClientPortal: React.FC = () => {
                                         />
                                     </div>
 
-                                    <div className="space-y-2 bg-nexo-lime/5 border border-nexo-lime/30 p-4 rounded-xl shadow-[0_0_15px_rgba(204,255,0,0.05)]">
-                                        <label className="text-nexo-lime text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                                            <span>🎬</span>
-                                            Servicios Requeridos
-                                            <span className="text-red-400 font-black">*</span>
-                                            <span className="text-zinc-500 text-[9px] font-normal normal-case">(obligatorio — elegí al menos uno)</span>
-                                        </label>
+                                    <div className="space-y-2">
+                                        <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider block">Servicios Requeridos</label>
                                         <div className="flex gap-2 pt-1">
-                                            {[{key:'foto',icon:'📷'},{key:'video',icon:'🎥'},{key:'streaming',icon:'📡'}].map(({key, icon}) => (
+                                            {['foto', 'video', 'streaming'].map((type) => (
                                                 <button
-                                                    key={key}
+                                                    key={type}
                                                     type="button"
-                                                    onClick={() => toggleCoverageType(key)}
-                                                    className={`flex-1 py-3 rounded-lg text-[11px] font-bold border capitalize transition-all flex flex-col items-center gap-1 ${
-                                                        coverageTypes.includes(key)
-                                                            ? 'bg-nexo-lime text-black border-nexo-lime shadow-[0_0_15px_rgba(204,255,0,0.3)]'
-                                                            : 'bg-black/50 text-zinc-400 border-white/10 hover:border-nexo-lime/40 hover:text-zinc-200'
-                                                    }`}
+                                                    onClick={() => toggleCoverageType(type)}
+                                                    className={`flex-1 py-2 rounded text-[10px] font-bold border capitalize transition-all ${coverageTypes.includes(type) ? 'bg-nexo-lime text-black border-nexo-lime shadow-[0_0_10px_rgba(204,255,0,0.2)]' : 'bg-black text-zinc-400 border-white/10 hover:border-white/20'}`}
                                                 >
-                                                    <span className="text-lg">{icon}</span>
-                                                    {key}
+                                                    {type}
                                                 </button>
                                             ))}
                                         </div>
-                                        {coverageTypes.length === 0 && (
-                                            <p className="text-[10px] text-amber-400/80 font-semibold flex items-center gap-1 mt-1">
-                                                ⚠️ Seleccioná al menos un servicio para continuar
-                                            </p>
-                                        )}
-                                        {coverageTypes.length > 0 && (
-                                            <p className="text-[10px] text-nexo-lime/70 font-semibold flex items-center gap-1 mt-1">
-                                                ✓ Seleccionado: {coverageTypes.join(', ')}
-                                            </p>
-                                        )}
                                     </div>
                                 </div>
 
@@ -2663,112 +2634,37 @@ const ClientPortal: React.FC = () => {
 
             </main>
 
-            {/* Caja de Consultas Continuas — Siempre visible en vista detalle cuando hay proyecto */}
-            {viewMode === 'detail' && project && project.status !== 'rejected' && (
-                <div className="container mx-auto px-4 md:px-6 pb-10 max-w-4xl no-print">
-                    <div className="relative bg-gradient-to-br from-zinc-900/80 to-zinc-950/80 border border-white/10 p-6 md:p-8 rounded-2xl shadow-2xl space-y-5 overflow-hidden">
-                        {/* Glow decorativo */}
-                        <div className="absolute top-0 left-0 w-40 h-40 bg-nexo-lime/3 rounded-full blur-3xl pointer-events-none"></div>
-
-                        <div className="relative flex items-start gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-nexo-lime/10 border border-nexo-lime/20 flex items-center justify-center shrink-0 text-lg">
-                                💬
-                            </div>
-                            <div>
-                                <h3 className="text-base font-black text-white uppercase tracking-tight">¿Tenés alguna consulta u observación?</h3>
-                                <p className="text-[11px] text-zinc-400 mt-0.5 leading-relaxed">
-                                    Escribinos acá y te respondemos a la brevedad. El equipo de producción recibe tu mensaje al instante.
-                                </p>
-                            </div>
-                        </div>
-
-                        <form onSubmit={handleSubmitNotes} className="relative space-y-3">
+            {/* Caja de Consultas Continuas (Siempre visible si el proyecto está cargado y activo) */}
+            {viewMode === 'detail' && project && !['rejected', 'delivered', 'approved', 'production'].includes(project.status) && (
+                <div className="container mx-auto px-6 pb-12 max-w-4xl no-print">
+                    <div className="bg-zinc-900/40 border border-white/5 p-6 md:p-8 rounded-xl shadow-2xl space-y-4">
+                        <h3 className="text-lg font-bold text-white uppercase tracking-tight">📩 ¿Tenés alguna duda o comentario?</h3>
+                        <p className="text-xs text-zinc-400">
+                            Escribí tu mensaje acá y el equipo de producción de NexoFilm será notificado en el acto.
+                        </p>
+                        <form onSubmit={handleSubmitNotes} className="flex flex-col sm:flex-row gap-4 items-end">
                             <textarea
                                 value={noteText}
                                 onChange={(e) => setNoteText(e.target.value)}
-                                className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-nexo-lime/50 focus:shadow-[0_0_15px_rgba(204,255,0,0.08)] h-24 resize-none placeholder:text-zinc-600 transition-all"
-                                placeholder="Ej: ¿Cuándo tendremos la propuesta lista? / Quiero agregar un servicio extra / Tengo una consulta sobre la fecha..."
+                                className="w-full sm:flex-1 bg-black border border-white/10 rounded px-4 py-2.5 text-xs text-white focus:outline-none focus:border-nexo-lime h-16 resize-none"
+                                placeholder="Escribí tu consulta o comentario aquí..."
                             />
-                            <div className="flex items-center justify-between gap-4">
-                                <p className="text-[10px] text-zinc-600 leading-tight">
-                                    Tu mensaje llegará directo al productor por email.
-                                </p>
-                                <button
-                                    type="submit"
-                                    disabled={sendingAction || !noteText.trim()}
-                                    className="shrink-0 bg-nexo-lime hover:bg-white text-black font-black text-xs uppercase tracking-widest py-2.5 px-6 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(204,255,0,0.15)] hover:shadow-[0_0_25px_rgba(204,255,0,0.3)]"
-                                >
-                                    {sendingAction ? 'Enviando...' : 'Enviar Consulta →'}
-                                </button>
-                            </div>
+                            <button
+                                type="submit"
+                                disabled={sendingAction || !noteText.trim()}
+                                className="w-full sm:w-auto bg-zinc-800 hover:bg-zinc-700 border border-white/10 text-white font-bold text-xs uppercase py-3.5 px-6 rounded transition-all disabled:opacity-50"
+                            >
+                                Enviar Mensaje
+                            </button>
                         </form>
-
                         {project.client_notes && (
-                            <div className="relative bg-black/30 p-4 border border-nexo-lime/10 rounded-xl text-xs text-zinc-400">
-                                <span className="text-[9px] font-black text-nexo-lime/70 uppercase tracking-widest block mb-1.5">📋 Última consulta enviada</span>
-                                <span className="italic text-zinc-300">"{project.client_notes}"</span>
+                            <div className="bg-black/20 p-4 border border-white/5 rounded text-xs text-zinc-400">
+                                <span className="font-bold text-zinc-300 block mb-1">Última observación enviada:</span>
+                                <span className="italic">"{project.client_notes}"</span>
                             </div>
                         )}
                     </div>
                 </div>
-            )}
-
-            {/* Botón WhatsApp Flotante — siempre visible en el portal */}
-            {project && (
-                (() => {
-                    const statusLabels: Record<string, string> = {
-                        draft: 'completando los detalles del proyecto',
-                        review: 'en revisión por producción',
-                        sent: 'con presupuesto enviado para revisión',
-                        approved: 'aprobado, en coordinación',
-                        production: 'en producción / rodaje',
-                        delivered: 'entregado'
-                    };
-                    const statusLabel = statusLabels[project.status] || project.status;
-                    const coverageLabel = project.coverage_types && project.coverage_types.length > 0
-                        ? project.coverage_types.map((t: string) => t.charAt(0).toUpperCase() + t.slice(1)).join(' + ')
-                        : 'Servicio por confirmar';
-                    const dateLabel = project.event_date ? `📅 ${formatDateAR(project.event_date)}` : '📅 Fecha por confirmar';
-
-                    const waMessage = [
-                        `¡Hola Martín! Te escribe ${project.contact_name} desde el portal de NexoFilm.`,
-                        ``,
-                        `📋 Proyecto: ${project.title || 'Nueva solicitud'}`,
-                        `🎬 Servicio: ${coverageLabel}`,
-                        `${dateLabel}`,
-                        project.location ? `📍 Lugar: ${project.location}` : '',
-                        `📊 Estado: ${statusLabel}`,
-                        ``,
-                        `Mi consulta es:`
-                    ].filter(Boolean).join('\n');
-
-                    const waUrl = `https://wa.me/5491151191964?text=${encodeURIComponent(waMessage)}`;
-
-                    return (
-                        <a
-                            href={waUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="fixed bottom-6 right-6 z-[200] group flex items-center no-print"
-                            aria-label="Consultar por WhatsApp"
-                            title="¿Dudas? Escribime por WhatsApp"
-                        >
-                            {/* Tooltip */}
-                            <div className="mr-3 px-3.5 py-2 bg-zinc-900/95 backdrop-blur-md border border-white/10 rounded-xl opacity-0 translate-x-3 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 pointer-events-none shadow-xl">
-                                <p className="text-[10px] font-black uppercase tracking-wider text-white whitespace-nowrap">💬 ¿Tenés dudas?</p>
-                                <p className="text-[9px] text-zinc-400 whitespace-nowrap">Escribime por WhatsApp</p>
-                            </div>
-                            {/* Botón */}
-                            <div className="relative w-14 h-14 bg-[#25D366] text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgba(37,211,102,0.4)] hover:shadow-[0_8px_40px_rgba(37,211,102,0.6)] hover:scale-110 active:scale-95 transition-all duration-300 overflow-hidden">
-                                <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.539 2.016 2.126-.54c1.029.563 2.025.873 3.162.873h.001c3.181 0 5.767-2.586 5.768-5.766 0-3.18-2.586-5.766-5.769-5.766zm3.446 8.212c-.149.427-.853.793-1.182.844-.33.051-.739.065-1.196-.082-.321-.102-.732-.249-1.25-.472-2.189-.941-3.605-3.111-3.715-3.26-.111-.148-.901-1.189-.901-2.285 0-1.096.579-1.636.786-1.859.207-.223.452-.279.601-.279.15 0 .301.001.433.007.145.007.337-.056.527.391.197.464.673 1.636.732 1.756.06.119.098.258.02.417-.079.158-.119.258-.237.396-.118.138-.248.309-.354.415-.119.119-.244.249-.105.487.139.238.618 1.017 1.328 1.647.915.811 1.687 1.061 1.925 1.179.238.119.377.099.516-.06.138-.159.595-.694.754-.933.159-.238.317-.198.536-.119.217.079 1.373.648 1.611.767.238.119.396.178.455.277.06.101.06.58-.089 1.008z"/>
-                                </svg>
-                                {/* Pulse ring */}
-                                <span className="absolute inset-0 rounded-full animate-ping bg-[#25D366] opacity-20"></span>
-                            </div>
-                        </a>
-                    );
-                })()
             )}
 
 
