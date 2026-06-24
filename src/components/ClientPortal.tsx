@@ -2869,7 +2869,7 @@ const ClientPortal: React.FC = () => {
                                     </tr>
                                 ))}
                                 <tr style={{ borderTop: '2px solid #e1f937', background: 'rgba(225, 249, 55, 0.02)' }}>
-                                    <td colSpan={3} style={{ color: '#ffffff', fontSize: '12px', padding: '14px 8px', textAlign: 'right', fontWeight: 'bold', textTransform: 'uppercase' }}>Total de la Propuesta (Valores Finales):</td>
+                                    <td colSpan={3} style={{ color: '#ffffff', fontSize: '12px', padding: '14px 8px', textAlign: 'right', fontWeight: 'bold', textTransform: 'uppercase' }}>Valor Total de la Propuesta (base):</td>
                                     <td style={{ color: '#e1f937', fontSize: '14px', padding: '14px 8px', textAlign: 'right', fontWeight: '900' }}>{project.currency || 'USD'} {budget.total_price.toLocaleString('es-AR')}</td>
                                 </tr>
                                 {budget.items.some(item => item.is_optional) && (
