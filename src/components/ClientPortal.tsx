@@ -2663,33 +2663,93 @@ const ClientPortal: React.FC = () => {
 
             </main>
 
-            {/* Caja de Consultas Continuas (Siempre visible si el proyecto está cargado y activo) */}
-            {viewMode === 'detail' && project && !['rejected', 'delivered', 'approved', 'production'].includes(project.status) && (
-                <div className="container mx-auto px-6 pb-12 max-w-4xl no-print">
-                    <div className="bg-zinc-900/40 border border-white/5 p-6 md:p-8 rounded-xl shadow-2xl space-y-4">
-                        <h3 className="text-lg font-bold text-white uppercase tracking-tight">📩 ¿Tenés alguna duda o comentario?</h3>
-                        <p className="text-xs text-zinc-400">
-                            Escribí tu mensaje acá y el equipo de producción de NexoFilm será notificado en el acto.
-                        </p>
-                        <form onSubmit={handleSubmitNotes} className="flex flex-col sm:flex-row gap-4 items-end">
+            {/* === CAJA DE CONSULTAS + WHATSAPP === */}
+            {/* Visible en TODOS los estados excepto rejected */}
+            {viewMode === 'detail' && project && project.status !== 'rejected' && (
+                <div className="container mx-auto px-4 md:px-6 pb-10 max-w-4xl no-print">
+                    <div className="relative bg-gradient-to-br from-zinc-900/80 to-zinc-950/80 border border-white/10 p-6 md:p-8 rounded-2xl shadow-2xl space-y-5 overflow-hidden">
+                        {/* Glow decorativo */}
+                        <div className="absolute top-0 left-0 w-48 h-48 bg-nexo-lime/3 rounded-full blur-3xl pointer-events-none"></div>
+
+                        {/* Header */}
+                        <div className="relative flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-nexo-lime/10 border border-nexo-lime/20 flex items-center justify-center shrink-0 text-lg">
+                                💬
+                            </div>
+                            <div>
+                                <h3 className="text-base font-black text-white uppercase tracking-tight">¿Tenés alguna consulta u observación?</h3>
+                                <p className="text-[11px] text-zinc-400 mt-0.5 leading-relaxed">
+                                    Escribinos acá y te respondemos a la brevedad. El equipo de producción recibe tu mensaje al instante por email.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Formulario */}
+                        <form onSubmit={handleSubmitNotes} className="relative space-y-3">
                             <textarea
                                 value={noteText}
                                 onChange={(e) => setNoteText(e.target.value)}
-                                className="w-full sm:flex-1 bg-black border border-white/10 rounded px-4 py-2.5 text-xs text-white focus:outline-none focus:border-nexo-lime h-16 resize-none"
-                                placeholder="Escribí tu consulta o comentario aquí..."
+                                className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-nexo-lime/50 focus:shadow-[0_0_15px_rgba(204,255,0,0.08)] h-24 resize-none placeholder:text-zinc-600 transition-all"
+                                placeholder="Ej: ¿Cuándo tendremos la propuesta lista? / Quiero agregar un servicio extra / Tengo una consulta sobre la fecha..."
                             />
-                            <button
-                                type="submit"
-                                disabled={sendingAction || !noteText.trim()}
-                                className="w-full sm:w-auto bg-zinc-800 hover:bg-zinc-700 border border-white/10 text-white font-bold text-xs uppercase py-3.5 px-6 rounded transition-all disabled:opacity-50"
-                            >
-                                Enviar Mensaje
-                            </button>
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                                <button
+                                    type="submit"
+                                    disabled={sendingAction || !noteText.trim()}
+                                    className="flex-1 sm:flex-none bg-nexo-lime hover:bg-white text-black font-black text-xs uppercase tracking-widest py-3 px-6 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(204,255,0,0.15)] hover:shadow-[0_0_25px_rgba(204,255,0,0.3)]"
+                                >
+                                    {sendingAction ? 'Enviando...' : '📨 Enviar Consulta'}
+                                </button>
+
+                                {/* Botón WhatsApp — al lado del formulario */}
+                                {(() => {
+                                    const coverageLabel = project.coverage_types && project.coverage_types.length > 0
+                                        ? project.coverage_types.map((t: string) => t.charAt(0).toUpperCase() + t.slice(1)).join(' + ')
+                                        : 'Servicio por confirmar';
+                                    const dateLabel = project.event_date ? `📅 ${formatDateAR(project.event_date)}` : '📅 Fecha por confirmar';
+                                    const statusLabels: Record<string, string> = {
+                                        draft: 'completando detalles',
+                                        review: 'en revisión por producción',
+                                        sent: 'presupuesto enviado para revisión',
+                                        approved: 'aprobado, en coordinación',
+                                        production: 'en producción / rodaje',
+                                        delivered: 'entregado'
+                                    };
+                                    const waMessage = [
+                                        `¡Hola Martín! Te escribe ${project.contact_name} desde el portal de NexoFilm.`,
+                                        ``,
+                                        `📋 Proyecto: ${project.title || 'Nueva solicitud'}`,
+                                        `🎬 Servicio: ${coverageLabel}`,
+                                        dateLabel,
+                                        project.location ? `📍 Lugar: ${project.location}` : '',
+                                        `📊 Estado: ${statusLabels[project.status] || project.status}`,
+                                        ``,
+                                        `Mi consulta es:`
+                                    ].filter(Boolean).join('\n');
+                                    const waUrl = `https://wa.me/5491151191964?text=${encodeURIComponent(waMessage)}`;
+                                    return (
+                                        <a
+                                            href={waUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex-1 sm:flex-none flex items-center justify-center gap-2.5 bg-[#25D366] hover:bg-[#1da851] text-white font-black text-xs uppercase tracking-widest py-3 px-6 rounded-xl transition-all shadow-[0_0_20px_rgba(37,211,102,0.25)] hover:shadow-[0_0_30px_rgba(37,211,102,0.45)] no-print"
+                                            aria-label="Consultar por WhatsApp"
+                                        >
+                                            <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.539 2.016 2.126-.54c1.029.563 2.025.873 3.162.873h.001c3.181 0 5.767-2.586 5.768-5.766 0-3.18-2.586-5.766-5.769-5.766zm3.446 8.212c-.149.427-.853.793-1.182.844-.33.051-.739.065-1.196-.082-.321-.102-.732-.249-1.25-.472-2.189-.941-3.605-3.111-3.715-3.26-.111-.148-.901-1.189-.901-2.285 0-1.096.579-1.636.786-1.859.207-.223.452-.279.601-.279.15 0 .301.001.433.007.145.007.337-.056.527.391.197.464.673 1.636.732 1.756.06.119.098.258.02.417-.079.158-.119.258-.237.396-.118.138-.248.309-.354.415-.119.119-.244.249-.105.487.139.238.618 1.017 1.328 1.647.915.811 1.687 1.061 1.925 1.179.238.119.377.099.516-.06.138-.159.595-.694.754-.933.159-.238.317-.198.536-.119.217.079 1.373.648 1.611.767.238.119.396.178.455.277.06.101.06.58-.089 1.008z"/>
+                                            </svg>
+                                            Consultar por WhatsApp
+                                        </a>
+                                    );
+                                })()}
+                            </div>
                         </form>
+
+                        {/* Última consulta enviada */}
                         {project.client_notes && (
-                            <div className="bg-black/20 p-4 border border-white/5 rounded text-xs text-zinc-400">
-                                <span className="font-bold text-zinc-300 block mb-1">Última observación enviada:</span>
-                                <span className="italic">"{project.client_notes}"</span>
+                            <div className="relative bg-black/30 p-4 border border-nexo-lime/10 rounded-xl text-xs text-zinc-400">
+                                <span className="text-[9px] font-black text-nexo-lime/70 uppercase tracking-widest block mb-1.5">📋 Última consulta enviada</span>
+                                <span className="italic text-zinc-300">"{project.client_notes}"</span>
                             </div>
                         )}
                     </div>
