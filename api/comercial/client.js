@@ -488,6 +488,12 @@ export default async function handler(req, res) {
             if (action === 'update_specifications') {
                 const { title, contact_name, event_date, event_time, event_end_time, location, coverage_types, coverage_hours, client_phone, client_email, notification_preference, guests_count, client_notes } = specifications || {};
 
+                // Solo bajamos a 'review' si el proyecto todavía es un borrador.
+                // Si ya está en sent/approved/production/delivered, preservamos el estado actual
+                // para que el cliente pueda seguir viendo su presupuesto y acciones.
+                const statusesToPreserve = ['sent', 'approved', 'production', 'delivered'];
+                const newStatus = statusesToPreserve.includes(project.status) ? project.status : 'review';
+
                 const updateData = {
                     title: (title && title.trim() !== '') ? title.trim() : project.title,
                     contact_name: (contact_name && contact_name.trim() !== '') ? contact_name.trim() : project.contact_name,
@@ -501,7 +507,7 @@ export default async function handler(req, res) {
                     notification_preference: notification_preference || project.notification_preference,
                     guests_count: guests_count !== undefined ? guests_count : project.guests_count,
                     client_notes: client_notes ?? project.client_notes,
-                    status: 'review',
+                    status: newStatus,
                     admin_action_required: true
                 };
 
