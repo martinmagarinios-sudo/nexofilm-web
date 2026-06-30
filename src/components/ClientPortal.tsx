@@ -2942,7 +2942,8 @@ const getWelcomeGreeting = (fullName: string) => {
     const femaleExceptions = [
         'sol', 'belen', 'belén', 'ines', 'inés', 'luz', 'flor', 'carmen', 
         'pilar', 'mercedes', 'consuelo', 'rosario', 'rocio', 'rocío', 'abril', 
-        'azul', 'marian', 'raquel', 'ruth', 'esther', 'noemi', 'noemí', 'iris'
+        'azul', 'marian', 'raquel', 'ruth', 'esther', 'noemi', 'noemí', 'iris',
+        'natally', 'nataly', 'natali', 'natalie'
     ];
     
     // Nombres masculinos comunes que terminan en 'a' en español
