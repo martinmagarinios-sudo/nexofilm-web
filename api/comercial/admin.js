@@ -385,7 +385,7 @@ Debes responder ÚNICAMENTE con un objeto JSON válido con la siguiente estructu
 Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato multilínea (Detalle del Servicio, Equipamiento Técnico, Entregables) y, si aplica, 1 o 2 servicios opcionales adicionales (marcados con is_optional: true). Pon todos los unit_price a 0.`;
 
                 const chatCompletion = await groq.chat.completions.create({
-                    model: 'llama-3.3-70b-versatile',
+                    model: 'openai/gpt-oss-120b',
                     messages: [
                         { role: 'system', content: systemPrompt },
                         { role: 'user', content: userPrompt }
@@ -681,7 +681,7 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
 }`;
 
                 const chatCompletion = await groq.chat.completions.create({
-                    model: 'llama-3.3-70b-versatile',
+                    model: 'openai/gpt-oss-120b',
                     messages: [
                         { role: 'system', content: systemPrompt },
                         { role: 'user', content: `Extraé los requerimientos de este documento:\n\n${extractedText}` }
@@ -766,7 +766,7 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
 }`;
 
                 const chatCompletion = await groq.chat.completions.create({
-                    model: 'llama-3.3-70b-versatile',
+                    model: 'openai/gpt-oss-120b',
                     messages: [
                         { role: 'system', content: systemPrompt },
                         { role: 'user', content: `Extraé los requerimientos de este documento:\n\n${extractedText}` }

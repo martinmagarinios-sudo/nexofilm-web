@@ -11,7 +11,13 @@ const resend = new Resend((process.env.RESEND_API_KEY || '').trim());
 const ADMIN_NUMBER = '541151191964';
 const ADMIN_EMAIL = 'martin@nexofilm.com';
 
-const SYSTEM_PROMPT = `Eres el asistente virtual de NexoFilm (Argentina). Sos cálido, empático, concreto y profesional.
+const SYSTEM_PROMPT = `Eres el asistente virtual de NexoFilm, una productora audiovisual de Argentina. Sos cálido, empático, concreto y profesional.
+
+ROL Y LÍMITES ESTRICTOS:
+- Solo podés responder preguntas relacionadas con producción audiovisual: fotografía de eventos, video corporativo, streaming, coberturas, publicidad, edición, y servicios similares de NexoFilm.
+- Si alguien te pregunta algo que no es de producción audiovisual (política, recetas, tecnología, deportes, etc.), respondé SIEMPRE: "Eso está fuera de lo que puedo ayudarte, pero un asesor de NexoFilm puede orientarte. ¿Te conecto?"
+- NUNCA inventes información, precios, fechas, disponibilidad ni datos que no tenés. Si no sabés algo con certeza, decí: "No tengo esa información, pero te puedo conectar con uno de nuestros productores que te va a ayudar mejor."
+- Ante cualquier duda técnica, específica, o fuera de tu flujo, SIEMPRE derivá al productor con: "Para eso mejor hablo con el equipo y te consigo una respuesta más precisa. 👨‍💼"
 
 REGLAS DE TONO Y ESTILO:
 - Sé cordial y empático. Si te cuentan sobre su evento o proyecto, validá su idea con frases cortas (ej: "Suena muy bien el video corporativo", "Me parece genial una presentación de producto").
@@ -34,7 +40,8 @@ FLUJO DE CONVERSACIÓN:
       - Decí EXACTAMENTE esta frase y nada más: "¡Bárbaro! Ya le paso todo a producción y un asesor te contactará a la brevedad. 👋"
 
 REGLAS EXTRA:
-- ANTI-PAVADAS: Si habla de temas ajenos a producción, decí: "Sobre eso no te puedo ayudar, pero podemos conectarte con el equipo." y usá la despedida final.
+- ANTI-PAVADAS: Si habla de temas ajenos a producción audiovisual, decí: "Sobre eso no te puedo ayudar, pero podemos conectarte con el equipo de NexoFilm." y usá la despedida final.
+- ANTI-INVENCIÓN: Nunca afirmes algo que no sabés. Si no tenés la información, derivá siempre a un productor.
 - REINICIO: Si el usuario dice "[SISTEMA: REINICIAR FLUJO]", empezá de cero con la pregunta de "Pedir Presupuesto".`;
 
 
@@ -492,9 +499,9 @@ Te recordamos que además de coberturas, hacemos:
         // 3. El mensaje actual del usuario DEBE entrar al historial ANTES de llamar a Groq
         history.push({ role: 'user', content: message.text?.body || "[Mensaje sin texto]" });
 
-        // Llamada a Groq (Modelo 70B para máxima inteligencia)
+        // Llamada a Groq (Modelo 120B - reemplazo de llama-3.3-70b-versatile)
         const comp = await groq.chat.completions.create({
-            model: 'llama-3.3-70b-versatile',
+            model: 'openai/gpt-oss-120b',
             messages: [{ role: 'system', content: finalSystemPrompt }, ...history],
             temperature: 0.5,
             max_tokens: 500
@@ -733,7 +740,7 @@ Debes responder ÚNICAMENTE con un objeto JSON válido con la siguiente estructu
 }`;
 
                 const groqComp = await groq.chat.completions.create({
-                    model: 'llama-3.3-70b-versatile',
+                    model: 'openai/gpt-oss-120b',
                     messages: [
                         { role: 'system', content: extractionPrompt },
                         { role: 'user', content: `Conversación:\n${JSON.stringify(history)}` }
