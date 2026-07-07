@@ -94,6 +94,9 @@ const CRMProjects: React.FC = () => {
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [loading, setLoading] = useState(false);
     const [expandedProjectIds, setExpandedProjectIds] = useState<string[]>([]);
+    const [crmView, setCrmView] = useState<'pipeline' | 'reviews'>('pipeline');
+    const [reviews, setReviews] = useState<any[]>([]);
+    const [loadingReviews, setLoadingReviews] = useState(false);
 
     // Formulario de creación
     const [newContactName, setNewContactName] = useState('');
@@ -159,6 +162,36 @@ const CRMProjects: React.FC = () => {
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const [filterStatus, setFilterStatus] = useState<string>('all');
     const [analyzingProjectId, setAnalyzingProjectId] = useState<string | null>(null);
+
+    // Helper reviews constants
+    const reviewsRatingAvg = reviews.length > 0 ? (reviews.reduce((acc, r) => acc + (r.rating || 0), 0) / reviews.length) : 0;
+    const reviewsNpsAvg = reviews.filter(r => r.recommendation_score !== null && r.recommendation_score !== undefined).length > 0
+        ? reviews.filter(r => r.recommendation_score !== null && r.recommendation_score !== undefined).reduce((acc, r) => acc + r.recommendation_score, 0) / reviews.filter(r => r.recommendation_score !== null && r.recommendation_score !== undefined).length
+        : 0;
+    const reviewsPromoters = reviews.filter(r => r.recommendation_score !== null && r.recommendation_score >= 9).length;
+    const reviewsPromoterPct = reviews.filter(r => r.recommendation_score !== null).length > 0
+        ? Math.round((reviewsPromoters / reviews.filter(r => r.recommendation_score !== null).length) * 100)
+        : 0;
+
+    const reviewsRatingDist = [1,2,3,4,5].map(star => ({
+        star,
+        count: reviews.filter(r => r.rating === star).length,
+        pct: reviews.length > 0 ? Math.round((reviews.filter(r => r.rating === star).length / reviews.length) * 100) : 0
+    }));
+
+    const reviewsCoverageTypes = [...new Set(reviews.map(r => r.coverage_type).filter(Boolean))];
+    const reviewsCoverageAvg = reviewsCoverageTypes.map(ct => ({
+        type: ct,
+        avg: reviews.filter(r => r.coverage_type === ct).reduce((acc, r) => acc + (r.rating || 0), 0) / reviews.filter(r => r.coverage_type === ct).length,
+        count: reviews.filter(r => r.coverage_type === ct).length
+    })).sort((a, b) => b.avg - a.avg);
+
+    const reviewsEventTypes = [...new Set(reviews.map(r => r.event_type).filter(Boolean))];
+    const reviewsEventAvg = reviewsEventTypes.map(et => ({
+        type: et,
+        avg: reviews.filter(r => r.event_type === et).reduce((acc, r) => acc + (r.rating || 0), 0) / reviews.filter(r => r.event_type === et).length,
+        count: reviews.filter(r => r.event_type === et).length
+    })).sort((a, b) => b.avg - a.avg);
 
     const filteredAndSortedProjects = projects
         .filter((project) => {
@@ -270,6 +303,24 @@ const CRMProjects: React.FC = () => {
             setError('Falla al obtener proyectos: ' + err.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchReviews = async () => {
+        setLoadingReviews(true);
+        try {
+            const res = await fetch('/api/comercial/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'getReviews', password })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al obtener reviews');
+            setReviews(data.reviews || []);
+        } catch (err: any) {
+            console.error('Error fetching reviews:', err);
+        } finally {
+            setLoadingReviews(false);
         }
     };
 
@@ -1009,12 +1060,35 @@ const CRMProjects: React.FC = () => {
                         <h1 className="text-zinc-300 font-medium text-xs sm:text-sm tracking-wide hidden sm:block truncate">CRM Comercial</h1>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
+                        {/* Navegacion de vistas CRM */}
+                        <div className="flex items-center gap-1 bg-black/40 border border-white/10 rounded-lg p-0.5">
+                            <button
+                                onClick={() => setCrmView('pipeline')}
+                                className={`text-xs px-3 py-1.5 rounded font-bold transition-all ${
+                                    crmView === 'pipeline'
+                                        ? 'bg-nexo-lime text-black'
+                                        : 'text-zinc-400 hover:text-white'
+                                }`}
+                            >
+                                Proyectos
+                            </button>
+                            <button
+                                onClick={() => { setCrmView('reviews'); if (reviews.length === 0) fetchReviews(); }}
+                                className={`text-xs px-3 py-1.5 rounded font-bold transition-all ${
+                                    crmView === 'reviews'
+                                        ? 'bg-nexo-lime text-black'
+                                        : 'text-zinc-400 hover:text-white'
+                                }`}
+                            >
+                                Reviews
+                            </button>
+                        </div>
                         <a href="/admin" className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded transition-colors flex items-center gap-1">
                             <span className="text-sm">←</span>
                             <span className="hidden sm:inline">Leads</span>
                         </a>
                         <button
-                            onClick={() => fetchData()}
+                            onClick={() => crmView === 'reviews' ? fetchReviews() : fetchData()}
                             className="text-xs bg-nexo-lime text-black font-bold px-3 py-1.5 rounded hover:bg-white transition-colors flex items-center gap-1"
                         >
                             <span>↻</span>
@@ -1037,6 +1111,188 @@ const CRMProjects: React.FC = () => {
                     </div>
                 )}
 
+                {/* ============================================================ */}
+                {/* VISTA: DASHBOARD DE REVIEWS                                  */}
+                {/* ============================================================ */}
+                {crmView === 'reviews' && (
+                    <div className="space-y-8">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-2xl font-black tracking-tight text-white">Dashboard de Satisfaccion</h2>
+                                <p className="text-zinc-500 text-xs mt-1">Analisis de encuestas completadas por clientes</p>
+                            </div>
+                            {loadingReviews && <span className="text-zinc-500 text-xs animate-pulse">Cargando datos...</span>}
+                        </div>
+
+                        {reviews.length === 0 && !loadingReviews ? (
+                            <div className="bg-zinc-900/40 border border-white/5 rounded-xl p-16 text-center">
+                                <div className="text-5xl mb-4">⭐</div>
+                                <p className="text-zinc-400 font-bold">Aun no hay encuestas completadas</p>
+                                <p className="text-zinc-600 text-xs mt-2">Las reviews apareceran aqui cuando los clientes completen la encuesta en su portal</p>
+                            </div>
+                        ) : (
+                            <>
+                                {/* KPI Cards */}
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div className="bg-zinc-900/40 border border-white/5 rounded-xl p-5 shadow-xl">
+                                        <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-black mb-2">Rating Promedio</p>
+                                        <div className="text-4xl font-black text-nexo-lime tracking-tighter">{reviewsRatingAvg.toFixed(1)}</div>
+                                        <div className="flex gap-0.5 mt-1">
+                                            {[1,2,3,4,5].map(s => (
+                                                <span key={s} className={`text-sm ${s <= Math.round(reviewsRatingAvg) ? 'text-nexo-lime' : 'text-zinc-700'}`}>★</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="bg-zinc-900/40 border border-white/5 rounded-xl p-5 shadow-xl">
+                                        <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-black mb-2">NPS Promedio</p>
+                                        <div className="text-4xl font-black text-[#00e5ff] tracking-tighter">{reviewsNpsAvg.toFixed(1)}</div>
+                                        <p className="text-zinc-600 text-[10px] mt-1">Escala 0-10</p>
+                                    </div>
+                                    <div className="bg-zinc-900/40 border border-white/5 rounded-xl p-5 shadow-xl">
+                                        <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-black mb-2">Total Reviews</p>
+                                        <div className="text-4xl font-black text-white tracking-tighter">{reviews.length}</div>
+                                        <p className="text-zinc-600 text-[10px] mt-1">encuestas completadas</p>
+                                    </div>
+                                    <div className="bg-zinc-900/40 border border-white/5 rounded-xl p-5 shadow-xl">
+                                        <p className="text-zinc-500 text-[10px] uppercase tracking-widest font-black mb-2">Promotores</p>
+                                        <div className="text-4xl font-black text-emerald-400 tracking-tighter">{reviewsPromoterPct}%</div>
+                                        <p className="text-zinc-600 text-[10px] mt-1">NPS &gt;= 9 ({reviewsPromoters} clientes)</p>
+                                    </div>
+                                </div>
+
+                                {/* Graficos */}
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    {/* Distribucion de Ratings */}
+                                    <div className="bg-zinc-900/40 border border-white/5 rounded-xl p-6 shadow-xl">
+                                        <h3 className="text-sm font-black uppercase tracking-wider text-zinc-300 mb-5">Distribucion de Ratings</h3>
+                                        <div className="space-y-3">
+                                            {[...reviewsRatingDist].reverse().map(({ star, count, pct }) => (
+                                                <div key={star} className="flex items-center gap-3">
+                                                    <div className="flex items-center gap-1 w-16 shrink-0">
+                                                        <span className="text-nexo-lime text-sm">★</span>
+                                                        <span className="text-white text-xs font-bold">{star}</span>
+                                                    </div>
+                                                    <div className="flex-1 bg-zinc-800 rounded-full h-2 overflow-hidden">
+                                                        <div
+                                                            className="h-full bg-nexo-lime rounded-full transition-all duration-700"
+                                                            style={{ width: `${pct}%` }}
+                                                        />
+                                                    </div>
+                                                    <div className="flex items-center gap-2 w-16 text-right shrink-0">
+                                                        <span className="text-zinc-400 text-xs">{count}</span>
+                                                        <span className="text-zinc-600 text-[10px]">({pct}%)</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Promedio por Tipo de Cobertura */}
+                                    <div className="bg-zinc-900/40 border border-white/5 rounded-xl p-6 shadow-xl">
+                                        <h3 className="text-sm font-black uppercase tracking-wider text-zinc-300 mb-5">Rating por Tipo de Cobertura</h3>
+                                        {reviewsCoverageAvg.length === 0 ? (
+                                            <p className="text-zinc-600 text-xs text-center py-6">Aun no hay datos de tipo de cobertura</p>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {reviewsCoverageAvg.map(({ type, avg, count }) => (
+                                                    <div key={type} className="flex items-center gap-3">
+                                                        <div className="w-36 shrink-0">
+                                                            <span className="text-zinc-300 text-xs font-bold truncate block">{type}</span>
+                                                            <span className="text-zinc-600 text-[10px]">{count} review{count !== 1 ? 's' : ''}</span>
+                                                        </div>
+                                                        <div className="flex-1 bg-zinc-800 rounded-full h-2 overflow-hidden">
+                                                            <div
+                                                                className="h-full bg-nexo-lime rounded-full transition-all duration-700"
+                                                                style={{ width: `${(avg / 5) * 100}%` }}
+                                                            />
+                                                        </div>
+                                                        <span className="text-nexo-lime text-xs font-black w-8 text-right shrink-0">{avg.toFixed(1)}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Rating por Tipo de Evento */}
+                                {reviewsEventAvg.length > 0 && (
+                                    <div className="bg-zinc-900/40 border border-white/5 rounded-xl p-6 shadow-xl">
+                                        <h3 className="text-sm font-black uppercase tracking-wider text-zinc-300 mb-5">Rating por Tipo de Evento</h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                            {reviewsEventAvg.map(({ type, avg, count }) => (
+                                                <div key={type} className="bg-black/40 border border-white/5 rounded-lg p-4 text-center">
+                                                    <p className="text-zinc-400 text-[10px] uppercase tracking-wider font-bold truncate mb-2">{type}</p>
+                                                    <div className="text-2xl font-black text-nexo-lime">{avg.toFixed(1)}</div>
+                                                    <div className="flex justify-center gap-0.5 my-1">
+                                                        {[1,2,3,4,5].map(s => (
+                                                            <span key={s} className={`text-[10px] ${s <= Math.round(avg) ? 'text-nexo-lime' : 'text-zinc-700'}`}>★</span>
+                                                        ))}
+                                                    </div>
+                                                    <p className="text-zinc-600 text-[10px]">{count} review{count !== 1 ? 's' : ''}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Lista de Reviews Recientes */}
+                                <div className="bg-zinc-900/40 border border-white/5 rounded-xl overflow-hidden shadow-xl">
+                                    <div className="p-4 border-b border-white/5 bg-zinc-800/20">
+                                        <h3 className="text-sm font-black uppercase tracking-wider text-zinc-300">Reviews Recientes</h3>
+                                    </div>
+                                    <div className="divide-y divide-white/5">
+                                        {reviews.slice(0, 20).map((review: any) => (
+                                            <div key={review.id} className="p-4 md:p-5 hover:bg-white/[0.02] transition-colors">
+                                                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                                            <span className="font-bold text-white text-sm">
+                                                                {review.projects?.contact_name || 'Cliente'}
+                                                            </span>
+                                                            {review.projects?.title && (
+                                                                <span className="text-zinc-500 text-xs truncate">— {review.projects.title}</span>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex items-center gap-3 flex-wrap mb-2">
+                                                            <div className="flex gap-0.5">
+                                                                {[1,2,3,4,5].map(s => (
+                                                                    <span key={s} className={`text-sm ${s <= (review.rating || 0) ? 'text-nexo-lime' : 'text-zinc-700'}`}>★</span>
+                                                                ))}
+                                                            </div>
+                                                            {review.recommendation_score !== null && review.recommendation_score !== undefined && (
+                                                                <span className="text-[10px] bg-[#00e5ff]/10 text-[#00e5ff] border border-[#00e5ff]/20 px-2 py-0.5 rounded font-bold">
+                                                                    NPS {review.recommendation_score}/10
+                                                                </span>
+                                                            )}
+                                                            {review.coverage_type && (
+                                                                <span className="text-[10px] bg-nexo-lime/10 text-nexo-lime border border-nexo-lime/20 px-2 py-0.5 rounded font-bold">
+                                                                    {review.coverage_type}
+                                                                </span>
+                                                            )}
+                                                            {review.event_type && (
+                                                                <span className="text-[10px] bg-white/5 text-zinc-400 border border-white/10 px-2 py-0.5 rounded font-bold">
+                                                                    {review.event_type}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {review.feedback_text && (
+                                                            <p className="text-zinc-400 text-xs italic leading-relaxed">"{review.feedback_text}"</p>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-zinc-600 text-[10px] whitespace-nowrap shrink-0">
+                                                        {new Date(review.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: '2-digit' })}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
+
+                {crmView === 'pipeline' && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     
                     {/* COLUMNA IZQUIERDA: CREADOR DE PROYECTOS Y PRESUPUESTOS */}
@@ -2083,6 +2339,7 @@ const CRMProjects: React.FC = () => {
                         </div>
                     </div>
                 </div>
+                )}
             </main>
 
             {/* MODAL DE FACTURACIÓN Y PAGO */}

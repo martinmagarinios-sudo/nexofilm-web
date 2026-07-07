@@ -25,7 +25,7 @@ const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supaba
 const resend = new Resend((process.env.RESEND_API_KEY || '').trim());
 const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY.trim() }) : null;
 
-const ADMIN_NUMBER = '541151191964';
+const ADMIN_NUMBER = '5491151191964'; // +54 9 11 5119 1964 (WhatsApp móvil Argentina requiere el 9)
 
 // Helper para extraer texto de DOCX
 function extractTextFromDocx(buffer) {
@@ -939,6 +939,29 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                     success: true,
                     project: updatedProject
                 });
+            }
+
+            case 'getReviews': {
+                // Obtener todas las reviews con datos del proyecto vinculado
+                const { data: reviewsRaw, error: reviewsErr } = await supabase
+                    .from('project_reviews')
+                    .select('id, project_id, rating, feedback_text, recommendation_score, coverage_type, event_type, created_at, projects(contact_name, title, company_name)')
+                    .order('created_at', { ascending: false });
+
+                if (reviewsErr) {
+                    // Fallback: si las columnas nuevas no existen aún, pedir sin ellas
+                    if (reviewsErr.message && (reviewsErr.message.includes('coverage_type') || reviewsErr.message.includes('event_type'))) {
+                        const { data: fallbackReviews, error: fallbackErr } = await supabase
+                            .from('project_reviews')
+                            .select('id, project_id, rating, feedback_text, recommendation_score, created_at, projects(contact_name, title, company_name)')
+                            .order('created_at', { ascending: false });
+                        if (fallbackErr) throw fallbackErr;
+                        return res.status(200).json({ success: true, reviews: fallbackReviews || [] });
+                    }
+                    throw reviewsErr;
+                }
+
+                return res.status(200).json({ success: true, reviews: reviewsRaw || [] });
             }
 
             default:

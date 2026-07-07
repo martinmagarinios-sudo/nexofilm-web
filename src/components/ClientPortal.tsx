@@ -163,6 +163,8 @@ const ClientPortal: React.FC = () => {
     const [surveyHover, setSurveyHover] = useState<number>(0);
     const [surveyText, setSurveyText] = useState('');
     const [surveyNps, setSurveyNps] = useState<number | ''>('');
+    const [surveyCoverageType, setSurveyCoverageType] = useState('');
+    const [surveyEventType, setSurveyEventType] = useState('');
     const [surveySuccess, setSurveySuccess] = useState(false);
 
     // Ingesta de Documentos (IA)
@@ -804,7 +806,9 @@ const ClientPortal: React.FC = () => {
                     action: 'submit_review',
                     rating: surveyRating,
                     feedback_text: surveyText,
-                    recommendation_score: surveyNps === '' ? null : Number(surveyNps)
+                    recommendation_score: surveyNps === '' ? null : Number(surveyNps),
+                    coverage_type: surveyCoverageType || null,
+                    event_type: surveyEventType || null
                 })
             });
             const data = await res.json();
@@ -2498,6 +2502,48 @@ const ClientPortal: React.FC = () => {
                                         <div className="flex justify-between text-[9px] text-zinc-500 max-w-sm pt-1">
                                             <span>Extremadamente improbable</span>
                                             <span>Muy probable</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Tipo de Cobertura */}
+                                    <div className="space-y-2">
+                                        <label className="block text-zinc-400 text-xs font-bold uppercase tracking-wider">¿Qué tipo de cobertura contrataste? <span className="text-zinc-600 font-normal normal-case">(Opcional)</span></label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {['Fotografía', 'Video', 'Streaming en Vivo', 'Foto + Video', 'Foto + Video + Streaming', 'Notas / Testimonios', 'Otro'].map((opt) => (
+                                                <button
+                                                    key={opt}
+                                                    type="button"
+                                                    onClick={() => setSurveyCoverageType(surveyCoverageType === opt ? '' : opt)}
+                                                    className={`px-3 py-1.5 rounded text-xs font-bold transition-all border ${
+                                                        surveyCoverageType === opt
+                                                            ? 'bg-nexo-lime text-black border-nexo-lime shadow-[0_0_12px_rgba(204,255,0,0.3)]'
+                                                            : 'bg-black text-zinc-400 border-white/10 hover:border-nexo-lime/40 hover:text-white'
+                                                    }`}
+                                                >
+                                                    {opt}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Tipo de Evento */}
+                                    <div className="space-y-2">
+                                        <label className="block text-zinc-400 text-xs font-bold uppercase tracking-wider">¿Qué tipo de evento fue? <span className="text-zinc-600 font-normal normal-case">(Opcional)</span></label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {['Corporativo', 'Campaña Publicitaria', 'Evento Social', 'Presentación de Producto', 'Cobertura Deportiva', 'Cobertura de Exposiciones', 'Otro'].map((opt) => (
+                                                <button
+                                                    key={opt}
+                                                    type="button"
+                                                    onClick={() => setSurveyEventType(surveyEventType === opt ? '' : opt)}
+                                                    className={`px-3 py-1.5 rounded text-xs font-bold transition-all border ${
+                                                        surveyEventType === opt
+                                                            ? 'bg-[#00e5ff] text-black border-[#00e5ff] shadow-[0_0_12px_rgba(0,229,255,0.25)]'
+                                                            : 'bg-black text-zinc-400 border-white/10 hover:border-[#00e5ff]/40 hover:text-white'
+                                                    }`}
+                                                >
+                                                    {opt}
+                                                </button>
+                                            ))}
                                         </div>
                                     </div>
 

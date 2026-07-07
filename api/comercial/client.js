@@ -30,7 +30,7 @@ const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supaba
 const resend = new Resend((process.env.RESEND_API_KEY || '').trim());
 const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY.trim() }) : null;
 
-const ADMIN_NUMBER = '541151191964';
+const ADMIN_NUMBER = '5491151191964'; // +54 9 11 5119 1964 (WhatsApp móvil Argentina requiere el 9)
 
 // Helpers de encriptación para Drive
 function base64url(str) {
@@ -478,7 +478,7 @@ export default async function handler(req, res) {
 
         // --- MANEJO DE POST ---
         if (method === 'POST') {
-            const { action, client_feedback, specifications, rating, feedback_text, recommendation_score, fileBase64, filename } = req.body;
+            const { action, client_feedback, specifications, rating, feedback_text, recommendation_score, coverage_type, event_type, fileBase64, filename } = req.body;
 
             let updatedProject = { ...project };
             let updatedStatus = project.status;
@@ -555,9 +555,10 @@ export default async function handler(req, res) {
 
                 // Enviar notificación inmediatamente para esta acción
                 try {
-                    const rawText = `🔔 NEXOFILM CRM\n\n${notificationSubject}\n\nProyecto: ${updatedProject.title}\nLocación: ${updatedProject.location || 'Sin especificar'}\nFecha: ${updatedProject.event_date || 'Sin especificar'}\nEstado: REVISIÓN\n\nVer en Admin:\nhttps://nexofilm.com/admin`;
+                    const portalLinkSpec = `https://nexofilm.com/portal?token=${project.access_token}`;
+                    const rawText = `📝 NEXOFILM CRM\n\nEspecificaciones actualizadas\n\nCliente: ${updatedProject.contact_name || project.contact_name}\nProyecto: ${updatedProject.title}\nLocación: ${updatedProject.location || 'Sin especificar'}\nFecha: ${updatedProject.event_date || 'Sin especificar'}\nEstado: REVISIÓN\n\nVer proyecto del cliente:\n${portalLinkSpec}`;
                     await notifyMartinWhatsApp(rawText);
-                    await notifyMartinEmail(notificationSubject, notificationBody);
+                    await notifyMartinEmail(notificationSubject, notificationBody + `<br/><br/><a href="${portalLinkSpec}" style="color:#ccff00;font-weight:bold;">→ Ver proyecto en el portal del cliente</a>`);
                 } catch (notifErr) {
                     console.warn('Error enviando notificación de update_specifications:', notifErr.message);
                 }
@@ -661,7 +662,20 @@ export default async function handler(req, res) {
                     .single();
 
                 if (createErr) throw createErr;
-                
+
+                // Notificar a Martín por WhatsApp y email
+                try {
+                    const newProjectLink = `https://nexofilm.com/portal?token=${newProj.access_token}`;
+                    const waText = `🆕 NEXOFILM CRM\n\n📋 Solicitud de nuevo presupuesto\n\nCliente: ${project.contact_name}\nEmpresa: ${project.company_name || 'Sin empresa'}\nEmail: ${project.client_email || '-'}\n\nVer proyecto:\n${newProjectLink}`;
+                    await notifyMartinWhatsApp(waText);
+                    await notifyMartinEmail(
+                        `🆕 Nuevo presupuesto solicitado: ${project.contact_name}`,
+                        `El cliente <strong>${project.contact_name}</strong> ha solicitado un nuevo presupuesto.<br/><br/><a href="${newProjectLink}" style="color:#ccff00;">Ver nuevo proyecto →</a>`
+                    );
+                } catch (notifErr) {
+                    console.warn('Error enviando notificación de request_new_project:', notifErr.message);
+                }
+
                 return res.status(200).json({
                     success: true,
                     project: newProj,
@@ -838,23 +852,40 @@ export default async function handler(req, res) {
             } else if (action === 'submit_review') {
                 if (!rating) return res.status(400).json({ error: 'La calificación es requerida.' });
 
+                const reviewInsert = {
+                    project_id: project.id,
+                    rating: parseInt(rating),
+                    feedback_text: feedback_text || '',
+                    recommendation_score: recommendation_score !== undefined ? parseInt(recommendation_score) : null
+                };
+                if (coverage_type) reviewInsert.coverage_type = coverage_type;
+                if (event_type) reviewInsert.event_type = event_type;
+
                 const { data: review, error: rErr } = await supabase
                     .from('project_reviews')
-                    .insert({
-                        project_id: project.id,
-                        rating: parseInt(rating),
-                        feedback_text: feedback_text || '',
-                        recommendation_score: recommendation_score !== undefined ? parseInt(recommendation_score) : null
-                    })
+                    .insert(reviewInsert)
                     .select()
                     .single();
 
-                if (rErr) throw rErr;
+                if (rErr) {
+                    // Fallback: si coverage_type o event_type no existen en la BD, intentar sin ellos
+                    if (rErr.message && (rErr.message.includes('coverage_type') || rErr.message.includes('event_type'))) {
+                        const fallbackInsert = { project_id: project.id, rating: parseInt(rating), feedback_text: feedback_text || '', recommendation_score: recommendation_score !== undefined ? parseInt(recommendation_score) : null };
+                        const { error: rErr2 } = await supabase.from('project_reviews').insert(fallbackInsert).select().single();
+                        if (rErr2) throw rErr2;
+                    } else {
+                        throw rErr;
+                    }
+                }
 
+                const coverageLabel = coverage_type ? `\nTipo de cobertura: ${coverage_type}` : '';
+                const eventLabel = event_type ? `\nTipo de evento: ${event_type}` : '';
                 notificationSubject = `⭐ Nueva reseña de ${project.contact_name}`;
                 notificationBody = `El cliente <strong>${project.contact_name}</strong> ha dejado su feedback para el proyecto "<strong>${project.title}</strong>":<br/><br/>
                 Calificación: <strong>${rating} / 5 estrellas</strong><br/>
-                Recomendación NPS: <strong>${recommendation_score} / 10</strong><br/>
+                Recomendación NPS: <strong>${recommendation_score !== undefined && recommendation_score !== null ? recommendation_score : '-'} / 10</strong><br/>
+                Tipo de cobertura: <strong>${coverage_type || 'No especificado'}</strong><br/>
+                Tipo de evento: <strong>${event_type || 'No especificado'}</strong><br/>
                 Comentarios: <em>"${feedback_text || 'Sin comentarios'}"</em>`;
 
             } else if (action === 'upload_document') {
@@ -1003,9 +1034,10 @@ export default async function handler(req, res) {
 
             // Notificaciones duales para Martín
             if (notificationSubject) {
-                const rawText = `🔔 NEXOFILM CRM\n\n${notificationSubject}\n\nProyecto: ${project.title}\nEstado actual: ${updatedStatus.toUpperCase()}\n\nVer en Admin:\nhttps://nexofilm.com/admin`;
+                const portalLink = `https://nexofilm.com/portal?token=${project.access_token}`;
+                const rawText = `🔔 NEXOFILM CRM\n\n${notificationSubject}\n\nProyecto: ${project.title}\nCliente: ${project.contact_name}\nEstado: ${updatedStatus.toUpperCase()}\n\nVer proyecto del cliente:\n${portalLink}`;
                 await notifyMartinWhatsApp(rawText);
-                await notifyMartinEmail(notificationSubject, notificationBody);
+                await notifyMartinEmail(notificationSubject, notificationBody + `<br/><br/><a href="${portalLink}" style="color:#ccff00;font-weight:bold;">→ Ver proyecto en el portal del cliente</a>`);
             }
 
             return res.status(200).json({
