@@ -272,6 +272,73 @@ export default async function handler(req, res) {
                 newLead = lead1;
             }
 
+            // ── NOTIFICACIÓN AL ADMIN POR EMAIL ──────────────────────────────
+            // Se envía a ambas cuentas del dueño usando Resend (igual que el bot de WhatsApp)
+            try {
+                const adminEmails = ['martinmagarinios@gmail.com', 'martin@nexofilm.com'];
+                const crmUrl = `https://nexofilm.com/admin/crm?project_id=${newLead.id}`;
+                const coverageLabel = (newLead.coverage_types || []).join(', ') || 'No especificado';
+                const emailHtml = `
+                    <div style="font-family: sans-serif; padding: 24px; border-top: 4px solid #ccff00; background: #fcfcfc;">
+                        <h2 style="color: #1a1a1a; margin-top: 0;">📋 Nuevo Presupuesto desde la Web</h2>
+                        <table style="border-collapse: collapse; width: 100%; margin-bottom: 20px; font-size: 14px;">
+                            <tr>
+                                <td style="padding: 6px 16px 6px 0; color: #555; white-space: nowrap;"><strong>Cliente:</strong></td>
+                                <td style="padding: 6px 0; color: #111;">${newLead.contact_name}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 16px 6px 0; color: #555; white-space: nowrap;"><strong>Email:</strong></td>
+                                <td style="padding: 6px 0; color: #111;">${newLead.client_email}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 16px 6px 0; color: #555; white-space: nowrap;"><strong>Teléfono:</strong></td>
+                                <td style="padding: 6px 0; color: #111;">${newLead.client_phone || 'No indicado'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 16px 6px 0; color: #555; white-space: nowrap;"><strong>Proyecto:</strong></td>
+                                <td style="padding: 6px 0; color: #111;">${newLead.title}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 16px 6px 0; color: #555; white-space: nowrap;"><strong>Fecha del evento:</strong></td>
+                                <td style="padding: 6px 0; color: #111;">${newLead.event_date || 'No indicada'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 16px 6px 0; color: #555; white-space: nowrap;"><strong>Ubicación:</strong></td>
+                                <td style="padding: 6px 0; color: #111;">${newLead.location || 'No indicada'}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 16px 6px 0; color: #555; white-space: nowrap;"><strong>Cobertura:</strong></td>
+                                <td style="padding: 6px 0; color: #111;">${coverageLabel}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 16px 6px 0; color: #555; white-space: nowrap;"><strong>Horas:</strong></td>
+                                <td style="padding: 6px 0; color: #111;">${newLead.coverage_hours || 'No indicadas'}</td>
+                            </tr>
+                            ${newLead.client_notes ? `
+                            <tr>
+                                <td style="padding: 6px 16px 6px 0; color: #555; white-space: nowrap; vertical-align: top;"><strong>Notas:</strong></td>
+                                <td style="padding: 6px 0; color: #111;">${newLead.client_notes}</td>
+                            </tr>` : ''}
+                        </table>
+                        <a href="${crmUrl}" style="background: #ccff00; color: #000; padding: 12px 28px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Ver en el CRM →</a>
+                        <p style="font-size: 11px; color: #999; margin-top: 20px;">Este lead llegó desde el formulario de presupuesto en nexofilm.com/presupuesto</p>
+                    </div>
+                `;
+                for (const email of adminEmails) {
+                    resend.emails.send({
+                        from: 'NexoFilm CRM <martin@nexofilm.com>',
+                        to: [email],
+                        subject: `📋 Nuevo presupuesto web: ${newLead.contact_name} — "${newLead.title}"`,
+                        html: emailHtml
+                    }).catch(e => console.error(`[EMAIL] Fallo envío a ${email}:`, e.message));
+                }
+                console.log(`[EMAIL] Notificación de nuevo lead enviada para: ${newLead.contact_name}`);
+            } catch (emailErr) {
+                // El error de email nunca debe romper la respuesta al cliente
+                console.error('[EMAIL] Error al enviar notificación de lead:', emailErr.message);
+            }
+            // ─────────────────────────────────────────────────────────────────
+
             return res.status(200).json({ success: true, project: newLead });
         } catch (error) {
             console.error('Error creando Public Lead:', error);
