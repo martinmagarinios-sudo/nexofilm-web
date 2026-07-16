@@ -1737,10 +1737,15 @@ const CRMProjects: React.FC = () => {
                                                                 );
                                                                 const totalInvoiced = displayInvoices.reduce((sum: number, inv: any) => sum + (inv.amount || 0), 0);
                                                                 const totalPaid = displayInvoices.reduce((sum: number, inv: any) => sum + (inv.paid ? (inv.amount || 0) : 0), 0);
-                                                                const basePrice = projectBudget ? projectBudget.total_price : 0;
-                                                                const optionalsInBudget = projectBudget ? (projectBudget.items || []).filter((it: any) => it.is_optional).reduce((s: number, it: any) => s + (it.quantity * it.unit_price), 0) : 0;
-                                                                const totalBudgetVal = basePrice + optionalsInBudget;
-                                                                const remainingToInvoice = Math.max(0, totalBudgetVal - totalInvoiced);
+                                                                const budgetItems = projectBudget ? (projectBudget.items || []) : [];
+                                                                // Base = siempre items[0]
+                                                                const basePrice = budgetItems[0] ? (budgetItems[0].quantity * budgetItems[0].unit_price) : (projectBudget ? projectBudget.total_price : 0);
+                                                                const optionalsInBudget = budgetItems.filter((it: any) => it.is_optional).reduce((s: number, it: any) => s + (it.quantity * it.unit_price), 0);
+                                                                // Si el cliente ya aprobó, total_price tiene base + extras elegidos (definitivo)
+                                                                // Si aún no aprobó, el monto confirmado es solo el base
+                                                                const isApproved = ['approved', 'production', 'delivered'].includes(project.status);
+                                                                const billingTotal = isApproved ? (projectBudget ? projectBudget.total_price : basePrice) : basePrice;
+                                                                const remainingToInvoice = Math.max(0, billingTotal - totalInvoiced);
                                                                 const remainingToCollect = Math.max(0, totalInvoiced - totalPaid);
                                                                 
                                                                 return (
@@ -1751,6 +1756,9 @@ const CRMProjects: React.FC = () => {
                                                                         </div>
                                                                         {optionalsInBudget > 0 && (
                                                                             <div className="text-[9px] text-[#00e5ff] font-mono font-bold">+ {project.currency || 'ARS'} {optionalsInBudget.toLocaleString()} extras</div>
+                                                                        )}
+                                                                        {isApproved && projectBudget && projectBudget.total_price > basePrice && (
+                                                                            <div className="text-[9px] text-nexo-lime font-mono font-bold mt-0.5">Total confirmado: {project.currency || 'ARS'} {projectBudget.total_price.toLocaleString()}</div>
                                                                         )}
                                                                         {totalInvoiced > 0 && (
                                                                             <div className="mt-1.5 flex flex-col items-end gap-1">
@@ -2126,8 +2134,10 @@ const CRMProjects: React.FC = () => {
                                                                         <span className="font-bold text-zinc-300">Presupuesto Activo </span>
                                                                         <span className="text-zinc-500 text-[10px] font-semibold mr-2">(Versión {projectBudget.version}): </span>
                                                                         {(() => {
-                                                                            const base = projectBudget.total_price;
-                                                                            const optionals = (projectBudget.items || []).filter((it: any) => it.is_optional).reduce((s: number, it: any) => s + (it.quantity * it.unit_price), 0);
+                                                                            const items = projectBudget.items || [];
+                                                                            // Base siempre desde items[0], independiente de total_price guardado
+                                                                            const base = items[0] ? (items[0].quantity * items[0].unit_price) : projectBudget.total_price;
+                                                                            const optionals = items.filter((it: any) => it.is_optional).reduce((s: number, it: any) => s + (it.quantity * it.unit_price), 0);
                                                                             return (
                                                                                 <span>
                                                                                     <span className="text-white font-medium">{project.currency || 'ARS'} {base.toLocaleString()}</span>
@@ -2142,8 +2152,13 @@ const CRMProjects: React.FC = () => {
                                                                     {/* Resumen Facturado / Pendiente */}
                                                                     {(() => {
                                                                         const history = project.invoices_history;
-                                                                        const optionalsSum = (projectBudget.items || []).filter((it: any) => it.is_optional).reduce((s: number, it: any) => s + (it.quantity * it.unit_price), 0);
-                                                                        const totalBudget = (projectBudget.total_price || 0) + optionalsSum;
+                                                                        const bItems = projectBudget.items || [];
+                                                                        const baseAmt = bItems[0] ? (bItems[0].quantity * bItems[0].unit_price) : projectBudget.total_price || 0;
+                                                                        const optionalsSum = bItems.filter((it: any) => it.is_optional).reduce((s: number, it: any) => s + (it.quantity * it.unit_price), 0);
+                                                                        // Si ya aprobó: total_price es definitivo (base + extras elegidos)
+                                                                        // Si no aprobó: el monto comprometido es solo el base
+                                                                        const isApproved = ['approved', 'production', 'delivered'].includes(project.status);
+                                                                        const totalBudget = isApproved ? projectBudget.total_price : baseAmt;
                                                                         const totalInvoiced = Array.isArray(history) 
                                                                             ? history.reduce((sum, inv) => sum + (inv.amount || 0), 0)
                                                                             : 0;
@@ -2153,6 +2168,12 @@ const CRMProjects: React.FC = () => {
                                                                         if (totalInvoiced > 0 || remaining > 0) {
                                                                             return (
                                                                                 <div className="flex items-center gap-3 bg-black/40 border border-white/10 px-3 py-1.5 rounded-lg shrink-0">
+                                                                                    {isApproved && optionalsSum === 0 && projectBudget.total_price > baseAmt && (
+                                                                                        <div className="flex flex-col">
+                                                                                            <span className="text-[9px] uppercase tracking-wider text-nexo-lime font-bold">Total Aprobado</span>
+                                                                                            <span className="text-nexo-lime text-xs font-bold">{currency} {projectBudget.total_price.toLocaleString()}</span>
+                                                                                        </div>
+                                                                                    )}
                                                                                     <div className="flex flex-col">
                                                                                         <span className="text-[9px] uppercase tracking-wider text-zinc-500 font-bold">Facturado</span>
                                                                                         <span className="text-white text-xs font-bold">{currency} {totalInvoiced.toLocaleString()}</span>
@@ -2170,14 +2191,19 @@ const CRMProjects: React.FC = () => {
                                                                 </div>
 
                                                                 <div className="space-y-2">
-                                                                    {projectBudget.items.map((it, i) => (
-                                                                        <div key={i} className="bg-black/20 border border-white/5 rounded-lg p-3 text-left text-zinc-300">
+                                                                    {projectBudget.items.map((it: any, i: number) => (
+                                                                        <div key={i} className={`border rounded-lg p-3 text-left text-zinc-300 ${i === 0 ? 'bg-nexo-lime/5 border-nexo-lime/15' : 'bg-black/20 border-white/5'}`}>
                                                                             <div className="flex justify-between items-center border-b border-white/5 pb-1.5 mb-2 text-[9px] text-zinc-500 font-bold uppercase tracking-wider">
-                                                                                <span>Concepto #{i + 1} {it.is_optional && <span className="text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded text-[8px] ml-1">Opcional</span>}</span>
+                                                                                <span>
+                                                                                    {i === 0 
+                                                                                        ? <span className="text-nexo-lime">★ Base Obligatorio</span>
+                                                                                        : <>Concepto #{i + 1} {it.is_optional && <span className="text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded text-[8px] ml-1">Opcional</span>}</>
+                                                                                    }
+                                                                                </span>
                                                                                 <div className="flex gap-4">
                                                                                     <span>Cantidad: {it.quantity}</span>
                                                                                     {it.unit_price > 0 && (
-                                                                                        <span className={it.is_optional ? "text-amber-500" : "text-white"}>
+                                                                                        <span className={i === 0 ? 'text-nexo-lime font-extrabold' : it.is_optional ? 'text-amber-500' : 'text-white'}>
                                                                                             {project.currency || 'ARS'} {(it.quantity * it.unit_price).toLocaleString()}
                                                                                         </span>
                                                                                     )}

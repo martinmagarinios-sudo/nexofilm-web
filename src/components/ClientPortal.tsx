@@ -1015,11 +1015,15 @@ const ClientPortal: React.FC = () => {
         if (!budget) return null;
 
         const isEditable = project.status === 'sent';
-        const optionalItems = budget.items.filter(item => item.is_optional);
+        // Base = SOLO items[0]. Extras = TODO items.slice(1)
+        const baseItem = budget.items[0];
+        const baseTotal = baseItem ? (baseItem.quantity * baseItem.unit_price) : 0;
+        const extraItems = budget.items.slice(1);
+        const optionalItems = extraItems.filter(item => item.is_optional);
         const selectedOptionalsTotal = optionalItems
             .filter((_, idx) => selectedOptionals.includes(idx))
             .reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
-        const finalCalculatedTotal = budget.total_price + selectedOptionalsTotal;
+        const finalCalculatedTotal = baseTotal + selectedOptionalsTotal;
 
         return (
             <div className="bg-zinc-900/40 border border-white/5 p-6 md:p-8 rounded-xl shadow-2xl space-y-8 no-print mt-6">
@@ -1054,17 +1058,17 @@ const ClientPortal: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5 text-sm text-zinc-300">
-                                {budget.items.filter(item => !item.is_optional).map((item, idx) => (
-                                    <tr key={idx}>
-                                        <td className="px-6 py-4 font-medium text-white whitespace-pre-wrap">{item.description}</td>
-                                        <td className="px-6 py-4 text-center">{item.quantity}</td>
-                                        <td className="px-6 py-4 text-right">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</td>
-                                        <td className="px-6 py-4 text-right text-white">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</td>
+                                {baseItem && (
+                                    <tr>
+                                        <td className="px-6 py-4 font-medium text-white whitespace-pre-wrap">{baseItem.description}</td>
+                                        <td className="px-6 py-4 text-center">{baseItem.quantity}</td>
+                                        <td className="px-6 py-4 text-right">{project.currency || 'USD'} {baseItem.unit_price.toLocaleString()}</td>
+                                        <td className="px-6 py-4 text-right text-white">{project.currency || 'USD'} {baseTotal.toLocaleString()}</td>
                                     </tr>
-                                ))}
+                                )}
                                 <tr className="bg-zinc-900/60 border-t-2 border-white/10">
-                                    <td colSpan={3} className="px-6 py-3 text-right text-zinc-400 text-xs font-normal">Valor Total de la Propuesta (base):</td>
-                                    <td className="px-6 py-3 text-right text-nexo-lime text-sm font-black whitespace-nowrap">{project.currency || 'USD'} {budget.total_price.toLocaleString()}</td>
+                                    <td colSpan={3} className="px-6 py-3 text-right text-zinc-400 text-xs font-normal">Presupuesto Base (Monto a Aprobar):</td>
+                                    <td className="px-6 py-3 text-right text-nexo-lime text-sm font-black whitespace-nowrap">{project.currency || 'USD'} {baseTotal.toLocaleString()}</td>
                                 </tr>
                                 {optionalItems.length > 0 && (
                                     <tr className="bg-[#00e5ff]/5">
@@ -1086,33 +1090,24 @@ const ClientPortal: React.FC = () => {
 
                     {/* Vista Móvil (Tarjetas Stacked) */}
                     <div className="block lg:hidden space-y-4">
-                        {budget.items.filter(item => !item.is_optional).map((item, idx) => (
-                            <div key={idx} className="bg-black/40 border border-white/5 p-5 rounded-xl space-y-3 shadow-lg">
+                        {baseItem && (
+                            <div className="bg-black/40 border border-white/5 p-5 rounded-xl space-y-3 shadow-lg">
                                 <div className="font-medium text-white text-sm whitespace-pre-wrap leading-relaxed">
-                                    {item.description}
+                                    {baseItem.description}
                                 </div>
                                 <div className="flex justify-between items-center gap-2 pt-3 border-t border-white/5 text-xs text-zinc-400">
-                                    <div>
-                                        <span>Cant: </span>
-                                        <strong className="text-white">{item.quantity}</strong>
-                                    </div>
-                                    <div>
-                                        <span>Precio U: </span>
-                                        <strong className="text-white">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</strong>
-                                    </div>
-                                    <div className="text-right">
-                                        <span>Subtotal: </span>
-                                        <strong className="text-nexo-lime font-bold">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</strong>
-                                    </div>
+                                    <div><span>Cant: </span><strong className="text-white">{baseItem.quantity}</strong></div>
+                                    <div><span>Precio U: </span><strong className="text-white">{project.currency || 'USD'} {baseItem.unit_price.toLocaleString()}</strong></div>
+                                    <div className="text-right"><span>Subtotal: </span><strong className="text-nexo-lime font-bold">{project.currency || 'USD'} {baseTotal.toLocaleString()}</strong></div>
                                 </div>
                             </div>
-                        ))}
+                        )}
 
                         {/* Totales en Móvil */}
                         <div className="bg-zinc-900/60 p-4 rounded-xl border border-nexo-lime/20 flex flex-col gap-2.5 shadow-lg">
                             <div className="flex justify-between items-center gap-4">
                                 <span className="text-zinc-400 text-[10px] uppercase tracking-wider font-bold shrink-0">Total base</span>
-                                <span className="text-sm font-black text-nexo-lime whitespace-nowrap">{project.currency || 'USD'} {budget.total_price.toLocaleString()}</span>
+                                <span className="text-sm font-black text-nexo-lime whitespace-nowrap">{project.currency || 'USD'} {baseTotal.toLocaleString()}</span>
                             </div>
                             {optionalItems.length > 0 && (
                                 <div className="flex justify-between items-center gap-4 border-t border-white/5 pt-2.5">
@@ -1132,8 +1127,8 @@ const ClientPortal: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Servicios Opcionales / Extras Sugeridos */}
-                {budget.items.some(item => item.is_optional) && (
+                {/* Servicios Opcionales / Extras Sugeridos: TODOS los items desde el [1] en adelante */}
+                {extraItems.length > 0 && (
                     <div className="space-y-3">
                         <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1">
                             <h4 className="text-zinc-400 text-xs font-bold uppercase tracking-wider">
@@ -1159,24 +1154,31 @@ const ClientPortal: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5 text-sm text-zinc-300">
-                                    {budget.items.filter(item => item.is_optional).map((item, idx) => {
-                                        const isChecked = selectedOptionals.includes(idx);
+                                    {extraItems.map((item, idx) => {
+                                        const isOptionalSelectable = item.is_optional;
+                                        // El idx para selectedOptionals usa solo los is_optional items
+                                        const optIdx = optionalItems.indexOf(item);
+                                        const isChecked = isOptionalSelectable && selectedOptionals.includes(optIdx);
                                         return (
                                             <tr key={idx} className={isChecked && isEditable ? "bg-nexo-lime/5" : ""}>
                                                 {isEditable && (
                                                     <td className="px-6 py-3 text-center">
-                                                        <input 
-                                                            type="checkbox" 
-                                                            checked={isChecked}
-                                                            onChange={() => {
-                                                                if (isChecked) {
-                                                                    setSelectedOptionals(selectedOptionals.filter(i => i !== idx));
-                                                                } else {
-                                                                    setSelectedOptionals([...selectedOptionals, idx]);
-                                                                }
-                                                            }}
-                                                            className="accent-nexo-lime w-4 h-4 cursor-pointer"
-                                                        />
+                                                        {isOptionalSelectable ? (
+                                                            <input 
+                                                                type="checkbox" 
+                                                                checked={isChecked}
+                                                                onChange={() => {
+                                                                    if (isChecked) {
+                                                                        setSelectedOptionals(selectedOptionals.filter(i => i !== optIdx));
+                                                                    } else {
+                                                                        setSelectedOptionals([...selectedOptionals, optIdx]);
+                                                                    }
+                                                                }}
+                                                                className="accent-nexo-lime w-4 h-4 cursor-pointer"
+                                                            />
+                                                        ) : (
+                                                            <span className="text-zinc-600 text-[9px]">—</span>
+                                                        )}
                                                     </td>
                                                 )}
                                                 <td className="px-6 py-3 font-medium text-white whitespace-pre-wrap">➕ {item.description}</td>
@@ -1192,21 +1194,23 @@ const ClientPortal: React.FC = () => {
 
                         {/* Vista Móvil (Tarjetas Stacked) */}
                         <div className="block lg:hidden space-y-3">
-                            {budget.items.filter(item => item.is_optional).map((item, idx) => {
-                                const isChecked = selectedOptionals.includes(idx);
+                            {extraItems.map((item, idx) => {
+                                const isOptionalSelectable = item.is_optional;
+                                const optIdx = optionalItems.indexOf(item);
+                                const isChecked = isOptionalSelectable && selectedOptionals.includes(optIdx);
                                 return (
                                     <div 
                                         key={idx} 
                                         onClick={() => {
-                                            if (!isEditable) return;
+                                            if (!isEditable || !isOptionalSelectable) return;
                                             if (isChecked) {
-                                                setSelectedOptionals(selectedOptionals.filter(i => i !== idx));
+                                                setSelectedOptionals(selectedOptionals.filter(i => i !== optIdx));
                                             } else {
-                                                setSelectedOptionals([...selectedOptionals, idx]);
+                                                setSelectedOptionals([...selectedOptionals, optIdx]);
                                             }
                                         }}
                                         className={`border p-5 rounded-xl space-y-3 shadow-md transition-all ${
-                                            isEditable ? 'cursor-pointer' : ''
+                                            isEditable && isOptionalSelectable ? 'cursor-pointer' : ''
                                         } ${
                                             isChecked && isEditable
                                                 ? 'bg-nexo-lime/10 border-nexo-lime/40' 
@@ -1217,7 +1221,7 @@ const ClientPortal: React.FC = () => {
                                             <div className="font-medium text-white text-sm whitespace-pre-wrap leading-relaxed">
                                                 ➕ {item.description}
                                             </div>
-                                            {isEditable && (
+                                            {isEditable && isOptionalSelectable && (
                                                 <input 
                                                     type="checkbox" 
                                                     checked={isChecked}
@@ -1227,18 +1231,9 @@ const ClientPortal: React.FC = () => {
                                             )}
                                         </div>
                                         <div className="flex justify-between items-center gap-2 pt-3 border-t border-white/5 text-xs text-zinc-400">
-                                            <div>
-                                                <span>Cant: </span>
-                                                <strong className="text-white">{item.quantity}</strong>
-                                            </div>
-                                            <div>
-                                                <span>Precio U: </span>
-                                                <strong className="text-white">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</strong>
-                                            </div>
-                                            <div className="text-right">
-                                                <span>Subtotal: </span>
-                                                <strong className="text-[#00e5ff] font-bold">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</strong>
-                                            </div>
+                                            <div><span>Cant: </span><strong className="text-white">{item.quantity}</strong></div>
+                                            <div><span>Precio U: </span><strong className="text-white">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</strong></div>
+                                            <div className="text-right"><span>Subtotal: </span><strong className="text-[#00e5ff] font-bold">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</strong></div>
                                         </div>
                                     </div>
                                 );
@@ -1390,7 +1385,14 @@ const ClientPortal: React.FC = () => {
                                         }))
                                     ];
 
-                                    const sorted = [...allProjects].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                                    // Ordenar: primero los 'sent' (presupuesto a revisar), luego por created_at desc
+                                    const sorted = [...allProjects].sort((a, b) => {
+                                        const priority: Record<string, number> = { sent: 0, review: 1, approved: 2, production: 3, delivered: 4, rejected: 5, draft: 6 };
+                                        const pa = priority[a.status] ?? 9;
+                                        const pb = priority[b.status] ?? 9;
+                                        if (pa !== pb) return pa - pb;
+                                        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+                                    });
 
                                     const filtered = sorted.filter(p => {
                                         const term = searchTerm.toLowerCase();
@@ -2906,38 +2908,40 @@ const ClientPortal: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {budget.items.filter(item => !item.is_optional).map((item, idx) => (
-                                    <tr key={idx} style={{ borderBottom: '1px solid #111111', background: idx === 0 ? 'rgba(225, 249, 55, 0.04)' : 'transparent' }}>
-                                        <td style={{ color: '#ffffff', fontSize: '12px', padding: '12px 8px', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
-                                            {idx === 0 && (
+                                {/* SOLO items[0] en la tabla base */}
+                                {budget.items[0] && (() => {
+                                    const bi = budget.items[0];
+                                    return (
+                                        <tr style={{ borderBottom: '1px solid #111111', background: 'rgba(225, 249, 55, 0.04)' }}>
+                                            <td style={{ color: '#ffffff', fontSize: '12px', padding: '12px 8px', whiteSpace: 'pre-wrap', lineHeight: '1.6', fontFamily: 'Arial, sans-serif' }}>
                                                 <span style={{ display: 'inline-block', fontSize: '8px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', color: '#000000', background: '#e1f937', padding: '2px 6px', borderRadius: '2px', marginRight: '8px', verticalAlign: 'middle' }}>
                                                     Presupuesto Base
                                                 </span>
-                                            )}
-                                            {item.description}
-                                        </td>
-                                        <td style={{ color: '#ffffff', fontSize: '12px', padding: '12px 8px', textAlign: 'center' }}>{item.quantity}</td>
-                                        <td style={{ color: '#ffffff', fontSize: '12px', padding: '12px 8px', textAlign: 'right' }}>{project.currency || 'USD'} {item.unit_price.toLocaleString('es-AR')}</td>
-                                        <td style={{ color: idx === 0 ? '#e1f937' : '#ffffff', fontSize: '12px', padding: '12px 8px', textAlign: 'right', fontWeight: idx === 0 ? '900' : '600' }}>{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString('es-AR')}</td>
-                                    </tr>
-                                ))}
+                                                {bi.description}
+                                            </td>
+                                            <td style={{ color: '#ffffff', fontSize: '12px', padding: '12px 8px', textAlign: 'center', fontFamily: 'Arial, sans-serif' }}>{bi.quantity}</td>
+                                            <td style={{ color: '#ffffff', fontSize: '12px', padding: '12px 8px', textAlign: 'right', fontFamily: 'Arial, sans-serif' }}>{project.currency || 'USD'} {bi.unit_price.toLocaleString('es-AR')}</td>
+                                            <td style={{ color: '#e1f937', fontSize: '12px', padding: '12px 8px', textAlign: 'right', fontWeight: '900', fontFamily: 'Arial, sans-serif' }}>{project.currency || 'USD'} {(bi.quantity * bi.unit_price).toLocaleString('es-AR')}</td>
+                                        </tr>
+                                    );
+                                })()}
                                 <tr style={{ borderTop: '2px solid #e1f937', background: 'rgba(225, 249, 55, 0.04)' }}>
-                                    <td colSpan={3} style={{ color: '#ffffff', fontSize: '12px', padding: '14px 8px', textAlign: 'right', fontWeight: 'bold', textTransform: 'uppercase' }}>Presupuesto Base (Monto a Aprobar):</td>
-                                    <td style={{ color: '#e1f937', fontSize: '14px', padding: '14px 8px', textAlign: 'right', fontWeight: '900' }}>{project.currency || 'USD'} {budget.total_price.toLocaleString('es-AR')}</td>
+                                    <td colSpan={3} style={{ color: '#ffffff', fontSize: '12px', padding: '14px 8px', textAlign: 'right', fontWeight: 'bold', textTransform: 'uppercase', fontFamily: 'Arial, sans-serif' }}>Presupuesto Base (Monto a Aprobar):</td>
+                                    <td style={{ color: '#e1f937', fontSize: '14px', padding: '14px 8px', textAlign: 'right', fontWeight: '900', fontFamily: 'Arial, sans-serif' }}>{project.currency || 'USD'} {budget.items[0] ? (budget.items[0].quantity * budget.items[0].unit_price).toLocaleString('es-AR') : budget.total_price.toLocaleString('es-AR')}</td>
                                 </tr>
-                                {budget.items.some(item => item.is_optional) && (
+                                {budget.items.slice(1).length > 0 && (
                                     <>
                                         <tr>
-                                            <td colSpan={4} style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '10px', color: '#888888', padding: '20px 8px 6px 8px', borderBottom: '1px solid #222222' }}>
+                                            <td colSpan={4} style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '10px', color: '#888888', padding: '20px 8px 6px 8px', borderBottom: '1px solid #222222', fontFamily: 'Arial, sans-serif' }}>
                                                 Adicionales Sugeridos (Opcionales)
                                             </td>
                                         </tr>
-                                        {budget.items.filter(item => item.is_optional).map((item, idx) => (
+                                        {budget.items.slice(1).map((item, idx) => (
                                             <tr key={idx} style={{ borderBottom: '1px solid #111111' }}>
-                                                <td style={{ color: '#a0a0a0', fontSize: '12px', padding: '12px 8px', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>➕ {item.description}</td>
-                                                <td style={{ color: '#a0a0a0', fontSize: '12px', padding: '12px 8px', textAlign: 'center' }}>{item.quantity}</td>
-                                                <td style={{ color: '#a0a0a0', fontSize: '12px', padding: '12px 8px', textAlign: 'right' }}>{project.currency || 'USD'} {item.unit_price.toLocaleString('es-AR')}</td>
-                                                <td style={{ color: '#e1f937', fontSize: '12px', padding: '12px 8px', textAlign: 'right', fontWeight: '600' }}>{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString('es-AR')}</td>
+                                                <td style={{ color: '#ffffff', fontSize: '12px', padding: '12px 8px', whiteSpace: 'pre-wrap', lineHeight: '1.6', fontFamily: 'Arial, sans-serif' }}>➕ {item.description}</td>
+                                                <td style={{ color: '#ffffff', fontSize: '12px', padding: '12px 8px', textAlign: 'center', fontFamily: 'Arial, sans-serif' }}>{item.quantity}</td>
+                                                <td style={{ color: '#ffffff', fontSize: '12px', padding: '12px 8px', textAlign: 'right', fontFamily: 'Arial, sans-serif' }}>{project.currency || 'USD'} {item.unit_price.toLocaleString('es-AR')}</td>
+                                                <td style={{ color: '#e1f937', fontSize: '12px', padding: '12px 8px', textAlign: 'right', fontWeight: '600', fontFamily: 'Arial, sans-serif' }}>{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString('es-AR')}</td>
                                             </tr>
                                         ))}
                                     </>
