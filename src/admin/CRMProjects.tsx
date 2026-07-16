@@ -1518,22 +1518,31 @@ const CRMProjects: React.FC = () => {
                                     </div>
                                 ))}
 
-                                <div className="text-right text-xs space-y-1">
-                                    <div>
-                                        <span className="text-zinc-500">Presupuesto Base: </span>
-                                        <span className="font-bold text-nexo-lime">
-                                            {newCurrency} {(newBudgetItems[0] ? (newBudgetItems[0].quantity * newBudgetItems[0].unit_price) : 0).toLocaleString()}
-                                        </span>
-                                    </div>
-                                    {newBudgetItems.slice(1).some(i => i.is_optional) && (
-                                        <div>
-                                            <span className="text-zinc-500">Extras Opcionales: </span>
-                                            <span className="font-bold text-[#00e5ff]">
-                                                + {newCurrency} {newBudgetItems.slice(1).filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
-                                            </span>
+                                {(() => {
+                                    const baseTotal = newBudgetItems[0] ? (newBudgetItems[0].quantity * newBudgetItems[0].unit_price) : 0;
+                                    const extrasTotal = newBudgetItems.slice(1).filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0);
+                                    const hasExtras = newBudgetItems.slice(1).some(i => i.is_optional);
+                                    return (
+                                        <div className="text-right text-xs space-y-1 border-t border-white/5 pt-2">
+                                            <div>
+                                                <span className="text-zinc-500">Presupuesto Base: </span>
+                                                <span className="font-bold text-nexo-lime">{newCurrency} {baseTotal.toLocaleString()}</span>
+                                            </div>
+                                            {hasExtras && (
+                                                <div>
+                                                    <span className="text-zinc-500">Extras Opcionales: </span>
+                                                    <span className="font-bold text-[#00e5ff]">+ {newCurrency} {extrasTotal.toLocaleString()}</span>
+                                                </div>
+                                            )}
+                                            {hasExtras && (
+                                                <div className="pt-1 border-t border-white/5">
+                                                    <span className="text-zinc-400">Total Sugerido (si el cliente elige todo): </span>
+                                                    <span className="font-extrabold text-white">{newCurrency} {(baseTotal + extrasTotal).toLocaleString()}</span>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </div>
+                                    );
+                                })()}
                             </div>
 
                             <div className="space-y-2 border-t border-white/5 pt-4">
@@ -1728,16 +1737,21 @@ const CRMProjects: React.FC = () => {
                                                                 );
                                                                 const totalInvoiced = displayInvoices.reduce((sum: number, inv: any) => sum + (inv.amount || 0), 0);
                                                                 const totalPaid = displayInvoices.reduce((sum: number, inv: any) => sum + (inv.paid ? (inv.amount || 0) : 0), 0);
-                                                                const totalBudgetVal = projectBudget ? projectBudget.total_price : 0;
+                                                                const basePrice = projectBudget ? projectBudget.total_price : 0;
+                                                                const optionalsInBudget = projectBudget ? (projectBudget.items || []).filter((it: any) => it.is_optional).reduce((s: number, it: any) => s + (it.quantity * it.unit_price), 0) : 0;
+                                                                const totalBudgetVal = basePrice + optionalsInBudget;
                                                                 const remainingToInvoice = Math.max(0, totalBudgetVal - totalInvoiced);
                                                                 const remainingToCollect = Math.max(0, totalInvoiced - totalPaid);
                                                                 
                                                                 return (
                                                                     <>
-                                                                        <span className="text-zinc-500 text-[9px] block font-bold uppercase tracking-wider">Presupuesto</span>
+                                                                        <span className="text-zinc-500 text-[9px] block font-bold uppercase tracking-wider">Presupuesto Base</span>
                                                                         <div className="font-mono font-bold text-sm text-white">
-                                                                            {project.currency || 'ARS'} {totalBudgetVal.toLocaleString()}
+                                                                            {project.currency || 'ARS'} {basePrice.toLocaleString()}
                                                                         </div>
+                                                                        {optionalsInBudget > 0 && (
+                                                                            <div className="text-[9px] text-[#00e5ff] font-mono font-bold">+ {project.currency || 'ARS'} {optionalsInBudget.toLocaleString()} extras</div>
+                                                                        )}
                                                                         {totalInvoiced > 0 && (
                                                                             <div className="mt-1.5 flex flex-col items-end gap-1">
                                                                                 {remainingToCollect === 0 && remainingToInvoice === 0 ? (
@@ -2111,13 +2125,25 @@ const CRMProjects: React.FC = () => {
                                                                     <div>
                                                                         <span className="font-bold text-zinc-300">Presupuesto Activo </span>
                                                                         <span className="text-zinc-500 text-[10px] font-semibold mr-2">(Versión {projectBudget.version}): </span>
-                                                                        <span className="text-white font-medium">{project.currency || 'ARS'} {projectBudget.total_price.toLocaleString()}</span>
+                                                                        {(() => {
+                                                                            const base = projectBudget.total_price;
+                                                                            const optionals = (projectBudget.items || []).filter((it: any) => it.is_optional).reduce((s: number, it: any) => s + (it.quantity * it.unit_price), 0);
+                                                                            return (
+                                                                                <span>
+                                                                                    <span className="text-white font-medium">{project.currency || 'ARS'} {base.toLocaleString()}</span>
+                                                                                    {optionals > 0 && (
+                                                                                        <span className="text-[#00e5ff] font-medium ml-1"> + {project.currency || 'ARS'} {optionals.toLocaleString()} <span className="text-zinc-500 text-[10px]">(extras opcionales)</span></span>
+                                                                                    )}
+                                                                                </span>
+                                                                            );
+                                                                        })()}
                                                                     </div>
                                                                     
                                                                     {/* Resumen Facturado / Pendiente */}
                                                                     {(() => {
                                                                         const history = project.invoices_history;
-                                                                        const totalBudget = projectBudget.total_price || 0;
+                                                                        const optionalsSum = (projectBudget.items || []).filter((it: any) => it.is_optional).reduce((s: number, it: any) => s + (it.quantity * it.unit_price), 0);
+                                                                        const totalBudget = (projectBudget.total_price || 0) + optionalsSum;
                                                                         const totalInvoiced = Array.isArray(history) 
                                                                             ? history.reduce((sum, inv) => sum + (inv.amount || 0), 0)
                                                                             : 0;
@@ -2729,14 +2755,23 @@ const CRMProjects: React.FC = () => {
                                             {budgetingProject?.currency || 'ARS'} {(editingBudgetItems[0] ? (editingBudgetItems[0].quantity * editingBudgetItems[0].unit_price) : 0).toLocaleString()}
                                         </span>
                                     </div>
-                                    {editingBudgetItems.slice(1).some(i => i.is_optional) && (
-                                        <div>
-                                            <span className="text-zinc-500">Extras Opcionales: </span>
-                                            <span className="font-bold text-[#00e5ff]">
-                                                + {budgetingProject?.currency || 'ARS'} {editingBudgetItems.slice(1).filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
-                                            </span>
-                                        </div>
-                                    )}
+                                    {(() => {
+                                        const hasExtras = editingBudgetItems.slice(1).some(i => i.is_optional);
+                                        const extrasTotal = editingBudgetItems.slice(1).filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0);
+                                        const baseTotal = editingBudgetItems[0] ? (editingBudgetItems[0].quantity * editingBudgetItems[0].unit_price) : 0;
+                                        return hasExtras ? (
+                                            <>
+                                                <div>
+                                                    <span className="text-zinc-500">Extras Opcionales: </span>
+                                                    <span className="font-bold text-[#00e5ff]">+ {budgetingProject?.currency || 'ARS'} {extrasTotal.toLocaleString()}</span>
+                                                </div>
+                                                <div className="pt-1 border-t border-white/5">
+                                                    <span className="text-zinc-400">Total Sugerido (si el cliente elige todo): </span>
+                                                    <span className="font-extrabold text-white">{budgetingProject?.currency || 'ARS'} {(baseTotal + extrasTotal).toLocaleString()}</span>
+                                                </div>
+                                            </>
+                                        ) : null;
+                                    })()}
                                 </div>
                             </div>
 
