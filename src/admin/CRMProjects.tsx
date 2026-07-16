@@ -362,10 +362,9 @@ const CRMProjects: React.FC = () => {
         setError('');
         setSuccessMsg('');
 
-        // Excluir opcionales de la suma total
-        const totalPrice = newBudgetItems
-            .filter(item => !item.is_optional)
-            .reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0);
+        // Excluir opcionales de la suma total (el primer ítem es siempre el base)
+        const itemsToSave = newBudgetItems.map((item, idx) => idx === 0 ? { ...item, is_optional: false } : item);
+        const totalPrice = itemsToSave[0] ? (itemsToSave[0].quantity * itemsToSave[0].unit_price) : 0;
 
         try {
             const countryPrefix = newPhoneCountryCode.trim() !== '' ? newPhoneCountryCode : '+54 9';
@@ -385,7 +384,7 @@ const CRMProjects: React.FC = () => {
                     status: newProjStatus,
                     currency: newCurrency,
                     crew_count: newCrewCount === '' ? null : Number(newCrewCount),
-                    items: newBudgetItems,
+                    items: itemsToSave,
                     total_price: totalPrice,
                     payment_terms: newPaymentTerms,
                     password
@@ -504,10 +503,9 @@ const CRMProjects: React.FC = () => {
         setError('');
         setSuccessMsg('');
 
-        // Excluir opcionales de la suma total
-        const totalPrice = editingBudgetItems
-            .filter(item => !item.is_optional)
-            .reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0);
+        // El primer ítem es siempre el presupuesto base (nunca opcional)
+        const itemsToSave = editingBudgetItems.map((item, idx) => idx === 0 ? { ...item, is_optional: false } : item);
+        const totalPrice = itemsToSave[0] ? (itemsToSave[0].quantity * itemsToSave[0].unit_price) : 0;
 
         try {
             const res = await fetch('/api/comercial/admin', {
@@ -516,7 +514,7 @@ const CRMProjects: React.FC = () => {
                 body: JSON.stringify({
                     action: 'updateBudget',
                     project_id: budgetingProject.id,
-                    items: editingBudgetItems,
+                    items: itemsToSave,
                     total_price: totalPrice,
                     payment_terms: editingPaymentTerms,
                     password
@@ -1448,13 +1446,18 @@ const CRMProjects: React.FC = () => {
                                 </div>
 
                                 {newBudgetItems.map((item, idx) => (
-                                    <div key={idx} className="flex flex-col sm:flex-row gap-2 items-stretch bg-black/40 p-3 sm:p-2 border border-white/5 rounded">
+                                    <div key={idx} className={`flex flex-col sm:flex-row gap-2 items-stretch p-3 sm:p-2 border rounded ${idx === 0 ? 'bg-nexo-lime/5 border-nexo-lime/20' : 'bg-black/40 border-white/5'}`}>
+                                        {idx === 0 && (
+                                            <div className="sm:hidden flex items-center gap-1.5 mb-1">
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-nexo-lime bg-nexo-lime/10 px-2 py-0.5 rounded border border-nexo-lime/30">★ Presupuesto Base</span>
+                                            </div>
+                                        )}
                                         <textarea
                                             value={item.description}
                                             onChange={(e) => updateNewBudgetItem(idx, 'description', e.target.value)}
-                                            className="w-full sm:flex-1 bg-black border border-white/5 rounded px-2.5 py-1.5 text-xs text-white resize-y min-h-[70px] self-start"
-                                            placeholder="Detalle del servicio (admite saltos de línea para formato técnico)"
-                                            rows={3}
+                                            className="w-full sm:flex-1 bg-black border border-white/5 rounded px-2.5 py-2 text-xs text-white resize-y min-h-[80px] self-start"
+                                            placeholder={idx === 0 ? "Descripción del servicio principal (monto a aprobar obligatorio)" : "Detalle del servicio extra / opcional"}
+                                            rows={4}
                                         />
                                         <div className="flex gap-2 items-center justify-between sm:justify-start w-full sm:w-auto shrink-0">
                                             <div className="flex items-center gap-1">
@@ -1464,7 +1467,7 @@ const CRMProjects: React.FC = () => {
                                                     min="1"
                                                     value={item.quantity}
                                                     onChange={(e) => updateNewBudgetItem(idx, 'quantity', e.target.value)}
-                                                    className="w-12 bg-black border border-white/5 rounded px-1 py-1 text-xs text-center text-white"
+                                                    className="w-16 bg-black border border-white/5 rounded px-2 py-2 text-sm text-center text-white"
                                                     placeholder="Cant"
                                                 />
                                             </div>
@@ -1476,7 +1479,7 @@ const CRMProjects: React.FC = () => {
                                                         min="0"
                                                         value={item.unit_price || ''}
                                                         onChange={(e) => updateNewBudgetItem(idx, 'unit_price', e.target.value)}
-                                                        className="w-24 bg-black border border-white/5 rounded px-2 py-1 text-xs text-right text-white"
+                                                        className="w-32 bg-black border border-white/5 rounded px-2 py-2 text-sm text-right text-white"
                                                         placeholder="Precio U."
                                                     />
                                                     {item.unit_price > 0 && (
@@ -1486,17 +1489,23 @@ const CRMProjects: React.FC = () => {
                                                     )}
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-1 shrink-0 bg-white/5 px-2 py-1 rounded border border-white/5">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={!!item.is_optional}
-                                                    onChange={(e) => updateNewBudgetItem(idx, 'is_optional', e.target.checked)}
-                                                    className="accent-nexo-lime h-3.5 w-3.5 bg-black border border-white/10 rounded cursor-pointer"
-                                                    title="Marcar como Extra / Opcional"
-                                                />
-                                                <span className="text-[10px] text-zinc-400">Extra</span>
-                                            </div>
-                                            {newBudgetItems.length > 1 && (
+                                            {idx === 0 ? (
+                                                <div className="flex items-center gap-1 shrink-0 bg-nexo-lime/10 px-2 py-1.5 rounded border border-nexo-lime/30 hidden sm:flex">
+                                                    <span className="text-[9px] font-black uppercase tracking-widest text-nexo-lime">★ Base</span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-1 shrink-0 bg-white/5 px-2 py-1.5 rounded border border-white/5">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={!!item.is_optional}
+                                                        onChange={(e) => updateNewBudgetItem(idx, 'is_optional', e.target.checked)}
+                                                        className="accent-nexo-lime h-3.5 w-3.5 bg-black border border-white/10 rounded cursor-pointer"
+                                                        title="Marcar como Extra / Opcional"
+                                                    />
+                                                    <span className="text-[10px] text-zinc-400">Extra</span>
+                                                </div>
+                                            )}
+                                            {newBudgetItems.length > 1 && idx > 0 && (
                                                 <button
                                                     type="button"
                                                     onClick={() => removeNewBudgetItem(idx)}
@@ -1511,16 +1520,16 @@ const CRMProjects: React.FC = () => {
 
                                 <div className="text-right text-xs space-y-1">
                                     <div>
-                                        <span className="text-zinc-500">Total Principal: </span>
+                                        <span className="text-zinc-500">Presupuesto Base: </span>
                                         <span className="font-bold text-nexo-lime">
-                                            {newCurrency} {newBudgetItems.filter(i => !i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
+                                            {newCurrency} {(newBudgetItems[0] ? (newBudgetItems[0].quantity * newBudgetItems[0].unit_price) : 0).toLocaleString()}
                                         </span>
                                     </div>
-                                    {newBudgetItems.some(i => i.is_optional) && (
+                                    {newBudgetItems.slice(1).some(i => i.is_optional) && (
                                         <div>
-                                            <span className="text-zinc-500">Extras Sugeridos: </span>
+                                            <span className="text-zinc-500">Extras Opcionales: </span>
                                             <span className="font-bold text-[#00e5ff]">
-                                                + {newCurrency} {newBudgetItems.filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
+                                                + {newCurrency} {newBudgetItems.slice(1).filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
                                             </span>
                                         </div>
                                     )}
@@ -2638,14 +2647,19 @@ const CRMProjects: React.FC = () => {
                                 </div>
 
                                 {editingBudgetItems.map((item, idx) => (
-                                    <div key={idx} className="flex flex-col sm:flex-row gap-2 items-stretch bg-black/40 p-3 sm:p-2 border border-white/5 rounded">
+                                    <div key={idx} className={`flex flex-col sm:flex-row gap-2 items-stretch p-3 sm:p-2 border rounded ${idx === 0 ? 'bg-nexo-lime/5 border-nexo-lime/20' : 'bg-black/40 border-white/5'}`}>
+                                        {idx === 0 && (
+                                            <div className="sm:hidden flex items-center gap-1.5 mb-1">
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-nexo-lime bg-nexo-lime/10 px-2 py-0.5 rounded border border-nexo-lime/30">★ Presupuesto Base</span>
+                                            </div>
+                                        )}
                                         <textarea
                                             required
                                             value={item.description}
                                             onChange={(e) => updateEditingBudgetItem(idx, 'description', e.target.value)}
-                                            className="w-full sm:flex-1 bg-black border border-white/5 rounded px-2.5 py-1.5 text-xs text-white resize-y min-h-[70px] self-start"
-                                            placeholder="Detalle del servicio (admite saltos de línea para formato técnico)"
-                                            rows={3}
+                                            className="w-full sm:flex-1 bg-black border border-white/5 rounded px-2.5 py-2 text-xs text-white resize-y min-h-[80px] self-start"
+                                            placeholder={idx === 0 ? "Descripción del servicio principal (monto a aprobar obligatorio)" : "Detalle del servicio extra / opcional"}
+                                            rows={4}
                                         />
                                         <div className="flex gap-2 items-center justify-between sm:justify-start w-full sm:w-auto shrink-0">
                                             <div className="flex items-center gap-1">
@@ -2656,7 +2670,7 @@ const CRMProjects: React.FC = () => {
                                                     min="1"
                                                     value={item.quantity}
                                                     onChange={(e) => updateEditingBudgetItem(idx, 'quantity', e.target.value)}
-                                                    className="w-12 bg-black border border-white/5 rounded px-1 py-1 text-xs text-center text-white"
+                                                    className="w-16 bg-black border border-white/5 rounded px-2 py-2 text-sm text-center text-white"
                                                     placeholder="Cant"
                                                 />
                                             </div>
@@ -2669,7 +2683,7 @@ const CRMProjects: React.FC = () => {
                                                         min="0"
                                                         value={item.unit_price || ''}
                                                         onChange={(e) => updateEditingBudgetItem(idx, 'unit_price', e.target.value)}
-                                                        className="w-24 bg-black border border-white/5 rounded px-2 py-1 text-xs text-right text-white"
+                                                        className="w-32 bg-black border border-white/5 rounded px-2 py-2 text-sm text-right text-white"
                                                         placeholder="Precio U."
                                                     />
                                                     {item.unit_price > 0 && (
@@ -2679,17 +2693,23 @@ const CRMProjects: React.FC = () => {
                                                     )}
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-1 shrink-0 bg-white/5 px-2 py-1 rounded border border-white/5">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={!!item.is_optional}
-                                                    onChange={(e) => updateEditingBudgetItem(idx, 'is_optional', e.target.checked)}
-                                                    className="accent-nexo-lime h-3.5 w-3.5 bg-black border border-white/10 rounded cursor-pointer"
-                                                    title="Marcar como Extra / Opcional"
-                                                />
-                                                <span className="text-[10px] text-zinc-400">Extra</span>
-                                            </div>
-                                            {editingBudgetItems.length > 1 && (
+                                            {idx === 0 ? (
+                                                <div className="flex items-center gap-1 shrink-0 bg-nexo-lime/10 px-2 py-1.5 rounded border border-nexo-lime/30 hidden sm:flex">
+                                                    <span className="text-[9px] font-black uppercase tracking-widest text-nexo-lime">★ Base</span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-1 shrink-0 bg-white/5 px-2 py-1.5 rounded border border-white/5">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={!!item.is_optional}
+                                                        onChange={(e) => updateEditingBudgetItem(idx, 'is_optional', e.target.checked)}
+                                                        className="accent-nexo-lime h-3.5 w-3.5 bg-black border border-white/10 rounded cursor-pointer"
+                                                        title="Marcar como Extra / Opcional"
+                                                    />
+                                                    <span className="text-[10px] text-zinc-400">Extra</span>
+                                                </div>
+                                            )}
+                                            {editingBudgetItems.length > 1 && idx > 0 && (
                                                 <button
                                                     type="button"
                                                     onClick={() => removeEditingBudgetItem(idx)}
@@ -2704,16 +2724,16 @@ const CRMProjects: React.FC = () => {
 
                                 <div className="text-right text-xs space-y-1">
                                     <div>
-                                        <span className="text-zinc-500">Total Principal: </span>
+                                        <span className="text-zinc-500">Presupuesto Base: </span>
                                         <span className="font-bold text-nexo-lime">
-                                            {budgetingProject?.currency || 'ARS'} {editingBudgetItems.filter(i => !i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
+                                            {budgetingProject?.currency || 'ARS'} {(editingBudgetItems[0] ? (editingBudgetItems[0].quantity * editingBudgetItems[0].unit_price) : 0).toLocaleString()}
                                         </span>
                                     </div>
-                                    {editingBudgetItems.some(i => i.is_optional) && (
+                                    {editingBudgetItems.slice(1).some(i => i.is_optional) && (
                                         <div>
-                                            <span className="text-zinc-500">Extras Sugeridos: </span>
+                                            <span className="text-zinc-500">Extras Opcionales: </span>
                                             <span className="font-bold text-[#00e5ff]">
-                                                + {budgetingProject?.currency || 'ARS'} {editingBudgetItems.filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
+                                                + {budgetingProject?.currency || 'ARS'} {editingBudgetItems.slice(1).filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0).toLocaleString()}
                                             </span>
                                         </div>
                                     )}

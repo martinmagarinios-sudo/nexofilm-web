@@ -2907,15 +2907,22 @@ const ClientPortal: React.FC = () => {
                             </thead>
                             <tbody>
                                 {budget.items.filter(item => !item.is_optional).map((item, idx) => (
-                                    <tr key={idx} style={{ borderBottom: '1px solid #111111' }}>
-                                        <td style={{ color: '#ffffff', fontSize: '12px', padding: '12px 8px', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>{item.description}</td>
+                                    <tr key={idx} style={{ borderBottom: '1px solid #111111', background: idx === 0 ? 'rgba(225, 249, 55, 0.04)' : 'transparent' }}>
+                                        <td style={{ color: '#ffffff', fontSize: '12px', padding: '12px 8px', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+                                            {idx === 0 && (
+                                                <span style={{ display: 'inline-block', fontSize: '8px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', color: '#000000', background: '#e1f937', padding: '2px 6px', borderRadius: '2px', marginRight: '8px', verticalAlign: 'middle' }}>
+                                                    Presupuesto Base
+                                                </span>
+                                            )}
+                                            {item.description}
+                                        </td>
                                         <td style={{ color: '#ffffff', fontSize: '12px', padding: '12px 8px', textAlign: 'center' }}>{item.quantity}</td>
                                         <td style={{ color: '#ffffff', fontSize: '12px', padding: '12px 8px', textAlign: 'right' }}>{project.currency || 'USD'} {item.unit_price.toLocaleString('es-AR')}</td>
-                                        <td style={{ color: '#ffffff', fontSize: '12px', padding: '12px 8px', textAlign: 'right', fontWeight: '600' }}>{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString('es-AR')}</td>
+                                        <td style={{ color: idx === 0 ? '#e1f937' : '#ffffff', fontSize: '12px', padding: '12px 8px', textAlign: 'right', fontWeight: idx === 0 ? '900' : '600' }}>{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString('es-AR')}</td>
                                     </tr>
                                 ))}
-                                <tr style={{ borderTop: '2px solid #e1f937', background: 'rgba(225, 249, 55, 0.02)' }}>
-                                    <td colSpan={3} style={{ color: '#ffffff', fontSize: '12px', padding: '14px 8px', textAlign: 'right', fontWeight: 'bold', textTransform: 'uppercase' }}>Valor Total de la Propuesta (base):</td>
+                                <tr style={{ borderTop: '2px solid #e1f937', background: 'rgba(225, 249, 55, 0.04)' }}>
+                                    <td colSpan={3} style={{ color: '#ffffff', fontSize: '12px', padding: '14px 8px', textAlign: 'right', fontWeight: 'bold', textTransform: 'uppercase' }}>Presupuesto Base (Monto a Aprobar):</td>
                                     <td style={{ color: '#e1f937', fontSize: '14px', padding: '14px 8px', textAlign: 'right', fontWeight: '900' }}>{project.currency || 'USD'} {budget.total_price.toLocaleString('es-AR')}</td>
                                 </tr>
                                 {budget.items.some(item => item.is_optional) && (
