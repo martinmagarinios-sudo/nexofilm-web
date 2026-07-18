@@ -1455,9 +1455,9 @@ const CRMProjects: React.FC = () => {
                                         <textarea
                                             value={item.description}
                                             onChange={(e) => updateNewBudgetItem(idx, 'description', e.target.value)}
-                                            className="w-full sm:flex-1 bg-black border border-white/5 rounded px-2.5 py-2 text-xs text-white resize-y min-h-[80px] self-start"
+                                            className="w-full sm:flex-1 bg-black/60 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white resize-y min-h-[160px] self-start leading-relaxed placeholder:text-zinc-600 focus:outline-none focus:border-nexo-lime/30 focus:ring-1 focus:ring-nexo-lime/20"
                                             placeholder={idx === 0 ? "Descripción del servicio principal (monto a aprobar obligatorio)" : "Detalle del servicio extra / opcional"}
-                                            rows={4}
+                                            rows={7}
                                         />
                                         <div className="flex gap-2 items-center justify-between sm:justify-start w-full sm:w-auto shrink-0">
                                             <div className="flex items-center gap-1">
@@ -2709,9 +2709,9 @@ const CRMProjects: React.FC = () => {
                                             required
                                             value={item.description}
                                             onChange={(e) => updateEditingBudgetItem(idx, 'description', e.target.value)}
-                                            className="w-full sm:flex-1 bg-black border border-white/5 rounded px-2.5 py-2 text-xs text-white resize-y min-h-[80px] self-start"
+                                            className="w-full sm:flex-1 bg-black/60 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white resize-y min-h-[160px] self-start leading-relaxed placeholder:text-zinc-600 focus:outline-none focus:border-nexo-lime/30 focus:ring-1 focus:ring-nexo-lime/20"
                                             placeholder={idx === 0 ? "Descripción del servicio principal (monto a aprobar obligatorio)" : "Detalle del servicio extra / opcional"}
-                                            rows={4}
+                                            rows={7}
                                         />
                                         <div className="flex gap-2 items-center justify-between sm:justify-start w-full sm:w-auto shrink-0">
                                             <div className="flex items-center gap-1">

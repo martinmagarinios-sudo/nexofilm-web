@@ -106,6 +106,69 @@ const formatDateAR = (dateStr: string | null) => {
     return dateStr;
 };
 
+/**
+ * Renderiza la descripción de un item de presupuesto con jerarquía visual:
+ * - La primera línea no-vacía se muestra como título en bold
+ * - Las líneas que empiezan con 'o ' se muestran como bullets con ○
+ * - El resto como texto normal
+ */
+const renderDescription = (text: string, forPrint = false) => {
+    if (!text) return null;
+    const lines = text.split('\n').filter(l => l.trim() !== '');
+    if (lines.length === 0) return null;
+
+    const result: React.ReactNode[] = [];
+    let firstNonBullet = true;
+
+    lines.forEach((line, i) => {
+        const isBullet = line.trimStart().startsWith('o ');
+        const content = isBullet ? line.trimStart().substring(2) : line;
+
+        if (!isBullet && firstNonBullet) {
+            // Primera línea = título
+            firstNonBullet = false;
+            result.push(
+                <div key={i} style={{
+                    fontWeight: '700',
+                    fontSize: forPrint ? '11px' : '13px',
+                    color: '#ffffff',
+                    marginBottom: '6px',
+                    fontFamily: 'Arial, Helvetica, sans-serif',
+                    letterSpacing: forPrint ? '0px' : '0.01em',
+                    lineHeight: '1.4'
+                }}>{content}</div>
+            );
+        } else if (isBullet) {
+            result.push(
+                <div key={i} style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '7px',
+                    fontSize: forPrint ? '10px' : '11.5px',
+                    color: forPrint ? '#d0d0d0' : '#c4c4c4',
+                    lineHeight: '1.6',
+                    marginBottom: '3px',
+                    fontFamily: 'Arial, Helvetica, sans-serif',
+                }}>
+                    <span style={{ color: '#e1f937', fontSize: forPrint ? '9px' : '10px', marginTop: '3px', flexShrink: 0, fontWeight: '900' }}>○</span>
+                    <span>{content}</span>
+                </div>
+            );
+        } else {
+            result.push(
+                <div key={i} style={{
+                    fontSize: forPrint ? '10px' : '11.5px',
+                    color: forPrint ? '#cccccc' : '#b0b0b0',
+                    lineHeight: '1.6',
+                    marginBottom: '3px',
+                    fontFamily: 'Arial, Helvetica, sans-serif',
+                }}>{content}</div>
+            );
+        }
+    });
+    return <div style={{ display: 'flex', flexDirection: 'column' }}>{result}</div>;
+};
+
 const ClientPortal: React.FC = () => {
     const [token, setToken] = useState<string | null>(null);
     const [project, setProject] = useState<Project | null>(null);
@@ -1060,10 +1123,10 @@ const ClientPortal: React.FC = () => {
                             <tbody className="divide-y divide-white/5 text-sm text-zinc-300">
                                 {baseItem && (
                                     <tr>
-                                        <td className="px-6 py-4 font-medium text-white whitespace-pre-wrap">{baseItem.description}</td>
-                                        <td className="px-6 py-4 text-center">{baseItem.quantity}</td>
-                                        <td className="px-6 py-4 text-right">{project.currency || 'USD'} {baseItem.unit_price.toLocaleString()}</td>
-                                        <td className="px-6 py-4 text-right text-white">{project.currency || 'USD'} {baseTotal.toLocaleString()}</td>
+                                        <td className="px-6 py-4 align-top" style={{ minWidth: '260px' }}>{renderDescription(baseItem.description)}</td>
+                                        <td className="px-6 py-4 text-center align-top">{baseItem.quantity}</td>
+                                        <td className="px-6 py-4 text-right align-top text-zinc-400">{project.currency || 'USD'} {baseItem.unit_price.toLocaleString()}</td>
+                                        <td className="px-6 py-4 text-right align-top text-white font-bold">{project.currency || 'USD'} {baseTotal.toLocaleString()}</td>
                                     </tr>
                                 )}
                                 <tr className="bg-zinc-900/60 border-t-2 border-white/10">
@@ -1092,8 +1155,8 @@ const ClientPortal: React.FC = () => {
                     <div className="block lg:hidden space-y-4">
                         {baseItem && (
                             <div className="bg-black/40 border border-white/5 p-5 rounded-xl space-y-3 shadow-lg">
-                                <div className="font-medium text-white text-sm whitespace-pre-wrap leading-relaxed">
-                                    {baseItem.description}
+                                <div className="leading-relaxed">
+                                    {renderDescription(baseItem.description)}
                                 </div>
                                 <div className="flex justify-between items-center gap-2 pt-3 border-t border-white/5 text-xs text-zinc-400">
                                     <div><span>Cant: </span><strong className="text-white">{baseItem.quantity}</strong></div>
@@ -1181,7 +1244,12 @@ const ClientPortal: React.FC = () => {
                                                         )}
                                                     </td>
                                                 )}
-                                                <td className="px-6 py-3 font-medium text-white whitespace-pre-wrap">➕ {item.description}</td>
+                                                <td className="px-6 py-3 align-top" style={{ minWidth: '220px' }}>
+                                                    <div style={{ display:'flex', alignItems:'flex-start', gap:'6px' }}>
+                                                        <span className="text-[#00e5ff] text-xs mt-1 shrink-0">➕</span>
+                                                        <div>{renderDescription(item.description)}</div>
+                                                    </div>
+                                                 </td>
                                                 <td className="px-6 py-3 text-center">{item.quantity}</td>
                                                 <td className="px-6 py-3 text-right">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</td>
                                                 <td className="px-6 py-3 text-right text-[#00e5ff]">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</td>
@@ -1218,8 +1286,9 @@ const ClientPortal: React.FC = () => {
                                         }`}
                                     >
                                         <div className="flex items-start gap-3 justify-between">
-                                            <div className="font-medium text-white text-sm whitespace-pre-wrap leading-relaxed">
-                                                ➕ {item.description}
+                                            <div className="leading-relaxed flex-1">
+                                                <span className="text-[#00e5ff] text-xs mr-1">➕</span>
+                                                {renderDescription(item.description)}
                                             </div>
                                             {isEditable && isOptionalSelectable && (
                                                 <input 
@@ -2899,7 +2968,7 @@ const ClientPortal: React.FC = () => {
                                                             Presupuesto Base
                                                         </span>
                                                     </div>
-                                                    <div style={{ fontSize: '11px', color: '#ffffff', lineHeight: '1.7', wordBreak: 'break-word', fontFamily: 'Arial, Helvetica, sans-serif' }}>{bi.description}</div>
+                                                    {renderDescription(bi.description, true)}
                                                 </td>
                                                 <td style={{ fontSize: '11px', color: '#fff', padding: '14px 6px', textAlign: 'center', verticalAlign: 'top', fontFamily: 'Arial, Helvetica, sans-serif' }}>{bi.quantity}</td>
                                                 <td style={{ fontSize: '11px', color: '#aaa', padding: '14px 12px', textAlign: 'right', verticalAlign: 'top', fontFamily: 'Arial, Helvetica, sans-serif', wordBreak: 'keep-all' }}>{project.currency || 'ARS'} {bi.unit_price.toLocaleString('es-AR')}</td>
@@ -2942,7 +3011,7 @@ const ClientPortal: React.FC = () => {
                                         {budget.items.slice(1).map((item, idx) => (
                                             <tr key={idx} style={{ borderBottom: idx < budget.items.slice(1).length - 1 ? '1px solid #1a1a1a' : 'none' }}>
                                                 <td style={{ padding: '12px 12px', verticalAlign: 'top', fontFamily: 'Arial, Helvetica, sans-serif' }}>
-                                                    <div style={{ fontSize: '11px', color: '#e0e0e0', lineHeight: '1.7', wordBreak: 'break-word', fontFamily: 'Arial, Helvetica, sans-serif' }}>{item.description}</div>
+                                                    {renderDescription(item.description, true)}
                                                 </td>
                                                 <td style={{ fontSize: '11px', color: '#ccc', padding: '12px 6px', textAlign: 'center', verticalAlign: 'top', fontFamily: 'Arial, Helvetica, sans-serif' }}>{item.quantity}</td>
                                                 <td style={{ fontSize: '11px', color: '#aaa', padding: '12px 12px', textAlign: 'right', verticalAlign: 'top', fontFamily: 'Arial, Helvetica, sans-serif', wordBreak: 'keep-all' }}>{project.currency || 'ARS'} {item.unit_price.toLocaleString('es-AR')}</td>
