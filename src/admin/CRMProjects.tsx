@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import CalendarView from './CalendarView';
 import CrewDirectory, { CrewMember, CREW_ROLES, ROLE_ICONS } from './CrewDirectory';
@@ -237,6 +237,11 @@ const CRMProjects: React.FC = () => {
     const [reviews, setReviews] = useState<any[]>([]);
     const [loadingReviews, setLoadingReviews] = useState(false);
 
+    // Refs e instanciación de Google Maps Autocomplete
+    const editLocationInputRef = useRef<HTMLInputElement>(null);
+    const budgetLocationInputRef = useRef<HTMLInputElement>(null);
+    const [isGoogleLoaded, setIsGoogleLoaded] = useState(false);
+
     // Formulario de creación
     const [newContactName, setNewContactName] = useState('');
     const [newCompanyName, setNewCompanyName] = useState('');
@@ -391,6 +396,99 @@ const CRMProjects: React.FC = () => {
             fetchCrewMembers();
         }
     }, [isAuthenticated]);
+
+    // Carga dinámica de Google Maps para Autocomplete
+    useEffect(() => {
+        const apiKey = (import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '').trim();
+        if (!apiKey) {
+            console.warn("VITE_GOOGLE_MAPS_API_KEY no configurada. Desactivando sugerencias de mapa.");
+            return;
+        }
+
+        if ((window as any).google && (window as any).google.maps) {
+            setIsGoogleLoaded(true);
+            return;
+        }
+
+        const scriptId = 'google-maps-places-script';
+        let script = document.getElementById(scriptId) as HTMLScriptElement;
+        if (!script) {
+            script = document.createElement('script');
+            script.id = scriptId;
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initGoogleMapsCallback`;
+            script.async = true;
+            script.defer = true;
+
+            (window as any).initGoogleMapsCallback = () => {
+                setIsGoogleLoaded(true);
+            };
+
+            document.head.appendChild(script);
+        } else {
+            const interval = setInterval(() => {
+                if ((window as any).google && (window as any).google.maps) {
+                    clearInterval(interval);
+                    setIsGoogleLoaded(true);
+                }
+            }, 100);
+            return () => clearInterval(interval);
+        }
+    }, []);
+
+    // Vincular Autocomplete a los inputs
+    useEffect(() => {
+        if (!isGoogleLoaded) return;
+        const google = (window as any).google;
+        if (!google || !google.maps || !google.maps.places) return;
+
+        let editAutocomplete: any = null;
+        let budgetAutocomplete: any = null;
+
+        // 1. Vincular al input de edición de contacto/evento
+        if (editLocationInputRef.current) {
+            try {
+                editAutocomplete = new google.maps.places.Autocomplete(editLocationInputRef.current, {
+                    types: ['geocode', 'establishment'],
+                    fields: ['formatted_address', 'name'],
+                    componentRestrictions: { country: 'ar' }
+                });
+                editAutocomplete.addListener('place_changed', () => {
+                    const place = editAutocomplete.getPlace();
+                    const val = place.formatted_address || place.name || '';
+                    if (val) setEditingLocation(val);
+                });
+            } catch (e) {
+                console.warn("Error al inicializar autocomplete en contacto:", e);
+            }
+        }
+
+        // 2. Vincular al input del modal de presupuesto
+        if (budgetLocationInputRef.current) {
+            try {
+                budgetAutocomplete = new google.maps.places.Autocomplete(budgetLocationInputRef.current, {
+                    types: ['geocode', 'establishment'],
+                    fields: ['formatted_address', 'name'],
+                    componentRestrictions: { country: 'ar' }
+                });
+                budgetAutocomplete.addListener('place_changed', () => {
+                    const place = budgetAutocomplete.getPlace();
+                    const val = place.formatted_address || place.name || '';
+                    if (val) setEditingLocation(val);
+                });
+            } catch (e) {
+                console.warn("Error al inicializar autocomplete en presupuesto:", e);
+            }
+        }
+
+        return () => {
+            if (editAutocomplete) {
+                google.maps.event.clearInstanceListeners(editAutocomplete);
+            }
+            if (budgetAutocomplete) {
+                google.maps.event.clearInstanceListeners(budgetAutocomplete);
+            }
+        };
+    }, [isGoogleLoaded, editingContactProjectId, budgetingProject]);
 
     // Autocalcular monto de factura al cambiar el tipo
     useEffect(() => {
@@ -1962,7 +2060,7 @@ const CRMProjects: React.FC = () => {
                                                                                     setEditingEventEndTime(end);
                                                                                     setEditingCoverageHours(calculateHours(editingEventTime, end));
                                                                                 }} className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" title="Horario de fin" />
-                                                                                <input type="text" value={editingLocation} onChange={(e) => setEditingLocation(e.target.value)} placeholder="Locación / Lugar" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
+                                                                                <input type="text" ref={editLocationInputRef} value={editingLocation} onChange={(e) => setEditingLocation(e.target.value)} placeholder="Locación / Lugar" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
                                                                                 <input type="number" min="1" value={editingCoverageHours} onChange={(e) => setEditingCoverageHours(e.target.value === '' ? '' : parseInt(e.target.value))} placeholder="Horas cobertura" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
                                                                                 <input type="number" min="1" value={editingGuestsCount} onChange={(e) => setEditingGuestsCount(e.target.value === '' ? '' : parseInt(e.target.value))} placeholder="Nº invitados" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
                                                                             </div>
@@ -3526,6 +3624,7 @@ const CRMProjects: React.FC = () => {
                                 <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider block">📍 Locación / Dirección del Evento</label>
                                 <input
                                     type="text"
+                                    ref={budgetLocationInputRef}
                                     value={editingLocation}
                                     onChange={(e) => setEditingLocation(e.target.value)}
                                     placeholder="Ej: Salón Fiestas, Av. Rivadavia 1234, CABA (o 'A confirmar')"
