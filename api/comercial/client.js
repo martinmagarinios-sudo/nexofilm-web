@@ -479,7 +479,7 @@ export default async function handler(req, res) {
                     // Definir URLs absolutas dinámicas para la imagen OG y la URL de la página
                     const host = req.headers.host || 'nexofilm.com';
                     const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
-                    const imageUrl = `${protocol}://${host}/logo-whatsapp.jpg`;
+                    const imageUrl = `${protocol}://${host}/preview_whatsapp.jpg`;
                     const portalUrl = `${protocol}://${host}/portal?token=${token}`;
 
                     // Reemplazos de SEO/OG Tags soportando saltos de línea con [\s\r\n]+

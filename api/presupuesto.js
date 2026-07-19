@@ -12,7 +12,7 @@ export default async function(req, res) {
         // Prepare SEO/OG Data
         const title = `Cotizá tu Producción Audiovisual | NexoFilm`;
         const description = `Completá esta breve información y nosotros armamos un presupuesto detallado para tu próximo evento.`;
-        const imageUrl = `https://nexofilm.com/logo-whatsapp.jpg`;
+        const imageUrl = `https://nexofilm.com/preview_whatsapp.jpg`;
         const url = `https://nexofilm.com/presupuesto`;
 
         // Inject Meta Tags dynamically
