@@ -69,8 +69,9 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
             const currency = proj.currency || 'ARS';
 
             // Egresos Crew
-            const crewAssignments = proj.crew_assignments || [];
+            const crewAssignments = Array.isArray(proj.crew_assignments) ? proj.crew_assignments : [];
             const crewCost = crewAssignments.reduce((acc, curr) => {
+                if (!acc) acc = 0; // Type safety
                 if (!curr) return acc;
                 if (curr.fee_currency === currency) {
                     return acc + (curr.fee || 0);
@@ -80,8 +81,9 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
             }, 0);
 
             // Costos extras
-            const extraExpenses = proj.extra_expenses || [];
+            const extraExpenses = Array.isArray(proj.extra_expenses) ? proj.extra_expenses : [];
             const extraCost = extraExpenses.reduce((acc, curr) => {
+                if (!acc) acc = 0; // Type safety
                 if (!curr) return acc;
                 if (curr.currency === currency) {
                     return acc + (curr.amount || 0);
@@ -633,11 +635,15 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                         let totalFees = 0;
                         let totalExtras = 0;
                         filteredProjects.forEach(p => {
-                            (p.crew_assignments || []).forEach(a => {
+                            const assignments = Array.isArray(p.crew_assignments) ? p.crew_assignments : [];
+                            const extras = Array.isArray(p.extra_expenses) ? p.extra_expenses : [];
+                            assignments.forEach(a => {
+                                if (!a) return;
                                 const rate = a.fee_currency === 'USD' ? 1000 : 1;
                                 totalFees += (a.fee || 0) * rate;
                             });
-                            (p.extra_expenses || []).forEach(e => {
+                            extras.forEach(e => {
+                                if (!e) return;
                                 const rate = e.currency === 'USD' ? 1000 : 1;
                                 totalExtras += (e.amount || 0) * rate;
                             });
