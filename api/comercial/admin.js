@@ -1111,32 +1111,34 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
       <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#111;border-radius:16px;overflow:hidden;border:1px solid #222;">
         <!-- Header -->
         <tr><td style="background:#111;padding:32px 40px 24px;border-bottom:1px solid #1a1a1a;text-align:center;">
-          <div style="font-size:28px;font-weight:900;letter-spacing:-1px;color:#ccff00;">NexoFilm</div>
-          <div style="color:#666;font-size:12px;margin-top:4px;letter-spacing:2px;text-transform:uppercase;">Productora Audiovisual</div>
+          <a href="https://nexofilm.com" target="_blank" style="text-decoration:none;">
+            <img src="https://nexofilm.com/img/logo.png" alt="NexoFilm" style="border:0;height:45px;display:block;margin:0 auto;" />
+          </a>
         </td></tr>
         <!-- Confirmed badge -->
         <tr><td style="padding:32px 40px 0;text-align:center;">
-          <div style="display:inline-block;background:#ccff00;color:#000;font-weight:900;font-size:13px;letter-spacing:2px;text-transform:uppercase;padding:8px 24px;border-radius:100px;">✅ Fecha Confirmada</div>
-          <h1 style="color:#fff;font-size:22px;font-weight:800;margin:20px 0 8px;">${project.title}</h1>
-          <p style="color:#888;font-size:14px;margin:0;">Hola <strong style="color:#e0e0e0;">${firstName}</strong>, quedaste confirmado/a para el siguiente evento:</p>
+          <div style="display:inline-block;background:#ccff00;color:#000;font-weight:900;font-size:13px;letter-spacing:2px;text-transform:uppercase;padding:8px 24px;border-radius:100px;">✅ Evento Confirmado</div>
+          <h1 style="color:#fff;font-size:22px;font-weight:800;margin:20px 0 8px;">¡Confirmación de Jornada!</h1>
+          <p style="color:#888;font-size:14px;margin:0;">Hola <strong style="color:#e0e0e0;">${firstName}</strong>, desde <strong>NexoFilm</strong> te confirmamos el evento para el cual fuiste asignado/a:</p>
         </td></tr>
         <!-- Event details -->
         <tr><td style="padding:24px 40px;">
           <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0d0d;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;">
-            ${dateStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;width:120px;">📆 Fecha</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;">${dateStr}</td></tr>` : ''}
+            <tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;width:120px;">🎬 Evento</td><td style="padding:14px 20px;color:#ccff00;font-size:14px;font-weight:800;">${project.title}</td></tr>
+            ${dateStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">📆 Fecha</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;">${dateStr}</td></tr>` : ''}
             ${timeStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">⏰ Horario</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;">${timeStr}</td></tr>` : ''}
-            ${locationStr ? `<tr${mapsLink ? '' : ''}><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">📍 Lugar</td><td style="padding:14px 20px;font-size:14px;font-weight:600;">${mapsLink ? `<a href="${mapsLink}" style="color:#60a5fa;text-decoration:underline;">${locationStr}</a>` : `<span style="color:#e0e0e0;">${locationStr}</span>`}</td></tr>` : ''}
-            ${project.coverage_types?.length ? `<tr style="border-top:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">🎥 Cobertura</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;">${project.coverage_types.join(' + ')}</td></tr>` : ''}
+            ${locationStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">📍 Lugar</td><td style="padding:14px 20px;font-size:14px;font-weight:600;">${mapsLink ? `<a href="${mapsLink}" style="color:#60a5fa;text-decoration:underline;">${locationStr}</a>` : `<span style="color:#e0e0e0;">${locationStr}</span>`}</td></tr>` : ''}
+            ${project.coverage_types?.length ? `<tr><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">🎥 Rol / Función</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;text-transform:capitalize;">${assign.role}</td></tr>` : ''}
           </table>
         </td></tr>
         <!-- Calendar button -->
         ${calLink ? `<tr><td style="padding:0 40px 24px;text-align:center;">
-          <a href="${calLink}" style="display:inline-block;background:#1a1a1a;color:#ccff00;text-decoration:none;font-weight:700;font-size:13px;padding:12px 28px;border-radius:8px;border:1px solid #2a2a2a;">🗓 Agregar a Google Calendar</a>
+          <a href="${calLink}" style="display:inline-block;background:#1a1a1a;color:#ccff00;text-decoration:none;font-weight:700;font-size:13px;padding:12px 28px;border-radius:8px;border:1px solid #2a2a2a;">🗓 Agregar a tu Google Calendar</a>
         </td></tr>` : ''}
         <!-- Footer -->
         <tr><td style="padding:24px 40px;text-align:center;border-top:1px solid #1a1a1a;">
           <p style="color:#555;font-size:13px;margin:0 0 8px;">¡Cualquier consulta respondé este mail o escribinos por WhatsApp!</p>
-          <p style="color:#333;font-size:12px;margin:0;">Con ganas de vernos pronto — <strong style="color:#ccff00;">El equipo de NexoFilm 🎬</strong></p>
+          <p style="color:#333;font-size:12px;margin:0;">Con ganas de rodar juntos pronto — <strong style="color:#ccff00;">El equipo de NexoFilm 🎬</strong></p>
         </td></tr>
       </table>
     </td></tr>
@@ -1147,7 +1149,7 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                             await resend.emails.send({
                                 from: 'NexoFilm <hola@nexofilm.com>',
                                 to: memberEmail,
-                                subject: `✅ Fecha Confirmada · ${project.title} — NexoFilm`,
+                                subject: `✅ Confirmación de Evento: ${project.title} — NexoFilm`,
                                 html: emailHtml
                             });
                             sent = true;

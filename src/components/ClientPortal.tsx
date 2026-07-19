@@ -1219,11 +1219,15 @@ const ClientPortal: React.FC = () => {
                                 <tbody className="divide-y divide-white/5 text-sm text-zinc-300">
                                     {extraItems.map((item, idx) => {
                                         const isOptionalSelectable = item.is_optional;
-                                        // El idx para selectedOptionals usa solo los is_optional items
                                         const optIdx = optionalItems.indexOf(item);
-                                        const isChecked = isOptionalSelectable && selectedOptionals.includes(optIdx);
+                                        const isChecked = isEditable 
+                                            ? (isOptionalSelectable && selectedOptionals.includes(optIdx))
+                                            : (item.approved_by_client !== false);
+                                        
+                                        const showStrikeThrough = !isEditable && item.approved_by_client === false;
+
                                         return (
-                                            <tr key={idx} className={isChecked && isEditable ? "bg-nexo-lime/5" : ""}>
+                                            <tr key={idx} className={isChecked ? "bg-nexo-lime/5" : showStrikeThrough ? "opacity-35 line-through text-zinc-500 bg-zinc-950/20" : ""}>
                                                 {isEditable && (
                                                     <td className="px-6 py-3 text-center">
                                                         {isOptionalSelectable ? (
@@ -1246,13 +1250,28 @@ const ClientPortal: React.FC = () => {
                                                 )}
                                                 <td className="px-6 py-3 align-top" style={{ minWidth: '220px' }}>
                                                     <div style={{ display:'flex', alignItems:'flex-start', gap:'6px' }}>
-                                                        <span className="text-[#00e5ff] text-xs mt-1 shrink-0">➕</span>
-                                                        <div>{renderDescription(item.description)}</div>
+                                                        <span className="text-xs mt-1 shrink-0">
+                                                            {!isEditable ? (item.approved_by_client === false ? "❌" : "✅") : "➕"}
+                                                        </span>
+                                                        <div>
+                                                            {renderDescription(item.description)}
+                                                            {!isEditable && item.approved_by_client === false && (
+                                                                <span className="text-[10px] text-red-400 font-bold ml-2 font-mono">(No seleccionado)</span>
+                                                            )}
+                                                            {!isEditable && (item.approved_by_client === true || item.approved_by_client === undefined) && (
+                                                                <span className="text-[10px] text-nexo-lime font-bold ml-2 font-mono">(Aprobado / Incluido)</span>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                 </td>
+                                                </td>
                                                 <td className="px-6 py-3 text-center">{item.quantity}</td>
                                                 <td className="px-6 py-3 text-right">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</td>
-                                                <td className="px-6 py-3 text-right text-[#00e5ff]">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</td>
+                                                <td className="px-6 py-3 text-right text-[#00e5ff]">
+                                                    {showStrikeThrough 
+                                                        ? <span className="text-zinc-500 line-through">No incl.</span>
+                                                        : `${project.currency || 'USD'} ${(item.quantity * item.unit_price).toLocaleString()}`
+                                                    }
+                                                </td>
                                             </tr>
                                         );
                                     })}
@@ -1265,7 +1284,12 @@ const ClientPortal: React.FC = () => {
                             {extraItems.map((item, idx) => {
                                 const isOptionalSelectable = item.is_optional;
                                 const optIdx = optionalItems.indexOf(item);
-                                const isChecked = isOptionalSelectable && selectedOptionals.includes(optIdx);
+                                const isChecked = isEditable 
+                                    ? (isOptionalSelectable && selectedOptionals.includes(optIdx))
+                                    : (item.approved_by_client !== false);
+                                
+                                const showStrikeThrough = !isEditable && item.approved_by_client === false;
+                                
                                 return (
                                     <div 
                                         key={idx} 
@@ -1280,15 +1304,23 @@ const ClientPortal: React.FC = () => {
                                         className={`border p-5 rounded-xl space-y-3 shadow-md transition-all ${
                                             isEditable && isOptionalSelectable ? 'cursor-pointer' : ''
                                         } ${
-                                            isChecked && isEditable
+                                            isChecked
                                                 ? 'bg-nexo-lime/10 border-nexo-lime/40' 
-                                                : 'bg-[#00e5ff]/5 border-[#00e5ff]/20'
+                                                : showStrikeThrough
+                                                    ? 'opacity-35 line-through bg-zinc-950/20 border-white/5'
+                                                    : 'bg-[#00e5ff]/5 border-[#00e5ff]/20'
                                         }`}
                                     >
                                         <div className="flex items-start gap-3 justify-between">
-                                            <div className="leading-relaxed flex-1">
-                                                <span className="text-[#00e5ff] text-xs mr-1">➕</span>
+                                            <div className="leading-relaxed flex-1 text-xs">
+                                                <span className="mr-1">{!isEditable ? (item.approved_by_client === false ? "❌" : "✅") : "➕"}</span>
                                                 {renderDescription(item.description)}
+                                                {!isEditable && item.approved_by_client === false && (
+                                                    <span className="text-[10px] text-red-400 font-bold block mt-1">(No seleccionado)</span>
+                                                )}
+                                                {!isEditable && (item.approved_by_client === true || item.approved_by_client === undefined) && (
+                                                    <span className="text-[10px] text-nexo-lime font-bold block mt-1">(Aprobado / Incluido)</span>
+                                                )}
                                             </div>
                                             {isEditable && isOptionalSelectable && (
                                                 <input 
@@ -1302,7 +1334,12 @@ const ClientPortal: React.FC = () => {
                                         <div className="flex justify-between items-center gap-2 pt-3 border-t border-white/5 text-xs text-zinc-400">
                                             <div><span>Cant: </span><strong className="text-white">{item.quantity}</strong></div>
                                             <div><span>Precio U: </span><strong className="text-white">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</strong></div>
-                                            <div className="text-right"><span>Subtotal: </span><strong className="text-[#00e5ff] font-bold">{project.currency || 'USD'} {(item.quantity * item.unit_price).toLocaleString()}</strong></div>
+                                            <div className="text-right">
+                                                <span>Subtotal: </span>
+                                                <strong className={showStrikeThrough ? "text-zinc-500 line-through" : "text-[#00e5ff] font-bold"}>
+                                                    {showStrikeThrough ? "No incl." : `${project.currency || 'USD'} ${(item.quantity * item.unit_price).toLocaleString()}`}
+                                                </strong>
+                                            </div>
                                         </div>
                                     </div>
                                 );

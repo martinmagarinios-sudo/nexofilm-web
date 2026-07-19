@@ -773,13 +773,18 @@ export default async function handler(req, res) {
 
                 for (const item of activeBudget.items) {
                     if (!item.is_optional) {
-                        finalItems.push(item);
+                        finalItems.push({
+                            ...item,
+                            approved_by_client: true
+                        });
                         calculatedTotal += item.quantity * item.unit_price;
                     } else {
                         const isSelected = Array.isArray(selected_optional_indices) && selected_optional_indices.includes(optionalIndexCounter);
+                        finalItems.push({
+                            ...item,
+                            approved_by_client: isSelected
+                        });
                         if (isSelected) {
-                            const cleanedItem = { ...item, is_optional: false };
-                            finalItems.push(cleanedItem);
                             calculatedTotal += item.quantity * item.unit_price;
                             approvedOptionalCount++;
                         }
