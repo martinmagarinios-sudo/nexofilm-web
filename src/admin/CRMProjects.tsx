@@ -3133,6 +3133,45 @@ const CRMProjects: React.FC = () => {
                     ? `${proj.event_time}${proj.event_end_time ? ' → ' + proj.event_end_time : ''}${proj.coverage_hours ? ' (' + proj.coverage_hours + 'hs de cobertura)' : ''}`
                     : '';
                 const locationStr = proj.location || 'No especificada';
+                const mapsLink = locationStr && locationStr !== 'No especificada' ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationStr)}` : '';
+
+                // Build Google Calendar link
+                const calLink = (() => {
+                    if (!proj.event_date) return '';
+                    const dateOnly = proj.event_date.replace(/-/g, '');
+                    const startTime = proj.event_time ? proj.event_time.replace(':', '') + '00' : '080000';
+                    const endTime = proj.event_end_time ? proj.event_end_time.replace(':', '') + '00' : '';
+                    const dates = endTime
+                        ? `${dateOnly}T${startTime}/${dateOnly}T${endTime}`
+                        : `${dateOnly}T${startTime}/${dateOnly}T${(Number(startTime.substring(0, 2)) + 4).toString().padStart(2,'0')}0000`;
+                    return `https://calendar.google.com/calendar/r/eventedit?text=${encodeURIComponent(proj.title)}&dates=${dates}&details=${encodeURIComponent(`Evento: ${proj.title}\nCliente: ${proj.contact_name}`)}&location=${encodeURIComponent(locationStr)}`;
+                })();
+
+                const handleMarkAsNotifiedLocal = async (crewMemberId: string) => {
+                    const updatedAssignments = assigned.map(a => {
+                        if (a.crew_member_id === crewMemberId) {
+                            return { ...a, notified: true, notified_at: new Date().toISOString() };
+                        }
+                        return a;
+                    });
+                    
+                    try {
+                        const res = await fetch('/api/comercial/admin', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: 'updateCrewAssignments',
+                                project_id: proj.id,
+                                crew_assignments: updatedAssignments,
+                                password
+                            })
+                        });
+                        if (!res.ok) throw new Error('Error al actualizar');
+                        fetchData();
+                    } catch (err) {
+                        console.error('Error al marcar notificado:', err);
+                    }
+                };
 
                 return (
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -3140,7 +3179,7 @@ const CRMProjects: React.FC = () => {
                             {/* Header */}
                             <div className="bg-zinc-950 px-6 py-4 border-b border-white/5 flex items-center justify-between">
                                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                                    <span>✉️ Notificar Equipo</span>
+                                    <span>✉️ Notificar Equipo (Seguro y Branded)</span>
                                     <span className="text-[10px] bg-nexo-lime/15 text-nexo-lime px-2 py-0.5 rounded font-black uppercase tracking-wider">Confirmado</span>
                                 </h3>
                                 <button
@@ -3152,20 +3191,59 @@ const CRMProjects: React.FC = () => {
                             {/* Body */}
                             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                                 <div>
-                                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-1.5">Destinatarios ({assigned.length})</p>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {assigned.map((a, idx) => (
-                                            <span key={idx} className="text-xs bg-zinc-800 border border-white/5 text-zinc-300 px-2.5 py-1 rounded-full flex items-center gap-1">
-                                                <span>{ROLE_ICONS[a.role] || '👤'}</span>
-                                                <strong>{a.name}</strong>
-                                                <span className="text-[10px] text-zinc-500">({a.role})</span>
-                                            </span>
-                                        ))}
+                                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-2">Miembros Asignados ({assigned.length})</p>
+                                    <div className="space-y-2">
+                                        {assigned.map((a, idx) => {
+                                            const member = crewMembers.find(cm => cm.id === a.crew_member_id);
+                                            const phone = member?.phone || '';
+                                            const email = member?.email || '';
+                                            
+                                            // Mensaje de WhatsApp personalizado
+                                            const firstName = a.name.split(' ')[0];
+                                            const waMsg = `🎬 *NexoFilm — Fecha Confirmada* ✅\n\nHola ${firstName}, ¡quedaste confirmado/a!\n\n📌 *${proj.title}*${dateStr ? `\n📆 ${dateStr}` : ''}${timeStr ? `\n⏰ ${timeStr}` : ''}${locationStr ? `\n📍 ${locationStr}` : ''}${mapsLink ? `\n🗺 Ver en mapa: ${mapsLink}` : ''}${calLink ? `\n🗓 Agregar a tu Calendar:\n${calLink}` : ''}\n\nCualquier consulta, respondé este mensaje.\n¡Nos vemos! – El equipo de NexoFilm 🎬`;
+                                            const waUrl = phone ? `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(waMsg)}` : '';
+
+                                            return (
+                                                <div key={idx} className="bg-zinc-950/40 border border-white/5 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                                    <div className="min-w-0">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span>{ROLE_ICONS[a.role] || '👤'}</span>
+                                                            <strong className="text-xs text-white truncate">{a.name}</strong>
+                                                            {a.notified ? (
+                                                                <span className="text-[9px] bg-green-500/10 border border-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full font-bold flex items-center gap-0.5">✅ Notificado</span>
+                                                            ) : (
+                                                                <span className="text-[9px] bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded-full font-medium">Pendiente</span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-[10px] text-zinc-500 truncate mt-0.5">
+                                                            {email ? `📧 ${email}` : 'Sin email'} · {phone ? `📱 ${phone}` : 'Sin WhatsApp'}
+                                                        </p>
+                                                    </div>
+                                                    
+                                                    <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+                                                        {phone && (
+                                                            <a
+                                                                href={waUrl}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                onClick={() => handleMarkAsNotifiedLocal(a.crew_member_id)}
+                                                                className="text-[10px] bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20 px-2.5 py-1.5 rounded transition-all font-bold"
+                                                            >
+                                                                💬 Enviar WA
+                                                            </a>
+                                                        )}
+                                                        {!phone && (
+                                                            <span className="text-[9px] text-zinc-600 italic">No WA</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
 
                                 <div className="bg-black/40 border border-white/5 rounded-xl p-4 space-y-2.5">
-                                    <p className="text-[10px] text-nexo-lime font-bold uppercase tracking-wider">Previsualización del Mensaje</p>
+                                    <p className="text-[10px] text-nexo-lime font-bold uppercase tracking-wider">Previsualización del Mensaje de WhatsApp</p>
                                     <div className="border border-white/8 rounded-lg p-3 bg-zinc-950/60 font-mono text-[11px] leading-relaxed text-zinc-300 whitespace-pre-line">
                                         {`🎬 *NexoFilm — Fecha Confirmada* ✅
 
@@ -3175,15 +3253,12 @@ Hola [Nombre], ¡quedaste confirmado/a!
 📆 ${dateStr}
 ⏰ ${timeStr}
 📍 ${locationStr}
-🗺 Ver en mapa: https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationStr)}
+🗺 Ver en mapa: ${mapsLink || 'Enlace de mapa'}
 🗓 Agregar a tu Calendar: [Link para agendar]
 
 Cualquier consulta, respondé este mensaje.
 ¡Nos vemos! – El equipo de NexoFilm 🎬`}
                                     </div>
-                                    <p className="text-[10px] text-zinc-600 italic">
-                                        * El mail se enviará branded con estilo HTML de NexoFilm desde hola@nexofilm.com. Las tarifas internas y costos de contabilidad nunca se incluyen en estas comunicaciones.
-                                    </p>
                                 </div>
                             </div>
 
@@ -3192,7 +3267,7 @@ Cualquier consulta, respondé este mensaje.
                                 <button
                                     onClick={() => setNotifyingProjectId(null)}
                                     className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold px-4 py-2.5 rounded transition-colors"
-                                >Cancelar</button>
+                                >Cerrar</button>
                                 <button
                                     onClick={() => handleNotifyCrewAll(proj.id)}
                                     disabled={sendingCrewNotifications}
@@ -3201,9 +3276,9 @@ Cualquier consulta, respondé este mensaje.
                                     {sendingCrewNotifications ? (
                                         <>
                                             <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                                            Enviando avisos...
+                                            Enviando Emails...
                                         </>
-                                    ) : '🚀 Confirmar y Enviar Avisos'}
+                                    ) : '📧 Enviar Mails a Todos'}
                                 </button>
                             </div>
                         </div>

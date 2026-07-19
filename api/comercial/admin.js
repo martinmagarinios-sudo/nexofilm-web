@@ -1156,31 +1156,6 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                         }
                     }
 
-                    // ── WHATSAPP ──────────────────────────────────────────────────────
-                    if (memberPhone && token && phoneNumberId) {
-                        let cleanPhone = memberPhone.replace(/\D/g, '');
-                        if (!cleanPhone.startsWith('54') && cleanPhone.length === 10) cleanPhone = '54' + cleanPhone;
-
-                        const waMsg = `🎬 *NexoFilm — Fecha Confirmada* ✅\n\nHola ${firstName}, ¡quedaste confirmado/a!\n\n📌 *${project.title}*${dateStr ? `\n📆 ${dateStr}` : ''}${timeStr ? `\n⏰ ${timeStr}` : ''}${locationStr ? `\n📍 ${locationStr}` : ''}${mapsLink ? `\n🗺 Ver en mapa: ${mapsLink}` : ''}${calLink ? `\n🗓 Agregar a tu Calendar:\n${calLink}` : ''}\n\nCualquier consulta, respondé este mensaje.\n¡Nos vemos! – El equipo de NexoFilm 🎬`;
-
-                        try {
-                            const waRes = await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
-                                method: 'POST',
-                                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    messaging_product: 'whatsapp',
-                                    to: cleanPhone,
-                                    type: 'text',
-                                    text: { body: waMsg }
-                                })
-                            });
-                            if (waRes.ok) sent = true;
-                            else console.error('WA error crew:', await waRes.text());
-                        } catch (waErr) {
-                            console.error(`Error WhatsApp a crew ${assign.name}:`, waErr.message);
-                        }
-                    }
-
                     if (sent) {
                         updatedAssignments[i] = { ...assign, notified: true, notified_at: new Date().toISOString() };
                         notifiedCount++;
