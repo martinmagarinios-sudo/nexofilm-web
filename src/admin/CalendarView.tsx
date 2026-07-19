@@ -55,7 +55,14 @@ const MONTHS_ES = [
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
 ];
 
+const MONTHS_ES_LOWER = [
+    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+];
+
 const DAYS_ES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+const DAYS_ES_FULL = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; label: string; dot: string }> = {
     approved:   { bg: 'bg-green-500/15 border-green-500/30',  text: 'text-green-400',  label: 'Confirmado', dot: 'bg-green-400' },
@@ -248,8 +255,9 @@ const EventCard: React.FC<{
     project: Project;
     budget: Budget | undefined;
     password: string;
+    crewMembers: CrewMember[];
     onNotified: () => void;
-}> = ({ project, budget, password, onNotified }) => {
+}> = ({ project, budget, password, crewMembers, onNotified }) => {
     const [notifying, setNotifying] = useState(false);
     const [notifyMsg, setNotifyMsg] = useState('');
     const [showCrewNotifyModal, setShowCrewNotifyModal] = useState(false);
@@ -280,7 +288,7 @@ const EventCard: React.FC<{
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error al notificar');
-            setNotifyMsg(`✅ Notificaciones enviadas a ${data.notified || assignments.length} personas.`);
+            setNotifyMsg(`✅ Emails de confirmación enviados a ${data.notified || assignments.length} personas.`);
             setShowCrewNotifyModal(false);
             setTimeout(() => { setNotifyMsg(''); onNotified(); }, 3000);
         } catch (err: any) {
@@ -289,6 +297,44 @@ const EventCard: React.FC<{
             setNotifying(false);
         }
     };
+
+    const handleMarkAsNotifiedLocal = async (crewMemberId: string) => {
+        const updatedAssignments = assignments.map(a => {
+            if (a.crew_member_id === crewMemberId) {
+                return { ...a, notified: true, notified_at: new Date().toISOString() };
+            }
+            return a;
+        });
+        
+        try {
+            const res = await fetch('/api/comercial/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'updateCrewAssignments',
+                    project_id: project.id,
+                    crew_assignments: updatedAssignments,
+                    password
+                })
+            });
+            if (!res.ok) throw new Error('Error al actualizar');
+            onNotified();
+        } catch (err) {
+            console.error('Error al marcar notificado:', err);
+        }
+    };
+
+    // Formatear datos del evento para preview
+    const eventDateObj = project.event_date ? new Date(project.event_date + 'T12:00:00') : null;
+    const dateStr = eventDateObj
+        ? `${DAYS_ES_FULL[eventDateObj.getDay()]} ${eventDateObj.getDate()} de ${MONTHS_ES_LOWER[eventDateObj.getMonth()]} ${eventDateObj.getFullYear()}`
+        : 'Fecha a confirmar';
+
+    const timeStr = project.event_time
+        ? `${project.event_time}${project.event_end_time ? ' → ' + project.event_end_time : ''}${project.coverage_hours ? ' (' + project.coverage_hours + 'hs de cobertura)' : ''}`
+        : '';
+    const locationStr = project.location || 'No especificada';
+    const mapsLink = locationStr && locationStr !== 'No especificada' ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationStr)}` : '';
 
     return (
         <div className="bg-zinc-900 border border-white/8 rounded-xl overflow-hidden hover:border-white/15 transition-all">
@@ -455,59 +501,111 @@ const EventCard: React.FC<{
 
             {/* Notify Modal */}
             {showCrewNotifyModal && (
-                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setShowCrewNotifyModal(false)}>
-                    <div className="bg-zinc-900 border border-white/15 rounded-2xl p-6 max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <h3 className="font-bold text-white text-base mb-1">✉️ Notificar al crew</h3>
-                        <p className="text-zinc-500 text-xs mb-4">Se enviará el siguiente mensaje a todos los asignados con email o WhatsApp:</p>
-
-                        {/* Preview */}
-                        <div className="bg-black border border-white/10 rounded-lg p-4 text-xs text-zinc-300 space-y-1.5 mb-4 font-mono">
-                            <p className="text-nexo-lime font-bold">🎬 NexoFilm — Fecha Confirmada ✅</p>
-                            <p className="text-zinc-400 mt-2">Hola [Nombre],</p>
-                            <p className="mt-1">Quedaste confirmado/a para el siguiente evento:</p>
-                            <p className="mt-2">📌 <strong className="text-white">{project.title}</strong></p>
-                            {project.event_date && <p>📆 {formatEventDate(project.event_date)}</p>}
-                            {project.event_time && <p>⏰ {project.event_time}{project.event_end_time ? ` → ${project.event_end_time}` : ''}{project.coverage_hours ? ` (${project.coverage_hours}hs)` : ''}</p>}
-                            {project.location && <p>📍 {project.location}</p>}
-                            <p className="text-zinc-500 mt-2">🗓 [Link Google Calendar incluido]</p>
-                            {project.location && <p>🗺 [Link Google Maps incluido]</p>}
-                            <p className="mt-2 text-zinc-500">¡Nos vemos! – El equipo de NexoFilm 🎬</p>
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowCrewNotifyModal(false)}>
+                    <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+                        {/* Header */}
+                        <div className="bg-zinc-950 px-6 py-4 border-b border-white/5 flex items-center justify-between">
+                            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                                <span>✉️ Notificar Equipo (Seguro y Branded)</span>
+                                <span className="text-[10px] bg-nexo-lime/15 text-nexo-lime px-2 py-0.5 rounded font-black uppercase tracking-wider">Confirmado</span>
+                            </h3>
+                            <button
+                                onClick={() => setShowCrewNotifyModal(false)}
+                                className="text-zinc-500 hover:text-white transition-colors text-lg"
+                            >&times;</button>
                         </div>
+                        
+                        {/* Body */}
+                        <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                            <div>
+                                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-2">Miembros Asignados ({assignments.length})</p>
+                                <div className="space-y-2">
+                                    {assignments.map((a, idx) => {
+                                        const member = crewMembers.find(cm => cm.id === a.crew_member_id);
+                                        const phone = member?.phone || '';
+                                        const email = member?.email || '';
+                                        
+                                        // Mensaje de WhatsApp personalizado
+                                        const firstName = a.name.split(' ')[0];
+                                        const waMsg = `🎬 *NexoFilm — Fecha Confirmada* ✅\n\nHola ${firstName}, ¡quedaste confirmado/a!\n\n📌 *${project.title}*${project.event_date ? `\n📆 ${dateStr}` : ''}${timeStr ? `\n⏰ ${timeStr}` : ''}${locationStr ? `\n📍 ${locationStr}` : ''}${mapsLink ? `\n🗺 Ver en mapa: ${mapsLink}` : ''}${calLink ? `\n🗓 Agregar a tu Calendar:\n${calLink}` : ''}\n\nCualquier consulta, respondé este mensaje.\n¡Nos vemos! – El equipo de NexoFilm 🎬`;
+                                        const waUrl = phone ? `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(waMsg)}` : '';
 
-                        <div className="mb-4">
-                            <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-2">Se notificará a:</p>
-                            <div className="space-y-1">
-                                {assignments.map((a, i) => (
-                                    <div key={i} className="flex items-center gap-2 text-xs text-zinc-400">
-                                        <span>{ROLE_ICONS[a.role] || '👤'}</span>
-                                        <span className="font-medium text-white">{a.name}</span>
-                                        <span className="text-zinc-600">·</span>
-                                        {a.notified
-                                            ? <span className="text-green-500">Ya notificado ✅</span>
-                                            : <span className="text-zinc-500">Pendiente</span>
-                                        }
-                                    </div>
-                                ))}
+                                        return (
+                                            <div key={idx} className="bg-zinc-950/40 border border-white/5 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span>{ROLE_ICONS[a.role] || '👤'}</span>
+                                                        <strong className="text-xs text-white truncate">{a.name}</strong>
+                                                        {a.notified ? (
+                                                            <span className="text-[9px] bg-green-500/10 border border-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full font-bold flex items-center gap-0.5">✅ Notificado</span>
+                                                        ) : (
+                                                            <span className="text-[9px] bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded-full font-medium">Pendiente</span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-[10px] text-zinc-500 truncate mt-0.5">
+                                                        {email ? `📧 ${email}` : 'Sin email'} · {phone ? `📱 ${phone}` : 'Sin WhatsApp'}
+                                                    </p>
+                                                </div>
+                                                
+                                                <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+                                                    {phone && (
+                                                        <a
+                                                            href={waUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            onClick={() => handleMarkAsNotifiedLocal(a.crew_member_id)}
+                                                            className="text-[10px] bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20 px-2.5 py-1.5 rounded transition-all font-bold"
+                                                        >
+                                                            💬 Enviar WA
+                                                        </a>
+                                                    )}
+                                                    {!phone && (
+                                                        <span className="text-[9px] text-zinc-600 italic">No WA</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className="bg-black/40 border border-white/5 rounded-xl p-4 space-y-2.5">
+                                <p className="text-[10px] text-nexo-lime font-bold uppercase tracking-wider">Previsualización del Mensaje de WhatsApp</p>
+                                <div className="border border-white/8 rounded-lg p-3 bg-zinc-950/60 font-mono text-[11px] leading-relaxed text-zinc-300 whitespace-pre-line">
+                                    {`🎬 *NexoFilm — Fecha Confirmada* ✅
+
+Hola [Nombre], ¡quedaste confirmado/a!
+
+📌 *${project.title}*
+📆 ${dateStr}
+⏰ ${timeStr}
+📍 ${locationStr}
+🗺 Ver en mapa: ${mapsLink || 'Enlace de mapa'}
+🗓 Agregar a tu Calendar: [Link para agendar]
+
+Cualquier consulta, respondé este mensaje.
+¡Nos vemos! – El equipo de NexoFilm 🎬`}
+                                </div>
                             </div>
                         </div>
 
-                        <p className="text-zinc-600 text-[10px] mb-4">
-                            ⚠️ El mensaje no incluye información de honorarios ni pagos. Solo datos del evento.
-                        </p>
-
-                        <div className="flex gap-2">
+                        {/* Footer */}
+                        <div className="bg-zinc-950 px-6 py-4 border-t border-white/5 flex items-center justify-between gap-3">
+                            <button
+                                onClick={() => setShowCrewNotifyModal(false)}
+                                className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold px-4 py-2.5 rounded transition-colors"
+                            >Cerrar</button>
                             <button
                                 onClick={handleNotifyAll}
                                 disabled={notifying}
-                                className="flex-1 bg-nexo-lime text-black font-bold text-xs py-2.5 rounded hover:bg-white transition-colors disabled:opacity-50"
+                                className="bg-nexo-lime text-black font-black text-xs uppercase tracking-widest px-5 py-2.5 rounded hover:bg-white transition-colors disabled:opacity-50 flex items-center gap-2"
                             >
-                                {notifying ? 'Enviando...' : '✉️ Confirmar y enviar'}
-                            </button>
-                            <button
-                                onClick={() => setShowCrewNotifyModal(false)}
-                                className="bg-zinc-800 text-zinc-300 text-xs px-4 py-2.5 rounded hover:bg-zinc-700 transition-colors"
-                            >
-                                Cancelar
+                                {notifying ? (
+                                    <>
+                                        <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                                        Enviando Emails...
+                                    </>
+                                ) : '📧 Enviar Mails a Todos'}
                             </button>
                         </div>
                     </div>
