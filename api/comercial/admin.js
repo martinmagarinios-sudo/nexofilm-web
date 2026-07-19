@@ -1089,7 +1089,7 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                     const dates = endTime
                         ? `${dateOnly}T${startTime}/${dateOnly}T${endTime}`
                         : `${dateOnly}T${startTime}/${dateOnly}T${(Number(startTime.substring(0, 2)) + 4).toString().padStart(2,'0')}0000`;
-                    return `https://calendar.google.com/calendar/r/eventedit?text=${encodeURIComponent(project.title)}&dates=${dates}&details=${encodeURIComponent(`Evento: ${project.title}\nCliente: ${project.contact_name}`)}&location=${encodeURIComponent(locationStr)}`;
+                    return `https://calendar.google.com/calendar/r/eventedit?text=Jornada%20NexoFilm&dates=${dates}&location=${encodeURIComponent(locationStr)}`;
                 })();
 
                 const token = process.env.WHATSAPP_TOKEN?.trim();
@@ -1158,30 +1158,12 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
         <!-- Event details -->
         <tr><td style="padding:20px 40px 16px;">
           <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0d0d;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;">
-            <tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;width:120px;">🎬 Evento</td><td style="padding:14px 20px;color:#ccff00;font-size:14px;font-weight:800;">${project.title}</td></tr>
-            ${dateStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">📆 Fecha</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;">${dateStr}</td></tr>` : ''}
+            ${dateStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;width:120px;">📆 Fecha</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;">${dateStr}</td></tr>` : ''}
             ${timeStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">⏰ Horario</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;">${timeStr}</td></tr>` : ''}
             ${locationStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">📍 Lugar</td><td style="padding:14px 20px;font-size:14px;font-weight:600;">${mapsLink ? `<a href="${mapsLink}" style="color:#60a5fa;text-decoration:underline;">${locationStr}</a>` : `<span style="color:#e0e0e0;">${locationStr}</span>`}</td></tr>` : ''}
             ${assign.role ? `<tr><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">🎥 Rol / Función</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;text-transform:capitalize;">${assign.role}</td></tr>` : ''}
           </table>
         </td></tr>
-
-        <!-- Map Button Embed Card -->
-        ${locationStr ? `
-        <tr><td style="padding:0 40px 20px;">
-          <a href="${mapsLink}" target="_blank" style="text-decoration:none;display:block;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0d0d;border:1px solid #222;border-radius:12px;overflow:hidden;">
-              <tr>
-                <td align="center" style="padding:24px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-                  <div style="font-size:28px;margin-bottom:8px;">🗺️</div>
-                  <div style="color:#ffffff;font-size:14px;font-weight:800;margin-bottom:4px;letter-spacing:0.5px;">Ver Ubicación en Google Maps</div>
-                  <div style="color:#71717a;font-size:12px;margin-bottom:16px;max-width:320px;line-height:1.5;">${locationStr}</div>
-                  <div style="display:inline-block;background:#3b82f6;color:#ffffff;font-weight:bold;font-size:12px;padding:10px 20px;border-radius:6px;text-transform:uppercase;letter-spacing:1px;">📍 Abrir en la App de Mapas</div>
-                </td>
-              </tr>
-            </table>
-          </a>
-        </td></tr>` : ''}
 
         <!-- Calendar button -->
         ${calLink ? `<tr><td style="padding:0 40px 24px;text-align:center;">
@@ -1201,7 +1183,7 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                             await resend.emails.send({
                                 from: 'NexoFilm <hola@nexofilm.com>',
                                 to: memberEmail,
-                                subject: `✅ Confirmación de Evento: ${project.title} — NexoFilm`,
+                                subject: 'Confirmación de jornada - NexoFilm',
                                 html: emailHtml
                             });
                             sent = true;
@@ -1277,7 +1259,7 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                     const dates = endTime
                         ? `${dateOnly}T${startTime}/${dateOnly}T${endTime}`
                         : `${dateOnly}T${startTime}/${dateOnly}T${(Number(startTime.substring(0, 2)) + 4).toString().padStart(2,'0')}0000`;
-                    return `https://calendar.google.com/calendar/r/eventedit?text=${encodeURIComponent(project.title)}&dates=${dates}&details=${encodeURIComponent(`Evento: ${project.title}\nCliente: ${project.contact_name}`)}&location=${encodeURIComponent(locationStr)}`;
+                    return `https://calendar.google.com/calendar/r/eventedit?text=Jornada%20NexoFilm&dates=${dates}&location=${encodeURIComponent(locationStr)}`;
                 })();
 
                 // Fetch crew member contact info
@@ -1337,30 +1319,12 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
         <!-- Event details -->
         <tr><td style="padding:20px 40px 16px;">
           <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0d0d;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;">
-            <tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;width:120px;">🎬 Evento</td><td style="padding:14px 20px;color:#ccff00;font-size:14px;font-weight:800;">${project.title}</td></tr>
-            ${dateStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">📆 Fecha</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;">${dateStr}</td></tr>` : ''}
+            ${dateStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;width:120px;">📆 Fecha</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;">${dateStr}</td></tr>` : ''}
             ${timeStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">⏰ Horario</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;">${timeStr}</td></tr>` : ''}
             ${locationStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">📍 Lugar</td><td style="padding:14px 20px;font-size:14px;font-weight:600;">${mapsLink ? `<a href="${mapsLink}" style="color:#60a5fa;text-decoration:underline;">${locationStr}</a>` : `<span style="color:#e0e0e0;">${locationStr}</span>`}</td></tr>` : ''}
             ${assign.role ? `<tr><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">🎥 Rol / Función</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;text-transform:capitalize;">${assign.role}</td></tr>` : ''}
           </table>
         </td></tr>
-
-        <!-- Map Button Embed Card -->
-        ${locationStr ? `
-        <tr><td style="padding:0 40px 20px;">
-          <a href="${mapsLink}" target="_blank" style="text-decoration:none;display:block;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0d0d;border:1px solid #222;border-radius:12px;overflow:hidden;">
-              <tr>
-                <td align="center" style="padding:24px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-                  <div style="font-size:28px;margin-bottom:8px;">🗺️</div>
-                  <div style="color:#ffffff;font-size:14px;font-weight:800;margin-bottom:4px;letter-spacing:0.5px;">Ver Ubicación en Google Maps</div>
-                  <div style="color:#71717a;font-size:12px;margin-bottom:16px;max-width:320px;line-height:1.5;">${locationStr}</div>
-                  <div style="display:inline-block;background:#3b82f6;color:#ffffff;font-weight:bold;font-size:12px;padding:10px 20px;border-radius:6px;text-transform:uppercase;letter-spacing:1px;">📍 Abrir en la App de Mapas</div>
-                </td>
-              </tr>
-            </table>
-          </a>
-        </td></tr>` : ''}
 
         <!-- Calendar button -->
         ${calLink ? `<tr><td style="padding:0 40px 24px;text-align:center;">
@@ -1381,7 +1345,7 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                     await resend.emails.send({
                         from: 'NexoFilm <hola@nexofilm.com>',
                         to: memberEmail,
-                        subject: `✅ Confirmación de Evento: ${project.title} — NexoFilm`,
+                        subject: 'Confirmación de jornada - NexoFilm',
                         html: emailHtml
                     });
 

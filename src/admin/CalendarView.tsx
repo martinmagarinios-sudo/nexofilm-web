@@ -91,13 +91,7 @@ function buildGoogleCalendarLink(project: Project): string {
         ? `${dateOnly}T${startTime}/${dateOnly}T${endTime}`
         : `${dateOnly}T${startTime}/${dateOnly}T${String(Number(startTime.substring(0, 2)) + 4).padStart(2, '0')}0000`;
 
-    const details = [
-        `Cliente: ${project.contact_name}${project.company_name ? ` (${project.company_name})` : ''}`,
-        project.coverage_types?.length ? `Cobertura: ${project.coverage_types.join(', ')}` : '',
-        project.coverage_hours ? `Horas: ${project.coverage_hours}hs` : '',
-    ].filter(Boolean).join('\n');
-
-    return `https://calendar.google.com/calendar/r/eventedit?text=${encodeURIComponent(project.title)}&dates=${dates}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(project.location || '')}`;
+    return `https://calendar.google.com/calendar/r/eventedit?text=Jornada%20NexoFilm&dates=${dates}&location=${encodeURIComponent(project.location || '')}`;
 }
 
 function buildGoogleMapsLink(location: string): string {
@@ -571,7 +565,24 @@ const EventCard: React.FC<{
                                         // Mensaje de WhatsApp personalizado
                                         const firstName = a.name.split(' ')[0];
                                         const notePart = crewNotificationNote.trim() ? `\n\n📝 *Nota:* ${crewNotificationNote.trim()}` : '';
-                                        const waMsg = `🎬 *NexoFilm — Fecha Confirmada* ✅\n\nHola ${firstName}, ¡quedaste confirmado/a!\n\n📌 *Jornada:* ${project.title}${project.event_date ? `\n📆 ${dateStr}` : ''}${timeStr ? `\n⏰ ${timeStr}` : ''}${locationStr ? `\n📍 ${locationStr}` : ''}${mapsLink ? `\n🗺 Ver en mapa: ${mapsLink}` : ''}${calLink ? `\n🗓 Agregar a tu Calendar:\n${calLink}` : ''}\n\n⚠️ *Importante:* Se solicita estar *30 minutos antes* para la organización y armado de equipos.${notePart}\n\nCualquier consulta, respondé este mensaje.\n¡Nos vemos! – El equipo de NexoFilm 🎬`;
+                                        const mapsPart = mapsLink ? `📍 *Ver en mapa:*\n${mapsLink}\n\n` : '';
+                                        const calPart = calLink ? `🗓️ *Agregar a tu Calendar:*\n${calLink}\n\n` : '';
+                                        const waMsg = `https://nexofilm.com
+
+🎬 *NEXOFILM* — _Confirmación de Jornada_
+─────────────────────
+Hola ${firstName}, ¡quedaste confirmado/a!
+
+• *Fecha:* ${dateStr}
+• *Horario:* ${timeStr}
+• *Lugar:* ${locationStr}
+• *Función:* ${a.role}
+
+${mapsPart}${calPart}─────────────────────
+⚠️ *Importante:* Se solicita estar *30 minutos antes* para la organización y armado de equipos.${notePart}
+
+Cualquier consulta, respondé este mensaje.
+¡Nos vemos! — El equipo de NexoFilm 🎬`;
                                         const waUrl = phone ? `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(waMsg)}` : '';
 
                                         return (
@@ -639,21 +650,22 @@ const EventCard: React.FC<{
                             <div className="bg-black/40 border border-white/5 rounded-xl p-4 space-y-2.5">
                                 <p className="text-[10px] text-nexo-lime font-bold uppercase tracking-wider">Previsualización del Mensaje de WhatsApp</p>
                                 <div className="border border-white/8 rounded-lg p-3 bg-zinc-950/60 font-mono text-[11px] leading-relaxed text-zinc-300 whitespace-pre-line">
-                                    {`🎬 *NexoFilm — Fecha Confirmada* ✅
+                                    {`https://nexofilm.com
 
+🎬 *NEXOFILM* — _Confirmación de Jornada_
+─────────────────────
 Hola [Nombre], ¡quedaste confirmado/a!
 
-📌 *Jornada:* ${project.title}
-📆 ${dateStr}
-⏰ ${timeStr}
-📍 ${locationStr}
-🗺 Ver en mapa: ${mapsLink || 'Enlace de mapa'}
-🗓 Agregar a tu Calendar: [Link para agendar]
+• *Fecha:* ${dateStr}
+• *Horario:* ${timeStr}
+• *Lugar:* ${locationStr}
+• *Función:* [Función]
 
+${mapsLink ? `📍 *Ver en mapa:*\n${mapsLink}\n\n` : ''}${calLink ? `🗓️ *Agregar a tu Calendar:*\n[Link para agendar]\n\n` : ''}─────────────────────
 ⚠️ *Importante:* Se solicita estar *30 minutos antes* para la organización y armado de equipos.${crewNotificationNote.trim() ? `\n\n📝 *Nota:* ${crewNotificationNote.trim()}` : ''}
 
 Cualquier consulta, respondé este mensaje.
-¡Nos vemos! – El equipo de NexoFilm 🎬`}
+¡Nos vemos! — El equipo de NexoFilm 🎬`}
                                 </div>
                             </div>
                         </div>
