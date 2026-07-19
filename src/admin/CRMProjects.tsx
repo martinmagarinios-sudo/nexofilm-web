@@ -181,6 +181,8 @@ const CRMProjects: React.FC = () => {
     const [editingCrewProjectId, setEditingCrewProjectId] = useState<string | null>(null);
     const [crewAssignDraft, setCrewAssignDraft] = useState<CrewAssignment[]>([]);
     const [savingCrewAssign, setSavingCrewAssign] = useState(false);
+    const [notifyingProjectId, setNotifyingProjectId] = useState<string | null>(null);
+    const [sendingCrewNotifications, setSendingCrewNotifications] = useState(false);
 
     // Helper reviews constants
     const reviewsRatingAvg = reviews.length > 0 ? (reviews.reduce((acc, r) => acc + (r.rating || 0), 0) / reviews.length) : 0;
@@ -382,6 +384,33 @@ const CRMProjects: React.FC = () => {
             setError('Error al guardar crew: ' + err.message);
         } finally {
             setSavingCrewAssign(false);
+        }
+    };
+
+    const handleNotifyCrewAll = async (projectId: string) => {
+        setSendingCrewNotifications(true);
+        setError('');
+        setSuccessMsg('');
+        try {
+            const res = await fetch('/api/comercial/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'notifyCrewAll',
+                    project_id: projectId,
+                    password
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al notificar');
+            setSuccessMsg(`✅ Notificaciones enviadas a ${data.notified || 0} personas del crew.`);
+            setNotifyingProjectId(null);
+            fetchData();
+            setTimeout(() => setSuccessMsg(''), 4000);
+        } catch (err: any) {
+            setError('Error al notificar crew: ' + err.message);
+        } finally {
+            setSendingCrewNotifications(false);
         }
     };
 
@@ -2197,13 +2226,23 @@ const CRMProjects: React.FC = () => {
                                                                                     {(() => {
                                                                                         const totalCrew = project.crew_assignments!.reduce((s, a) => s + (a.fee || 0), 0);
                                                                                         const income = projectBudget?.total_price || 0;
-                                                                                        if (totalCrew > 0) return (
-                                                                                            <div className="border-t border-white/5 mt-2 pt-2 flex justify-between text-[10px]">
-                                                                                                <span className="text-zinc-600">Costo crew: <strong className="text-zinc-400">${totalCrew.toLocaleString()}</strong></span>
-                                                                                                {income > 0 && <span className="text-zinc-600">Margen: <strong className={income - totalCrew >= 0 ? 'text-nexo-lime' : 'text-red-400'}>${(income - totalCrew).toLocaleString()}</strong></span>}
+                                                                                        const canNotify = ['approved', 'production'].includes(project.status);
+                                                                                        return (
+                                                                                            <div className="border-t border-white/5 mt-2 pt-2 flex flex-col gap-2">
+                                                                                                <div className="flex justify-between text-[10px]">
+                                                                                                    <span className="text-zinc-600">Costo crew: <strong className="text-zinc-400">${totalCrew.toLocaleString()}</strong></span>
+                                                                                                    {income > 0 && <span className="text-zinc-600">Margen: <strong className={income - totalCrew >= 0 ? 'text-nexo-lime' : 'text-red-400'}>${(income - totalCrew).toLocaleString()}</strong></span>}
+                                                                                                </div>
+                                                                                                {canNotify && (
+                                                                                                    <button
+                                                                                                        onClick={() => setNotifyingProjectId(project.id)}
+                                                                                                        className="w-full text-center bg-nexo-lime/10 border border-nexo-lime/30 hover:bg-nexo-lime/20 text-nexo-lime text-[11px] font-bold py-1.5 rounded transition-all mt-1 flex items-center justify-center gap-1.5"
+                                                                                                    >
+                                                                                                        ✉️ Notificar Crew
+                                                                                                    </button>
+                                                                                                )}
                                                                                             </div>
                                                                                         );
-                                                                                        return null;
                                                                                     })()}
                                                                                 </div>
                                                                             ) : (
@@ -3075,6 +3114,102 @@ const CRMProjects: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* ── MODAL NOTIFICAR CREW ── */}
+            {notifyingProjectId && (() => {
+                const proj = projects.find(p => p.id === notifyingProjectId);
+                if (!proj) return null;
+                const assigned = proj.crew_assignments || [];
+                
+                // Formatear datos del evento para preview
+                const eventDateObj = proj.event_date ? new Date(proj.event_date + 'T12:00:00') : null;
+                const MONTHS_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+                const DAYS_ES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+                const dateStr = eventDateObj
+                    ? `${DAYS_ES[eventDateObj.getDay()]} ${eventDateObj.getDate()} de ${MONTHS_ES[eventDateObj.getMonth()]} ${eventDateObj.getFullYear()}`
+                    : 'Fecha a confirmar';
+
+                const timeStr = proj.event_time
+                    ? `${proj.event_time}${proj.event_end_time ? ' → ' + proj.event_end_time : ''}${proj.coverage_hours ? ' (' + proj.coverage_hours + 'hs de cobertura)' : ''}`
+                    : '';
+                const locationStr = proj.location || 'No especificada';
+
+                return (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
+                            {/* Header */}
+                            <div className="bg-zinc-950 px-6 py-4 border-b border-white/5 flex items-center justify-between">
+                                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                                    <span>✉️ Notificar Equipo</span>
+                                    <span className="text-[10px] bg-nexo-lime/15 text-nexo-lime px-2 py-0.5 rounded font-black uppercase tracking-wider">Confirmado</span>
+                                </h3>
+                                <button
+                                    onClick={() => setNotifyingProjectId(null)}
+                                    className="text-zinc-500 hover:text-white transition-colors text-lg"
+                                >&times;</button>
+                            </div>
+                            
+                            {/* Body */}
+                            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                                <div>
+                                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-1.5">Destinatarios ({assigned.length})</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {assigned.map((a, idx) => (
+                                            <span key={idx} className="text-xs bg-zinc-800 border border-white/5 text-zinc-300 px-2.5 py-1 rounded-full flex items-center gap-1">
+                                                <span>{ROLE_ICONS[a.role] || '👤'}</span>
+                                                <strong>{a.name}</strong>
+                                                <span className="text-[10px] text-zinc-500">({a.role})</span>
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="bg-black/40 border border-white/5 rounded-xl p-4 space-y-2.5">
+                                    <p className="text-[10px] text-nexo-lime font-bold uppercase tracking-wider">Previsualización del Mensaje</p>
+                                    <div className="border border-white/8 rounded-lg p-3 bg-zinc-950/60 font-mono text-[11px] leading-relaxed text-zinc-300 whitespace-pre-line">
+                                        {`🎬 *NexoFilm — Fecha Confirmada* ✅
+
+Hola [Nombre], ¡quedaste confirmado/a!
+
+📌 *${proj.title}*
+📆 ${dateStr}
+⏰ ${timeStr}
+📍 ${locationStr}
+🗺 Ver en mapa: https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationStr)}
+🗓 Agregar a tu Calendar: [Link para agendar]
+
+Cualquier consulta, respondé este mensaje.
+¡Nos vemos! – El equipo de NexoFilm 🎬`}
+                                    </div>
+                                    <p className="text-[10px] text-zinc-600 italic">
+                                        * El mail se enviará branded con estilo HTML de NexoFilm desde hola@nexofilm.com. Las tarifas internas y costos de contabilidad nunca se incluyen en estas comunicaciones.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="bg-zinc-950 px-6 py-4 border-t border-white/5 flex items-center justify-between gap-3">
+                                <button
+                                    onClick={() => setNotifyingProjectId(null)}
+                                    className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold px-4 py-2.5 rounded transition-colors"
+                                >Cancelar</button>
+                                <button
+                                    onClick={() => handleNotifyCrewAll(proj.id)}
+                                    disabled={sendingCrewNotifications}
+                                    className="bg-nexo-lime text-black font-black text-xs uppercase tracking-widest px-5 py-2.5 rounded hover:bg-white transition-colors disabled:opacity-50 flex items-center gap-2"
+                                >
+                                    {sendingCrewNotifications ? (
+                                        <>
+                                            <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                                            Enviando avisos...
+                                        </>
+                                    ) : '🚀 Confirmar y Enviar Avisos'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
         </div>
     );
 };
