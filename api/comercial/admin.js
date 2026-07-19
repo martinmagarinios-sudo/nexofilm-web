@@ -309,6 +309,10 @@ export default async function handler(req, res) {
                     updated_at: new Date().toISOString()
                 };
 
+                if (req.body.location !== undefined) {
+                    updatePayload.location = req.body.location || null;
+                }
+
                 let { data: project, error: getErr } = await supabase
                     .from('projects')
                     .update(updatePayload)
@@ -1024,11 +1028,20 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
 
             // ─── CREW: Guardar asignaciones en un proyecto ────────────────────────
             case 'updateCrewAssignments': {
-                const { project_id, crew_assignments } = req.body;
+                const { project_id, crew_assignments, extra_expenses } = req.body;
                 if (!project_id) return res.status(400).json({ error: 'project_id requerido.' });
+                
+                const updatePayload = {
+                    crew_assignments: crew_assignments || []
+                };
+                
+                if (extra_expenses !== undefined) {
+                    updatePayload.extra_expenses = extra_expenses || [];
+                }
+
                 const { error: assignErr } = await supabase
                     .from('projects')
-                    .update({ crew_assignments: crew_assignments || [] })
+                    .update(updatePayload)
                     .eq('id', project_id);
                 if (assignErr) throw assignErr;
                 return res.status(200).json({ success: true });

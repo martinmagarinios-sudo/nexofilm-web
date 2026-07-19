@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import CalendarView from './CalendarView';
 import CrewDirectory, { CrewMember, CREW_ROLES, ROLE_ICONS } from './CrewDirectory';
+import FinanceDashboard from './FinanceDashboard';
 
 interface Budget {
     id: string;
@@ -60,6 +61,7 @@ interface Project {
     currency?: 'USD' | 'ARS' | null;
     crew_count?: number | null;
     crew_assignments?: CrewAssignment[] | null;
+    extra_expenses?: any[] | null;
     client_tax_certificate_url?: string | null;
     invoice_sent?: boolean | null;
     updated_at?: string | null;
@@ -230,7 +232,7 @@ const CRMProjects: React.FC = () => {
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [loading, setLoading] = useState(false);
     const [expandedProjectIds, setExpandedProjectIds] = useState<string[]>([]);
-    const [crmView, setCrmView] = useState<'pipeline' | 'reviews' | 'calendar' | 'crew'>('pipeline');
+    const [crmView, setCrmView] = useState<'pipeline' | 'reviews' | 'calendar' | 'crew' | 'finance'>('pipeline');
     const [crewMembers, setCrewMembers] = useState<CrewMember[]>([]);
     const [reviews, setReviews] = useState<any[]>([]);
     const [loadingReviews, setLoadingReviews] = useState(false);
@@ -309,6 +311,10 @@ const CRMProjects: React.FC = () => {
     const [savingCrewAssign, setSavingCrewAssign] = useState(false);
     const [notifyingProjectId, setNotifyingProjectId] = useState<string | null>(null);
     const [sendingCrewNotifications, setSendingCrewNotifications] = useState(false);
+    const [extraExpensesDraft, setExtraExpensesDraft] = useState<{ description: string; amount: number; currency: 'USD' | 'ARS' }[]>([]);
+    const [newExtraExpenseDesc, setNewExtraExpenseDesc] = useState('');
+    const [newExtraExpenseAmount, setNewExtraExpenseAmount] = useState('');
+    const [newExtraExpenseCurrency, setNewExtraExpenseCurrency] = useState<'USD' | 'ARS'>('ARS');
 
     // Helper reviews constants
     const reviewsRatingAvg = reviews.length > 0 ? (reviews.reduce((acc, r) => acc + (r.rating || 0), 0) / reviews.length) : 0;
@@ -497,14 +503,16 @@ const CRMProjects: React.FC = () => {
                     action: 'updateCrewAssignments',
                     project_id: projectId,
                     crew_assignments: crewAssignDraft,
+                    extra_expenses: extraExpensesDraft,
                     password
                 })
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error al guardar crew');
-            setSuccessMsg('✅ Crew del evento actualizado.');
+            setSuccessMsg('✅ Crew y gastos del evento actualizados.');
             setEditingCrewProjectId(null);
             setCrewAssignDraft([]);
+            setExtraExpensesDraft([]);
             fetchData();
             setTimeout(() => setSuccessMsg(''), 3000);
         } catch (err: any) {
@@ -712,6 +720,7 @@ const CRMProjects: React.FC = () => {
     // Abrir Modal de Edición de Presupuesto para Proyecto Existente
     const openBudgetModal = (proj: Project) => {
         setBudgetingProject(proj);
+        setEditingLocation(proj.location || '');
         const activeBudget = budgets.find(b => b.project_id === proj.id);
         if (activeBudget) {
             setEditingBudgetItems(activeBudget.items || [{ description: '', quantity: 1, unit_price: 0 }]);
@@ -758,6 +767,7 @@ const CRMProjects: React.FC = () => {
                     items: itemsToSave,
                     total_price: totalPrice,
                     payment_terms: editingPaymentTerms,
+                    location: editingLocation,
                     password
                 })
             });
@@ -1341,6 +1351,16 @@ const CRMProjects: React.FC = () => {
                             >
                                 Reviews
                             </button>
+                            <button
+                                onClick={() => setCrmView('finance')}
+                                className={`text-xs px-3 py-1.5 rounded font-bold transition-all ${
+                                    crmView === 'finance'
+                                        ? 'bg-nexo-lime text-black'
+                                        : 'text-zinc-400 hover:text-white'
+                                }`}
+                            >
+                                📊 <span className="hidden sm:inline">Finanzas</span>
+                            </button>
                         </div>
                         <a href="/admin" className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded transition-colors flex items-center gap-1">
                             <span className="text-sm">←</span>
@@ -1395,6 +1415,17 @@ const CRMProjects: React.FC = () => {
                         password={password}
                         crewMembers={crewMembers}
                         onCrewUpdated={fetchCrewMembers}
+                    />
+                )}
+
+                {/* ============================================================ */}
+                {/* VISTA: DASHBOARD FINANCIERO                                  */}
+                {/* ============================================================ */}
+                {crmView === 'finance' && (
+                    <FinanceDashboard
+                        projects={projects as any}
+                        budgets={budgets}
+                        crewMembers={crewMembers}
                     />
                 )}
 
@@ -1998,7 +2029,6 @@ const CRMProjects: React.FC = () => {
                                                                     </div>
                                                                 )}
 
-                                                                {/* ── CREW ASSIGNMENT BLOCK ── */}
                                                                 <div className="border border-white/8 rounded-xl p-3 mt-3 bg-zinc-900/50">
                                                                     <div className="flex items-center justify-between mb-2">
                                                                         <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">
@@ -2010,9 +2040,13 @@ const CRMProjects: React.FC = () => {
                                                                                     setEditingCrewProjectId(project.id);
                                                                                     if (crewMembers.length === 0) fetchCrewMembers();
                                                                                     setCrewAssignDraft(project.crew_assignments ? [...project.crew_assignments] : []);
+                                                                                    setExtraExpensesDraft(project.extra_expenses ? [...project.extra_expenses] : []);
+                                                                                    setNewExtraExpenseDesc('');
+                                                                                    setNewExtraExpenseAmount('');
+                                                                                    setNewExtraExpenseCurrency((project.currency as 'USD' | 'ARS') || 'ARS');
                                                                                 }}
                                                                                 className="text-[10px] bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white px-2 py-1 rounded transition-colors"
-                                                                            >✏️ Editar crew</button>
+                                                                            >✏️ Editar crew y Gastos</button>
                                                                         )}
                                                                     </div>
 
@@ -2089,6 +2123,7 @@ const CRMProjects: React.FC = () => {
                                                                                     {crewMembers.filter(cm => cm.is_active).map(cm => (
                                                                                         <button
                                                                                             key={cm.id}
+                                                                                            type="button"
                                                                                             onClick={() => {
                                                                                                 const firstRole = cm.role ? cm.role.split(',')[0].trim() : 'Otro';
                                                                                                 setCrewAssignDraft([...crewAssignDraft, {
@@ -2115,26 +2150,100 @@ const CRMProjects: React.FC = () => {
                                                                                 </div>
                                                                             </div>
 
+                                                                            {/* Gastos Extras en modo edición */}
+                                                                            <div className="border-t border-white/5 pt-3 mt-3">
+                                                                                <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-2">
+                                                                                    💸 Gastos Extras de Rodaje (Ej: remis, catering, alquiler)
+                                                                                </p>
+                                                                                <div className="space-y-2 mb-3">
+                                                                                    {extraExpensesDraft.map((exp, expIdx) => (
+                                                                                        <div key={expIdx} className="flex items-center justify-between gap-3 bg-black/40 border border-white/5 rounded px-2.5 py-1.5 text-xs text-zinc-300">
+                                                                                            <span className="truncate flex-1 font-medium">{exp.description}</span>
+                                                                                            <span className="font-mono text-white text-xs whitespace-nowrap">${exp.amount.toLocaleString()} {exp.currency}</span>
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                onClick={() => setExtraExpensesDraft(extraExpensesDraft.filter((_, i) => i !== expIdx))}
+                                                                                                className="text-red-400 hover:text-red-300 font-bold ml-1 text-xs cursor-pointer"
+                                                                                                title="Eliminar gasto"
+                                                                                            >
+                                                                                                🗑️
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    ))}
+                                                                                    {extraExpensesDraft.length === 0 && (
+                                                                                        <p className="text-zinc-600 text-[10px] italic">No hay gastos extras detallados.</p>
+                                                                                    )}
+                                                                                </div>
+                                                                                
+                                                                                <div className="flex flex-col sm:flex-row gap-2 bg-black/20 p-2.5 rounded border border-white/5">
+                                                                                    <input
+                                                                                        type="text"
+                                                                                        value={newExtraExpenseDesc}
+                                                                                        onChange={e => setNewExtraExpenseDesc(e.target.value)}
+                                                                                        placeholder="Descripción (ej: Combustible, viáticos...)"
+                                                                                        className="flex-1 bg-zinc-950 border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-nexo-lime"
+                                                                                    />
+                                                                                    <div className="flex gap-2">
+                                                                                        <input
+                                                                                            type="number"
+                                                                                            min="0"
+                                                                                            value={newExtraExpenseAmount}
+                                                                                            onChange={e => setNewExtraExpenseAmount(e.target.value)}
+                                                                                            placeholder="Monto"
+                                                                                            className="w-20 bg-zinc-950 border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-nexo-lime text-right font-mono"
+                                                                                        />
+                                                                                        <select
+                                                                                            value={newExtraExpenseCurrency}
+                                                                                            onChange={e => setNewExtraExpenseCurrency(e.target.value as 'USD' | 'ARS')}
+                                                                                            className="bg-zinc-950 border border-white/10 rounded px-1 py-1 text-xs text-white focus:outline-none"
+                                                                                        >
+                                                                                            <option>ARS</option>
+                                                                                            <option>USD</option>
+                                                                                        </select>
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            onClick={() => {
+                                                                                                if (!newExtraExpenseDesc.trim()) return;
+                                                                                                const amt = Number(newExtraExpenseAmount) || 0;
+                                                                                                setExtraExpensesDraft([...extraExpensesDraft, {
+                                                                                                    description: newExtraExpenseDesc.trim(),
+                                                                                                    amount: amt,
+                                                                                                    currency: newExtraExpenseCurrency
+                                                                                                }]);
+                                                                                                setNewExtraExpenseDesc('');
+                                                                                                setNewExtraExpenseAmount('');
+                                                                                            }}
+                                                                                            className="bg-zinc-800 hover:bg-zinc-700 border border-white/10 text-white font-bold text-xs px-3 py-1 rounded transition-colors whitespace-nowrap"
+                                                                                        >
+                                                                                            ➕ Agregar
+                                                                                        </button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+
                                                                             {/* Save/cancel */}
-                                                                            <div className="flex gap-2 pt-1">
+                                                                            <div className="flex gap-2 pt-3 border-t border-white/5 mt-3">
                                                                                 <button
+                                                                                    type="button"
                                                                                     onClick={() => handleSaveCrewAssignments(project.id)}
                                                                                     disabled={savingCrewAssign}
                                                                                     className="bg-nexo-lime text-black font-bold text-xs px-3 py-1.5 rounded hover:bg-white transition-colors disabled:opacity-50"
                                                                                 >
-                                                                                    {savingCrewAssign ? 'Guardando...' : '💾 Guardar crew'}
+                                                                                    {savingCrewAssign ? 'Guardando...' : '💾 Guardar crew y Gastos'}
                                                                                 </button>
                                                                                 <button
-                                                                                    onClick={() => { setEditingCrewProjectId(null); setCrewAssignDraft([]); }}
+                                                                                    type="button"
+                                                                                    onClick={() => { setEditingCrewProjectId(null); setCrewAssignDraft([]); setExtraExpensesDraft([]); }}
                                                                                     className="bg-zinc-800 text-zinc-300 text-xs px-3 py-1.5 rounded hover:bg-zinc-700 transition-colors"
                                                                                 >Cancelar</button>
                                                                             </div>
                                                                         </div>
                                                                     ) : (
                                                                         <div>
-                                                                            {(project.crew_assignments || []).length > 0 ? (
-                                                                                <div className="space-y-1.5">
-                                                                                    {project.crew_assignments!.map((a, idx) => (
+                                                                            {((project.crew_assignments || []).length > 0 || (project.extra_expenses || []).length > 0) ? (
+                                                                                <div className="space-y-2">
+                                                                                    {/* Render Crew Members */}
+                                                                                    {(project.crew_assignments || []).map((a, idx) => (
                                                                                         <div key={idx} className="flex items-center justify-between gap-2 text-xs">
                                                                                             <div className="flex items-center gap-1.5">
                                                                                                 <span>{ROLE_ICONS[a.role] || '👤'}</span>
@@ -2149,27 +2258,56 @@ const CRMProjects: React.FC = () => {
                                                                                             )}
                                                                                         </div>
                                                                                     ))}
+
+                                                                                    {/* Render Extra Expenses */}
+                                                                                    {(project.extra_expenses || []).length > 0 && (
+                                                                                        <div className="border-t border-white/5 pt-2 mt-2 space-y-1">
+                                                                                            <p className="text-zinc-500 text-[9px] font-bold uppercase tracking-wider">💸 Gastos Extras Detallados</p>
+                                                                                            {project.extra_expenses!.map((exp, eIdx) => (
+                                                                                                <div key={eIdx} className="flex items-center justify-between text-xs text-zinc-400">
+                                                                                                    <span>• {exp.description}</span>
+                                                                                                    <span className="font-mono text-zinc-500">${exp.amount.toLocaleString()} {exp.currency}</span>
+                                                                                                </div>
+                                                                                            ))}
+                                                                                        </div>
+                                                                                    )}
+
                                                                                     {(() => {
-                                                                                        const totalCrew = project.crew_assignments!.reduce((s, a) => s + (a.fee || 0), 0);
+                                                                                        const totalCrew = (project.crew_assignments || []).reduce((s, a) => s + (a.fee || 0), 0);
+                                                                                        const totalExtras = (project.extra_expenses || []).reduce((s, e) => s + (e.amount || 0), 0);
+                                                                                        const totalCost = totalCrew + totalExtras;
                                                                                         const income = projectBudget?.total_price || 0;
                                                                                         const canNotify = ['approved', 'production'].includes(project.status);
                                                                                         return (
                                                                                             <div className="border-t border-white/5 mt-3 pt-3 space-y-3">
                                                                                                 {/* Panel Destacado de Ganancia / Costos */}
-                                                                                                <div className="bg-black/30 border border-white/5 rounded-xl p-3 flex justify-between items-center shadow-inner">
-                                                                                                    <div>
-                                                                                                        <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block">Costo Crew</span>
-                                                                                                        <span className="font-mono text-xs text-zinc-300 font-bold">${totalCrew.toLocaleString()}</span>
+                                                                                                <div className="bg-black/30 border border-white/5 rounded-xl p-3 flex flex-col gap-2 shadow-inner">
+                                                                                                    <div className="flex justify-between items-center text-xs">
+                                                                                                        <span className="text-zinc-500">Costo Crew:</span>
+                                                                                                        <span className="font-mono text-zinc-300 font-bold">${totalCrew.toLocaleString()}</span>
                                                                                                     </div>
-                                                                                                    <div className="text-right">
-                                                                                                        <span className="text-[9px] text-nexo-lime font-black uppercase tracking-widest block">Ganancia Estimada</span>
-                                                                                                        <span className={`font-mono text-base font-black ${income - totalCrew >= 0 ? 'text-nexo-lime' : 'text-red-400'}`}>
-                                                                                                            ${(income - totalCrew).toLocaleString()}
-                                                                                                        </span>
+                                                                                                    {totalExtras > 0 && (
+                                                                                                        <div className="flex justify-between items-center text-xs">
+                                                                                                            <span className="text-zinc-500">Gastos Extras:</span>
+                                                                                                            <span className="font-mono text-zinc-300 font-bold">${totalExtras.toLocaleString()}</span>
+                                                                                                        </div>
+                                                                                                    )}
+                                                                                                    <div className="flex justify-between items-center border-t border-white/5 pt-2">
+                                                                                                        <div>
+                                                                                                            <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block">Costo Total</span>
+                                                                                                            <span className="font-mono text-xs text-zinc-300 font-bold">${totalCost.toLocaleString()}</span>
+                                                                                                        </div>
+                                                                                                        <div className="text-right">
+                                                                                                            <span className="text-[9px] text-nexo-lime font-black uppercase tracking-widest block">Ganancia Estimada</span>
+                                                                                                            <span className={`font-mono text-base font-black ${income - totalCost >= 0 ? 'text-nexo-lime' : 'text-red-400'}`}>
+                                                                                                                ${(income - totalCost).toLocaleString()}
+                                                                                                            </span>
+                                                                                                        </div>
                                                                                                     </div>
                                                                                                 </div>
                                                                                                 {canNotify && (
                                                                                                     <button
+                                                                                                        type="button"
                                                                                                         onClick={() => setNotifyingProjectId(project.id)}
                                                                                                         className="w-full text-center bg-nexo-lime/10 border border-nexo-lime/30 hover:bg-nexo-lime/20 text-nexo-lime text-[11px] font-bold py-2 rounded transition-all flex items-center justify-center gap-1.5 uppercase tracking-widest font-black"
                                                                                                     >
@@ -3347,6 +3485,17 @@ const CRMProjects: React.FC = () => {
                                         ) : null;
                                     })()}
                                 </div>
+                            </div>
+
+                            <div className="space-y-2 border-t border-white/5 pt-4">
+                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider block">📍 Locación / Dirección del Evento</label>
+                                <input
+                                    type="text"
+                                    value={editingLocation}
+                                    onChange={(e) => setEditingLocation(e.target.value)}
+                                    placeholder="Ej: Salón Fiestas, Av. Rivadavia 1234, CABA (o 'A confirmar')"
+                                    className="w-full bg-black border border-white/10 rounded px-4 py-2 text-xs text-white focus:outline-none focus:border-nexo-lime"
+                                />
                             </div>
 
                             <div className="space-y-2">
