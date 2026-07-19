@@ -63,33 +63,35 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
 
     // Procesar proyectos con presupuestos vinculados
     const projectsWithFinancials = useMemo(() => {
-        return projects.map(proj => {
+        return projects.filter(p => p).map(proj => {
             const budget = budgets.find(b => b && b.project_id === proj.id && b.is_active);
-            const income = budget ? (budget.total_price || 0) : 0;
+            const income = budget ? (Number(budget.total_price) || 0) : 0;
             const currency = proj.currency || 'ARS';
 
             // Egresos Crew
             const crewAssignments = Array.isArray(proj.crew_assignments) ? proj.crew_assignments : [];
             const crewCost = crewAssignments.reduce((acc, curr) => {
-                if (!acc) acc = 0; // Type safety
-                if (!curr) return acc;
+                const currentAcc = Number(acc) || 0;
+                if (!curr) return currentAcc;
+                const feeVal = Number(curr.fee) || 0;
                 if (curr.fee_currency === currency) {
-                    return acc + (curr.fee || 0);
+                    return currentAcc + feeVal;
                 }
                 const rate = curr.fee_currency === 'USD' ? 1000 : 0.001;
-                return acc + (curr.fee || 0) * rate;
+                return currentAcc + feeVal * rate;
             }, 0);
 
             // Costos extras
             const extraExpenses = Array.isArray(proj.extra_expenses) ? proj.extra_expenses : [];
             const extraCost = extraExpenses.reduce((acc, curr) => {
-                if (!acc) acc = 0; // Type safety
-                if (!curr) return acc;
+                const currentAcc = Number(acc) || 0;
+                if (!curr) return currentAcc;
+                const amtVal = Number(curr.amount) || 0;
                 if (curr.currency === currency) {
-                    return acc + (curr.amount || 0);
+                    return currentAcc + amtVal;
                 }
                 const rate = curr.currency === 'USD' ? 1000 : 0.001;
-                return acc + (curr.amount || 0) * rate;
+                return currentAcc + amtVal * rate;
             }, 0);
 
             const totalExpenses = crewCost + extraCost;
@@ -131,10 +133,10 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
 
             if (searchTerm.trim() !== '') {
                 const searchLower = searchTerm.toLowerCase();
-                const matchTitle = (proj.title || '').toLowerCase().includes(searchLower);
-                const matchContact = (proj.contact_name || '').toLowerCase().includes(searchLower);
-                const matchCompany = (proj.company_name || '').toLowerCase().includes(searchLower);
-                const matchLoc = (proj.location || '').toLowerCase().includes(searchLower);
+                const matchTitle = String(proj.title || '').toLowerCase().includes(searchLower);
+                const matchContact = String(proj.contact_name || '').toLowerCase().includes(searchLower);
+                const matchCompany = String(proj.company_name || '').toLowerCase().includes(searchLower);
+                const matchLoc = String(proj.location || '').toLowerCase().includes(searchLower);
                 if (!matchTitle && !matchContact && !matchCompany && !matchLoc) return false;
             }
 
@@ -143,7 +145,8 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
             }
 
             if (selectedCrewId !== 'all') {
-                const hasCrewAssigned = (proj.crew_assignments || []).some(a => a && a.crew_member_id === selectedCrewId);
+                const assignments = Array.isArray(proj.crew_assignments) ? proj.crew_assignments : [];
+                const hasCrewAssigned = assignments.some(a => a && a.crew_member_id === selectedCrewId);
                 if (!hasCrewAssigned) return false;
             }
 
@@ -166,27 +169,31 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
         filteredProjects.forEach(p => {
             if (p.currency === 'USD') {
                 revenueUSD += p.income;
-                const assignments = p.crew_assignments || [];
-                const extras = p.extra_expenses || [];
+                const assignments = Array.isArray(p.crew_assignments) ? p.crew_assignments : [];
+                const extras = Array.isArray(p.extra_expenses) ? p.extra_expenses : [];
                 assignments.forEach(a => {
                     if (!a) return;
-                    expensesUSD += a.fee_currency === 'USD' ? (a.fee || 0) : (a.fee || 0) / 1000;
+                    const feeVal = Number(a.fee) || 0;
+                    expensesUSD += a.fee_currency === 'USD' ? feeVal : feeVal / 1000;
                 });
                 extras.forEach(e => {
                     if (!e) return;
-                    expensesUSD += e.currency === 'USD' ? (e.amount || 0) : (e.amount || 0) / 1000;
+                    const amtVal = Number(e.amount) || 0;
+                    expensesUSD += e.currency === 'USD' ? amtVal : amtVal / 1000;
                 });
             } else {
-                revenueARS += p.income;
-                const assignments = p.crew_assignments || [];
-                const extras = p.extra_expenses || [];
+                revenueARS += Number(p.income) || 0;
+                const assignments = Array.isArray(p.crew_assignments) ? p.crew_assignments : [];
+                const extras = Array.isArray(p.extra_expenses) ? p.extra_expenses : [];
                 assignments.forEach(a => {
                     if (!a) return;
-                    expensesARS += a.fee_currency === 'ARS' ? (a.fee || 0) : (a.fee || 0) * 1000;
+                    const feeVal = Number(a.fee) || 0;
+                    expensesARS += a.fee_currency === 'ARS' ? feeVal : feeVal * 1000;
                 });
                 extras.forEach(e => {
                     if (!e) return;
-                    expensesARS += e.currency === 'ARS' ? (e.amount || 0) : (e.amount || 0) * 1000;
+                    const amtVal = Number(e.amount) || 0;
+                    expensesARS += e.currency === 'ARS' ? amtVal : amtVal * 1000;
                 });
             }
         });
@@ -213,7 +220,7 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
         const rankingMap: { [key: string]: { id: string; name: string; role: string; count: number; earnedARS: number; earnedUSD: number } } = {};
 
         filteredProjects.forEach(p => {
-            const assignments = p.crew_assignments || [];
+            const assignments = Array.isArray(p.crew_assignments) ? p.crew_assignments : [];
             assignments.forEach(a => {
                 if (!a || !a.crew_member_id) return;
                 if (!rankingMap[a.crew_member_id]) {
@@ -227,10 +234,11 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                     };
                 }
                 rankingMap[a.crew_member_id].count += 1;
+                const feeVal = Number(a.fee) || 0;
                 if (a.fee_currency === 'USD') {
-                    rankingMap[a.crew_member_id].earnedUSD += a.fee || 0;
+                    rankingMap[a.crew_member_id].earnedUSD += feeVal;
                 } else {
-                    rankingMap[a.crew_member_id].earnedARS += a.fee || 0;
+                    rankingMap[a.crew_member_id].earnedARS += feeVal;
                 }
             });
         });
@@ -243,7 +251,9 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
         const rankingMap: { [key: string]: { name: string; count: number; billedARS: number; billedUSD: number; marginARS: number; marginUSD: number } } = {};
 
         filteredProjects.forEach(p => {
-            const key = p.company_name?.trim() || (p.contact_name || '').trim() || 'Desconocido';
+            const companyNameStr = typeof p.company_name === 'string' ? p.company_name.trim() : '';
+            const contactNameStr = typeof p.contact_name === 'string' ? p.contact_name.trim() : '';
+            const key = companyNameStr || contactNameStr || 'Desconocido';
             if (!rankingMap[key]) {
                 rankingMap[key] = {
                     name: key,
@@ -257,29 +267,32 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
 
             rankingMap[key].count += 1;
 
-            const crewAssignments = p.crew_assignments || [];
-            const extraExpenses = p.extra_expenses || [];
+            const crewAssignments = Array.isArray(p.crew_assignments) ? p.crew_assignments : [];
+            const extraExpenses = Array.isArray(p.extra_expenses) ? p.extra_expenses : [];
 
             let projCostARS = 0;
             let projCostUSD = 0;
 
             crewAssignments.forEach(a => {
                 if (!a) return;
-                if (a.fee_currency === 'USD') projCostUSD += a.fee || 0;
-                else projCostARS += a.fee || 0;
+                const feeVal = Number(a.fee) || 0;
+                if (a.fee_currency === 'USD') projCostUSD += feeVal;
+                else projCostARS += feeVal;
             });
             extraExpenses.forEach(e => {
                 if (!e) return;
-                if (e.currency === 'USD') projCostUSD += e.amount || 0;
-                else projCostARS += e.amount || 0;
+                const amtVal = Number(e.amount) || 0;
+                if (e.currency === 'USD') projCostUSD += amtVal;
+                else projCostARS += amtVal;
             });
 
+            const incomeVal = Number(p.income) || 0;
             if (p.currency === 'USD') {
-                rankingMap[key].billedUSD += p.income;
-                rankingMap[key].marginUSD += (p.income - projCostUSD - (projCostARS / 1000));
+                rankingMap[key].billedUSD += incomeVal;
+                rankingMap[key].marginUSD += (incomeVal - projCostUSD - (projCostARS / 1000));
             } else {
-                rankingMap[key].billedARS += p.income;
-                rankingMap[key].marginARS += (p.income - projCostARS - (projCostUSD * 1000));
+                rankingMap[key].billedARS += incomeVal;
+                rankingMap[key].marginARS += (incomeVal - projCostARS - (projCostUSD * 1000));
             }
         });
 
@@ -308,21 +321,23 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
             }
 
             const rate = p.currency === 'USD' ? 1000 : 1;
-            monthlyMap[key].income += p.income * rate;
+            monthlyMap[key].income += (Number(p.income) || 0) * rate;
 
-            const crewAssignments = p.crew_assignments || [];
-            const extraExpenses = p.extra_expenses || [];
+            const crewAssignments = Array.isArray(p.crew_assignments) ? p.crew_assignments : [];
+            const extraExpenses = Array.isArray(p.extra_expenses) ? p.extra_expenses : [];
 
             crewAssignments.forEach(a => {
                 if (!a) return;
+                const feeVal = Number(a.fee) || 0;
                 const cRate = a.fee_currency === 'USD' ? 1000 : 1;
-                monthlyMap[key].expenses += (a.fee || 0) * cRate;
+                monthlyMap[key].expenses += feeVal * cRate;
             });
 
             extraExpenses.forEach(e => {
                 if (!e) return;
+                const amtVal = Number(e.amount) || 0;
                 const eRate = e.currency === 'USD' ? 1000 : 1;
-                monthlyMap[key].expenses += (e.amount || 0) * eRate;
+                monthlyMap[key].expenses += amtVal * eRate;
             });
         });
 
