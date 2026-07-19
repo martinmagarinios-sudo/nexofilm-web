@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import CalendarView from './CalendarView';
+import CrewDirectory, { CrewMember, CREW_ROLES, ROLE_ICONS } from './CrewDirectory';
 
 interface Budget {
     id: string;
@@ -57,11 +59,22 @@ interface Project {
     admin_notes?: string | null;
     currency?: 'USD' | 'ARS' | null;
     crew_count?: number | null;
+    crew_assignments?: CrewAssignment[] | null;
     client_tax_certificate_url?: string | null;
     invoice_sent?: boolean | null;
     updated_at?: string | null;
     admin_action_required?: boolean | null;
     created_at: string;
+}
+
+interface CrewAssignment {
+    crew_member_id: string;
+    name: string;
+    role: string;
+    fee: number;
+    fee_currency: 'USD' | 'ARS';
+    notified: boolean;
+    notified_at: string | null;
 }
 
 const parsePhone = (phoneStr: string) => {
@@ -94,7 +107,8 @@ const CRMProjects: React.FC = () => {
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [loading, setLoading] = useState(false);
     const [expandedProjectIds, setExpandedProjectIds] = useState<string[]>([]);
-    const [crmView, setCrmView] = useState<'pipeline' | 'reviews'>('pipeline');
+    const [crmView, setCrmView] = useState<'pipeline' | 'reviews' | 'calendar' | 'crew'>('pipeline');
+    const [crewMembers, setCrewMembers] = useState<CrewMember[]>([]);
     const [reviews, setReviews] = useState<any[]>([]);
     const [loadingReviews, setLoadingReviews] = useState(false);
 
@@ -162,6 +176,11 @@ const CRMProjects: React.FC = () => {
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const [filterStatus, setFilterStatus] = useState<string>('all');
     const [analyzingProjectId, setAnalyzingProjectId] = useState<string | null>(null);
+
+    // Crew assignment state
+    const [editingCrewProjectId, setEditingCrewProjectId] = useState<string | null>(null);
+    const [crewAssignDraft, setCrewAssignDraft] = useState<CrewAssignment[]>([]);
+    const [savingCrewAssign, setSavingCrewAssign] = useState(false);
 
     // Helper reviews constants
     const reviewsRatingAvg = reviews.length > 0 ? (reviews.reduce((acc, r) => acc + (r.rating || 0), 0) / reviews.length) : 0;
@@ -321,6 +340,48 @@ const CRMProjects: React.FC = () => {
             console.error('Error fetching reviews:', err);
         } finally {
             setLoadingReviews(false);
+        }
+    };
+
+    const fetchCrewMembers = async () => {
+        try {
+            const res = await fetch('/api/comercial/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'listCrewMembers', password })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al obtener crew');
+            setCrewMembers(data.crew || []);
+        } catch (err: any) {
+            console.error('Error fetching crew:', err);
+        }
+    };
+
+    const handleSaveCrewAssignments = async (projectId: string) => {
+        setSavingCrewAssign(true);
+        try {
+            const res = await fetch('/api/comercial/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'updateCrewAssignments',
+                    project_id: projectId,
+                    crew_assignments: crewAssignDraft,
+                    password
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al guardar crew');
+            setSuccessMsg('✅ Crew del evento actualizado.');
+            setEditingCrewProjectId(null);
+            setCrewAssignDraft([]);
+            fetchData();
+            setTimeout(() => setSuccessMsg(''), 3000);
+        } catch (err: any) {
+            setError('Error al guardar crew: ' + err.message);
+        } finally {
+            setSavingCrewAssign(false);
         }
     };
 
@@ -1071,6 +1132,26 @@ const CRMProjects: React.FC = () => {
                                 Proyectos
                             </button>
                             <button
+                                onClick={() => { setCrmView('calendar'); if (crewMembers.length === 0) fetchCrewMembers(); }}
+                                className={`text-xs px-3 py-1.5 rounded font-bold transition-all ${
+                                    crmView === 'calendar'
+                                        ? 'bg-nexo-lime text-black'
+                                        : 'text-zinc-400 hover:text-white'
+                                }`}
+                            >
+                                📅 <span className="hidden sm:inline">Calendario</span>
+                            </button>
+                            <button
+                                onClick={() => { setCrmView('crew'); if (crewMembers.length === 0) fetchCrewMembers(); }}
+                                className={`text-xs px-3 py-1.5 rounded font-bold transition-all ${
+                                    crmView === 'crew'
+                                        ? 'bg-nexo-lime text-black'
+                                        : 'text-zinc-400 hover:text-white'
+                                }`}
+                            >
+                                👥 <span className="hidden sm:inline">Crew</span>
+                            </button>
+                            <button
                                 onClick={() => { setCrmView('reviews'); if (reviews.length === 0) fetchReviews(); }}
                                 className={`text-xs px-3 py-1.5 rounded font-bold transition-all ${
                                     crmView === 'reviews'
@@ -1086,7 +1167,11 @@ const CRMProjects: React.FC = () => {
                             <span className="hidden sm:inline">Leads</span>
                         </a>
                         <button
-                            onClick={() => crmView === 'reviews' ? fetchReviews() : fetchData()}
+                            onClick={() => {
+                                if (crmView === 'reviews') fetchReviews();
+                                else if (crmView === 'crew') fetchCrewMembers();
+                                else { fetchData(); if (crewMembers.length === 0) fetchCrewMembers(); }
+                            }}
                             className="text-xs bg-nexo-lime text-black font-bold px-3 py-1.5 rounded hover:bg-white transition-colors flex items-center gap-1"
                         >
                             <span>↻</span>
@@ -1107,6 +1192,30 @@ const CRMProjects: React.FC = () => {
                     <div className="bg-nexo-lime/10 border border-nexo-lime/20 text-nexo-lime p-3 rounded-lg mb-4 text-sm">
                         {successMsg}
                     </div>
+                )}
+
+                {/* ============================================================ */}
+                {/* VISTA: CALENDARIO DE EVENTOS                                 */}
+                {/* ============================================================ */}
+                {crmView === 'calendar' && (
+                    <CalendarView
+                        projects={projects as any}
+                        budgets={budgets}
+                        crewMembers={crewMembers}
+                        password={password}
+                        onDataRefresh={() => { fetchData(); fetchCrewMembers(); }}
+                    />
+                )}
+
+                {/* ============================================================ */}
+                {/* VISTA: DIRECTORIO DE CREW                                     */}
+                {/* ============================================================ */}
+                {crmView === 'crew' && (
+                    <CrewDirectory
+                        password={password}
+                        crewMembers={crewMembers}
+                        onCrewUpdated={fetchCrewMembers}
+                    />
                 )}
 
                 {/* ============================================================ */}
@@ -1958,6 +2067,151 @@ const CRMProjects: React.FC = () => {
                                                                         <p className="text-amber-300 text-xs italic flex-1">Nota activa al cliente: &quot;{project.admin_notes}&quot;</p>
                                                                     </div>
                                                                 )}
+
+                                                                {/* ── CREW ASSIGNMENT BLOCK ── */}
+                                                                <div className="border border-white/8 rounded-xl p-3 mt-3 bg-zinc-900/50">
+                                                                    <div className="flex items-center justify-between mb-2">
+                                                                        <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">
+                                                                            👥 Equipo del evento <span className="text-zinc-700 font-normal normal-case">(solo interno)</span>
+                                                                        </p>
+                                                                        {editingCrewProjectId !== project.id && (
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    setEditingCrewProjectId(project.id);
+                                                                                    if (crewMembers.length === 0) fetchCrewMembers();
+                                                                                    setCrewAssignDraft(project.crew_assignments ? [...project.crew_assignments] : []);
+                                                                                }}
+                                                                                className="text-[10px] bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white px-2 py-1 rounded transition-colors"
+                                                                            >✏️ Editar crew</button>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {editingCrewProjectId === project.id ? (
+                                                                        <div className="space-y-2">
+                                                                            {/* Current assignments */}
+                                                                            {crewAssignDraft.map((assign, idx) => (
+                                                                                <div key={idx} className="flex items-center gap-2 bg-black/40 border border-white/8 rounded-lg p-2">
+                                                                                    <span className="text-base">{ROLE_ICONS[assign.role] || '👤'}</span>
+                                                                                    <div className="flex-1 min-w-0">
+                                                                                        <p className="text-xs font-bold text-white truncate">{assign.name}</p>
+                                                                                        <p className="text-[10px] text-nexo-lime">{assign.role}</p>
+                                                                                    </div>
+                                                                                    <div className="flex items-center gap-1.5">
+                                                                                        <input
+                                                                                            type="number"
+                                                                                            min="0"
+                                                                                            value={assign.fee || ''}
+                                                                                            onChange={e => {
+                                                                                                const draft = [...crewAssignDraft];
+                                                                                                draft[idx] = { ...draft[idx], fee: Number(e.target.value) };
+                                                                                                setCrewAssignDraft(draft);
+                                                                                            }}
+                                                                                            placeholder="Honorario"
+                                                                                            className="w-24 bg-black border border-white/20 rounded px-2 py-1 text-xs text-white focus:border-nexo-lime focus:outline-none text-right"
+                                                                                        />
+                                                                                        <select
+                                                                                            value={assign.fee_currency}
+                                                                                            onChange={e => {
+                                                                                                const draft = [...crewAssignDraft];
+                                                                                                draft[idx] = { ...draft[idx], fee_currency: e.target.value as 'USD' | 'ARS' };
+                                                                                                setCrewAssignDraft(draft);
+                                                                                            }}
+                                                                                            className="bg-black border border-white/20 rounded px-1.5 py-1 text-xs text-white focus:outline-none"
+                                                                                        >
+                                                                                            <option>USD</option>
+                                                                                            <option>ARS</option>
+                                                                                        </select>
+                                                                                        <button
+                                                                                            onClick={() => setCrewAssignDraft(crewAssignDraft.filter((_, i) => i !== idx))}
+                                                                                            className="text-red-500/60 hover:text-red-400 text-sm w-6 h-6 flex items-center justify-center rounded hover:bg-red-500/10 transition-colors"
+                                                                                            title="Quitar"
+                                                                                        >×</button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))}
+
+                                                                            {/* Add from directory */}
+                                                                            <div className="pt-1">
+                                                                                <p className="text-zinc-600 text-[10px] mb-1.5">+ Agregar desde el directorio:</p>
+                                                                                <div className="flex flex-wrap gap-1">
+                                                                                    {crewMembers.filter(cm => cm.is_active && !crewAssignDraft.find(a => a.crew_member_id === cm.id)).map(cm => (
+                                                                                        <button
+                                                                                            key={cm.id}
+                                                                                            onClick={() => setCrewAssignDraft([...crewAssignDraft, {
+                                                                                                crew_member_id: cm.id,
+                                                                                                name: cm.name,
+                                                                                                role: cm.role,
+                                                                                                fee: 0,
+                                                                                                fee_currency: (project.currency as 'USD' | 'ARS') || 'USD',
+                                                                                                notified: false,
+                                                                                                notified_at: null
+                                                                                            }])}
+                                                                                            className="text-[10px] bg-zinc-800 hover:bg-zinc-700 border border-white/10 hover:border-nexo-lime/30 text-zinc-300 px-2 py-1 rounded transition-all flex items-center gap-1"
+                                                                                        >
+                                                                                            {ROLE_ICONS[cm.role] || '👤'} {cm.name}
+                                                                                        </button>
+                                                                                    ))}
+                                                                                    {crewMembers.filter(cm => cm.is_active).length === 0 && (
+                                                                                        <p className="text-zinc-600 text-[10px] italic">
+                                                                                            No hay crew en el directorio.{' '}
+                                                                                            <button onClick={() => setCrmView('crew')} className="text-nexo-lime hover:underline">Ir al directorio →</button>
+                                                                                        </p>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+
+                                                                            {/* Save/cancel */}
+                                                                            <div className="flex gap-2 pt-1">
+                                                                                <button
+                                                                                    onClick={() => handleSaveCrewAssignments(project.id)}
+                                                                                    disabled={savingCrewAssign}
+                                                                                    className="bg-nexo-lime text-black font-bold text-xs px-3 py-1.5 rounded hover:bg-white transition-colors disabled:opacity-50"
+                                                                                >
+                                                                                    {savingCrewAssign ? 'Guardando...' : '💾 Guardar crew'}
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => { setEditingCrewProjectId(null); setCrewAssignDraft([]); }}
+                                                                                    className="bg-zinc-800 text-zinc-300 text-xs px-3 py-1.5 rounded hover:bg-zinc-700 transition-colors"
+                                                                                >Cancelar</button>
+                                                                            </div>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div>
+                                                                            {(project.crew_assignments || []).length > 0 ? (
+                                                                                <div className="space-y-1.5">
+                                                                                    {project.crew_assignments!.map((a, idx) => (
+                                                                                        <div key={idx} className="flex items-center justify-between gap-2 text-xs">
+                                                                                            <div className="flex items-center gap-1.5">
+                                                                                                <span>{ROLE_ICONS[a.role] || '👤'}</span>
+                                                                                                <span className="font-medium text-white">{a.name}</span>
+                                                                                                <span className="text-zinc-600">· {a.role}</span>
+                                                                                                {a.notified && <span title={`Notificado ${a.notified_at ? new Date(a.notified_at).toLocaleDateString('es-AR') : ''}`} className="text-green-500 text-[10px]">✅</span>}
+                                                                                            </div>
+                                                                                            {a.fee > 0 && (
+                                                                                                <span className="text-zinc-500 font-mono tabular-nums">
+                                                                                                    ${a.fee.toLocaleString()} {a.fee_currency}
+                                                                                                </span>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    ))}
+                                                                                    {(() => {
+                                                                                        const totalCrew = project.crew_assignments!.reduce((s, a) => s + (a.fee || 0), 0);
+                                                                                        const income = projectBudget?.total_price || 0;
+                                                                                        if (totalCrew > 0) return (
+                                                                                            <div className="border-t border-white/5 mt-2 pt-2 flex justify-between text-[10px]">
+                                                                                                <span className="text-zinc-600">Costo crew: <strong className="text-zinc-400">${totalCrew.toLocaleString()}</strong></span>
+                                                                                                {income > 0 && <span className="text-zinc-600">Margen: <strong className={income - totalCrew >= 0 ? 'text-nexo-lime' : 'text-red-400'}>${(income - totalCrew).toLocaleString()}</strong></span>}
+                                                                                            </div>
+                                                                                        );
+                                                                                        return null;
+                                                                                    })()}
+                                                                                </div>
+                                                                            ) : (
+                                                                                <p className="text-zinc-700 text-xs italic">Sin crew asignado aún</p>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                             <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto">
                                                                 <button

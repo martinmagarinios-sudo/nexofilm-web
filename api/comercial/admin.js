@@ -964,6 +964,238 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                 return res.status(200).json({ success: true, reviews: reviewsRaw || [] });
             }
 
+            // ─── CREW: Listar directorio ───────────────────────────────────────────
+            case 'listCrewMembers': {
+                const { data: crew, error: crewErr } = await supabase
+                    .from('crew_members')
+                    .select('*')
+                    .order('name', { ascending: true });
+                if (crewErr) throw crewErr;
+                return res.status(200).json({ success: true, crew: crew || [] });
+            }
+
+            // ─── CREW: Crear persona ───────────────────────────────────────────────
+            case 'createCrewMember': {
+                const { name, role, email, phone, notes, dni, birth_date, address, dni_url } = req.body;
+                if (!name) return res.status(400).json({ error: 'El nombre es obligatorio.' });
+                const { data: newCm, error: createErr } = await supabase
+                    .from('crew_members')
+                    .insert({ 
+                        name, 
+                        role: role || 'Otro', 
+                        email: email || null, 
+                        phone: phone || null, 
+                        notes: notes || null, 
+                        is_active: true,
+                        dni: dni || null,
+                        birth_date: birth_date || null,
+                        address: address || null,
+                        dni_url: dni_url || null
+                    })
+                    .select()
+                    .single();
+                if (createErr) throw createErr;
+                return res.status(200).json({ success: true, crew_member: newCm });
+            }
+
+            // ─── CREW: Actualizar persona ──────────────────────────────────────────
+            case 'updateCrewMember': {
+                const { crew_member_id, name, role, email, phone, notes, is_active, dni, birth_date, address, dni_url } = req.body;
+                if (!crew_member_id) return res.status(400).json({ error: 'crew_member_id requerido.' });
+                const updatePayload = {};
+                if (name !== undefined) updatePayload.name = name;
+                if (role !== undefined) updatePayload.role = role;
+                if (email !== undefined) updatePayload.email = email;
+                if (phone !== undefined) updatePayload.phone = phone;
+                if (notes !== undefined) updatePayload.notes = notes;
+                if (is_active !== undefined) updatePayload.is_active = is_active;
+                if (dni !== undefined) updatePayload.dni = dni;
+                if (birth_date !== undefined) updatePayload.birth_date = birth_date;
+                if (address !== undefined) updatePayload.address = address;
+                if (dni_url !== undefined) updatePayload.dni_url = dni_url;
+                
+                const { error: updateErr } = await supabase
+                    .from('crew_members')
+                    .update(updatePayload)
+                    .eq('id', crew_member_id);
+                if (updateErr) throw updateErr;
+                return res.status(200).json({ success: true });
+            }
+
+            // ─── CREW: Guardar asignaciones en un proyecto ────────────────────────
+            case 'updateCrewAssignments': {
+                const { project_id, crew_assignments } = req.body;
+                if (!project_id) return res.status(400).json({ error: 'project_id requerido.' });
+                const { error: assignErr } = await supabase
+                    .from('projects')
+                    .update({ crew_assignments: crew_assignments || [] })
+                    .eq('id', project_id);
+                if (assignErr) throw assignErr;
+                return res.status(200).json({ success: true });
+            }
+
+            // ─── CREW: Notificar a todo el crew de un proyecto ────────────────────
+            case 'notifyCrewAll': {
+                const { project_id } = req.body;
+                if (!project_id) return res.status(400).json({ error: 'project_id requerido.' });
+
+                // Fetch project
+                const { data: project, error: projFetchErr } = await supabase
+                    .from('projects')
+                    .select('*')
+                    .eq('id', project_id)
+                    .single();
+                if (projFetchErr) throw projFetchErr;
+                if (!project) return res.status(404).json({ error: 'Proyecto no encontrado.' });
+
+                const assignments = project.crew_assignments || [];
+                if (assignments.length === 0) {
+                    return res.status(400).json({ error: 'No hay crew asignado a este proyecto.' });
+                }
+
+                // Build event info
+                const eventDateObj = project.event_date ? new Date(project.event_date + 'T12:00:00') : null;
+                const MONTHS_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+                const DAYS_ES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+                const dateStr = eventDateObj
+                    ? `${DAYS_ES[eventDateObj.getDay()]} ${eventDateObj.getDate()} de ${MONTHS_ES[eventDateObj.getMonth()]} ${eventDateObj.getFullYear()}`
+                    : 'Fecha a confirmar';
+
+                const timeStr = project.event_time
+                    ? `${project.event_time}${project.event_end_time ? ' → ' + project.event_end_time : ''}${project.coverage_hours ? ' (' + project.coverage_hours + 'hs de cobertura)' : ''}`
+                    : '';
+                const locationStr = project.location || '';
+                const mapsLink = locationStr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationStr)}` : '';
+
+                // Build Google Calendar link
+                const calLink = (() => {
+                    if (!project.event_date) return '';
+                    const dateOnly = project.event_date.replace(/-/g, '');
+                    const startTime = project.event_time ? project.event_time.replace(':', '') + '00' : '080000';
+                    const endTime = project.event_end_time ? project.event_end_time.replace(':', '') + '00' : '';
+                    const dates = endTime
+                        ? `${dateOnly}T${startTime}/${dateOnly}T${endTime}`
+                        : `${dateOnly}T${startTime}/${dateOnly}T${(Number(startTime.substring(0, 2)) + 4).toString().padStart(2,'0')}0000`;
+                    return `https://calendar.google.com/calendar/r/eventedit?text=${encodeURIComponent(project.title)}&dates=${dates}&details=${encodeURIComponent(`Evento: ${project.title}\nCliente: ${project.contact_name}`)}&location=${encodeURIComponent(locationStr)}`;
+                })();
+
+                const token = process.env.WHATSAPP_TOKEN?.trim();
+                const phoneNumberId = process.env.WHATSAPP_PHONE_ID?.trim();
+
+                let notifiedCount = 0;
+                const updatedAssignments = [...assignments];
+
+                for (let i = 0; i < assignments.length; i++) {
+                    const assign = assignments[i];
+                    const firstName = assign.name.split(' ')[0];
+                    let sent = false;
+
+                    // Fetch crew member contact info
+                    const { data: crewMember } = await supabase
+                        .from('crew_members')
+                        .select('email, phone')
+                        .eq('id', assign.crew_member_id)
+                        .single();
+
+                    const memberEmail = crewMember?.email || null;
+                    const memberPhone = crewMember?.phone || null;
+
+                    // ── EMAIL ─────────────────────────────────────────────────────────
+                    if (memberEmail) {
+                        const emailHtml = `<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Fecha Confirmada - NexoFilm</title></head>
+<body style="margin:0;padding:0;background:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0a;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#111;border-radius:16px;overflow:hidden;border:1px solid #222;">
+        <!-- Header -->
+        <tr><td style="background:#111;padding:32px 40px 24px;border-bottom:1px solid #1a1a1a;text-align:center;">
+          <div style="font-size:28px;font-weight:900;letter-spacing:-1px;color:#ccff00;">NexoFilm</div>
+          <div style="color:#666;font-size:12px;margin-top:4px;letter-spacing:2px;text-transform:uppercase;">Productora Audiovisual</div>
+        </td></tr>
+        <!-- Confirmed badge -->
+        <tr><td style="padding:32px 40px 0;text-align:center;">
+          <div style="display:inline-block;background:#ccff00;color:#000;font-weight:900;font-size:13px;letter-spacing:2px;text-transform:uppercase;padding:8px 24px;border-radius:100px;">✅ Fecha Confirmada</div>
+          <h1 style="color:#fff;font-size:22px;font-weight:800;margin:20px 0 8px;">${project.title}</h1>
+          <p style="color:#888;font-size:14px;margin:0;">Hola <strong style="color:#e0e0e0;">${firstName}</strong>, quedaste confirmado/a para el siguiente evento:</p>
+        </td></tr>
+        <!-- Event details -->
+        <tr><td style="padding:24px 40px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0d0d;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;">
+            ${dateStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;width:120px;">📆 Fecha</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;">${dateStr}</td></tr>` : ''}
+            ${timeStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">⏰ Horario</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;">${timeStr}</td></tr>` : ''}
+            ${locationStr ? `<tr${mapsLink ? '' : ''}><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">📍 Lugar</td><td style="padding:14px 20px;font-size:14px;font-weight:600;">${mapsLink ? `<a href="${mapsLink}" style="color:#60a5fa;text-decoration:underline;">${locationStr}</a>` : `<span style="color:#e0e0e0;">${locationStr}</span>`}</td></tr>` : ''}
+            ${project.coverage_types?.length ? `<tr style="border-top:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">🎥 Cobertura</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;">${project.coverage_types.join(' + ')}</td></tr>` : ''}
+          </table>
+        </td></tr>
+        <!-- Calendar button -->
+        ${calLink ? `<tr><td style="padding:0 40px 24px;text-align:center;">
+          <a href="${calLink}" style="display:inline-block;background:#1a1a1a;color:#ccff00;text-decoration:none;font-weight:700;font-size:13px;padding:12px 28px;border-radius:8px;border:1px solid #2a2a2a;">🗓 Agregar a Google Calendar</a>
+        </td></tr>` : ''}
+        <!-- Footer -->
+        <tr><td style="padding:24px 40px;text-align:center;border-top:1px solid #1a1a1a;">
+          <p style="color:#555;font-size:13px;margin:0 0 8px;">¡Cualquier consulta respondé este mail o escribinos por WhatsApp!</p>
+          <p style="color:#333;font-size:12px;margin:0;">Con ganas de vernos pronto — <strong style="color:#ccff00;">El equipo de NexoFilm 🎬</strong></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+                        try {
+                            await resend.emails.send({
+                                from: 'NexoFilm <hola@nexofilm.com>',
+                                to: memberEmail,
+                                subject: `✅ Fecha Confirmada · ${project.title} — NexoFilm`,
+                                html: emailHtml
+                            });
+                            sent = true;
+                        } catch (emailErr) {
+                            console.error(`Error email a crew ${assign.name}:`, emailErr.message);
+                        }
+                    }
+
+                    // ── WHATSAPP ──────────────────────────────────────────────────────
+                    if (memberPhone && token && phoneNumberId) {
+                        let cleanPhone = memberPhone.replace(/\D/g, '');
+                        if (!cleanPhone.startsWith('54') && cleanPhone.length === 10) cleanPhone = '54' + cleanPhone;
+
+                        const waMsg = `🎬 *NexoFilm — Fecha Confirmada* ✅\n\nHola ${firstName}, ¡quedaste confirmado/a!\n\n📌 *${project.title}*${dateStr ? `\n📆 ${dateStr}` : ''}${timeStr ? `\n⏰ ${timeStr}` : ''}${locationStr ? `\n📍 ${locationStr}` : ''}${mapsLink ? `\n🗺 Ver en mapa: ${mapsLink}` : ''}${calLink ? `\n🗓 Agregar a tu Calendar:\n${calLink}` : ''}\n\nCualquier consulta, respondé este mensaje.\n¡Nos vemos! – El equipo de NexoFilm 🎬`;
+
+                        try {
+                            const waRes = await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
+                                method: 'POST',
+                                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    messaging_product: 'whatsapp',
+                                    to: cleanPhone,
+                                    type: 'text',
+                                    text: { body: waMsg }
+                                })
+                            });
+                            if (waRes.ok) sent = true;
+                            else console.error('WA error crew:', await waRes.text());
+                        } catch (waErr) {
+                            console.error(`Error WhatsApp a crew ${assign.name}:`, waErr.message);
+                        }
+                    }
+
+                    if (sent) {
+                        updatedAssignments[i] = { ...assign, notified: true, notified_at: new Date().toISOString() };
+                        notifiedCount++;
+                    }
+                }
+
+                // Update notified flags in DB
+                await supabase
+                    .from('projects')
+                    .update({ crew_assignments: updatedAssignments })
+                    .eq('id', project_id);
+
+                return res.status(200).json({ success: true, notified: notifiedCount, total: assignments.length });
+            }
+
             default:
                 return res.status(400).json({ error: 'Acción inválida' });
         }
