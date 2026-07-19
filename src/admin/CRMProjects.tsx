@@ -223,6 +223,43 @@ const renderFormattingToolbar = (textareaId: string, value: string, setter: (val
     );
 };
 
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
+    constructor(props: any) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+
+    static getDerivedStateFromError(error: Error) {
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error: Error, errorInfo: any) {
+        console.error("ErrorBoundary caught an error", error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="bg-red-950/20 border border-red-500/30 p-6 rounded-2xl my-6 space-y-4">
+                    <h3 className="text-red-400 font-bold text-lg flex items-center gap-2">
+                        ⚠️ Error en la visualización de Finanzas
+                    </h3>
+                    <p className="text-zinc-400 text-sm">
+                        Ocurrió un error inesperado al renderizar el panel financiero:
+                    </p>
+                    <pre className="bg-black/50 border border-white/10 p-4 rounded text-xs text-red-300 font-mono overflow-auto max-h-60 whitespace-pre-wrap">
+                        {this.state.error?.stack || this.state.error?.message || String(this.state.error)}
+                    </pre>
+                    <p className="text-zinc-500 text-xs">
+                        Por favor, captura una pantalla de este mensaje para diagnosticar el problema de inmediato.
+                    </p>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
 const CRMProjects: React.FC = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(() => sessionStorage.getItem('admin_auth') === 'true');
     const [password, setPassword] = useState(() => sessionStorage.getItem('admin_pass') || '');
@@ -1520,11 +1557,13 @@ const CRMProjects: React.FC = () => {
                 {/* VISTA: DASHBOARD FINANCIERO                                  */}
                 {/* ============================================================ */}
                 {crmView === 'finance' && (
-                    <FinanceDashboard
-                        projects={projects as any}
-                        budgets={budgets}
-                        crewMembers={crewMembers}
-                    />
+                    <ErrorBoundary>
+                        <FinanceDashboard
+                            projects={projects as any}
+                            budgets={budgets}
+                            crewMembers={crewMembers}
+                        />
+                    </ErrorBoundary>
                 )}
 
                 {/* ============================================================ */}
