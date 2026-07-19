@@ -2620,7 +2620,42 @@ const CRMProjects: React.FC = () => {
                                                             <div className="bg-black/20 p-4 border border-dashed border-white/10 rounded-lg text-xs space-y-3">
                                                                 {(project.event_date || project.location || (project.coverage_types && project.coverage_types.length > 0) || project.guests_count) && (
                                                                     <div>
-                                                                        <span className="font-bold text-nexo-lime block mb-1">📝 Especificaciones del Cliente:</span>
+                                                                        <div className="flex justify-between items-center mb-1">
+                                                                            <span className="font-bold text-nexo-lime">📝 Especificaciones del Cliente:</span>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    setEditingContactProjectId(project.id);
+                                                                                    setEditingContactName(project.contact_name);
+                                                                                    setEditingCompanyName(project.company_name || '');
+                                                                                    setEditingClientEmail(project.client_email || '');
+                                                                                    const parsed = parsePhone(project.client_phone || '');
+                                                                                    setEditingPhoneCountryCode(parsed.country);
+                                                                                    setEditingPhoneLocalNumber(parsed.local);
+                                                                                    setEditingCurrency(project.currency || 'ARS');
+                                                                                    setEditingCrewCount(project.crew_count || '');
+                                                                                    setEditingAdminNotes(project.admin_notes || '');
+                                                                                    setEditingEventDate(project.event_date || '');
+                                                                                    setEditingEventTime(project.event_time || '');
+                                                                                    setEditingEventEndTime(project.event_end_time || '');
+                                                                                    setEditingLocation(project.location || '');
+                                                                                    setEditingCoverageHours(project.coverage_hours || '');
+                                                                                    setEditingGuestsCount(project.guests_count || '');
+                                                                                    setEditingNotificationPreference(project.notification_preference || 'both');
+                                                                                    
+                                                                                    setTimeout(() => {
+                                                                                        const cardEl = document.getElementById(`project-${project.id}`);
+                                                                                        if (cardEl) {
+                                                                                            cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                                                                        }
+                                                                                    }, 100);
+                                                                                }}
+                                                                                className="text-[10px] bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white px-2 py-0.5 rounded transition-all flex items-center gap-1 font-bold"
+                                                                                title="Editar fecha, locación y detalles del evento"
+                                                                            >
+                                                                                ✏️ Editar Datos
+                                                                            </button>
+                                                                        </div>
                                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-zinc-400">
                                                                             <p>📅 Fecha: <span className="text-white font-medium">{project.event_date ? formatDate(project.event_date) : ''} {project.event_time || ''}</span></p>
                                                                             <p>📍 Locación: <span className="text-white font-medium">{project.location}</span></p>
