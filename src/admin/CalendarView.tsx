@@ -567,7 +567,7 @@ const EventCard: React.FC<{
                                         const notePart = crewNotificationNote.trim() ? `\n\n📝 *Nota:* ${crewNotificationNote.trim()}` : '';
                                         const mapsPart = mapsLink ? `📍 *Ver en mapa:*\n${mapsLink}\n\n` : '';
                                         const calPart = calLink ? `🗓️ *Agregar a tu Calendar:*\n${calLink}\n\n` : '';
-                                        const waMsg = `https://nexofilm.com
+                                        const waMsg = `https://nexofilm.com/?ref=crew
 
 🎬 *NEXOFILM* — _Confirmación de Jornada_
 ─────────────────────
@@ -650,7 +650,7 @@ Cualquier consulta, respondé este mensaje.
                             <div className="bg-black/40 border border-white/5 rounded-xl p-4 space-y-2.5">
                                 <p className="text-[10px] text-nexo-lime font-bold uppercase tracking-wider">Previsualización del Mensaje de WhatsApp</p>
                                 <div className="border border-white/8 rounded-lg p-3 bg-zinc-950/60 font-mono text-[11px] leading-relaxed text-zinc-300 whitespace-pre-line">
-                                    {`https://nexofilm.com
+                                    {`https://nexofilm.com/?ref=crew
 
 🎬 *NEXOFILM* — _Confirmación de Jornada_
 ─────────────────────
