@@ -1173,6 +1173,144 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                 return res.status(200).json({ success: true, notified: notifiedCount, total: assignments.length });
             }
 
+            // ─── CREW: Notificar a un miembro del crew por email individualmente ───
+            case 'notifyCrewSingle': {
+                const { project_id, crew_member_id } = req.body;
+                if (!project_id || !crew_member_id) {
+                    return res.status(400).json({ error: 'project_id y crew_member_id requeridos.' });
+                }
+
+                // Fetch project
+                const { data: project, error: projFetchErr } = await supabase
+                    .from('projects')
+                    .select('*')
+                    .eq('id', project_id)
+                    .single();
+                if (projFetchErr) throw projFetchErr;
+                if (!project) return res.status(404).json({ error: 'Proyecto no encontrado.' });
+
+                const assignments = project.crew_assignments || [];
+                const assignIdx = assignments.findIndex(a => a.crew_member_id === crew_member_id);
+                if (assignIdx === -1) {
+                    return res.status(404).json({ error: 'Miembro del crew no asignado a este proyecto.' });
+                }
+
+                const assign = assignments[assignIdx];
+
+                // Build event info
+                const eventDateObj = project.event_date ? new Date(project.event_date + 'T12:00:00') : null;
+                const MONTHS_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+                const DAYS_ES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+                const dateStr = eventDateObj
+                    ? `${DAYS_ES[eventDateObj.getDay()]} ${eventDateObj.getDate()} de ${MONTHS_ES[eventDateObj.getMonth()]} ${eventDateObj.getFullYear()}`
+                    : 'Fecha a confirmar';
+
+                const timeStr = project.event_time
+                    ? `${project.event_time}${project.event_end_time ? ' → ' + project.event_end_time : ''}${project.coverage_hours ? ' (' + project.coverage_hours + 'hs de cobertura)' : ''}`
+                    : '';
+                const locationStr = project.location || '';
+                const mapsLink = locationStr ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationStr)}` : '';
+
+                // Build Google Calendar link
+                const calLink = (() => {
+                    if (!project.event_date) return '';
+                    const dateOnly = project.event_date.replace(/-/g, '');
+                    const startTime = project.event_time ? project.event_time.replace(':', '') + '00' : '080000';
+                    const endTime = project.event_end_time ? project.event_end_time.replace(':', '') + '00' : '';
+                    const dates = endTime
+                        ? `${dateOnly}T${startTime}/${dateOnly}T${endTime}`
+                        : `${dateOnly}T${startTime}/${dateOnly}T${(Number(startTime.substring(0, 2)) + 4).toString().padStart(2,'0')}0000`;
+                    return `https://calendar.google.com/calendar/r/eventedit?text=${encodeURIComponent(project.title)}&dates=${dates}&details=${encodeURIComponent(`Evento: ${project.title}\nCliente: ${project.contact_name}`)}&location=${encodeURIComponent(locationStr)}`;
+                })();
+
+                // Fetch crew member contact info
+                const { data: crewMember } = await supabase
+                    .from('crew_members')
+                    .select('email, phone')
+                    .eq('id', crew_member_id)
+                    .single();
+
+                const memberEmail = crewMember?.email || null;
+                const firstName = assign.name.split(' ')[0];
+
+                if (!memberEmail) {
+                    return res.status(400).json({ error: 'El miembro no tiene un correo electrónico registrado.' });
+                }
+
+                const emailHtml = `<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Fecha Confirmada - NexoFilm</title></head>
+<body style="margin:0;padding:0;background:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0a;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#111;border-radius:16px;overflow:hidden;border:1px solid #222;">
+        <!-- Header -->
+        <tr><td style="background:#111;padding:32px 40px 24px;border-bottom:1px solid #1a1a1a;text-align:center;">
+          <a href="https://nexofilm.com" target="_blank" style="text-decoration:none;">
+            <img src="https://nexofilm.com/img/logo.png" alt="NexoFilm" style="border:0;height:45px;display:block;margin:0 auto;" />
+          </a>
+        </td></tr>
+        <!-- Confirmed badge -->
+        <tr><td style="padding:32px 40px 0;text-align:center;">
+          <div style="display:inline-block;background:#ccff00;color:#000;font-weight:900;font-size:13px;letter-spacing:2px;text-transform:uppercase;padding:8px 24px;border-radius:100px;">✅ Evento Confirmado</div>
+          <h1 style="color:#fff;font-size:22px;font-weight:800;margin:20px 0 8px;">¡Confirmación de Jornada!</h1>
+          <p style="color:#888;font-size:14px;margin:0;">Hola <strong style="color:#e0e0e0;">${firstName}</strong>, desde <strong>NexoFilm</strong> te confirmamos el evento para el cual fuiste asignado/a:</p>
+        </td></tr>
+        <!-- Event details -->
+        <tr><td style="padding:24px 40px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0d0d;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;">
+            <tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;width:120px;">🎬 Evento</td><td style="padding:14px 20px;color:#ccff00;font-size:14px;font-weight:800;">${project.title}</td></tr>
+            ${dateStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">📆 Fecha</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;">${dateStr}</td></tr>` : ''}
+            ${timeStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">⏰ Horario</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;">${timeStr}</td></tr>` : ''}
+            ${locationStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">📍 Lugar</td><td style="padding:14px 20px;font-size:14px;font-weight:600;">${mapsLink ? `<a href="${mapsLink}" style="color:#60a5fa;text-decoration:underline;">${locationStr}</a>` : `<span style="color:#e0e0e0;">${locationStr}</span>`}</td></tr>` : ''}
+            ${assign.role ? `<tr><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">🎥 Rol / Función</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;text-transform:capitalize;">${assign.role}</td></tr>` : ''}
+          </table>
+        </td></tr>
+        <!-- Calendar button -->
+        ${calLink ? `<tr><td style="padding:0 40px 24px;text-align:center;">
+          <a href="${calLink}" style="display:inline-block;background:#1a1a1a;color:#ccff00;text-decoration:none;font-weight:700;font-size:13px;padding:12px 28px;border-radius:8px;border:1px solid #2a2a2a;">🗓 Agregar a tu Google Calendar</a>
+        </td></tr>` : ''}
+        <!-- Footer -->
+        <tr><td style="padding:24px 40px;text-align:center;border-top:1px solid #1a1a1a;">
+          <p style="color:#555;font-size:13px;margin:0 0 8px;">¡Cualquier consulta respondé este mail o escribinos por WhatsApp!</p>
+          <p style="color:#333;font-size:12px;margin:0;">Con ganas de rodar juntos pronto — <strong style="color:#ccff00;">El equipo de NexoFilm 🎬</strong></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+                try {
+                    await resend.emails.send({
+                        from: 'NexoFilm <hola@nexofilm.com>',
+                        to: memberEmail,
+                        subject: `✅ Confirmación de Evento: ${project.title} — NexoFilm`,
+                        html: emailHtml
+                    });
+
+                    // Update assignment status
+                    const updatedAssignments = [...assignments];
+                    updatedAssignments[assignIdx] = {
+                        ...assign,
+                        notified: true,
+                        notified_at: new Date().toISOString()
+                    };
+
+                    const { error: updateErr } = await supabase
+                        .from('projects')
+                        .update({ crew_assignments: updatedAssignments })
+                        .eq('id', project_id);
+
+                    if (updateErr) throw updateErr;
+
+                    return res.status(200).json({ success: true });
+                } catch (err) {
+                    console.error('Error al enviar email individual:', err);
+                    return res.status(500).json({ error: err.message || 'Error al enviar email' });
+                }
+            }
+
             default:
                 return res.status(400).json({ error: 'Acción inválida' });
         }

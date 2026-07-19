@@ -183,6 +183,7 @@ const CRMProjects: React.FC = () => {
     const [savingCrewAssign, setSavingCrewAssign] = useState(false);
     const [notifyingProjectId, setNotifyingProjectId] = useState<string | null>(null);
     const [sendingCrewNotifications, setSendingCrewNotifications] = useState(false);
+    const [sendingSingleCrewEmailId, setSendingSingleCrewEmailId] = useState<string | null>(null);
 
     // Helper reviews constants
     const reviewsRatingAvg = reviews.length > 0 ? (reviews.reduce((acc, r) => acc + (r.rating || 0), 0) / reviews.length) : 0;
@@ -412,6 +413,29 @@ const CRMProjects: React.FC = () => {
             setError('Error al notificar crew: ' + err.message);
         } finally {
             setSendingCrewNotifications(false);
+        }
+    };
+
+    const handleNotifyCrewSingleEmail = async (projectId: string, crewMemberId: string) => {
+        setSendingSingleCrewEmailId(crewMemberId);
+        try {
+            const res = await fetch('/api/comercial/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'notifyCrewSingle',
+                    project_id: projectId,
+                    crew_member_id: crewMemberId,
+                    password
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al enviar email');
+            fetchData();
+        } catch (err: any) {
+            alert('Error al enviar email al miembro del crew: ' + err.message);
+        } finally {
+            setSendingSingleCrewEmailId(null);
         }
     };
 
@@ -2265,15 +2289,24 @@ const CRMProjects: React.FC = () => {
                                                                                         const income = projectBudget?.total_price || 0;
                                                                                         const canNotify = ['approved', 'production'].includes(project.status);
                                                                                         return (
-                                                                                            <div className="border-t border-white/5 mt-2 pt-2 flex flex-col gap-2">
-                                                                                                <div className="flex justify-between text-[10px]">
-                                                                                                    <span className="text-zinc-600">Costo crew: <strong className="text-zinc-400">${totalCrew.toLocaleString()}</strong></span>
-                                                                                                    {income > 0 && <span className="text-zinc-600">Margen: <strong className={income - totalCrew >= 0 ? 'text-nexo-lime' : 'text-red-400'}>${(income - totalCrew).toLocaleString()}</strong></span>}
+                                                                                            <div className="border-t border-white/5 mt-3 pt-3 space-y-3">
+                                                                                                {/* Panel Destacado de Ganancia / Costos */}
+                                                                                                <div className="bg-black/30 border border-white/5 rounded-xl p-3 flex justify-between items-center shadow-inner">
+                                                                                                    <div>
+                                                                                                        <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider block">Costo Crew</span>
+                                                                                                        <span className="font-mono text-xs text-zinc-300 font-bold">${totalCrew.toLocaleString()}</span>
+                                                                                                    </div>
+                                                                                                    <div className="text-right">
+                                                                                                        <span className="text-[9px] text-nexo-lime font-black uppercase tracking-widest block">Ganancia Estimada</span>
+                                                                                                        <span className={`font-mono text-base font-black ${income - totalCrew >= 0 ? 'text-nexo-lime' : 'text-red-400'}`}>
+                                                                                                            ${(income - totalCrew).toLocaleString()}
+                                                                                                        </span>
+                                                                                                    </div>
                                                                                                 </div>
                                                                                                 {canNotify && (
                                                                                                     <button
                                                                                                         onClick={() => setNotifyingProjectId(project.id)}
-                                                                                                        className="w-full text-center bg-nexo-lime/10 border border-nexo-lime/30 hover:bg-nexo-lime/20 text-nexo-lime text-[11px] font-bold py-1.5 rounded transition-all mt-1 flex items-center justify-center gap-1.5"
+                                                                                                        className="w-full text-center bg-nexo-lime/10 border border-nexo-lime/30 hover:bg-nexo-lime/20 text-nexo-lime text-[11px] font-bold py-2 rounded transition-all flex items-center justify-center gap-1.5 uppercase tracking-widest font-black"
                                                                                                     >
                                                                                                         ✉️ Notificar Crew
                                                                                                     </button>
@@ -3285,19 +3318,36 @@ const CRMProjects: React.FC = () => {
                                                     </div>
                                                     
                                                     <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
-                                                        {phone && (
+                                                        {phone ? (
                                                             <a
                                                                 href={waUrl}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 onClick={() => handleMarkAsNotifiedLocal(a.crew_member_id)}
-                                                                className="text-[10px] bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20 px-2.5 py-1.5 rounded transition-all font-bold"
+                                                                className={a.notified
+                                                                    ? "text-[10px] bg-zinc-800/60 border border-zinc-700/50 text-zinc-400 hover:bg-zinc-800/80 px-2.5 py-1.5 rounded transition-all font-medium flex items-center gap-0.5"
+                                                                    : "text-[10px] bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
+                                                                }
                                                             >
-                                                                💬 Enviar WA
+                                                                💬 WA
                                                             </a>
-                                                        )}
-                                                        {!phone && (
+                                                        ) : (
                                                             <span className="text-[9px] text-zinc-600 italic">No WA</span>
+                                                        )}
+
+                                                        {email ? (
+                                                            <button
+                                                                onClick={() => handleNotifyCrewSingleEmail(proj.id, a.crew_member_id)}
+                                                                disabled={sendingSingleCrewEmailId === a.crew_member_id}
+                                                                className={a.notified
+                                                                    ? "text-[10px] bg-zinc-800/60 border border-zinc-700/50 text-zinc-400 hover:bg-zinc-800/80 px-2.5 py-1.5 rounded transition-all font-medium flex items-center gap-0.5"
+                                                                    : "text-[10px] bg-[#00e5ff]/10 border border-[#00e5ff]/30 text-[#00e5ff] hover:bg-[#00e5ff]/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
+                                                                }
+                                                            >
+                                                                {sendingSingleCrewEmailId === a.crew_member_id ? '⏳ ...' : '✉️ Mail'}
+                                                            </button>
+                                                        ) : (
+                                                            <span className="text-[9px] text-zinc-600 italic font-medium">No Mail</span>
                                                         )}
                                                     </div>
                                                 </div>

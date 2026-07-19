@@ -261,6 +261,7 @@ const EventCard: React.FC<{
     const [notifying, setNotifying] = useState(false);
     const [notifyMsg, setNotifyMsg] = useState('');
     const [showCrewNotifyModal, setShowCrewNotifyModal] = useState(false);
+    const [sendingSingleCrewEmailId, setSendingSingleCrewEmailId] = useState<string | null>(null);
 
     const statusStyle = STATUS_STYLES[project.status] || STATUS_STYLES.draft;
     const calLink = buildGoogleCalendarLink(project);
@@ -321,6 +322,29 @@ const EventCard: React.FC<{
             onNotified();
         } catch (err) {
             console.error('Error al marcar notificado:', err);
+        }
+    };
+
+    const handleNotifyCrewSingleEmail = async (crewMemberId: string) => {
+        setSendingSingleCrewEmailId(crewMemberId);
+        try {
+            const res = await fetch('/api/comercial/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'notifyCrewSingle',
+                    project_id: project.id,
+                    crew_member_id: crewMemberId,
+                    password
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al enviar email');
+            onNotified();
+        } catch (err: any) {
+            alert('Error al enviar email al miembro del crew: ' + err.message);
+        } finally {
+            setSendingSingleCrewEmailId(null);
         }
     };
 
@@ -470,8 +494,9 @@ const EventCard: React.FC<{
                                 </span>
                             )}
                             {income > 0 && crewCost > 0 && (
-                                <span className="text-zinc-500">
-                                    📊 Margen: <strong className={margin >= 0 ? 'text-nexo-lime' : 'text-red-400'}>
+                                <span className="text-zinc-400 font-bold bg-zinc-950/40 px-2.5 py-1.5 rounded border border-white/5 flex items-center gap-1.5 shadow-sm">
+                                    <span>Ganancia:</span>
+                                    <strong className={margin >= 0 ? 'text-nexo-lime font-black text-xs' : 'text-red-400 font-black text-xs'}>
                                         ${margin.toLocaleString()}
                                     </strong>
                                 </span>
@@ -548,19 +573,36 @@ const EventCard: React.FC<{
                                                 </div>
                                                 
                                                 <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
-                                                    {phone && (
+                                                    {phone ? (
                                                         <a
                                                             href={waUrl}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             onClick={() => handleMarkAsNotifiedLocal(a.crew_member_id)}
-                                                            className="text-[10px] bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20 px-2.5 py-1.5 rounded transition-all font-bold"
+                                                            className={a.notified
+                                                                ? "text-[10px] bg-zinc-800/60 border border-zinc-700/50 text-zinc-400 hover:bg-zinc-800/80 px-2.5 py-1.5 rounded transition-all font-medium flex items-center gap-0.5"
+                                                                : "text-[10px] bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
+                                                            }
                                                         >
-                                                            💬 Enviar WA
+                                                            💬 WA
                                                         </a>
-                                                    )}
-                                                    {!phone && (
+                                                    ) : (
                                                         <span className="text-[9px] text-zinc-600 italic">No WA</span>
+                                                    )}
+
+                                                    {email ? (
+                                                        <button
+                                                            onClick={() => handleNotifyCrewSingleEmail(a.crew_member_id)}
+                                                            disabled={sendingSingleCrewEmailId === a.crew_member_id}
+                                                            className={a.notified
+                                                                ? "text-[10px] bg-zinc-800/60 border border-zinc-700/50 text-zinc-400 hover:bg-zinc-800/80 px-2.5 py-1.5 rounded transition-all font-medium flex items-center gap-0.5"
+                                                                : "text-[10px] bg-[#00e5ff]/10 border border-[#00e5ff]/30 text-[#00e5ff] hover:bg-[#00e5ff]/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
+                                                            }
+                                                        >
+                                                            {sendingSingleCrewEmailId === a.crew_member_id ? '⏳ ...' : '✉️ Mail'}
+                                                        </button>
+                                                    ) : (
+                                                        <span className="text-[9px] text-zinc-600 italic font-medium">No Mail</span>
                                                     )}
                                                 </div>
                                             </div>
