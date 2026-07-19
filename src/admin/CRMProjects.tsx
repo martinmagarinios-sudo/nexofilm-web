@@ -98,6 +98,129 @@ const parsePhone = (phoneStr: string) => {
     return { country: '+54 9', local: cleaned };
 };
 
+const insertTextAtCursor = (id: string, textToInsert: string, setter: (val: string) => void, val: string) => {
+    const textarea = document.getElementById(id) as HTMLTextAreaElement | null;
+    if (!textarea) {
+        setter(val + textToInsert);
+        return;
+    }
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const before = text.substring(0, start);
+    const after = text.substring(end, text.length);
+    const newValue = before + textToInsert + after;
+    setter(newValue);
+    setTimeout(() => {
+        textarea.focus();
+        textarea.selectionStart = textarea.selectionEnd = start + textToInsert.length;
+    }, 50);
+};
+
+const parseBold = (text: string): React.ReactNode => {
+    if (!text.includes('**')) return text;
+    const parts = text.split('**');
+    return parts.map((part, index) => {
+        if (index % 2 === 1) {
+            return <strong key={index} className="text-white font-extrabold">{part}</strong>;
+        }
+        return part;
+    });
+};
+
+const renderDescription = (text: string) => {
+    if (!text) return null;
+    const lines = text.split('\n');
+    if (lines.length === 0) return null;
+
+    const result: React.ReactNode[] = [];
+    let firstNonBullet = true;
+
+    lines.forEach((line, i) => {
+        const trimmed = line.trim();
+        if (trimmed === '') {
+            result.push(<div key={i} className="h-2" />);
+            return;
+        }
+
+        if (trimmed.startsWith('# ')) {
+            const content = trimmed.substring(2);
+            result.push(
+                <div key={i} className="font-extrabold text-white text-sm mt-3 mb-1 uppercase tracking-wider border-b border-white/5 pb-1">
+                    {parseBold(content)}
+                </div>
+            );
+            return;
+        }
+
+        if (trimmed.startsWith('## ')) {
+            const content = trimmed.substring(3);
+            result.push(
+                <div key={i} className="font-bold text-nexo-lime text-xs mt-2.5 mb-1">
+                    {parseBold(content)}
+                </div>
+            );
+            return;
+        }
+
+        const isBullet = trimmed.startsWith('o ') || trimmed.startsWith('• ') || trimmed.startsWith('- ');
+        const content = isBullet ? trimmed.substring(2) : line;
+
+        if (!isBullet && firstNonBullet) {
+            firstNonBullet = false;
+            result.push(
+                <div key={i} className="font-bold text-white text-xs mb-1 leading-snug">
+                    {parseBold(content)}
+                </div>
+            );
+        } else if (isBullet) {
+            result.push(
+                <div key={i} className="flex items-start gap-1.5 text-xs text-zinc-300 leading-relaxed mb-0.5 pl-0.5">
+                    <span className="text-nexo-lime font-black shrink-0">○</span>
+                    <span>{parseBold(content)}</span>
+                </div>
+            );
+        } else {
+            result.push(
+                <div key={i} className="text-xs text-zinc-400 leading-relaxed mb-0.5">
+                    {parseBold(content)}
+                </div>
+            );
+        }
+    });
+
+    return <div className="flex flex-col">{result}</div>;
+};
+
+const renderFormattingToolbar = (textareaId: string, value: string, setter: (val: string) => void) => {
+    const handleInsert = (txt: string) => {
+        insertTextAtCursor(textareaId, txt, setter, value);
+    };
+
+    return (
+        <div className="flex flex-wrap gap-1 bg-zinc-950 p-1.5 rounded-t-lg border-t border-x border-white/10 text-[10px] items-center">
+            <span className="text-zinc-500 mr-1.5 uppercase font-bold text-[8px] tracking-wider select-none">Formato:</span>
+            <button type="button" onClick={() => handleInsert('# ')} className="px-2 py-0.5 bg-zinc-900 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded border border-white/5 font-extrabold transition-all" title="Título principal">H1</button>
+            <button type="button" onClick={() => handleInsert('## ')} className="px-2 py-0.5 bg-zinc-900 hover:bg-zinc-800 hover:text-nexo-lime text-zinc-300 rounded border border-white/5 font-bold transition-all" title="Subtítulo">H2</button>
+            <button type="button" onClick={() => handleInsert('o ')} className="px-2 py-0.5 bg-zinc-900 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded border border-white/5 font-bold transition-all" title="Viñeta (○)">• Lista</button>
+            <button type="button" onClick={() => handleInsert('**texto**')} className="px-2 py-0.5 bg-zinc-900 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded border border-white/5 font-bold transition-all" title="Negrita">B</button>
+            <span className="h-3.5 w-px bg-white/10 mx-1"></span>
+            <span className="text-zinc-500 mr-1.5 uppercase font-bold text-[8px] tracking-wider select-none">Iconos:</span>
+            <button type="button" onClick={() => handleInsert('📷 ')} className="px-1.5 py-0.5 bg-zinc-900 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded border border-white/5 transition-all" title="Cámara">📷</button>
+            <button type="button" onClick={() => handleInsert('🎬 ')} className="px-1.5 py-0.5 bg-zinc-900 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded border border-white/5 transition-all" title="Claqueta">🎬</button>
+            <button type="button" onClick={() => handleInsert('🚁 ')} className="px-1.5 py-0.5 bg-zinc-900 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded border border-white/5 transition-all" title="Drone">🚁</button>
+            <button type="button" onClick={() => handleInsert('💻 ')} className="px-1.5 py-0.5 bg-zinc-900 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded border border-white/5 transition-all" title="Edición">💻</button>
+            <button type="button" onClick={() => handleInsert('🎙️ ')} className="px-1.5 py-0.5 bg-zinc-900 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded border border-white/5 transition-all" title="Sonido">🎙️</button>
+            <button type="button" onClick={() => handleInsert('🤝 ')} className="px-1.5 py-0.5 bg-zinc-900 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded border border-white/5 transition-all" title="Asistencia">🤝</button>
+            <button type="button" onClick={() => handleInsert('🎯 ')} className="px-1.5 py-0.5 bg-zinc-900 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded border border-white/5 transition-all" title="Producción">🎯</button>
+            <button type="button" onClick={() => handleInsert('📡 ')} className="px-1.5 py-0.5 bg-zinc-900 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded border border-white/5 transition-all" title="Streaming">📡</button>
+            <button type="button" onClick={() => handleInsert('✨ ')} className="px-1.5 py-0.5 bg-zinc-900 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded border border-white/5 transition-all" title="Destacado">✨</button>
+            <button type="button" onClick={() => handleInsert('✓ ')} className="px-1.5 py-0.5 bg-zinc-900 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded border border-white/5 transition-all" title="Checkmark">✓</button>
+            <button type="button" onClick={() => handleInsert('📍 ')} className="px-1.5 py-0.5 bg-zinc-900 hover:bg-zinc-800 hover:text-white text-zinc-300 rounded border border-white/5 transition-all" title="Ubicación">📍</button>
+        </div>
+    );
+};
+
 const CRMProjects: React.FC = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(() => sessionStorage.getItem('admin_auth') === 'true');
     const [password, setPassword] = useState(() => sessionStorage.getItem('admin_pass') || '');
@@ -173,6 +296,9 @@ const CRMProjects: React.FC = () => {
     });
     const [hasAutoOpened, setHasAutoOpened] = useState(false);
     const [sortBy, setSortBy] = useState<'date' | 'updated' | 'price' | 'status' | 'name'>('updated');
+    const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
+    const [crewNotificationNote, setCrewNotificationNote] = useState('');
+    const [sendingSingleCrewEmailId, setSendingSingleCrewEmailId] = useState<string | null>(null);
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const [filterStatus, setFilterStatus] = useState<string>('all');
     const [analyzingProjectId, setAnalyzingProjectId] = useState<string | null>(null);
@@ -183,7 +309,6 @@ const CRMProjects: React.FC = () => {
     const [savingCrewAssign, setSavingCrewAssign] = useState(false);
     const [notifyingProjectId, setNotifyingProjectId] = useState<string | null>(null);
     const [sendingCrewNotifications, setSendingCrewNotifications] = useState(false);
-    const [sendingSingleCrewEmailId, setSendingSingleCrewEmailId] = useState<string | null>(null);
 
     // Helper reviews constants
     const reviewsRatingAvg = reviews.length > 0 ? (reviews.reduce((acc, r) => acc + (r.rating || 0), 0) / reviews.length) : 0;
@@ -525,6 +650,7 @@ const CRMProjects: React.FC = () => {
             setNewPaymentTerms('50% de seña para reservar fecha, 50% contra entrega.');
             
             fetchData();
+            setShowCreateProjectModal(false);
         } catch (err: any) {
             setError('Error al crear: ' + err.message);
         }
@@ -1454,287 +1580,23 @@ const CRMProjects: React.FC = () => {
                 )}
 
                 {crmView === 'pipeline' && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    
-                    {/* COLUMNA IZQUIERDA: CREADOR DE PROYECTOS Y PRESUPUESTOS */}
-                    <div className="lg:col-span-1 bg-zinc-900/40 border border-white/5 p-4 md:p-6 rounded-xl shadow-2xl h-fit">
-                        <h2 className="text-base md:text-lg font-bold tracking-tight mb-4 text-white border-b border-white/5 pb-3">
-                            Nuevo Proyecto Comercial
-                        </h2>
-                        
-                        <form onSubmit={handleCreateProject} className="space-y-4">
-                            {/* Fila 1: Contacto + Empresa */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1">
-                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Contacto</label>
-                                    <input
-                                        type="text"
-                                        value={newContactName}
-                                        onChange={(e) => setNewContactName(e.target.value)}
-                                        className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                        placeholder="Carlos Gómez"
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Empresa</label>
-                                    <input
-                                        type="text"
-                                        value={newCompanyName}
-                                        onChange={(e) => setNewCompanyName(e.target.value)}
-                                        className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                        placeholder="Nike Argentina"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Fila 2: Email (ancho completo) */}
-                            <div className="space-y-1">
-                                <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Email</label>
-                                <input
-                                    type="email"
-                                    value={newClientEmail}
-                                    onChange={(e) => setNewClientEmail(e.target.value)}
-                                    className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                    placeholder="carlos@nike.com"
-                                />
-                            </div>
-
-                            {/* Fila 3: WhatsApp + Moneda */}
-                            <div className="grid grid-cols-3 gap-3">
-                                <div className="col-span-2 space-y-1">
-                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">WhatsApp</label>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            value={newPhoneCountryCode}
-                                            onChange={(e) => setNewPhoneCountryCode(e.target.value)}
-                                            placeholder="+54 9"
-                                            className="bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime w-[80px] shrink-0"
-                                        />
-                                        <input
-                                            type="text"
-                                            value={newPhoneLocalNumber}
-                                            onChange={(e) => setNewPhoneLocalNumber(e.target.value)}
-                                            className="flex-1 min-w-0 bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                            placeholder="11 5892 2379"
-                                        />
-                                    </div>
-                                    <span className="text-[10px] text-zinc-500 block mt-1">Ej: Código de país (tipo +54 9) y celular (11 5892 2379)</span>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Moneda</label>
-                                    <select
-                                        value={newCurrency}
-                                        onChange={(e) => setNewCurrency(e.target.value as 'USD' | 'ARS')}
-                                        className="w-full bg-black border border-white/10 rounded px-2 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                <div className="w-full space-y-8 animate-in fade-in duration-300">
+                    <div className="bg-zinc-900/40 border border-white/5 rounded-xl overflow-hidden shadow-2xl">
+                        <div className="p-4 md:p-6 border-b border-white/10 bg-zinc-800/20">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div className="flex items-center gap-3 shrink-0">
+                                    <h2 className="text-base md:text-lg font-bold text-white tracking-tight">Pipeline de Proyectos</h2>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCreateProjectModal(true)}
+                                        className="bg-nexo-lime text-black font-black text-[10px] uppercase tracking-widest px-3 py-1.5 rounded hover:bg-white transition-all flex items-center gap-1 shadow-md shadow-nexo-lime/10 shrink-0"
                                     >
-                                        <option value="USD">USD</option>
-                                        <option value="ARS">ARS</option>
-                                    </select>
+                                        ➕ Nuevo Proyecto
+                                    </button>
                                 </div>
-                            </div>
-
-                            {/* Fila 4: Título + Personal */}
-                            <div className="grid grid-cols-3 gap-3">
-                                <div className="col-span-2 space-y-1">
-                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Título proyecto</label>
-                                    <input
-                                        type="text"
-                                        value={newProjTitle}
-                                        onChange={(e) => setNewProjTitle(e.target.value)}
-                                        className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                        placeholder="Video Lanzamiento..."
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Personal</label>
-                                    <input
-                                        type="number" min="1"
-                                        value={newCrewCount}
-                                        onChange={(e) => setNewCrewCount(e.target.value === '' ? '' : parseInt(e.target.value))}
-                                        className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-center text-white focus:outline-none focus:border-nexo-lime"
-                                        placeholder="2"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Estado inicial y Preferencia */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1">
-                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Estado Inicial</label>
-                                    <select
-                                        value={newProjStatus}
-                                        onChange={(e) => setNewProjStatus(e.target.value as 'draft' | 'sent')}
-                                        className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                    >
-                                        <option value="draft">Borrador (Specs vacías)</option>
-                                        <option value="sent">Enviar presupuesto ya</option>
-                                    </select>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Preferencia Envío</label>
-                                    <select
-                                        value={newNotificationPreference}
-                                        onChange={(e) => setNewNotificationPreference(e.target.value as 'both' | 'email' | 'whatsapp')}
-                                        className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                    >
-                                        <option value="both">Ambos (Mail/WA)</option>
-                                        <option value="email">Sólo Mail</option>
-                                        <option value="whatsapp">Sólo WA</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            {/* Creador dinámico de presupuesto */}
-                            <div className="space-y-4 border-t border-white/5 pt-4">
-                                <div className="flex justify-between items-center">
-                                    <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Ítems del Presupuesto</label>
-                                    <div className="flex gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={handleGenerateAIBudget}
-                                            disabled={aiLoading}
-                                            className="text-[10px] bg-nexo-lime text-black font-bold px-2 py-1 rounded hover:bg-white transition-colors disabled:opacity-50"
-                                        >
-                                            {aiLoading ? '🪄 Generando...' : '🪄 Sugerir Propuesta'}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={addNewBudgetItem}
-                                            className="text-[10px] bg-white/5 hover:bg-white/10 px-2 py-1 rounded border border-white/10"
-                                        >
-                                            + Añadir Fila
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {newBudgetItems.map((item, idx) => (
-                                    <div key={idx} className={`flex flex-col sm:flex-row gap-2 items-stretch p-3 sm:p-2 border rounded ${idx === 0 ? 'bg-nexo-lime/5 border-nexo-lime/20' : 'bg-black/40 border-white/5'}`}>
-                                        {idx === 0 && (
-                                            <div className="sm:hidden flex items-center gap-1.5 mb-1">
-                                                <span className="text-[9px] font-black uppercase tracking-widest text-nexo-lime bg-nexo-lime/10 px-2 py-0.5 rounded border border-nexo-lime/30">★ Presupuesto Base</span>
-                                            </div>
-                                        )}
-                                        <textarea
-                                            value={item.description}
-                                            onChange={(e) => updateNewBudgetItem(idx, 'description', e.target.value)}
-                                            className="w-full sm:flex-1 bg-black/60 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white resize-y min-h-[160px] self-start leading-relaxed placeholder:text-zinc-600 focus:outline-none focus:border-nexo-lime/30 focus:ring-1 focus:ring-nexo-lime/20"
-                                            placeholder={idx === 0 ? "Descripción del servicio principal (monto a aprobar obligatorio)" : "Detalle del servicio extra / opcional"}
-                                            rows={7}
-                                        />
-                                        <div className="flex gap-2 items-center justify-between sm:justify-start w-full sm:w-auto shrink-0">
-                                            <div className="flex items-center gap-1">
-                                                <span className="text-[10px] text-zinc-500 sm:hidden">Cant:</span>
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    value={item.quantity}
-                                                    onChange={(e) => updateNewBudgetItem(idx, 'quantity', e.target.value)}
-                                                    className="w-16 bg-black border border-white/5 rounded px-2 py-2 text-sm text-center text-white"
-                                                    placeholder="Cant"
-                                                />
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <span className="text-[10px] text-zinc-500 sm:hidden">Precio:</span>
-                                                <div className="flex flex-col items-end">
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        value={item.unit_price || ''}
-                                                        onChange={(e) => updateNewBudgetItem(idx, 'unit_price', e.target.value)}
-                                                        className="w-32 bg-black border border-white/5 rounded px-2 py-2 text-sm text-right text-white"
-                                                        placeholder="Precio U."
-                                                    />
-                                                    {item.unit_price > 0 && (
-                                                        <span className="text-[9px] text-nexo-lime font-mono mt-0.5" style={{ textShadow: '0 0 4px rgba(225, 249, 55, 0.2)' }}>
-                                                            {Number(item.unit_price).toLocaleString('es-AR')}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            {idx === 0 ? (
-                                                <div className="flex items-center gap-1 shrink-0 bg-nexo-lime/10 px-2 py-1.5 rounded border border-nexo-lime/30 hidden sm:flex">
-                                                    <span className="text-[9px] font-black uppercase tracking-widest text-nexo-lime">★ Base</span>
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center gap-1 shrink-0 bg-white/5 px-2 py-1.5 rounded border border-white/5">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={!!item.is_optional}
-                                                        onChange={(e) => updateNewBudgetItem(idx, 'is_optional', e.target.checked)}
-                                                        className="accent-nexo-lime h-3.5 w-3.5 bg-black border border-white/10 rounded cursor-pointer"
-                                                        title="Marcar como Extra / Opcional"
-                                                    />
-                                                    <span className="text-[10px] text-zinc-400">Extra</span>
-                                                </div>
-                                            )}
-                                            {newBudgetItems.length > 1 && idx > 0 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeNewBudgetItem(idx)}
-                                                    className="text-red-500 hover:text-red-400 font-bold px-2 py-1 text-sm bg-red-950/20 border border-red-500/10 rounded sm:bg-transparent sm:border-0 sm:p-0"
-                                                >
-                                                    ×
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {(() => {
-                                    const baseTotal = newBudgetItems[0] ? (newBudgetItems[0].quantity * newBudgetItems[0].unit_price) : 0;
-                                    const extrasTotal = newBudgetItems.slice(1).filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0);
-                                    const hasExtras = newBudgetItems.slice(1).some(i => i.is_optional);
-                                    return (
-                                        <div className="text-right text-xs space-y-1 border-t border-white/5 pt-2">
-                                            <div>
-                                                <span className="text-zinc-500">Presupuesto Base: </span>
-                                                <span className="font-bold text-nexo-lime">{newCurrency} {baseTotal.toLocaleString()}</span>
-                                            </div>
-                                            {hasExtras && (
-                                                <div>
-                                                    <span className="text-zinc-500">Extras Opcionales: </span>
-                                                    <span className="font-bold text-[#00e5ff]">+ {newCurrency} {extrasTotal.toLocaleString()}</span>
-                                                </div>
-                                            )}
-                                            {hasExtras && (
-                                                <div className="pt-1 border-t border-white/5">
-                                                    <span className="text-zinc-400">Total Sugerido (si el cliente elige todo): </span>
-                                                    <span className="font-extrabold text-white">{newCurrency} {(baseTotal + extrasTotal).toLocaleString()}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })()}
-                            </div>
-
-                            <div className="space-y-2 border-t border-white/5 pt-4">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Términos de Pago</label>
-                                <textarea
-                                    value={newPaymentTerms}
-                                    onChange={(e) => setNewPaymentTerms(e.target.value)}
-                                    className="w-full bg-black border border-white/10 rounded px-4 py-2 text-xs text-white focus:outline-none focus:border-nexo-lime h-20 resize-none"
-                                />
-                            </div>
-
-                            <button
-                                type="submit"
-                                className="w-full bg-nexo-lime text-black font-black text-xs uppercase tracking-widest py-3 rounded hover:bg-white transition-colors"
-                            >
-                                Crear y Guardar Proyecto
-                            </button>
-                        </form>
-                    </div>
-
-                    {/* COLUMNA DERECHA: PIPELINE DE PROYECTOS */}
-                    <div className="lg:col-span-2 space-y-8">
-                        <div className="bg-zinc-900/40 border border-white/5 rounded-xl overflow-hidden shadow-2xl">
-                            <div className="p-4 md:p-6 border-b border-white/10 bg-zinc-800/20">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                    <h2 className="text-base md:text-lg font-bold text-white tracking-tight shrink-0">Pipeline de Proyectos</h2>
-                                    
-                                    {/* Controles compactos */}
-                                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                                
+                                {/* Controles compactos */}
+                                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                                         <div className="flex gap-1 shrink-0">
                                             <button
                                                 type="button"
@@ -1851,11 +1713,11 @@ const CRMProjects: React.FC = () => {
                                                         {/* Nombre / Empresa */}
                                                         <div className="lg:col-span-4 min-w-0">
                                                             <span className="text-zinc-500 text-[10px] block font-bold uppercase tracking-wider">Cliente / Empresa</span>
-                                                            <div className="font-extrabold text-sm text-white truncate">
+                                                            <div className="font-extrabold text-sm text-white break-words">
                                                         {project.contact_name}
                                                             </div>
                                                             {project.company_name && (
-                                                                <div className="text-[11px] text-zinc-400 truncate">
+                                                                <div className="text-[11px] text-zinc-400 break-words">
                                                                     🏢 {project.company_name}
                                                                 </div>
                                                             )}
@@ -1919,8 +1781,11 @@ const CRMProjects: React.FC = () => {
                                                                                 <div className="font-mono font-black text-base text-nexo-lime">
                                                                                     {project.currency || 'ARS'} {billingTotal.toLocaleString()}
                                                                                 </div>
-                                                                                <div className="text-[9px] text-zinc-500 font-bold mt-0.5">
-                                                                                    Base: {project.currency || 'ARS'} {basePrice.toLocaleString()} {projectBudget && projectBudget.total_price > basePrice && ` · Extras: ${project.currency || 'ARS'} ${(projectBudget.total_price - basePrice).toLocaleString()}`}
+                                                                                <div className="text-[9px] text-zinc-500 font-bold mt-0.5 space-y-0.5">
+                                                                                    <div>Base: {project.currency || 'ARS'} {basePrice.toLocaleString()}</div>
+                                                                                    {projectBudget && projectBudget.total_price > basePrice && (
+                                                                                        <div className="text-zinc-400">+ Extras: {project.currency || 'ARS'} {(projectBudget.total_price - basePrice).toLocaleString()}</div>
+                                                                                    )}
                                                                                 </div>
                                                                             </>
                                                                         ) : (
@@ -2598,7 +2463,7 @@ const CRMProjects: React.FC = () => {
                                                                                         )}
                                                                                     </div>
                                                                                 </div>
-                                                                                <div className={`whitespace-pre-wrap leading-relaxed text-[13px] ${isRejectedExtra ? 'line-through' : ''}`}>{it.description}</div>
+                                                                                <div className={`leading-relaxed text-[13px] ${isRejectedExtra ? 'line-through opacity-40' : ''}`}>{renderDescription(it.description)}</div>
                                                                             </div>
                                                                         );
                                                                     })}
@@ -2789,7 +2654,6 @@ const CRMProjects: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                </div>
                 )}
             </main>
 
@@ -3024,6 +2888,293 @@ const CRMProjects: React.FC = () => {
                     </div>
                 </div>
             )}
+            {/* MODAL NUEVO PROYECTO */}
+            {showCreateProjectModal && (
+                <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowCreateProjectModal(false)}>
+                    <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-5xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+                        {/* Header */}
+                        <div className="bg-zinc-950 px-6 py-4 border-b border-white/5 flex items-center justify-between">
+                            <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                <span>➕ Nuevo Proyecto Comercial y Presupuesto</span>
+                            </h3>
+                            <button
+                                onClick={() => setShowCreateProjectModal(false)}
+                                className="text-zinc-500 hover:text-white transition-colors text-lg"
+                            >&times;</button>
+                        </div>
+                        {/* Body */}
+                        <form onSubmit={handleCreateProject} className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-white/5 max-h-[80vh] overflow-y-auto">
+                            {/* Columna Izquierda: Datos del Cliente (1/3) */}
+                            <div className="w-full md:w-1/3 p-6 space-y-4">
+                                <h4 className="text-xs font-black uppercase tracking-wider text-zinc-400 border-b border-white/5 pb-2">Datos de Contacto</h4>
+                                
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1">
+                                        <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Contacto</label>
+                                        <input
+                                            type="text" required
+                                            value={newContactName}
+                                            onChange={(e) => setNewContactName(e.target.value)}
+                                            className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                            placeholder="Carlos Gómez"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Empresa</label>
+                                        <input
+                                            type="text"
+                                            value={newCompanyName}
+                                            onChange={(e) => setNewCompanyName(e.target.value)}
+                                            className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                            placeholder="Nike Argentina"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Email</label>
+                                    <input
+                                        type="email" required
+                                        value={newClientEmail}
+                                        onChange={(e) => setNewClientEmail(e.target.value)}
+                                        className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                        placeholder="carlos@nike.com"
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div className="col-span-2 space-y-1">
+                                        <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">WhatsApp</label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={newPhoneCountryCode}
+                                                onChange={(e) => setNewPhoneCountryCode(e.target.value)}
+                                                placeholder="+54 9"
+                                                className="bg-black border border-white/10 rounded px-2.5 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime w-[75px] shrink-0"
+                                            />
+                                            <input
+                                                type="text"
+                                                value={newPhoneLocalNumber}
+                                                onChange={(e) => setNewPhoneLocalNumber(e.target.value)}
+                                                className="flex-1 min-w-0 bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                                placeholder="11 5892 2379"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Moneda</label>
+                                        <select
+                                            value={newCurrency}
+                                            onChange={(e) => setNewCurrency(e.target.value as 'USD' | 'ARS')}
+                                            className="w-full bg-black border border-white/10 rounded px-2 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime cursor-pointer"
+                                        >
+                                            <option value="USD">USD</option>
+                                            <option value="ARS">ARS</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div className="col-span-2 space-y-1">
+                                        <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Título proyecto</label>
+                                        <input
+                                            type="text" required
+                                            value={newProjTitle}
+                                            onChange={(e) => setNewProjTitle(e.target.value)}
+                                            className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                                            placeholder="Video Lanzamiento..."
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Personal</label>
+                                        <input
+                                            type="number" min="1"
+                                            value={newCrewCount}
+                                            onChange={(e) => setNewCrewCount(e.target.value === '' ? '' : parseInt(e.target.value))}
+                                            className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-center text-white focus:outline-none focus:border-nexo-lime"
+                                            placeholder="2"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1">
+                                        <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Estado Inicial</label>
+                                        <select
+                                            value={newProjStatus}
+                                            onChange={(e) => setNewProjStatus(e.target.value as 'draft' | 'sent')}
+                                            className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime cursor-pointer"
+                                        >
+                                            <option value="draft">Borrador (Specs vacías)</option>
+                                            <option value="sent">Enviar presupuesto ya</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Preferencia Envío</label>
+                                        <select
+                                            value={newNotificationPreference}
+                                            onChange={(e) => setNewNotificationPreference(e.target.value as 'both' | 'email' | 'whatsapp')}
+                                            className="w-full bg-black border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime cursor-pointer"
+                                        >
+                                            <option value="both">Ambos (Mail/WA)</option>
+                                            <option value="email">Sólo Mail</option>
+                                            <option value="whatsapp">Sólo WA</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5 pt-2">
+                                    <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider block">Términos de Pago</label>
+                                    <textarea
+                                        value={newPaymentTerms}
+                                        onChange={(e) => setNewPaymentTerms(e.target.value)}
+                                        className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-xs text-white focus:outline-none focus:border-nexo-lime h-20 resize-none"
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    className="w-full bg-nexo-lime text-black font-black text-xs uppercase tracking-widest py-3 rounded-lg hover:bg-white transition-colors mt-2"
+                                >
+                                    Crear y Guardar Proyecto
+                                </button>
+                            </div>
+
+                            {/* Columna Derecha: Ítems y Cotización (2/3) */}
+                            <div className="w-full md:w-2/3 p-6 space-y-4 bg-zinc-950/20">
+                                <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                                    <h4 className="text-xs font-black uppercase tracking-wider text-zinc-400">Detalle de Cotización</h4>
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleGenerateAIBudget}
+                                            disabled={aiLoading}
+                                            className="text-[10px] bg-nexo-lime text-black font-bold px-2.5 py-1 rounded hover:bg-white transition-colors disabled:opacity-50"
+                                        >
+                                            {aiLoading ? '🪄 Generando...' : '🪄 Sugerir Propuesta'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={addNewBudgetItem}
+                                            className="text-[10px] bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded border border-white/10 transition-colors"
+                                        >
+                                            + Añadir Fila
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
+                                    {newBudgetItems.map((item, idx) => (
+                                        <div key={idx} className={`flex flex-col gap-3 p-3 border rounded-xl ${idx === 0 ? 'bg-nexo-lime/5 border-nexo-lime/20' : 'bg-black/40 border-white/5'}`}>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                                                    {idx === 0 ? '★ Presupuesto Base (Obligatorio)' : `Adicional #${idx}`}
+                                                </span>
+                                                {newBudgetItems.length > 1 && idx > 0 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeNewBudgetItem(idx)}
+                                                        className="text-red-500 hover:text-red-400 text-xs font-bold"
+                                                    >
+                                                        Eliminar fila ×
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            <div className="w-full flex flex-col">
+                                                {renderFormattingToolbar(`new-desc-${idx}`, item.description, (val) => updateNewBudgetItem(idx, 'description', val))}
+                                                <textarea
+                                                    id={`new-desc-${idx}`}
+                                                    value={item.description}
+                                                    onChange={(e) => updateNewBudgetItem(idx, 'description', e.target.value)}
+                                                    className="w-full bg-black/60 border border-white/10 rounded-b-lg px-3 py-2 text-xs text-white resize-y leading-relaxed placeholder:text-zinc-600 focus:outline-none focus:border-nexo-lime/30"
+                                                    placeholder={idx === 0 ? "Descripción del servicio principal (monto a aprobar obligatorio)" : "Detalle del servicio extra / opcional"}
+                                                    rows={idx === 0 ? 12 : 5}
+                                                    style={{ minHeight: idx === 0 ? '240px' : '100px' }}
+                                                    spellCheck="true"
+                                                    lang="es"
+                                                />
+                                            </div>
+
+                                            <div className="flex flex-wrap gap-4 items-center justify-between bg-zinc-950/40 p-2.5 rounded-lg border border-white/5">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="text-[10px] text-zinc-500 uppercase font-bold">Cant:</span>
+                                                        <input
+                                                            type="number" min="1"
+                                                            value={item.quantity}
+                                                            onChange={(e) => updateNewBudgetItem(idx, 'quantity', e.target.value)}
+                                                            className="w-14 bg-black border border-white/10 rounded px-2 py-1 text-xs text-center text-white"
+                                                        />
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="text-[10px] text-zinc-500 uppercase font-bold">Precio:</span>
+                                                        <input
+                                                            type="number" min="0"
+                                                            value={item.unit_price || ''}
+                                                            onChange={(e) => updateNewBudgetItem(idx, 'unit_price', e.target.value)}
+                                                            className="w-28 bg-black border border-white/10 rounded px-2.5 py-1 text-xs text-right text-white"
+                                                            placeholder="Precio U."
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-4">
+                                                    {idx !== 0 && (
+                                                        <div className="flex items-center gap-1.5">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={!!item.is_optional}
+                                                                onChange={(e) => updateNewBudgetItem(idx, 'is_optional', e.target.checked)}
+                                                                className="accent-nexo-lime h-3.5 w-3.5 bg-black border border-white/10 rounded cursor-pointer"
+                                                                id={`new-opt-${idx}`}
+                                                            />
+                                                            <label htmlFor={`new-opt-${idx}`} className="text-[10px] text-zinc-400 font-bold uppercase cursor-pointer">Extra Opcional</label>
+                                                        </div>
+                                                    )}
+                                                    <div className="text-right">
+                                                        <span className="text-[9px] text-zinc-500 uppercase block font-bold">Subtotal</span>
+                                                        <span className="text-xs font-mono font-black text-white">
+                                                            {newCurrency} {((item.quantity || 1) * (item.unit_price || 0)).toLocaleString()}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {(() => {
+                                    const baseTotal = newBudgetItems[0] ? (newBudgetItems[0].quantity * newBudgetItems[0].unit_price) : 0;
+                                    const extrasTotal = newBudgetItems.slice(1).filter(i => i.is_optional).reduce((acc, curr) => acc + (curr.quantity * curr.unit_price), 0);
+                                    const hasExtras = newBudgetItems.slice(1).some(i => i.is_optional);
+                                    return (
+                                        <div className="text-right text-xs space-y-1.5 border-t border-white/5 pt-3">
+                                            <div>
+                                                <span className="text-zinc-400 font-medium">Presupuesto Base: </span>
+                                                <span className="font-extrabold text-sm text-nexo-lime">{newCurrency} {baseTotal.toLocaleString()}</span>
+                                            </div>
+                                            {hasExtras && (
+                                                <div>
+                                                    <span className="text-zinc-400 font-medium">Extras Opcionales: </span>
+                                                    <span className="font-extrabold text-xs text-[#00e5ff]">+ {newCurrency} {extrasTotal.toLocaleString()}</span>
+                                                </div>
+                                            )}
+                                            {hasExtras && (
+                                                <div className="pt-2 border-t border-white/5">
+                                                    <span className="text-zinc-300 font-bold">Total Sugerido (si el cliente elige todo): </span>
+                                                    <span className="font-black text-base text-white">{newCurrency} {(baseTotal + extrasTotal).toLocaleString()}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
             {/* MODAL DE EDICIÓN DE PRESUPUESTO */}
             {budgetingProject && (
                 <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -3095,14 +3246,21 @@ const CRMProjects: React.FC = () => {
                                                 <span className="text-[9px] font-black uppercase tracking-widest text-nexo-lime bg-nexo-lime/10 px-2 py-0.5 rounded border border-nexo-lime/30">★ Presupuesto Base</span>
                                             </div>
                                         )}
-                                        <textarea
-                                            required
-                                            value={item.description}
-                                            onChange={(e) => updateEditingBudgetItem(idx, 'description', e.target.value)}
-                                            className="w-full sm:flex-1 bg-black/60 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white resize-y min-h-[160px] self-start leading-relaxed placeholder:text-zinc-600 focus:outline-none focus:border-nexo-lime/30 focus:ring-1 focus:ring-nexo-lime/20"
-                                            placeholder={idx === 0 ? "Descripción del servicio principal (monto a aprobar obligatorio)" : "Detalle del servicio extra / opcional"}
-                                            rows={7}
-                                        />
+                                        <div className="w-full sm:flex-1 flex flex-col">
+                                            {renderFormattingToolbar(`edit-desc-${idx}`, item.description, (val) => updateEditingBudgetItem(idx, 'description', val))}
+                                            <textarea
+                                                id={`edit-desc-${idx}`}
+                                                required
+                                                value={item.description}
+                                                onChange={(e) => updateEditingBudgetItem(idx, 'description', e.target.value)}
+                                                className="w-full bg-black/60 border border-white/10 rounded-b-lg px-3 py-2.5 text-sm text-white resize-y leading-relaxed placeholder:text-zinc-600 focus:outline-none focus:border-nexo-lime/30 focus:ring-1 focus:ring-nexo-lime/20"
+                                                placeholder={idx === 0 ? "Descripción del servicio principal (monto a aprobar obligatorio)" : "Detalle del servicio extra / opcional"}
+                                                rows={idx === 0 ? 12 : 6}
+                                                style={{ minHeight: idx === 0 ? '240px' : '120px' }}
+                                                spellCheck="true"
+                                                lang="es"
+                                            />
+                                        </div>
                                         <div className="flex gap-2 items-center justify-between sm:justify-start w-full sm:w-auto shrink-0">
                                             <div className="flex items-center gap-1">
                                                 <span className="text-[10px] text-zinc-500 sm:hidden">Cant:</span>
@@ -3247,7 +3405,7 @@ const CRMProjects: React.FC = () => {
                 const handleMarkAsNotifiedLocal = async (crewMemberId: string) => {
                     const updatedAssignments = assigned.map(a => {
                         if (a.crew_member_id === crewMemberId) {
-                            return { ...a, notified: true, notified_at: new Date().toISOString() };
+                            return { ...a, wa_notified: true, notified: true, notified_at: new Date().toISOString() };
                         }
                         return a;
                     });
@@ -3270,9 +3428,33 @@ const CRMProjects: React.FC = () => {
                     }
                 };
 
+                const handleNotifyCrewSingleEmail = async (projectId: string, crewMemberId: string) => {
+                    setSendingSingleCrewEmailId(crewMemberId);
+                    try {
+                        const res = await fetch('/api/comercial/admin', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: 'notifyCrewSingle',
+                                project_id: projectId,
+                                crew_member_id: crewMemberId,
+                                custom_note: crewNotificationNote,
+                                password
+                            })
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.error || 'Error al enviar email');
+                        fetchData();
+                    } catch (err: any) {
+                        alert('Error al enviar email: ' + err.message);
+                    } finally {
+                        setSendingSingleCrewEmailId(null);
+                    }
+                };
+
                 return (
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                        <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
+                    <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
                             {/* Header */}
                             <div className="bg-zinc-950 px-6 py-4 border-b border-white/5 flex items-center justify-between">
                                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -3287,6 +3469,19 @@ const CRMProjects: React.FC = () => {
                             
                             {/* Body */}
                             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                                {/* Nota Personalizada */}
+                                <div className="space-y-1.5 bg-black/30 p-3 rounded-lg border border-white/5">
+                                    <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">📝 Nota Personalizada para la Crew (Opcional)</label>
+                                    <textarea
+                                        value={crewNotificationNote}
+                                        onChange={(e) => setCrewNotificationNote(e.target.value)}
+                                        placeholder="Ej: Traer batería extra de drone, ropa oscura para rodaje, etc. Se sumará al mail y al mensaje de WhatsApp."
+                                        className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-nexo-lime h-16 resize-none"
+                                        spellCheck="true"
+                                        lang="es"
+                                    />
+                                </div>
+
                                 <div>
                                     <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-2">Miembros Asignados ({assigned.length})</p>
                                     <div className="space-y-2">
@@ -3295,26 +3490,36 @@ const CRMProjects: React.FC = () => {
                                             const phone = member?.phone || '';
                                             const email = member?.email || '';
                                             
+                                            const waNotified = a.wa_notified !== undefined ? a.wa_notified : a.notified;
+                                            const emailNotified = a.email_notified !== undefined ? a.email_notified : a.notified;
+
                                             // Mensaje de WhatsApp personalizado
                                             const firstName = a.name.split(' ')[0];
-                                            const waMsg = `🎬 *NexoFilm — Fecha Confirmada* ✅\n\nHola ${firstName}, ¡quedaste confirmado/a!\n\n📌 *${proj.title}*${dateStr ? `\n📆 ${dateStr}` : ''}${timeStr ? `\n⏰ ${timeStr}` : ''}${locationStr ? `\n📍 ${locationStr}` : ''}${mapsLink ? `\n🗺 Ver en mapa: ${mapsLink}` : ''}${calLink ? `\n🗓 Agregar a tu Calendar:\n${calLink}` : ''}\n\nCualquier consulta, respondé este mensaje.\n¡Nos vemos! – El equipo de NexoFilm 🎬`;
+                                            const notePart = crewNotificationNote.trim() ? `\n\n📝 *Nota:* ${crewNotificationNote.trim()}` : '';
+                                            const waMsg = `🎬 *NexoFilm — Fecha Confirmada* ✅\n\nHola ${firstName}, ¡quedaste confirmado/a!\n\n📌 *Jornada:* ${proj.title}${dateStr ? `\n📆 ${dateStr}` : ''}${timeStr ? `\n⏰ ${timeStr}` : ''}${locationStr ? `\n📍 ${locationStr}` : ''}${mapsLink ? `\n🗺 Ver en mapa: ${mapsLink}` : ''}${calLink ? `\n🗓 Agregar a tu Calendar:\n${calLink}` : ''}\n\n⚠️ *Importante:* Se solicita estar *30 minutos antes* para la organización y armado de equipos.${notePart}\n\nCualquier consulta, respondé este mensaje.\n¡Nos vemos! – El equipo de NexoFilm 🎬`;
                                             const waUrl = phone ? `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(waMsg)}` : '';
 
                                             return (
                                                 <div key={idx} className="bg-zinc-950/40 border border-white/5 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                                     <div className="min-w-0">
-                                                        <div className="flex items-center gap-1.5">
+                                                        <div className="flex items-center gap-1.5 flex-wrap">
                                                             <span>{ROLE_ICONS[a.role] || '👤'}</span>
                                                             <strong className="text-xs text-white truncate">{a.name}</strong>
-                                                            {a.notified ? (
-                                                                <span className="text-[9px] bg-green-500/10 border border-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full font-bold flex items-center gap-0.5">✅ Notificado</span>
-                                                            ) : (
-                                                                <span className="text-[9px] bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded-full font-medium">Pendiente</span>
-                                                            )}
                                                         </div>
                                                         <p className="text-[10px] text-zinc-500 truncate mt-0.5">
                                                             {email ? `📧 ${email}` : 'Sin email'} · {phone ? `📱 ${phone}` : 'Sin WhatsApp'}
                                                         </p>
+                                                        <div className="flex gap-1.5 items-center mt-1 flex-wrap">
+                                                            {waNotified && (
+                                                                <span className="text-[8px] bg-green-500/15 border border-green-500/30 text-green-400 px-2 py-0.5 rounded font-black uppercase tracking-wider">💬 WA Enviado</span>
+                                                            )}
+                                                            {emailNotified && (
+                                                                <span className="text-[8px] bg-[#00e5ff]/15 border border-[#00e5ff]/30 text-[#00e5ff] px-2 py-0.5 rounded font-black uppercase tracking-wider">✉️ Mail Enviado</span>
+                                                            )}
+                                                            {!waNotified && !emailNotified && (
+                                                                <span className="text-[8px] bg-zinc-800 text-zinc-500 px-2 py-0.5 rounded font-medium">Pendiente</span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                     
                                                     <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
@@ -3324,9 +3529,9 @@ const CRMProjects: React.FC = () => {
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 onClick={() => handleMarkAsNotifiedLocal(a.crew_member_id)}
-                                                                className={a.notified
-                                                                    ? "text-[10px] bg-zinc-800/60 border border-zinc-700/50 text-zinc-400 hover:bg-zinc-800/80 px-2.5 py-1.5 rounded transition-all font-medium flex items-center gap-0.5"
-                                                                    : "text-[10px] bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
+                                                                className={waNotified
+                                                                    ? "text-[10px] bg-zinc-800/60 border border-zinc-700/50 text-zinc-500 px-2.5 py-1.5 rounded transition-all font-medium flex items-center gap-0.5"
+                                                                    : "text-[10px] bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
                                                                 }
                                                             >
                                                                 💬 WA
@@ -3339,9 +3544,9 @@ const CRMProjects: React.FC = () => {
                                                             <button
                                                                 onClick={() => handleNotifyCrewSingleEmail(proj.id, a.crew_member_id)}
                                                                 disabled={sendingSingleCrewEmailId === a.crew_member_id}
-                                                                className={a.notified
-                                                                    ? "text-[10px] bg-zinc-800/60 border border-zinc-700/50 text-zinc-400 hover:bg-zinc-800/80 px-2.5 py-1.5 rounded transition-all font-medium flex items-center gap-0.5"
-                                                                    : "text-[10px] bg-[#00e5ff]/10 border border-[#00e5ff]/30 text-[#00e5ff] hover:bg-[#00e5ff]/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
+                                                                className={emailNotified
+                                                                    ? "text-[10px] bg-zinc-800/60 border border-zinc-700/50 text-zinc-500 px-2.5 py-1.5 rounded transition-all font-medium flex items-center gap-0.5"
+                                                                    : "text-[10px] bg-[#00e5ff]/15 border border-[#00e5ff]/30 text-[#00e5ff] hover:bg-[#00e5ff]/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
                                                                 }
                                                             >
                                                                 {sendingSingleCrewEmailId === a.crew_member_id ? '⏳ ...' : '✉️ Mail'}
@@ -3363,12 +3568,14 @@ const CRMProjects: React.FC = () => {
 
 Hola [Nombre], ¡quedaste confirmado/a!
 
-📌 *${proj.title}*
+📌 *Jornada:* ${proj.title}
 📆 ${dateStr}
 ⏰ ${timeStr}
 📍 ${locationStr}
 🗺 Ver en mapa: ${mapsLink || 'Enlace de mapa'}
 🗓 Agregar a tu Calendar: [Link para agendar]
+
+⚠️ *Importante:* Se solicita estar *30 minutos antes* para la organización y armado de equipos.${crewNotificationNote.trim() ? `\n\n📝 *Nota:* ${crewNotificationNote.trim()}` : ''}
 
 Cualquier consulta, respondé este mensaje.
 ¡Nos vemos! – El equipo de NexoFilm 🎬`}
@@ -3377,23 +3584,11 @@ Cualquier consulta, respondé este mensaje.
                             </div>
 
                             {/* Footer */}
-                            <div className="bg-zinc-950 px-6 py-4 border-t border-white/5 flex items-center justify-between gap-3">
+                            <div className="bg-zinc-950 px-6 py-4 border-t border-white/5 flex items-center justify-end">
                                 <button
                                     onClick={() => setNotifyingProjectId(null)}
-                                    className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold px-4 py-2.5 rounded transition-colors"
+                                    className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold px-5 py-2.5 rounded transition-colors"
                                 >Cerrar</button>
-                                <button
-                                    onClick={() => handleNotifyCrewAll(proj.id)}
-                                    disabled={sendingCrewNotifications}
-                                    className="bg-nexo-lime text-black font-black text-xs uppercase tracking-widest px-5 py-2.5 rounded hover:bg-white transition-colors disabled:opacity-50 flex items-center gap-2"
-                                >
-                                    {sendingCrewNotifications ? (
-                                        <>
-                                            <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                                            Enviando Emails...
-                                        </>
-                                    ) : '📧 Enviar Mails a Todos'}
-                                </button>
                             </div>
                         </div>
                     </div>

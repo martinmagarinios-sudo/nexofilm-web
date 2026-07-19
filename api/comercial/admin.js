@@ -1036,7 +1036,7 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
 
             // ─── CREW: Notificar a todo el crew de un proyecto ────────────────────
             case 'notifyCrewAll': {
-                const { project_id } = req.body;
+                const { project_id, custom_note } = req.body;
                 if (!project_id) return res.status(400).json({ error: 'project_id requerido.' });
 
                 // Fetch project
@@ -1121,22 +1121,61 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
           <h1 style="color:#fff;font-size:22px;font-weight:800;margin:20px 0 8px;">¡Confirmación de Jornada!</h1>
           <p style="color:#888;font-size:14px;margin:0;">Hola <strong style="color:#e0e0e0;">${firstName}</strong>, desde <strong>NexoFilm</strong> te confirmamos el evento para el cual fuiste asignado/a:</p>
         </td></tr>
+        
+        <!-- Arrival warning -->
+        <tr><td style="padding:20px 40px 0;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#2a1a00;border:1px solid #d97706;border-radius:12px;">
+            <tr><td style="padding:14px 20px;color:#f59e0b;font-size:12px;font-weight:700;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+              ⚠️ <strong>Importante:</strong> Se solicita estar <strong>30 minutos antes</strong> de la hora de inicio acordada para la organización y armado de equipos.
+            </td></tr>
+          </table>
+        </td></tr>
+
+        <!-- Custom note if exists -->
+        ${custom_note && custom_note.trim() ? `
+        <tr><td style="padding:16px 40px 0;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#1a1a1a;border:1px dashed #3f3f46;border-radius:12px;">
+            <tr><td style="padding:14px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+              <div style="color:#a1a1aa;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">✍️ Nota Aclaratoria / Instrucciones</div>
+              <div style="color:#e4e4e7;font-size:13px;line-height:1.6;white-space:pre-wrap;">${custom_note.trim()}</div>
+            </td></tr>
+          </table>
+        </td></tr>` : ''}
+
         <!-- Event details -->
-        <tr><td style="padding:24px 40px;">
+        <tr><td style="padding:20px 40px 16px;">
           <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0d0d;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;">
             <tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;width:120px;">🎬 Evento</td><td style="padding:14px 20px;color:#ccff00;font-size:14px;font-weight:800;">${project.title}</td></tr>
             ${dateStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">📆 Fecha</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;">${dateStr}</td></tr>` : ''}
             ${timeStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">⏰ Horario</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;">${timeStr}</td></tr>` : ''}
             ${locationStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">📍 Lugar</td><td style="padding:14px 20px;font-size:14px;font-weight:600;">${mapsLink ? `<a href="${mapsLink}" style="color:#60a5fa;text-decoration:underline;">${locationStr}</a>` : `<span style="color:#e0e0e0;">${locationStr}</span>`}</td></tr>` : ''}
-            ${project.coverage_types?.length ? `<tr><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">🎥 Rol / Función</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;text-transform:capitalize;">${assign.role}</td></tr>` : ''}
+            ${assign.role ? `<tr><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">🎥 Rol / Función</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;text-transform:capitalize;">${assign.role}</td></tr>` : ''}
           </table>
         </td></tr>
+
+        <!-- Map Button Embed Card -->
+        ${locationStr ? `
+        <tr><td style="padding:0 40px 20px;">
+          <a href="${mapsLink}" target="_blank" style="text-decoration:none;display:block;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0d0d;border:1px solid #222;border-radius:12px;overflow:hidden;">
+              <tr>
+                <td align="center" style="padding:24px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+                  <div style="font-size:28px;margin-bottom:8px;">🗺️</div>
+                  <div style="color:#ffffff;font-size:14px;font-weight:800;margin-bottom:4px;letter-spacing:0.5px;">Ver Ubicación en Google Maps</div>
+                  <div style="color:#71717a;font-size:12px;margin-bottom:16px;max-width:320px;line-height:1.5;">${locationStr}</div>
+                  <div style="display:inline-block;background:#3b82f6;color:#ffffff;font-weight:bold;font-size:12px;padding:10px 20px;border-radius:6px;text-transform:uppercase;letter-spacing:1px;">📍 Abrir en la App de Mapas</div>
+                </td>
+              </tr>
+            </table>
+          </a>
+        </td></tr>` : ''}
+
         <!-- Calendar button -->
         ${calLink ? `<tr><td style="padding:0 40px 24px;text-align:center;">
-          <a href="${calLink}" style="display:inline-block;background:#1a1a1a;color:#ccff00;text-decoration:none;font-weight:700;font-size:13px;padding:12px 28px;border-radius:8px;border:1px solid #2a2a2a;">🗓 Agregar a tu Google Calendar</a>
+          <a href="${calLink}" style="display:inline-block;background:#1a1a1a;color:#ccff00;text-decoration:none;font-weight:700;font-size:13px;padding:12px 28px;border-radius:8px;border:1px solid #2a2a2a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">🗓 Agregar a tu Google Calendar</a>
         </td></tr>` : ''}
         <!-- Footer -->
-        <tr><td style="padding:24px 40px;text-align:center;border-top:1px solid #1a1a1a;">
+        <tr><td style="padding:24px 40px;text-align:center;border-top:1px solid #1a1a1a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
           <p style="color:#555;font-size:13px;margin:0 0 8px;">¡Cualquier consulta respondé este mail o escribinos por WhatsApp!</p>
           <p style="color:#333;font-size:12px;margin:0;">Con ganas de rodar juntos pronto — <strong style="color:#ccff00;">El equipo de NexoFilm 🎬</strong></p>
         </td></tr>
@@ -1159,7 +1198,12 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                     }
 
                     if (sent) {
-                        updatedAssignments[i] = { ...assign, notified: true, notified_at: new Date().toISOString() };
+                        updatedAssignments[i] = { 
+                            ...assign, 
+                            email_notified: true, 
+                            notified: true, 
+                            notified_at: new Date().toISOString() 
+                        };
                         notifiedCount++;
                     }
                 }
@@ -1175,7 +1219,7 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
 
             // ─── CREW: Notificar a un miembro del crew por email individualmente ───
             case 'notifyCrewSingle': {
-                const { project_id, crew_member_id } = req.body;
+                const { project_id, crew_member_id, custom_note } = req.body;
                 if (!project_id || !crew_member_id) {
                     return res.status(400).json({ error: 'project_id y crew_member_id requeridos.' });
                 }
@@ -1256,8 +1300,29 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
           <h1 style="color:#fff;font-size:22px;font-weight:800;margin:20px 0 8px;">¡Confirmación de Jornada!</h1>
           <p style="color:#888;font-size:14px;margin:0;">Hola <strong style="color:#e0e0e0;">${firstName}</strong>, desde <strong>NexoFilm</strong> te confirmamos el evento para el cual fuiste asignado/a:</p>
         </td></tr>
+        
+        <!-- Arrival warning -->
+        <tr><td style="padding:20px 40px 0;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#2a1a00;border:1px solid #d97706;border-radius:12px;">
+            <tr><td style="padding:14px 20px;color:#f59e0b;font-size:12px;font-weight:700;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+              ⚠️ <strong>Importante:</strong> Se solicita estar <strong>30 minutos antes</strong> de la hora de inicio acordada para la organización y armado de equipos.
+            </td></tr>
+          </table>
+        </td></tr>
+
+        <!-- Custom note if exists -->
+        ${custom_note && custom_note.trim() ? `
+        <tr><td style="padding:16px 40px 0;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#1a1a1a;border:1px dashed #3f3f46;border-radius:12px;">
+            <tr><td style="padding:14px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+              <div style="color:#a1a1aa;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">✍️ Nota Aclaratoria / Instrucciones</div>
+              <div style="color:#e4e4e7;font-size:13px;line-height:1.6;white-space:pre-wrap;">${custom_note.trim()}</div>
+            </td></tr>
+          </table>
+        </td></tr>` : ''}
+
         <!-- Event details -->
-        <tr><td style="padding:24px 40px;">
+        <tr><td style="padding:20px 40px 16px;">
           <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0d0d;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;">
             <tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;width:120px;">🎬 Evento</td><td style="padding:14px 20px;color:#ccff00;font-size:14px;font-weight:800;">${project.title}</td></tr>
             ${dateStr ? `<tr style="border-bottom:1px solid #1a1a1a;"><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">📆 Fecha</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;">${dateStr}</td></tr>` : ''}
@@ -1266,12 +1331,30 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
             ${assign.role ? `<tr><td style="padding:14px 20px;color:#888;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">🎥 Rol / Función</td><td style="padding:14px 20px;color:#e0e0e0;font-size:14px;font-weight:600;text-transform:capitalize;">${assign.role}</td></tr>` : ''}
           </table>
         </td></tr>
+
+        <!-- Map Button Embed Card -->
+        ${locationStr ? `
+        <tr><td style="padding:0 40px 20px;">
+          <a href="${mapsLink}" target="_blank" style="text-decoration:none;display:block;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0d0d;border:1px solid #222;border-radius:12px;overflow:hidden;">
+              <tr>
+                <td align="center" style="padding:24px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+                  <div style="font-size:28px;margin-bottom:8px;">🗺️</div>
+                  <div style="color:#ffffff;font-size:14px;font-weight:800;margin-bottom:4px;letter-spacing:0.5px;">Ver Ubicación en Google Maps</div>
+                  <div style="color:#71717a;font-size:12px;margin-bottom:16px;max-width:320px;line-height:1.5;">${locationStr}</div>
+                  <div style="display:inline-block;background:#3b82f6;color:#ffffff;font-weight:bold;font-size:12px;padding:10px 20px;border-radius:6px;text-transform:uppercase;letter-spacing:1px;">📍 Abrir en la App de Mapas</div>
+                </td>
+              </tr>
+            </table>
+          </a>
+        </td></tr>` : ''}
+
         <!-- Calendar button -->
         ${calLink ? `<tr><td style="padding:0 40px 24px;text-align:center;">
-          <a href="${calLink}" style="display:inline-block;background:#1a1a1a;color:#ccff00;text-decoration:none;font-weight:700;font-size:13px;padding:12px 28px;border-radius:8px;border:1px solid #2a2a2a;">🗓 Agregar a tu Google Calendar</a>
+          <a href="${calLink}" style="display:inline-block;background:#1a1a1a;color:#ccff00;text-decoration:none;font-weight:700;font-size:13px;padding:12px 28px;border-radius:8px;border:1px solid #2a2a2a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">🗓 Agregar a tu Google Calendar</a>
         </td></tr>` : ''}
         <!-- Footer -->
-        <tr><td style="padding:24px 40px;text-align:center;border-top:1px solid #1a1a1a;">
+        <tr><td style="padding:24px 40px;text-align:center;border-top:1px solid #1a1a1a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
           <p style="color:#555;font-size:13px;margin:0 0 8px;">¡Cualquier consulta respondé este mail o escribinos por WhatsApp!</p>
           <p style="color:#333;font-size:12px;margin:0;">Con ganas de rodar juntos pronto — <strong style="color:#ccff00;">El equipo de NexoFilm 🎬</strong></p>
         </td></tr>
@@ -1293,6 +1376,7 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                     const updatedAssignments = [...assignments];
                     updatedAssignments[assignIdx] = {
                         ...assign,
+                        email_notified: true,
                         notified: true,
                         notified_at: new Date().toISOString()
                     };

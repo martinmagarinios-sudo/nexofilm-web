@@ -262,6 +262,7 @@ const EventCard: React.FC<{
     const [notifyMsg, setNotifyMsg] = useState('');
     const [showCrewNotifyModal, setShowCrewNotifyModal] = useState(false);
     const [sendingSingleCrewEmailId, setSendingSingleCrewEmailId] = useState<string | null>(null);
+    const [crewNotificationNote, setCrewNotificationNote] = useState('');
 
     const statusStyle = STATUS_STYLES[project.status] || STATUS_STYLES.draft;
     const calLink = buildGoogleCalendarLink(project);
@@ -302,7 +303,7 @@ const EventCard: React.FC<{
     const handleMarkAsNotifiedLocal = async (crewMemberId: string) => {
         const updatedAssignments = assignments.map(a => {
             if (a.crew_member_id === crewMemberId) {
-                return { ...a, notified: true, notified_at: new Date().toISOString() };
+                return { ...a, wa_notified: true, notified: true, notified_at: new Date().toISOString() };
             }
             return a;
         });
@@ -335,6 +336,7 @@ const EventCard: React.FC<{
                     action: 'notifyCrewSingle',
                     project_id: project.id,
                     crew_member_id: crewMemberId,
+                    custom_note: crewNotificationNote,
                     password
                 })
             });
@@ -526,8 +528,8 @@ const EventCard: React.FC<{
 
             {/* Notify Modal */}
             {showCrewNotifyModal && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowCrewNotifyModal(false)}>
-                    <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+                <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowCrewNotifyModal(false)}>
+                    <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
                         {/* Header */}
                         <div className="bg-zinc-950 px-6 py-4 border-b border-white/5 flex items-center justify-between">
                             <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -542,6 +544,19 @@ const EventCard: React.FC<{
                         
                         {/* Body */}
                         <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                            {/* Nota Personalizada */}
+                            <div className="space-y-1.5 bg-black/30 p-3 rounded-lg border border-white/5">
+                                <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">📝 Nota Personalizada para la Crew (Opcional)</label>
+                                <textarea
+                                    value={crewNotificationNote}
+                                    onChange={(e) => setCrewNotificationNote(e.target.value)}
+                                    placeholder="Ej: Traer batería extra de drone, ropa oscura para rodaje, etc. Se sumará al mail y al mensaje de WhatsApp."
+                                    className="w-full bg-black border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-nexo-lime h-16 resize-none"
+                                    spellCheck="true"
+                                    lang="es"
+                                />
+                            </div>
+
                             <div>
                                 <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-2">Miembros Asignados ({assignments.length})</p>
                                 <div className="space-y-2">
@@ -550,26 +565,36 @@ const EventCard: React.FC<{
                                         const phone = member?.phone || '';
                                         const email = member?.email || '';
                                         
+                                        const waNotified = a.wa_notified !== undefined ? a.wa_notified : a.notified;
+                                        const emailNotified = a.email_notified !== undefined ? a.email_notified : a.notified;
+
                                         // Mensaje de WhatsApp personalizado
                                         const firstName = a.name.split(' ')[0];
-                                        const waMsg = `🎬 *NexoFilm — Fecha Confirmada* ✅\n\nHola ${firstName}, ¡quedaste confirmado/a!\n\n📌 *${project.title}*${project.event_date ? `\n📆 ${dateStr}` : ''}${timeStr ? `\n⏰ ${timeStr}` : ''}${locationStr ? `\n📍 ${locationStr}` : ''}${mapsLink ? `\n🗺 Ver en mapa: ${mapsLink}` : ''}${calLink ? `\n🗓 Agregar a tu Calendar:\n${calLink}` : ''}\n\nCualquier consulta, respondé este mensaje.\n¡Nos vemos! – El equipo de NexoFilm 🎬`;
+                                        const notePart = crewNotificationNote.trim() ? `\n\n📝 *Nota:* ${crewNotificationNote.trim()}` : '';
+                                        const waMsg = `🎬 *NexoFilm — Fecha Confirmada* ✅\n\nHola ${firstName}, ¡quedaste confirmado/a!\n\n📌 *Jornada:* ${project.title}${project.event_date ? `\n📆 ${dateStr}` : ''}${timeStr ? `\n⏰ ${timeStr}` : ''}${locationStr ? `\n📍 ${locationStr}` : ''}${mapsLink ? `\n🗺 Ver en mapa: ${mapsLink}` : ''}${calLink ? `\n🗓 Agregar a tu Calendar:\n${calLink}` : ''}\n\n⚠️ *Importante:* Se solicita estar *30 minutos antes* para la organización y armado de equipos.${notePart}\n\nCualquier consulta, respondé este mensaje.\n¡Nos vemos! – El equipo de NexoFilm 🎬`;
                                         const waUrl = phone ? `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(waMsg)}` : '';
 
                                         return (
                                             <div key={idx} className="bg-zinc-950/40 border border-white/5 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                                 <div className="min-w-0">
-                                                    <div className="flex items-center gap-1.5">
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
                                                         <span>{ROLE_ICONS[a.role] || '👤'}</span>
                                                         <strong className="text-xs text-white truncate">{a.name}</strong>
-                                                        {a.notified ? (
-                                                            <span className="text-[9px] bg-green-500/10 border border-green-500/20 text-green-400 px-1.5 py-0.5 rounded-full font-bold flex items-center gap-0.5">✅ Notificado</span>
-                                                        ) : (
-                                                            <span className="text-[9px] bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded-full font-medium">Pendiente</span>
-                                                        )}
                                                     </div>
                                                     <p className="text-[10px] text-zinc-500 truncate mt-0.5">
                                                         {email ? `📧 ${email}` : 'Sin email'} · {phone ? `📱 ${phone}` : 'Sin WhatsApp'}
                                                     </p>
+                                                    <div className="flex gap-1.5 items-center mt-1 flex-wrap">
+                                                        {waNotified && (
+                                                            <span className="text-[8px] bg-green-500/15 border border-green-500/30 text-green-400 px-2 py-0.5 rounded font-black uppercase tracking-wider">💬 WA Enviado</span>
+                                                        )}
+                                                        {emailNotified && (
+                                                            <span className="text-[8px] bg-[#00e5ff]/15 border border-[#00e5ff]/30 text-[#00e5ff] px-2 py-0.5 rounded font-black uppercase tracking-wider">✉️ Mail Enviado</span>
+                                                        )}
+                                                        {!waNotified && !emailNotified && (
+                                                            <span className="text-[8px] bg-zinc-800 text-zinc-500 px-2 py-0.5 rounded font-medium">Pendiente</span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                                 
                                                 <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
@@ -579,9 +604,9 @@ const EventCard: React.FC<{
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             onClick={() => handleMarkAsNotifiedLocal(a.crew_member_id)}
-                                                            className={a.notified
-                                                                ? "text-[10px] bg-zinc-800/60 border border-zinc-700/50 text-zinc-400 hover:bg-zinc-800/80 px-2.5 py-1.5 rounded transition-all font-medium flex items-center gap-0.5"
-                                                                : "text-[10px] bg-green-500/10 border border-green-500/30 text-green-400 hover:bg-green-500/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
+                                                            className={waNotified
+                                                                ? "text-[10px] bg-zinc-800/60 border border-zinc-700/50 text-zinc-500 px-2.5 py-1.5 rounded transition-all font-medium flex items-center gap-0.5"
+                                                                : "text-[10px] bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
                                                             }
                                                         >
                                                             💬 WA
@@ -594,9 +619,9 @@ const EventCard: React.FC<{
                                                         <button
                                                             onClick={() => handleNotifyCrewSingleEmail(a.crew_member_id)}
                                                             disabled={sendingSingleCrewEmailId === a.crew_member_id}
-                                                            className={a.notified
-                                                                ? "text-[10px] bg-zinc-800/60 border border-zinc-700/50 text-zinc-400 hover:bg-zinc-800/80 px-2.5 py-1.5 rounded transition-all font-medium flex items-center gap-0.5"
-                                                                : "text-[10px] bg-[#00e5ff]/10 border border-[#00e5ff]/30 text-[#00e5ff] hover:bg-[#00e5ff]/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
+                                                            className={emailNotified
+                                                                ? "text-[10px] bg-zinc-800/60 border border-zinc-700/50 text-zinc-500 px-2.5 py-1.5 rounded transition-all font-medium flex items-center gap-0.5"
+                                                                : "text-[10px] bg-[#00e5ff]/15 border border-[#00e5ff]/30 text-[#00e5ff] hover:bg-[#00e5ff]/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
                                                             }
                                                         >
                                                             {sendingSingleCrewEmailId === a.crew_member_id ? '⏳ ...' : '✉️ Mail'}
@@ -618,12 +643,14 @@ const EventCard: React.FC<{
 
 Hola [Nombre], ¡quedaste confirmado/a!
 
-📌 *${project.title}*
+📌 *Jornada:* ${project.title}
 📆 ${dateStr}
 ⏰ ${timeStr}
 📍 ${locationStr}
 🗺 Ver en mapa: ${mapsLink || 'Enlace de mapa'}
 🗓 Agregar a tu Calendar: [Link para agendar]
+
+⚠️ *Importante:* Se solicita estar *30 minutos antes* para la organización y armado de equipos.${crewNotificationNote.trim() ? `\n\n📝 *Nota:* ${crewNotificationNote.trim()}` : ''}
 
 Cualquier consulta, respondé este mensaje.
 ¡Nos vemos! – El equipo de NexoFilm 🎬`}
@@ -632,23 +659,11 @@ Cualquier consulta, respondé este mensaje.
                         </div>
 
                         {/* Footer */}
-                        <div className="bg-zinc-950 px-6 py-4 border-t border-white/5 flex items-center justify-between gap-3">
+                        <div className="bg-zinc-950 px-6 py-4 border-t border-white/5 flex items-center justify-end">
                             <button
                                 onClick={() => setShowCrewNotifyModal(false)}
-                                className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold px-4 py-2.5 rounded transition-colors"
+                                className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold px-5 py-2.5 rounded transition-colors"
                             >Cerrar</button>
-                            <button
-                                onClick={handleNotifyAll}
-                                disabled={notifying}
-                                className="bg-nexo-lime text-black font-black text-xs uppercase tracking-widest px-5 py-2.5 rounded hover:bg-white transition-colors disabled:opacity-50 flex items-center gap-2"
-                            >
-                                {notifying ? (
-                                    <>
-                                        <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                                        Enviando Emails...
-                                    </>
-                                ) : '📧 Enviar Mails a Todos'}
-                            </button>
                         </div>
                     </div>
                 </div>

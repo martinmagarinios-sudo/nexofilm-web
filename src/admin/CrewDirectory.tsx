@@ -17,7 +17,7 @@ export interface CrewMember {
 }
 
 export const CREW_ROLES: string[] = [
-    'Fotógrafo', 'Filmmaker', 'Drone', 'Editor', 'Sonidista', 'Asistente', 'Productor', 'Otro'
+    'Fotógrafo', 'Filmmaker', 'Drone', 'Editor', 'Sonidista', 'Asistente', 'Productor', 'Streaming', 'Otro'
 ];
 
 export const ROLE_ICONS: Record<string, string> = {
@@ -28,6 +28,7 @@ export const ROLE_ICONS: Record<string, string> = {
     'Sonidista': '🎙️',
     'Asistente': '🤝',
     'Productor': '🎯',
+    'Streaming': '📡',
     'Otro': '👤',
 };
 
