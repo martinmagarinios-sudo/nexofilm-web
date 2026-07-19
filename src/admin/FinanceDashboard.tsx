@@ -57,8 +57,9 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
     const [selectedStatus, setSelectedStatus] = useState<'all' | 'confirmed' | 'delivered' | 'production'>('all');
 
     // Formateadores
-    const formatMoney = (amount: number, currency: string) => {
-        return `${currency === 'USD' ? 'US$' : '$'}${amount.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    const formatMoney = (amount: any, currency: string) => {
+        const val = Number(amount) || 0;
+        return `${currency === 'USD' ? 'US$' : '$'}${val.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
     };
 
     // Procesar proyectos con presupuestos vinculados
@@ -343,6 +344,7 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
 
         return Object.entries(monthlyMap)
             .sort((a, b) => a[0].localeCompare(b[0]))
+            .map(entry => entry[1])
             .slice(-6);
     }, [filteredProjects]);
 
