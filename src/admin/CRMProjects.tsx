@@ -1450,7 +1450,7 @@ const CRMProjects: React.FC = () => {
                                 Reviews
                             </button>
                             <button
-                                onClick={() => setCrmView('finance')}
+                                onClick={() => { setCrmView('finance'); if (crewMembers.length === 0) fetchCrewMembers(); }}
                                 className={`text-xs px-3 py-1.5 rounded font-bold transition-all ${
                                     crmView === 'finance'
                                         ? 'bg-nexo-lime text-black'

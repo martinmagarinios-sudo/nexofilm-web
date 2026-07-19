@@ -64,13 +64,14 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
     // Procesar proyectos con presupuestos vinculados
     const projectsWithFinancials = useMemo(() => {
         return projects.map(proj => {
-            const budget = budgets.find(b => b.project_id === proj.id && b.is_active);
+            const budget = budgets.find(b => b && b.project_id === proj.id && b.is_active);
             const income = budget ? (budget.total_price || 0) : 0;
             const currency = proj.currency || 'ARS';
 
             // Egresos Crew
             const crewAssignments = proj.crew_assignments || [];
             const crewCost = crewAssignments.reduce((acc, curr) => {
+                if (!curr) return acc;
                 if (curr.fee_currency === currency) {
                     return acc + (curr.fee || 0);
                 }
@@ -81,6 +82,7 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
             // Costos extras
             const extraExpenses = proj.extra_expenses || [];
             const extraCost = extraExpenses.reduce((acc, curr) => {
+                if (!curr) return acc;
                 if (curr.currency === currency) {
                     return acc + (curr.amount || 0);
                 }
@@ -127,8 +129,8 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
 
             if (searchTerm.trim() !== '') {
                 const searchLower = searchTerm.toLowerCase();
-                const matchTitle = proj.title.toLowerCase().includes(searchLower);
-                const matchContact = proj.contact_name.toLowerCase().includes(searchLower);
+                const matchTitle = (proj.title || '').toLowerCase().includes(searchLower);
+                const matchContact = (proj.contact_name || '').toLowerCase().includes(searchLower);
                 const matchCompany = (proj.company_name || '').toLowerCase().includes(searchLower);
                 const matchLoc = (proj.location || '').toLowerCase().includes(searchLower);
                 if (!matchTitle && !matchContact && !matchCompany && !matchLoc) return false;
@@ -139,7 +141,7 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
             }
 
             if (selectedCrewId !== 'all') {
-                const hasCrewAssigned = (proj.crew_assignments || []).some(a => a.crew_member_id === selectedCrewId);
+                const hasCrewAssigned = (proj.crew_assignments || []).some(a => a && a.crew_member_id === selectedCrewId);
                 if (!hasCrewAssigned) return false;
             }
 
@@ -165,9 +167,11 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                 const assignments = p.crew_assignments || [];
                 const extras = p.extra_expenses || [];
                 assignments.forEach(a => {
+                    if (!a) return;
                     expensesUSD += a.fee_currency === 'USD' ? (a.fee || 0) : (a.fee || 0) / 1000;
                 });
                 extras.forEach(e => {
+                    if (!e) return;
                     expensesUSD += e.currency === 'USD' ? (e.amount || 0) : (e.amount || 0) / 1000;
                 });
             } else {
@@ -175,9 +179,11 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                 const assignments = p.crew_assignments || [];
                 const extras = p.extra_expenses || [];
                 assignments.forEach(a => {
+                    if (!a) return;
                     expensesARS += a.fee_currency === 'ARS' ? (a.fee || 0) : (a.fee || 0) * 1000;
                 });
                 extras.forEach(e => {
+                    if (!e) return;
                     expensesARS += e.currency === 'ARS' ? (e.amount || 0) : (e.amount || 0) * 1000;
                 });
             }
@@ -207,11 +213,12 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
         filteredProjects.forEach(p => {
             const assignments = p.crew_assignments || [];
             assignments.forEach(a => {
+                if (!a || !a.crew_member_id) return;
                 if (!rankingMap[a.crew_member_id]) {
                     rankingMap[a.crew_member_id] = {
                         id: a.crew_member_id,
-                        name: a.name,
-                        role: a.role,
+                        name: a.name || 'Desconocido',
+                        role: a.role || 'Otro',
                         count: 0,
                         earnedARS: 0,
                         earnedUSD: 0
@@ -234,7 +241,7 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
         const rankingMap: { [key: string]: { name: string; count: number; billedARS: number; billedUSD: number; marginARS: number; marginUSD: number } } = {};
 
         filteredProjects.forEach(p => {
-            const key = p.company_name?.trim() || p.contact_name.trim();
+            const key = p.company_name?.trim() || (p.contact_name || '').trim() || 'Desconocido';
             if (!rankingMap[key]) {
                 rankingMap[key] = {
                     name: key,
@@ -255,10 +262,12 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
             let projCostUSD = 0;
 
             crewAssignments.forEach(a => {
+                if (!a) return;
                 if (a.fee_currency === 'USD') projCostUSD += a.fee || 0;
                 else projCostARS += a.fee || 0;
             });
             extraExpenses.forEach(e => {
+                if (!e) return;
                 if (e.currency === 'USD') projCostUSD += e.amount || 0;
                 else projCostARS += e.amount || 0;
             });
@@ -286,6 +295,7 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
         filteredProjects.forEach(p => {
             if (!p.event_date) return;
             const dateObj = new Date(p.event_date + 'T12:00:00');
+            if (isNaN(dateObj.getTime())) return;
             const year = dateObj.getFullYear();
             const month = dateObj.getMonth();
             const key = `${year}-${String(month + 1).padStart(2, '0')}`;
@@ -302,11 +312,13 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
             const extraExpenses = p.extra_expenses || [];
 
             crewAssignments.forEach(a => {
+                if (!a) return;
                 const cRate = a.fee_currency === 'USD' ? 1000 : 1;
                 monthlyMap[key].expenses += (a.fee || 0) * cRate;
             });
 
             extraExpenses.forEach(e => {
+                if (!e) return;
                 const eRate = e.currency === 'USD' ? 1000 : 1;
                 monthlyMap[key].expenses += (e.amount || 0) * eRate;
             });
@@ -333,23 +345,23 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
         csvContent += '--- DETALLE DE PROYECTOS / EVENTOS ---\n';
         csvContent += 'Fecha;Proyecto;Cliente;Empresa;Estado;Moneda;Ingresos;Costo Crew;Gastos Extras;Margen Neto;Margen %\n';
         filteredProjects.forEach(p => {
-            const extraListCost = (p.extra_expenses || []).reduce((acc, curr) => acc + (curr.amount || 0), 0);
-            const crewListCost = (p.crew_assignments || []).reduce((acc, curr) => acc + (curr.fee || 0), 0);
-            csvContent += `${p.event_date || 'A conf.'};"${p.title.replace(/"/g, '""')}";"${p.contact_name.replace(/"/g, '""')}";"${(p.company_name || '').replace(/"/g, '""')}";${p.status};${p.currency || 'ARS'};${p.income};${crewListCost};${extraListCost};${p.margin};${p.marginPercent}%\n`;
+            const extraListCost = (p.extra_expenses || []).reduce((acc, curr) => acc + (curr ? (curr.amount || 0) : 0), 0);
+            const crewListCost = (p.crew_assignments || []).reduce((acc, curr) => acc + (curr ? (curr.fee || 0) : 0), 0);
+            csvContent += `${p.event_date || 'A conf.'};"${(p.title || '').replace(/"/g, '""')}";"${(p.contact_name || '').replace(/"/g, '""')}";"${(p.company_name || '').replace(/"/g, '""')}";${p.status};${p.currency || 'ARS'};${p.income};${crewListCost};${extraListCost};${p.margin};${p.marginPercent}%\n`;
         });
         csvContent += '\n\n';
 
         csvContent += '--- COLABORADORES (CREW) MÁS CONTRATADOS ---\n';
         csvContent += 'Nombre Colaborador;Rol Frecuente;Jornadas Realizadas;Total Cobrado ARS;Total Cobrado USD\n';
         crewRanking.forEach(c => {
-            csvContent += `"${c.name.replace(/"/g, '""')}";${c.role};${c.count};${c.earnedARS};${c.earnedUSD}\n`;
+            csvContent += `"${(c.name || '').replace(/"/g, '""')}";${c.role};${c.count};${c.earnedARS};${c.earnedUSD}\n`;
         });
         csvContent += '\n\n';
 
         csvContent += '--- FACTURACIÓN Y GANANCIA POR CLIENTE / EMPRESA ---\n';
         csvContent += 'Cliente / Empresa;Eventos Totales;Billed ARS;Billed USD;Margen ARS (Estimado);Margen USD (Estimado)\n';
         companyRanking.forEach(c => {
-            csvContent += `"${c.name.replace(/"/g, '""')}";${c.count};${c.billedARS};${c.billedUSD};${Math.round(c.marginARS)};${Math.round(c.marginUSD)}\n`;
+            csvContent += `"${(c.name || '').replace(/"/g, '""')}";${c.count};${c.billedARS};${c.billedUSD};${Math.round(c.marginARS)};${Math.round(c.marginUSD)}\n`;
         });
         csvContent += '\n\n';
 
@@ -358,7 +370,8 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
         filteredProjects.forEach(p => {
             const extras = p.extra_expenses || [];
             extras.forEach(e => {
-                csvContent += `${p.event_date || 'A conf.'};"${p.title.replace(/"/g, '""')}";"${e.description.replace(/"/g, '""')}";${e.amount};${e.currency}\n`;
+                if (!e) return;
+                csvContent += `${p.event_date || 'A conf.'};"${(p.title || '').replace(/"/g, '""')}";"${(e.description || '').replace(/"/g, '""')}";${e.amount};${e.currency}\n`;
             });
         });
 
@@ -817,8 +830,8 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                         </thead>
                         <tbody className="divide-y divide-white/5 text-zinc-300 text-xs">
                             {filteredProjects.map((p) => {
-                                const extraCost = (p.extra_expenses || []).reduce((acc, curr) => acc + (curr.amount || 0), 0);
-                                const crewCostOnly = (p.crew_assignments || []).reduce((acc, curr) => acc + (curr.fee || 0), 0);
+                                const extraCost = (p.extra_expenses || []).reduce((acc, curr) => acc + (curr ? (curr.amount || 0) : 0), 0);
+                                const crewCostOnly = (p.crew_assignments || []).reduce((acc, curr) => acc + (curr ? (curr.fee || 0) : 0), 0);
                                 
                                 return (
                                     <tr key={p.id} className="hover:bg-white/[0.01] transition-colors">
