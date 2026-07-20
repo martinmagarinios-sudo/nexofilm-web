@@ -264,7 +264,7 @@ const EventCard: React.FC<{
     const crewCost = assignments.reduce((sum, a) => sum + (a.fee || 0), 0);
     const income = budget?.total_price || 0;
     const margin = income - crewCost;
-    const canNotify = ['approved', 'production'].includes(project.status) && assignments.some(a => a.name);
+    const canNotify = project.status !== 'rejected' && assignments.some(a => a.name);
     const allNotified = assignments.length > 0 && assignments.every(a => a.notified);
 
     const daysUntil = project.event_date ? getDaysUntil(project.event_date) : null;
@@ -508,7 +508,7 @@ const EventCard: React.FC<{
                                         : 'bg-nexo-lime/10 border-nexo-lime/30 text-nexo-lime hover:bg-nexo-lime/20'
                                 }`}
                             >
-                                {allNotified ? '✅ Crew notificado' : '✉️ Notificar Crew'}
+                                {allNotified ? '✅ Crew notificado (Reenviar)' : '✉️ Notificar Crew'}
                             </button>
                         )}
                     </div>
@@ -615,12 +615,9 @@ Cualquier consulta, respondé este mensaje.
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             onClick={() => handleMarkAsNotifiedLocal(a.crew_member_id)}
-                                                            className={waNotified
-                                                                ? "text-[10px] bg-zinc-800/60 border border-zinc-700/50 text-zinc-500 px-2.5 py-1.5 rounded transition-all font-medium flex items-center gap-0.5"
-                                                                : "text-[10px] bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
-                                                            }
+                                                            className="text-[10px] bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
                                                         >
-                                                            💬 WA
+                                                            {waNotified ? '💬 Reenviar WA' : '💬 WA'}
                                                         </a>
                                                     ) : (
                                                         <span className="text-[9px] text-zinc-600 italic">No WA</span>
@@ -630,12 +627,9 @@ Cualquier consulta, respondé este mensaje.
                                                         <button
                                                             onClick={() => handleNotifyCrewSingleEmail(a.crew_member_id)}
                                                             disabled={sendingSingleCrewEmailId === a.crew_member_id}
-                                                            className={emailNotified
-                                                                ? "text-[10px] bg-zinc-800/60 border border-zinc-700/50 text-zinc-500 px-2.5 py-1.5 rounded transition-all font-medium flex items-center gap-0.5"
-                                                                : "text-[10px] bg-[#00e5ff]/15 border border-[#00e5ff]/30 text-[#00e5ff] hover:bg-[#00e5ff]/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
-                                                            }
+                                                            className="text-[10px] bg-[#00e5ff]/15 border border-[#00e5ff]/30 text-[#00e5ff] hover:bg-[#00e5ff]/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
                                                         >
-                                                            {sendingSingleCrewEmailId === a.crew_member_id ? '⏳ ...' : '✉️ Mail'}
+                                                            {sendingSingleCrewEmailId === a.crew_member_id ? '⏳ ...' : (emailNotified ? '✉️ Reenviar Mail' : '✉️ Mail')}
                                                         </button>
                                                     ) : (
                                                         <span className="text-[9px] text-zinc-600 italic font-medium">No Mail</span>

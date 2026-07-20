@@ -2416,7 +2416,7 @@ const CRMProjects: React.FC = () => {
                                                                                         const totalExtras = (project.extra_expenses || []).reduce((s, e) => s + (e.amount || 0), 0);
                                                                                         const totalCost = totalCrew + totalExtras;
                                                                                         const income = projectBudget?.total_price || 0;
-                                                                                        const canNotify = ['approved', 'production'].includes(project.status);
+                                                                                        const canNotify = project.status !== 'rejected';
                                                                                         return (
                                                                                             <div className="border-t border-white/5 mt-3 pt-3 space-y-3">
                                                                                                 {/* Panel Destacado de Ganancia / Costos */}
@@ -3870,12 +3870,9 @@ Cualquier consulta, respondé este mensaje.
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 onClick={() => handleMarkAsNotifiedLocal(a.crew_member_id)}
-                                                                className={waNotified
-                                                                    ? "text-[10px] bg-zinc-800/60 border border-zinc-700/50 text-zinc-500 px-2.5 py-1.5 rounded transition-all font-medium flex items-center gap-0.5"
-                                                                    : "text-[10px] bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
-                                                                }
+                                                                className="text-[10px] bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
                                                             >
-                                                                💬 WA
+                                                                {waNotified ? '💬 Reenviar WA' : '💬 WA'}
                                                             </a>
                                                         ) : (
                                                             <span className="text-[9px] text-zinc-600 italic">No WA</span>
@@ -3885,12 +3882,9 @@ Cualquier consulta, respondé este mensaje.
                                                             <button
                                                                 onClick={() => handleNotifyCrewSingleEmail(proj.id, a.crew_member_id)}
                                                                 disabled={sendingSingleCrewEmailId === a.crew_member_id}
-                                                                className={emailNotified
-                                                                    ? "text-[10px] bg-zinc-800/60 border border-zinc-700/50 text-zinc-500 px-2.5 py-1.5 rounded transition-all font-medium flex items-center gap-0.5"
-                                                                    : "text-[10px] bg-[#00e5ff]/15 border border-[#00e5ff]/30 text-[#00e5ff] hover:bg-[#00e5ff]/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
-                                                                }
+                                                                className="text-[10px] bg-[#00e5ff]/15 border border-[#00e5ff]/30 text-[#00e5ff] hover:bg-[#00e5ff]/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
                                                             >
-                                                                {sendingSingleCrewEmailId === a.crew_member_id ? '⏳ ...' : '✉️ Mail'}
+                                                                {sendingSingleCrewEmailId === a.crew_member_id ? '⏳ ...' : (emailNotified ? '✉️ Reenviar Mail' : '✉️ Mail')}
                                                             </button>
                                                         ) : (
                                                             <span className="text-[9px] text-zinc-600 italic font-medium">No Mail</span>
