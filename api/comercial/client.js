@@ -228,7 +228,7 @@ export default async function handler(req, res) {
         }
 
         try {
-            const newToken = crypto.randomBytes(32).toString('hex');
+            const newToken = crypto.randomUUID();
             let newLeadData = {
                 title: specifications.title,
                 contact_name: specifications.contact_name,
