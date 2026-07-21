@@ -879,7 +879,7 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                 
                 let waLink = '';
                 if (cleanPhone) {
-                    const messageText = `🎥 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla en tu portal seguro:\n👉 ${portalUrl}`;
+                    const messageText = `🎬 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla en tu portal seguro haciendo clic en el siguiente enlace:\n${portalUrl}`;
                     waLink = `https://wa.me/${cleanPhone.startsWith('54') || cleanPhone.length > 10 ? cleanPhone : '54' + cleanPhone}?text=${encodeURIComponent(messageText)}`;
                 }
 
@@ -1496,7 +1496,7 @@ async function notifyClient(project, items, total, terms, host, forceChannel = n
                 cleanPhone = '54' + cleanPhone;
             }
             
-            const messageText = `🎥 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya está listo tu presupuesto para "${project.title}".\n\nPresupuesto base: ${project.currency || 'USD'} ${total.toLocaleString()}\n${optionalItems.length > 0 ? `(También incluimos algunos adicionales opcionales)\n` : ''}\nIngresá al portal para ver el desglose completo, pedir ajustes o confirmarlo:\n👉 ${portalUrl}`;
+            const messageText = `🎬 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya está listo tu presupuesto para "${project.title}".\n\nPresupuesto base: ${project.currency || 'USD'} ${total.toLocaleString()}\n${optionalItems.length > 0 ? `(También incluimos algunos adicionales opcionales)\n` : ''}\nIngresá al portal para ver el desglose completo, pedir ajustes o confirmarlo:\n${portalUrl}`;
 
             try {
                 const response = await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {

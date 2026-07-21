@@ -2561,7 +2561,7 @@ const CRMProjects: React.FC = () => {
                                                                                 </a>
                                                                             );
                                                                         } else if (isDraftOrReview) {
-                                                                            const waUrl = `https://wa.me/${project.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(`🎥 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla en tu portal seguro haciendo clic en el siguiente enlace:\n👉 ${window.location.origin}/portal?token=${project.access_token}`)}`;
+                                                                            const waUrl = `https://wa.me/${project.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(`🎬 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla en tu portal seguro haciendo clic en el siguiente enlace:\nhttps://nexofilm.com/portal?token=${project.access_token}`)}`;
                                                                             return (
                                                                                 <div className="flex gap-2">
                                                                                     <a
@@ -2592,7 +2592,7 @@ const CRMProjects: React.FC = () => {
                                                                                 </div>
                                                                             );
                                                                         } else {
-                                                                            const waUrl = `https://wa.me/${project.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(`🎥 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla en tu portal seguro haciendo clic en el siguiente enlace:\n👉 ${window.location.origin}/portal?token=${project.access_token}`)}`;
+                                                                            const waUrl = `https://wa.me/${project.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(`🎬 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla en tu portal seguro haciendo clic en el siguiente enlace:\nhttps://nexofilm.com/portal?token=${project.access_token}`)}`;
                                                                             return (
                                                                                 <a
                                                                                     href={waUrl}

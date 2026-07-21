@@ -119,10 +119,83 @@ async function extractTextFromPdf(buffer) {
 
 export default async function handler(req, res) {
     const method = req.method;
-    const token = req.headers['x-client-token'] || req.query.token || req.body.token;
+    const token = req.headers['x-client-token'] || req.query.token || (req.body && req.body.token);
 
     if (!supabase) {
         return res.status(500).json({ error: 'Supabase credentials not configured' });
+    }
+
+    // --- ACCIÓN DE RENDERIZADO HTML CON OG TAGS DINÁMICOS (SOPORTE DE PREVIEW WHATSAPP / SOCIAL) ---
+    if (method === 'GET' && (req.query.action === 'render' || (req.headers.accept && req.headers.accept.includes('text/html')))) {
+        let title = "Portal de Clientes - NexoFilm";
+        let description = "Accedé a tu portal seguro para revisar tu propuesta comercial, consultar el presupuesto y gestionar tu proyecto.";
+        let project = null;
+
+        if (token) {
+            try {
+                const { data } = await supabase
+                    .from('projects')
+                    .select('title, contact_name')
+                    .eq('access_token', token)
+                    .maybeSingle();
+                if (data) {
+                    project = data;
+                    if (project.title && project.title.trim()) {
+                        title = `Propuesta Comercial: ${project.title} - NexoFilm`;
+                    }
+                    const contactName = project.contact_name ? project.contact_name.trim() : '';
+                    if (contactName) {
+                        description = `¡Hola ${contactName}! Ya preparamos la cotización para tu proyecto${project.title ? ` "${project.title}"` : ''}. Ingresá a tu portal seguro para ver el desglose, solicitar modificaciones o aprobar la propuesta.`;
+                    }
+                }
+            } catch (dbErr) {
+                console.error('Error buscando proyecto para meta tags:', dbErr);
+            }
+        }
+
+        try {
+            const searchPaths = [
+                path.join(process.cwd(), 'dist', 'index.html'),
+                path.join(process.cwd(), 'index.html'),
+                path.join(__dirname, '..', '..', 'dist', 'index.html'),
+                path.join(__dirname, '..', 'dist', 'index.html'),
+                path.join(__dirname, 'dist', 'index.html')
+            ];
+            let filePath = searchPaths[0];
+            for (const p of searchPaths) {
+                if (fs.existsSync(p)) {
+                    filePath = p;
+                    break;
+                }
+            }
+
+            let html = fs.readFileSync(filePath, 'utf8');
+
+            const host = req.headers.host || 'nexofilm.com';
+            const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
+            const imageUrl = `${protocol}://${host}/preview_whatsapp.jpg`;
+            const portalUrl = `${protocol}://${host}/portal${token ? `?token=${token}` : ''}`;
+
+            html = html.replace(/<title>[^<]*<\/title>/g, `<title>${title}</title>`);
+            html = html.replace(/<meta[\s\r\n]+name="description"[\s\r\n]+content="[^"]*"/g, `<meta name="description" content="${description}"`);
+            html = html.replace(/<meta[\s\r\n]+property="og:title"[\s\r\n]+content="[^"]*"/g, `<meta property="og:title" content="${title}"`);
+            html = html.replace(/<meta[\s\r\n]+property="og:description"[\s\r\n]+content="[^"]*"/g, `<meta property="og:description" content="${description}"`);
+            html = html.replace(/<meta[\s\r\n]+property="og:image"[\s\r\n]+content="[^"]*"/g, `<meta property="og:image" content="${imageUrl}"`);
+            html = html.replace(/<meta[\s\r\n]+property="og:image:secure_url"[\s\r\n]+content="[^"]*"/g, `<meta property="og:image:secure_url" content="${imageUrl}"`);
+            html = html.replace(/<meta[\s\r\n]+property="og:url"[\s\r\n]+content="[^"]*"/g, `<meta property="og:url" content="${portalUrl}"`);
+            html = html.replace(/<meta[\s\r\n]+property="twitter:title"[\s\r\n]+content="[^"]*"/g, `<meta property="twitter:title" content="${title}"`);
+            html = html.replace(/<meta[\s\r\n]+property="twitter:description"[\s\r\n]+content="[^"]*"/g, `<meta property="twitter:description" content="${description}"`);
+            html = html.replace(/<meta[\s\r\n]+property="twitter:image"[\s\r\n]+content="[^"]*"/g, `<meta property="twitter:image" content="${imageUrl}"`);
+            html = html.replace(/<meta[\s\r\n]+itemprop="image"[\s\r\n]+content="[^"]*"/g, `<meta itemprop="image" content="${imageUrl}"`);
+            html = html.replace(/<link[\s\r\n]+rel="image_src"[\s\r\n]+href="[^"]*"/g, `<link rel="image_src" href="${imageUrl}"`);
+
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            return res.status(200).send(html);
+        } catch (htmlErr) {
+            console.error('Error renderizando index.html:', htmlErr);
+            return res.status(500).send('Error loading page');
+        }
     }
 
     // --- ACCIÓN DE LOGIN CON MAGIC LINK (POST, NO REQUIERE TOKEN EXTRÍNSECO PREVIO) ---
@@ -439,65 +512,6 @@ export default async function handler(req, res) {
                 } catch (gErr) {
                     console.error('Error conectando con Google Drive:', gErr);
                     return res.status(500).json({ error: gErr.message });
-                }
-            }
-
-            // GET Acción: Render HTML con OG Tags Dinámicos
-            if (action === 'render') {
-                let title = "Portal de Clientes - NexoFilm";
-                let description = "Accedé al portal para gestionar tu propuesta comercial.";
-
-                if (project) {
-                    if (project.title) {
-                        title = `${project.title} - NexoFilm`;
-                    }
-                    const contactName = project.contact_name || '';
-                    if (contactName) {
-                        description = `¡Hola ${contactName}! Ingresá a tu portal para revisar el presupuesto, ver el estado o solicitar cambios.`;
-                    }
-                }
-
-                try {
-                    // Buscar index.html de forma robusta en ambientes serverless
-                    const searchPaths = [
-                        path.join(process.cwd(), 'dist', 'index.html'),
-                        path.join(process.cwd(), 'index.html'),
-                        path.join(__dirname, '..', '..', 'dist', 'index.html'),
-                        path.join(__dirname, '..', 'dist', 'index.html'),
-                        path.join(__dirname, 'dist', 'index.html')
-                    ];
-                    let filePath = searchPaths[0];
-                    for (const p of searchPaths) {
-                        if (fs.existsSync(p)) {
-                            filePath = p;
-                            break;
-                        }
-                    }
-
-                    let html = fs.readFileSync(filePath, 'utf8');
-
-                    // Definir URLs absolutas dinámicas para la imagen OG y la URL de la página
-                    const host = req.headers.host || 'nexofilm.com';
-                    const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
-                    const imageUrl = `${protocol}://${host}/preview_whatsapp.jpg`;
-                    const portalUrl = `${protocol}://${host}/portal?token=${token}`;
-
-                    // Reemplazos de SEO/OG Tags soportando saltos de línea con [\s\r\n]+
-                    html = html.replace(/<title>[^<]*<\/title>/g, `<title>${title}</title>`);
-                    html = html.replace(/<meta[\s\r\n]+name="description"[\s\r\n]+content="[^"]*"/g, `<meta name="description" content="${description}"`);
-                    html = html.replace(/<meta[\s\r\n]+property="og:title"[\s\r\n]+content="[^"]*"/g, `<meta property="og:title" content="${title}"`);
-                    html = html.replace(/<meta[\s\r\n]+property="og:description"[\s\r\n]+content="[^"]*"/g, `<meta property="og:description" content="${description}"`);
-                    html = html.replace(/<meta[\s\r\n]+property="og:image"[\s\r\n]+content="[^"]*"/g, `<meta property="og:image" content="${imageUrl}"`);
-                    html = html.replace(/<meta[\s\r\n]+property="og:url"[\s\r\n]+content="[^"]*"/g, `<meta property="og:url" content="${portalUrl}"`);
-                    html = html.replace(/<meta[\s\r\n]+property="twitter:title"[\s\r\n]+content="[^"]*"/g, `<meta property="twitter:title" content="${title}"`);
-                    html = html.replace(/<meta[\s\r\n]+property="twitter:description"[\s\r\n]+content="[^"]*"/g, `<meta property="twitter:description" content="${description}"`);
-                    html = html.replace(/<meta[\s\r\n]+property="twitter:image"[\s\r\n]+content="[^"]*"/g, `<meta property="twitter:image" content="${imageUrl}"`);
-
-                    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-                    return res.status(200).send(html);
-                } catch (htmlErr) {
-                    console.error('Error renderizando index.html:', htmlErr);
-                    return res.status(500).send('Error loading page');
                 }
             }
 
