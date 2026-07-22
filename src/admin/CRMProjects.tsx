@@ -2048,10 +2048,20 @@ const CRMProjects: React.FC = () => {
                                                                         <div>
                                                                             <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-2">👤 Datos de Contacto</p>
                                                                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                                                                                <input type="text" value={editingContactName} onChange={(e) => setEditingContactName(e.target.value)} placeholder="Nombre contacto" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
-                                                                                <input type="text" value={editingCompanyName} onChange={(e) => setEditingCompanyName(e.target.value)} placeholder="Empresa (Opcional)" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
-                                                                                <input type="email" value={editingClientEmail} onChange={(e) => setEditingClientEmail(e.target.value)} placeholder="Email" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
-                                                                                <div className="flex flex-col gap-1">
+                                                                                <div className="space-y-1">
+                                                                                    <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Nombre Contacto</label>
+                                                                                    <input type="text" value={editingContactName} onChange={(e) => setEditingContactName(e.target.value)} placeholder="Nombre contacto" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
+                                                                                </div>
+                                                                                <div className="space-y-1">
+                                                                                    <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Empresa (Opcional)</label>
+                                                                                    <input type="text" value={editingCompanyName} onChange={(e) => setEditingCompanyName(e.target.value)} placeholder="Empresa (Opcional)" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
+                                                                                </div>
+                                                                                <div className="space-y-1">
+                                                                                    <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Email Cliente</label>
+                                                                                    <input type="email" value={editingClientEmail} onChange={(e) => setEditingClientEmail(e.target.value)} placeholder="Email" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
+                                                                                </div>
+                                                                                <div className="space-y-1">
+                                                                                    <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">WhatsApp / Teléfono</label>
                                                                                     <div className="flex gap-1.5">
                                                                                         <input
                                                                                             type="text"
@@ -2070,39 +2080,64 @@ const CRMProjects: React.FC = () => {
                                                                                     </div>
                                                                                     <span className="text-[9px] text-zinc-500 block">Ej: +54 9 / 11 5892 2379</span>
                                                                                 </div>
-                                                                                <select value={editingCurrency} onChange={(e) => setEditingCurrency(e.target.value as 'USD' | 'ARS')} className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none">
-                                                                                    <option value="USD">USD (Dólares)</option>
-                                                                                    <option value="ARS">ARS (Pesos)</option>
-                                                                                </select>
-                                                                                <input type="number" min="1" value={editingCrewCount} onChange={(e) => setEditingCrewCount(e.target.value === '' ? '' : parseInt(e.target.value))} placeholder="Personal" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-center text-white focus:border-nexo-lime focus:outline-none" />
-                                                                                <select value={editingNotificationPreference} onChange={(e) => setEditingNotificationPreference(e.target.value as 'both' | 'email' | 'whatsapp')} className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" title="Preferencia de contacto">
-                                                                                    <option value="both">Ambos (Mail y WA)</option>
-                                                                                    <option value="email">Sólo Mail</option>
-                                                                                    <option value="whatsapp">Sólo WA</option>
-                                                                                </select>
+                                                                                <div className="space-y-1">
+                                                                                    <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Moneda Presupuesto</label>
+                                                                                    <select value={editingCurrency} onChange={(e) => setEditingCurrency(e.target.value as 'USD' | 'ARS')} className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none cursor-pointer">
+                                                                                        <option value="USD">USD (Dólares)</option>
+                                                                                        <option value="ARS">ARS (Pesos)</option>
+                                                                                    </select>
+                                                                                </div>
+                                                                                <div className="space-y-1">
+                                                                                    <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Personal / Equipos (Cant.)</label>
+                                                                                    <input type="number" min="1" value={editingCrewCount} onChange={(e) => setEditingCrewCount(e.target.value === '' ? '' : parseInt(e.target.value))} placeholder="Personal" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-center text-white focus:border-nexo-lime focus:outline-none" />
+                                                                                </div>
+                                                                                <div className="space-y-1">
+                                                                                    <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Preferencia de Contacto</label>
+                                                                                    <select value={editingNotificationPreference} onChange={(e) => setEditingNotificationPreference(e.target.value as 'both' | 'email' | 'whatsapp')} className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none cursor-pointer" title="Preferencia de contacto">
+                                                                                        <option value="both">Ambos (Mail y WA)</option>
+                                                                                        <option value="email">Sólo Mail</option>
+                                                                                        <option value="whatsapp">Sólo WA</option>
+                                                                                    </select>
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                         {/* Sección Evento */}
                                                                         <div className="border-t border-white/5 pt-3">
                                                                             <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-2">📅 Detalles del Evento</p>
                                                                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
-                                                                                <input type="date" value={editingEventDate} onChange={(e) => setEditingEventDate(e.target.value)} className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" title="Fecha del evento" />
-                                                                                <input type="time" value={editingEventTime} onChange={(e) => {
-                                                                                    const start = e.target.value;
-                                                                                    setEditingEventTime(start);
-                                                                                    if (editingEventEndTime) {
-                                                                                        setEditingCoverageHours(calculateHours(start, editingEventEndTime));
-                                                                                    }
-                                                                                }} className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" title="Horario de inicio" />
-                                                                                <input type="time" value={editingEventEndTime} onChange={(e) => {
-                                                                                    const end = e.target.value;
-                                                                                    setEditingEventEndTime(end);
-                                                                                    setEditingCoverageHours(calculateHours(editingEventTime, end));
-                                                                                }} className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" title="Horario de fin" />
-                                                                                <input type="number" min="1" value={editingCoverageHours} onChange={(e) => setEditingCoverageHours(e.target.value === '' ? '' : parseInt(e.target.value))} placeholder="Horas cobertura" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
-                                                                                <input type="number" min="1" value={editingGuestsCount} onChange={(e) => setEditingGuestsCount(e.target.value === '' ? '' : parseInt(e.target.value))} placeholder="Nº invitados" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
+                                                                                <div className="space-y-1">
+                                                                                    <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Fecha del Evento</label>
+                                                                                    <input type="date" value={editingEventDate} onChange={(e) => setEditingEventDate(e.target.value)} className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" title="Fecha del evento" />
+                                                                                </div>
+                                                                                <div className="space-y-1">
+                                                                                    <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Hora Inicio Cobertura</label>
+                                                                                    <input type="time" value={editingEventTime} onChange={(e) => {
+                                                                                        const start = e.target.value;
+                                                                                        setEditingEventTime(start);
+                                                                                        if (editingEventEndTime) {
+                                                                                            setEditingCoverageHours(calculateHours(start, editingEventEndTime));
+                                                                                        }
+                                                                                    }} className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" title="Horario de inicio" />
+                                                                                </div>
+                                                                                <div className="space-y-1">
+                                                                                    <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Hora Fin Cobertura</label>
+                                                                                    <input type="time" value={editingEventEndTime} onChange={(e) => {
+                                                                                        const end = e.target.value;
+                                                                                        setEditingEventEndTime(end);
+                                                                                        setEditingCoverageHours(calculateHours(editingEventTime, end));
+                                                                                    }} className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" title="Horario de fin" />
+                                                                                </div>
+                                                                                <div className="space-y-1">
+                                                                                    <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Horas Cobertura Totales</label>
+                                                                                    <input type="number" min="1" value={editingCoverageHours} onChange={(e) => setEditingCoverageHours(e.target.value === '' ? '' : parseInt(e.target.value))} placeholder="Horas cobertura" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
+                                                                                </div>
+                                                                                <div className="space-y-1">
+                                                                                    <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Nº de Invitados</label>
+                                                                                    <input type="number" min="1" value={editingGuestsCount} onChange={(e) => setEditingGuestsCount(e.target.value === '' ? '' : parseInt(e.target.value))} placeholder="Nº invitados" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
+                                                                                </div>
                                                                             </div>
-                                                                            <div className="mt-2.5">
+                                                                            <div className="mt-2.5 space-y-1">
+                                                                                <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Locación / Dirección del Evento</label>
                                                                                 <input type="text" ref={editLocationInputRef} value={editingLocation} onChange={(e) => setEditingLocation(e.target.value)} placeholder="📍 Locación / Lugar (escribí para buscar y autocompletar con Google Maps)" className="w-full bg-black border border-white/20 rounded px-3 py-2.5 text-xs text-white focus:border-nexo-lime focus:outline-none" />
                                                                             </div>
                                                                         </div>
@@ -3573,21 +3608,22 @@ const CRMProjects: React.FC = () => {
                                                 lang="es"
                                             />
                                         </div>
-                                        <div className="flex gap-2 items-center justify-between sm:justify-start w-full sm:w-auto shrink-0">
-                                            <div className="flex items-center gap-1">
-                                                <span className="text-[10px] text-zinc-500 sm:hidden">Cant:</span>
+                                        <div className="flex gap-2.5 items-start sm:items-center justify-between sm:justify-start w-full sm:w-auto shrink-0 pt-1 sm:pt-0">
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Cant.</label>
                                                 <input
                                                     type="number"
                                                     required
                                                     min="1"
                                                     value={item.quantity}
                                                     onChange={(e) => updateEditingBudgetItem(idx, 'quantity', e.target.value)}
-                                                    className="w-16 bg-black border border-white/5 rounded px-2 py-2 text-sm text-center text-white"
+                                                    className="w-16 bg-black border border-white/10 rounded px-2 py-2 text-sm text-center text-white focus:outline-none focus:border-nexo-lime"
                                                     placeholder="Cant"
+                                                    title="Cantidad"
                                                 />
                                             </div>
-                                            <div className="flex items-center gap-1">
-                                                <span className="text-[10px] text-zinc-500 sm:hidden">Precio:</span>
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Precio Unit ({budgetingProject?.currency || 'ARS'})</label>
                                                 <div className="flex flex-col items-end">
                                                     <input
                                                         type="number"
@@ -3595,8 +3631,9 @@ const CRMProjects: React.FC = () => {
                                                         min="0"
                                                         value={item.unit_price || ''}
                                                         onChange={(e) => updateEditingBudgetItem(idx, 'unit_price', e.target.value)}
-                                                        className="w-32 bg-black border border-white/5 rounded px-2 py-2 text-sm text-right text-white"
+                                                        className="w-32 bg-black border border-white/10 rounded px-2 py-2 text-sm text-right text-white focus:outline-none focus:border-nexo-lime"
                                                         placeholder="Precio U."
+                                                        title="Precio unitario"
                                                     />
                                                     {item.unit_price > 0 && (
                                                         <span className="text-[9px] text-nexo-lime font-mono mt-0.5" style={{ textShadow: '0 0 4px rgba(225, 249, 55, 0.2)' }}>
