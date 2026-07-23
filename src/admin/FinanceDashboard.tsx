@@ -11,6 +11,7 @@ interface Project {
     event_time: string | null;
     location: string | null;
     currency?: 'USD' | 'ARS' | null;
+    coverage_types?: string[] | null;
     crew_assignments?: CrewAssignment[] | null;
     extra_expenses?: ExtraExpense[] | null;
 }
@@ -53,6 +54,7 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCrewId, setSelectedCrewId] = useState('all');
     const [selectedCurrency, setSelectedCurrency] = useState('all');
+    const [selectedCoverageType, setSelectedCoverageType] = useState('all');
     const [minMarginVal, setMinMarginVal] = useState('');
     const [selectedStatus, setSelectedStatus] = useState<'all' | 'confirmed' | 'delivered' | 'production'>('all');
 
@@ -145,6 +147,11 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                 if (proj.currency !== selectedCurrency) return false;
             }
 
+            if (selectedCoverageType !== 'all') {
+                const types = Array.isArray(proj.coverage_types) ? proj.coverage_types : [];
+                if (!types.includes(selectedCoverageType)) return false;
+            }
+
             if (selectedCrewId !== 'all') {
                 const assignments = Array.isArray(proj.crew_assignments) ? proj.crew_assignments : [];
                 const hasCrewAssigned = assignments.some(a => a && a.crew_member_id === selectedCrewId);
@@ -158,7 +165,7 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
 
             return true;
         });
-    }, [projectsWithFinancials, startDate, endDate, searchTerm, selectedCrewId, selectedCurrency, minMarginVal, selectedStatus]);
+    }, [projectsWithFinancials, startDate, endDate, searchTerm, selectedCrewId, selectedCurrency, selectedCoverageType, minMarginVal, selectedStatus]);
 
     // Métricas Totales
     const summaryStats = useMemo(() => {
@@ -302,6 +309,38 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
             const valB = b.billedARS + b.billedUSD * 1000;
             return valB - valA;
         });
+    }, [filteredProjects]);
+
+    // Clasificación por Tipo de Servicio / Cobertura
+    const coverageTypeRanking = useMemo(() => {
+        const rankingMap: { [key: string]: { label: string; icon: string; count: number; billedARS: number; billedUSD: number } } = {
+            foto: { label: 'Fotografía', icon: '📷', count: 0, billedARS: 0, billedUSD: 0 },
+            video: { label: 'Video', icon: '🎥', count: 0, billedARS: 0, billedUSD: 0 },
+            streaming: { label: 'Streaming', icon: '📡', count: 0, billedARS: 0, billedUSD: 0 },
+            drone: { label: 'Drone', icon: '🚁', count: 0, billedARS: 0, billedUSD: 0 },
+            'social media': { label: 'Social Media', icon: '📱', count: 0, billedARS: 0, billedUSD: 0 },
+            sin_especificar: { label: 'Sin especificar', icon: '❓', count: 0, billedARS: 0, billedUSD: 0 }
+        };
+
+        filteredProjects.forEach(p => {
+            const types = Array.isArray(p.coverage_types) && p.coverage_types.length > 0
+                ? p.coverage_types
+                : ['sin_especificar'];
+
+            const incomeVal = Number(p.income) || 0;
+            types.forEach(t => {
+                const normalizedType = String(t).toLowerCase();
+                const key = rankingMap[normalizedType] ? normalizedType : 'sin_especificar';
+                rankingMap[key].count += 1;
+                if (p.currency === 'USD') {
+                    rankingMap[key].billedUSD += incomeVal;
+                } else {
+                    rankingMap[key].billedARS += incomeVal;
+                }
+            });
+        });
+
+        return Object.values(rankingMap).filter(item => item.count > 0);
     }, [filteredProjects]);
 
     // Agrupación mensual para gráfico SVG
@@ -476,11 +515,27 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                         <select
                             value={selectedCurrency}
                             onChange={e => setSelectedCurrency(e.target.value)}
-                            className="w-full bg-black border border-white/10 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-nexo-lime"
+                            className="w-full bg-black border border-white/10 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-nexo-lime cursor-pointer"
                         >
                             <option value="all">Todas las monedas</option>
                             <option value="ARS">Sólo Pesos (ARS)</option>
                             <option value="USD">Sólo Dólares (USD)</option>
+                        </select>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider block">🎥 Servicio / Cobertura</label>
+                        <select
+                            value={selectedCoverageType}
+                            onChange={e => setSelectedCoverageType(e.target.value)}
+                            className="w-full bg-black border border-white/10 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-nexo-lime cursor-pointer"
+                        >
+                            <option value="all">Todos los servicios</option>
+                            <option value="video">🎥 Video</option>
+                            <option value="foto">📷 Foto</option>
+                            <option value="streaming">📡 Streaming</option>
+                            <option value="drone">🚁 Drone</option>
+                            <option value="social media">📱 Social Media</option>
                         </select>
                     </div>
 
@@ -570,6 +625,37 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                 </div>
 
             </div>
+
+            {/* Sección de Facturación por Tipo de Cobertura */}
+            {coverageTypeRanking.length > 0 && (
+                <div className="bg-zinc-900/40 border border-white/5 rounded-2xl p-5 space-y-3">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h3 className="text-sm font-extrabold text-white uppercase tracking-wider flex items-center gap-2">
+                                <span>🎥 Facturación por Servicio / Tipo de Cobertura</span>
+                            </h3>
+                            <p className="text-[10px] text-zinc-500 mt-0.5">Desglose de recaudación total según los servicios contratados.</p>
+                        </div>
+                        <span className="text-[10px] text-zinc-500 font-mono font-bold uppercase">{coverageTypeRanking.length} categoría(s)</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                        {coverageTypeRanking.map((srv) => (
+                            <div key={srv.label} className="bg-black/40 border border-white/5 rounded-xl p-3 space-y-1.5 hover:border-white/20 transition-all">
+                                <div className="flex items-center justify-between text-xs text-zinc-400 font-semibold">
+                                    <span>{srv.icon} {srv.label}</span>
+                                    <span className="text-[9px] bg-white/10 px-1.5 py-0.5 rounded text-white font-bold">{srv.count} {srv.count === 1 ? 'proj' : 'projs'}</span>
+                                </div>
+                                <div className="text-sm font-extrabold text-nexo-lime font-mono">
+                                    {srv.billedARS > 0 && <div>{formatMoney(srv.billedARS, 'ARS')}</div>}
+                                    {srv.billedUSD > 0 && <div className="text-cyan-400">{formatMoney(srv.billedUSD, 'USD')}</div>}
+                                    {srv.billedARS === 0 && srv.billedUSD === 0 && <div className="text-zinc-600 text-xs">$0</div>}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 

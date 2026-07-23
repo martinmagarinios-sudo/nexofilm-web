@@ -290,6 +290,7 @@ const CRMProjects: React.FC = () => {
     const [newCurrency, setNewCurrency] = useState<'USD' | 'ARS'>('ARS');
     const [newCrewCount, setNewCrewCount] = useState<number | ''>('');
     const [newNotificationPreference, setNewNotificationPreference] = useState<'both' | 'email' | 'whatsapp'>('both');
+    const [newCoverageTypes, setNewCoverageTypes] = useState<string[]>([]);
 
     // Inline editing contact info
     const [editingContactProjectId, setEditingContactProjectId] = useState<string | null>(null);
@@ -308,6 +309,7 @@ const CRMProjects: React.FC = () => {
     const [editingCoverageHours, setEditingCoverageHours] = useState<number | ''>('');
     const [editingGuestsCount, setEditingGuestsCount] = useState<number | ''>('');
     const [editingNotificationPreference, setEditingNotificationPreference] = useState<'both' | 'email' | 'whatsapp'>('both');
+    const [editingCoverageTypes, setEditingCoverageTypes] = useState<string[]>([]);
     
     // Formulario de presupuesto (Creación)
     const [newBudgetItems, setNewBudgetItems] = useState<BudgetItem[]>([{ description: '', quantity: 1, unit_price: 0 }]);
@@ -767,6 +769,7 @@ const CRMProjects: React.FC = () => {
                     status: newProjStatus,
                     currency: newCurrency,
                     crew_count: newCrewCount === '' ? null : Number(newCrewCount),
+                    coverage_types: newCoverageTypes,
                     items: itemsToSave,
                     total_price: totalPrice,
                     payment_terms: newPaymentTerms,
@@ -788,6 +791,7 @@ const CRMProjects: React.FC = () => {
             setNewProjTitle('');
             setNewCurrency('ARS');
             setNewCrewCount('');
+            setNewCoverageTypes([]);
             setNewNotificationPreference('both');
             setNewBudgetItems([{ description: '', quantity: 1, unit_price: 0 }]);
             setNewPaymentTerms('50% de seña para reservar fecha, 50% contra entrega.');
@@ -1109,6 +1113,7 @@ const CRMProjects: React.FC = () => {
                     location: editingLocation || null,
                     coverage_hours: editingCoverageHours === '' ? null : Number(editingCoverageHours),
                     guests_count: editingGuestsCount === '' ? null : Number(editingGuestsCount),
+                    coverage_types: editingCoverageTypes,
                     notification_preference: editingNotificationPreference,
                     admin_action_required: adminActionRequiredVal,
                     password
@@ -2141,6 +2146,41 @@ const CRMProjects: React.FC = () => {
                                                                                 <input type="text" ref={editLocationInputRef} value={editingLocation} onChange={(e) => setEditingLocation(e.target.value)} placeholder="📍 Locación / Lugar (escribí para buscar y autocompletar con Google Maps)" className="w-full bg-black border border-white/20 rounded px-3 py-2.5 text-xs text-white focus:border-nexo-lime focus:outline-none" />
                                                                             </div>
                                                                         </div>
+                                                                        {/* Sección Servicios / Tipo de Cobertura */}
+                                                                        <div className="border-t border-white/5 pt-3">
+                                                                            <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block mb-1.5">🎥 Servicios / Tipo de Cobertura</label>
+                                                                            <div className="flex flex-wrap gap-1.5">
+                                                                                {[
+                                                                                    { key: 'foto', label: '📷 Foto' },
+                                                                                    { key: 'video', label: '🎥 Video' },
+                                                                                    { key: 'streaming', label: '📡 Streaming' },
+                                                                                    { key: 'drone', label: '🚁 Drone' },
+                                                                                    { key: 'social media', label: '📱 Social Media' }
+                                                                                ].map((srv) => {
+                                                                                    const isSelected = editingCoverageTypes.includes(srv.key);
+                                                                                    return (
+                                                                                        <button
+                                                                                            key={srv.key}
+                                                                                            type="button"
+                                                                                            onClick={() => {
+                                                                                                if (isSelected) {
+                                                                                                    setEditingCoverageTypes(editingCoverageTypes.filter(t => t !== srv.key));
+                                                                                                } else {
+                                                                                                    setEditingCoverageTypes([...editingCoverageTypes, srv.key]);
+                                                                                                }
+                                                                                            }}
+                                                                                            className={`px-2.5 py-1 rounded text-xs font-semibold border transition-all cursor-pointer ${
+                                                                                                isSelected
+                                                                                                    ? 'bg-nexo-lime text-black border-nexo-lime shadow-[0_0_10px_rgba(204,255,0,0.2)]'
+                                                                                                    : 'bg-black text-zinc-400 border-white/10 hover:border-white/20 hover:text-white'
+                                                                                            }`}
+                                                                                        >
+                                                                                            {srv.label}
+                                                                                        </button>
+                                                                                    );
+                                                                                })}
+                                                                            </div>
+                                                                        </div>
                                                                         {/* Sección Nota para el Cliente */}
                                                                         <div className="border-t border-white/5 pt-3">
                                                                             <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-1">📝 Mensaje para el Cliente (visible en su portal)</p>
@@ -2188,6 +2228,7 @@ const CRMProjects: React.FC = () => {
                                                                                 setEditingCoverageHours(project.coverage_hours || '');
                                                                                 setEditingGuestsCount(project.guests_count || '');
                                                                                 setEditingNotificationPreference(project.notification_preference || 'both');
+                                                                                setEditingCoverageTypes(project.coverage_types || []);
                                                                             }}
                                                                             className="text-zinc-500 hover:text-white text-xs shrink-0 p-1 bg-white/5 border border-white/10 rounded hover:bg-white/10 transition-colors"
                                                                             title="Editar datos del proyecto"
@@ -2816,6 +2857,7 @@ const CRMProjects: React.FC = () => {
                                                                                     setEditingCoverageHours(project.coverage_hours || '');
                                                                                     setEditingGuestsCount(project.guests_count || '');
                                                                                     setEditingNotificationPreference(project.notification_preference || 'both');
+                                                                                    setEditingCoverageTypes(project.coverage_types || []);
                                                                                     
                                                                                     setTimeout(() => {
                                                                                         const cardEl = document.getElementById(`project-${project.id}`);

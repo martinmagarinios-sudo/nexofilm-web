@@ -304,6 +304,12 @@ const PublicRequestForm: React.FC = () => {
         setErrorMsg('');
 
         try {
+            if (coverageTypes.length === 0) {
+                setFormStatus('idle');
+                setErrorMsg('Por favor selecciona al menos un servicio requerido (Foto, Video o Streaming).');
+                return;
+            }
+
             const combinedPhone = phoneCountryCode && phoneLocalNumber ? `${phoneCountryCode} ${phoneLocalNumber}` : phoneLocalNumber || '';
 
             const res = await fetch('/api/comercial/client', {
@@ -572,7 +578,9 @@ const PublicRequestForm: React.FC = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider block">Servicios Requeridos</label>
+                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider block flex items-center gap-1">
+                                    Servicios Requeridos <span className="text-nexo-lime font-bold">*</span>
+                                </label>
                                 <div className="flex gap-2 pt-1">
                                     {['foto', 'video', 'streaming'].map((type) => (
                                         <button
