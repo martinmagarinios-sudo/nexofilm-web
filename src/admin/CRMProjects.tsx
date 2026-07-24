@@ -1885,42 +1885,48 @@ const CRMProjects: React.FC = () => {
                                         {projects.length === 0 ? "No hay proyectos activos creados." : "No se encontraron proyectos que coincidan con los filtros."}
                                     </div>
                                 ) : (
-                                    filteredAndSortedProjects.map((project) => {
-                                        const projectBudget = budgets.find(b => b.project_id === project.id);
-                                        const isExpanded = expandedProjectIds.includes(project.id);
-                                        const statusColors: { [key: string]: string } = {
-                                            draft: 'bg-zinc-800 text-zinc-400 border-zinc-700',
-                                            sent: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-                                            review: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-                                            approved: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-                                            rejected: 'bg-red-500/10 text-red-400 border-red-500/20',
-                                            production: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-                                            delivered: 'bg-nexo-lime/10 text-nexo-lime border-nexo-lime/20'
-                                        };
+                                    <div className="space-y-3">
+                                        {/* Encabezado de columnas alineado para vista de escritorio */}
+                                        <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-2.5 bg-zinc-950/80 border border-white/10 rounded-lg text-[10px] font-extrabold uppercase tracking-widest text-zinc-400 select-none mb-3">
+                                            <div className="lg:col-span-3">Cliente / Empresa</div>
+                                            <div className="lg:col-span-3">Proyecto</div>
+                                            <div className="lg:col-span-3">Fecha & Lugar</div>
+                                            <div className="lg:col-span-3 text-right">Presupuesto & Estado</div>
+                                        </div>
 
-                                        return (
-                                            <div 
-                                                key={project.id} 
-                                                id={`project-${project.id}`}
-                                                className={`border rounded-xl transition-all shadow-xl space-y-4 ${
-                                                    isExpanded 
-                                                        ? 'bg-zinc-900/90 border-nexo-lime/30 p-6 ring-1 ring-nexo-lime/10' 
-                                                        : 'bg-zinc-950/45 border-white/10 hover:border-white/20 p-4'
-                                                }`}
-                                            >
-                                                {/* Fila de Vista Previa Compacta (Header) Clickable */}
+                                        {filteredAndSortedProjects.map((project) => {
+                                            const projectBudget = budgets.find(b => b.project_id === project.id);
+                                            const isExpanded = expandedProjectIds.includes(project.id);
+                                            const statusColors: { [key: string]: string } = {
+                                                draft: 'bg-zinc-800 text-zinc-400 border-zinc-700',
+                                                sent: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+                                                review: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                                                approved: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+                                                rejected: 'bg-red-500/10 text-red-400 border-red-500/20',
+                                                production: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+                                                delivered: 'bg-nexo-lime/10 text-nexo-lime border-nexo-lime/20'
+                                            };
+
+                                            return (
                                                 <div 
-                                                    onClick={() => toggleExpandProject(project.id)}
-                                                    className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 cursor-pointer select-none"
+                                                    key={project.id} 
+                                                    id={`project-${project.id}`}
+                                                    className={`border rounded-xl transition-all shadow-xl space-y-4 ${
+                                                        isExpanded 
+                                                            ? 'bg-zinc-900/90 border-nexo-lime/30 p-6 ring-1 ring-nexo-lime/10' 
+                                                            : 'bg-zinc-950/45 border-white/10 hover:border-white/20 p-4'
+                                                    }`}
                                                 >
-                                                    {/* Columna 1: Nombre / Empresa y Título */}
-                                                    <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
-                                                        
-                                                        {/* Nombre / Empresa */}
-                                                        <div className="lg:col-span-4 min-w-0">
-                                                            <span className="text-zinc-500 text-[10px] block font-bold uppercase tracking-wider">Cliente / Empresa</span>
+                                                    {/* Fila de Vista Previa Compacta (Header) Clickable con Grilla Unificada */}
+                                                    <div 
+                                                        onClick={() => toggleExpandProject(project.id)}
+                                                        className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center cursor-pointer select-none"
+                                                    >
+                                                        {/* Columna 1: Cliente / Empresa */}
+                                                        <div className="lg:col-span-3 min-w-0">
+                                                            <span className="text-zinc-500 text-[10px] block font-bold uppercase tracking-wider lg:hidden">Cliente / Empresa</span>
                                                             <div className="font-extrabold text-sm text-white break-words">
-                                                        {project.contact_name}
+                                                                {project.contact_name}
                                                             </div>
                                                             {project.company_name && (
                                                                 <div className="text-[11px] text-zinc-400 break-words">
@@ -1929,9 +1935,9 @@ const CRMProjects: React.FC = () => {
                                                             )}
                                                         </div>
 
-                                                        {/* Título & Coberturas */}
-                                                        <div className="lg:col-span-4 min-w-0">
-                                                            <span className="text-zinc-500 text-[10px] block font-bold uppercase tracking-wider">Proyecto</span>
+                                                        {/* Columna 2: Título & Coberturas */}
+                                                        <div className="lg:col-span-3 min-w-0">
+                                                            <span className="text-zinc-500 text-[10px] block font-bold uppercase tracking-wider lg:hidden">Proyecto</span>
                                                             <div className="font-bold text-xs text-nexo-lime truncate flex items-center gap-1.5 flex-wrap">
                                                                 <span>{project.title}</span>
                                                                 {renderPendingActionBadge(project)}
@@ -1941,9 +1947,9 @@ const CRMProjects: React.FC = () => {
                                                             </div>
                                                         </div>
 
-                                                        {/* Fecha y Lugar */}
-                                                        <div className="lg:col-span-4 min-w-0">
-                                                            <span className="text-zinc-500 text-[10px] block font-bold uppercase tracking-wider">Fecha & Lugar</span>
+                                                        {/* Columna 3: Fecha y Lugar */}
+                                                        <div className="lg:col-span-3 min-w-0">
+                                                            <span className="text-zinc-500 text-[10px] block font-bold uppercase tracking-wider lg:hidden">Fecha & Lugar</span>
                                                             <div className="text-xs text-white truncate flex items-center gap-1">
                                                                 <span>📅</span>
                                                                 <span>{project.event_date ? formatDate(project.event_date) : 'Sin fecha'}</span>
@@ -1954,127 +1960,124 @@ const CRMProjects: React.FC = () => {
                                                             </div>
                                                         </div>
 
-                                                    </div>
-
-                                                    {/* Columna 2: Importe, Estado y Acción Pendiente */}
-                                                    <div className="flex items-center gap-4 shrink-0 justify-between lg:justify-end">
-                                                        
-                                                        {/* Importe Total y Saldos */}
-                                                        <div className="text-right flex flex-col justify-center min-w-[120px]">
-                                                            {(() => {
-                                                                const history = project.invoices_history || [];
-                                                                const displayInvoices = history.length > 0 ? history : (
-                                                                    project.invoice_url ? [{ amount: project.invoice_amount || 0, type: project.invoice_type || 'custom', invoice_url: project.invoice_url, paid: project.invoice_paid || false }] : []
-                                                                );
-                                                                const totalInvoiced = displayInvoices.reduce((sum: number, inv: any) => {
-                                                                    const amt = Number(inv.amount) || 0;
-                                                                    return inv.type === 'credit_note' ? sum - amt : sum + amt;
-                                                                }, 0);
-                                                                const totalPaid = displayInvoices.reduce((sum: number, inv: any) => {
-                                                                    if (!inv.paid) return sum;
-                                                                    const amt = Number(inv.amount) || 0;
-                                                                    return inv.type === 'credit_note' ? sum - amt : sum + amt;
-                                                                }, 0);
-                                                                const budgetItems = projectBudget ? (projectBudget.items || []) : [];
-                                                                // Base = siempre items[0]
-                                                                const basePrice = budgetItems[0] ? (budgetItems[0].quantity * budgetItems[0].unit_price) : (projectBudget ? projectBudget.total_price : 0);
-                                                                const optionalsInBudget = budgetItems.filter((it: any) => it.is_optional).reduce((s: number, it: any) => s + (it.quantity * it.unit_price), 0);
-                                                                // Si el cliente ya aprobó, total_price tiene base + extras elegidos (definitivo)
-                                                                // Si aún no aprobó, el monto confirmado es solo el base
-                                                                const isApproved = ['approved', 'production', 'delivered'].includes(project.status);
-                                                                const billingTotal = isApproved ? (projectBudget ? projectBudget.total_price : basePrice) : basePrice;
-                                                                const remainingToInvoice = Math.max(0, billingTotal - totalInvoiced);
-                                                                const remainingToCollect = Math.max(0, totalInvoiced - totalPaid);
-                                                                
-                                                                return (
-                                                                    <>
-                                                                        {isApproved ? (
-                                                                            <>
-                                                                                <span className="text-nexo-lime text-[9px] block font-black uppercase tracking-widest">Total Confirmado</span>
-                                                                                <div className="font-mono font-black text-base text-nexo-lime">
-                                                                                    {project.currency || 'ARS'} {billingTotal.toLocaleString()}
-                                                                                </div>
-                                                                                <div className="text-[9px] text-zinc-500 font-bold mt-0.5 space-y-0.5">
-                                                                                    <div>Base: {project.currency || 'ARS'} {basePrice.toLocaleString()}</div>
-                                                                                    {projectBudget && projectBudget.total_price > basePrice && (
-                                                                                        <div className="text-zinc-400">+ Extras: {project.currency || 'ARS'} {(projectBudget.total_price - basePrice).toLocaleString()}</div>
+                                                        {/* Columna 4: Importe, Estado y Acción Pendiente */}
+                                                        <div className="lg:col-span-3 min-w-0 flex items-center justify-between lg:justify-end gap-3 text-right">
+                                                            {/* Importe Total y Saldos */}
+                                                            <div className="text-right flex flex-col justify-center min-w-0 flex-1">
+                                                                {(() => {
+                                                                    const history = project.invoices_history || [];
+                                                                    const displayInvoices = history.length > 0 ? history : (
+                                                                        project.invoice_url ? [{ amount: project.invoice_amount || 0, type: project.invoice_type || 'custom', invoice_url: project.invoice_url, paid: project.invoice_paid || false }] : []
+                                                                    );
+                                                                    const totalInvoiced = displayInvoices.reduce((sum: number, inv: any) => {
+                                                                        const amt = Number(inv.amount) || 0;
+                                                                        return inv.type === 'credit_note' ? sum - amt : sum + amt;
+                                                                    }, 0);
+                                                                    const totalPaid = displayInvoices.reduce((sum: number, inv: any) => {
+                                                                        if (!inv.paid) return sum;
+                                                                        const amt = Number(inv.amount) || 0;
+                                                                        return inv.type === 'credit_note' ? sum - amt : sum + amt;
+                                                                    }, 0);
+                                                                    const budgetItems = projectBudget ? (projectBudget.items || []) : [];
+                                                                    // Base = siempre items[0]
+                                                                    const basePrice = budgetItems[0] ? (budgetItems[0].quantity * budgetItems[0].unit_price) : (projectBudget ? projectBudget.total_price : 0);
+                                                                    const optionalsInBudget = budgetItems.filter((it: any) => it.is_optional).reduce((s: number, it: any) => s + (it.quantity * it.unit_price), 0);
+                                                                    // Si el cliente ya aprobó, total_price tiene base + extras elegidos (definitivo)
+                                                                    // Si aún no aprobó, el monto confirmado es solo el base
+                                                                    const isApproved = ['approved', 'production', 'delivered'].includes(project.status);
+                                                                    const billingTotal = isApproved ? (projectBudget ? projectBudget.total_price : basePrice) : basePrice;
+                                                                    const remainingToInvoice = Math.max(0, billingTotal - totalInvoiced);
+                                                                    const remainingToCollect = Math.max(0, totalInvoiced - totalPaid);
+                                                                    
+                                                                    return (
+                                                                        <>
+                                                                            {isApproved ? (
+                                                                                <>
+                                                                                    <span className="text-nexo-lime text-[9px] block font-black uppercase tracking-widest">Total Confirmado</span>
+                                                                                    <div className="font-mono font-black text-base text-nexo-lime">
+                                                                                        {project.currency || 'ARS'} {billingTotal.toLocaleString()}
+                                                                                    </div>
+                                                                                    <div className="text-[9px] text-zinc-500 font-bold mt-0.5 space-y-0.5">
+                                                                                        <div>Base: {project.currency || 'ARS'} {basePrice.toLocaleString()}</div>
+                                                                                        {projectBudget && projectBudget.total_price > basePrice && (
+                                                                                            <div className="text-zinc-400">+ Extras: {project.currency || 'ARS'} {(projectBudget.total_price - basePrice).toLocaleString()}</div>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </>
+                                                                            ) : (
+                                                                                <>
+                                                                                    <span className="text-zinc-500 text-[9px] block font-bold uppercase tracking-wider">Presupuesto Base</span>
+                                                                                    <div className="font-mono font-bold text-sm text-white">
+                                                                                        {project.currency || 'ARS'} {basePrice.toLocaleString()}
+                                                                                    </div>
+                                                                                    {optionalsInBudget > 0 && (
+                                                                                        <div className="text-[9px] text-[#00e5ff] font-mono font-bold mt-0.5">+ {project.currency || 'ARS'} {optionalsInBudget.toLocaleString()} extras</div>
+                                                                                    )}
+                                                                                </>
+                                                                            )}
+                                                                            {totalInvoiced > 0 && (
+                                                                                <div className="mt-1.5 flex flex-col items-end gap-1">
+                                                                                    {remainingToCollect === 0 && remainingToInvoice === 0 ? (
+                                                                                        <span className="bg-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]">✅ 100% Cobrado</span>
+                                                                                    ) : (
+                                                                                        <>
+                                                                                            {totalPaid > 0 && (
+                                                                                                <span className="bg-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-emerald-500/30">✅ Cobrado: {project.currency || 'ARS'} {totalPaid.toLocaleString()}</span>
+                                                                                            )}
+                                                                                            {remainingToCollect > 0 && (
+                                                                                                <span className="bg-amber-500/20 text-amber-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-amber-500/30">⏳ A Cobrar: {project.currency || 'ARS'} {remainingToCollect.toLocaleString()}</span>
+                                                                                            )}
+                                                                                            {remainingToInvoice > 0 && (
+                                                                                                <span className="bg-zinc-800 text-zinc-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-white/5">A Facturar: {project.currency || 'ARS'} {remainingToInvoice.toLocaleString()}</span>
+                                                                                            )}
+                                                                                        </>
                                                                                     )}
                                                                                 </div>
-                                                                            </>
-                                                                        ) : (
-                                                                            <>
-                                                                                <span className="text-zinc-500 text-[9px] block font-bold uppercase tracking-wider">Presupuesto Base</span>
-                                                                                <div className="font-mono font-bold text-sm text-white">
-                                                                                    {project.currency || 'ARS'} {basePrice.toLocaleString()}
-                                                                                </div>
-                                                                                {optionalsInBudget > 0 && (
-                                                                                    <div className="text-[9px] text-[#00e5ff] font-mono font-bold mt-0.5">+ {project.currency || 'ARS'} {optionalsInBudget.toLocaleString()} extras</div>
-                                                                                )}
-                                                                            </>
-                                                                        )}
-                                                                        {totalInvoiced > 0 && (
-                                                                            <div className="mt-1.5 flex flex-col items-end gap-1">
-                                                                                {remainingToCollect === 0 && remainingToInvoice === 0 ? (
-                                                                                    <span className="bg-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]">✅ 100% Cobrado</span>
-                                                                                ) : (
-                                                                                    <>
-                                                                                        {totalPaid > 0 && (
-                                                                                            <span className="bg-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-emerald-500/30">✅ Cobrado: {project.currency || 'ARS'} {totalPaid.toLocaleString()}</span>
-                                                                                        )}
-                                                                                        {remainingToCollect > 0 && (
-                                                                                            <span className="bg-amber-500/20 text-amber-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-amber-500/30">⏳ A Cobrar: {project.currency || 'ARS'} {remainingToCollect.toLocaleString()}</span>
-                                                                                        )}
-                                                                                        {remainingToInvoice > 0 && (
-                                                                                            <span className="bg-zinc-800 text-zinc-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-white/5">A Facturar: {project.currency || 'ARS'} {remainingToInvoice.toLocaleString()}</span>
-                                                                                        )}
-                                                                                    </>
-                                                                                )}
-                                                                            </div>
-                                                                        )}
-                                                                    </>
-                                                                );
-                                                            })()}
-                                                        </div>
+                                                                            )}
+                                                                        </>
+                                                                    );
+                                                                })()}
+                                                            </div>
 
-                                                        {/* Estado Badge */}
-                                                        <div className="shrink-0">
-                                                            <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black border ${statusColors[project.status] || ''}`}>
-                                                                {project.status.toUpperCase()}
-                                                            </span>
-                                                        </div>
+                                                            {/* Estado Badge */}
+                                                            <div className="shrink-0">
+                                                                <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black border ${statusColors[project.status] || ''}`}>
+                                                                    {project.status.toUpperCase()}
+                                                                </span>
+                                                            </div>
 
-                                                        {/* Acción Pendiente Badge/Botón */}
-                                                        <div className="shrink-0 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                                                            {project.admin_action_required ? (
-                                                                <button
-                                                                    onClick={() => handleToggleAdminAction(project)}
-                                                                    className="bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 font-bold px-2.5 py-1 rounded text-[10px] animate-pulse flex items-center gap-1 transition-all"
-                                                                    title="Haz clic para marcar como contestado"
-                                                                >
-                                                                    <span>🔔</span>
-                                                                    <span className="hidden sm:inline">Contestación Pendiente</span>
-                                                                    <span className="sm:hidden">Pendiente</span>
-                                                                </button>
-                                                            ) : (
-                                                                <button
-                                                                    onClick={() => handleToggleAdminAction(project)}
-                                                                    className="bg-zinc-800 hover:bg-zinc-700 border border-white/10 text-zinc-400 px-2.5 py-1 rounded text-[10px] flex items-center gap-1 transition-all"
-                                                                    title="Haz clic para marcar que requiere contestación"
-                                                                >
-                                                                    <span>🔕</span>
-                                                                    <span className="hidden sm:inline">Sin pendientes</span>
-                                                                    <span className="sm:hidden">Ok</span>
-                                                                </button>
-                                                            )}
-                                                        </div>
+                                                            {/* Acción Pendiente Badge/Botón */}
+                                                            <div className="shrink-0 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                                                {project.admin_action_required ? (
+                                                                    <button
+                                                                        onClick={() => handleToggleAdminAction(project)}
+                                                                        className="bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 font-bold px-2.5 py-1 rounded text-[10px] animate-pulse flex items-center gap-1 transition-all"
+                                                                        title="Haz clic para marcar como contestado"
+                                                                    >
+                                                                        <span>🔔</span>
+                                                                        <span className="hidden sm:inline">Contestación Pendiente</span>
+                                                                        <span className="sm:hidden">Pendiente</span>
+                                                                    </button>
+                                                                ) : (
+                                                                    <button
+                                                                        onClick={() => handleToggleAdminAction(project)}
+                                                                        className="bg-zinc-800 hover:bg-zinc-700 border border-white/10 text-zinc-400 px-2.5 py-1 rounded text-[10px] flex items-center gap-1 transition-all"
+                                                                        title="Haz clic para marcar que requiere contestación"
+                                                                    >
+                                                                        <span>🔕</span>
+                                                                        <span className="hidden sm:inline">Sin pendientes</span>
+                                                                        <span className="sm:hidden">Ok</span>
+                                                                    </button>
+                                                                )}
+                                                            </div>
 
-                                                        {/* Flecha de Expansión */}
-                                                        <div className="text-zinc-500 text-xs pl-1 hidden lg:block">
-                                                            {isExpanded ? '▲' : '▼'}
-                                                        </div>
+                                                            {/* Flecha de Expansión */}
+                                                            <div className="text-zinc-500 text-xs shrink-0 pl-1 font-bold">
+                                                                {isExpanded ? '▲' : '▼'}
+                                                            </div>
 
+                                                        </div>
                                                     </div>
-                                                </div>
 
                                                 {/* Cuerpo detallado (Visible solo cuando está expandido) */}
                                                 {isExpanded && (
@@ -3082,7 +3085,8 @@ const CRMProjects: React.FC = () => {
                                                 )}
                                             </div>
                                         );
-                                    })
+                                    })}
+                                    </div>
                                 )}
                             </div>
                         </div>
