@@ -2526,21 +2526,31 @@ const ClientPortal: React.FC = () => {
                                             {docsToDisplay.map((inv: any, idx: number) => {
                                                 const isNC = inv.type === 'credit_note';
                                                 const typeLabel = isNC ? 'Nota de Crédito' : inv.type === 'deposit_50' ? 'Factura Seña 50%' : inv.type === 'total' ? 'Factura 100% Total' : 'Factura';
-                                                const fcText = inv.fc_number ? `FC ${inv.fc_number}` : `Comprobante #${idx + 1}`;
                                                 return (
                                                     <a
                                                         key={idx}
                                                         href={inv.invoice_url}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className={`flex items-center justify-between px-4 py-2.5 rounded font-extrabold text-xs uppercase tracking-wider transition-all border ${
+                                                        className={`group block p-3 rounded-lg border transition-all ${
                                                             isNC 
-                                                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/30 hover:bg-amber-500/30' 
-                                                                : 'bg-nexo-lime text-black border-nexo-lime hover:bg-white'
+                                                                ? 'bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20' 
+                                                                : 'bg-nexo-lime/10 text-nexo-lime border-nexo-lime/30 hover:bg-nexo-lime hover:text-black'
                                                         }`}
                                                     >
-                                                        <span>📄 {typeLabel} ({fcText})</span>
-                                                        <span className="text-[10px] font-mono">↗ Abrir PDF</span>
+                                                        <div className="flex items-center justify-between gap-2 mb-1">
+                                                            <span className="font-extrabold text-xs uppercase tracking-wider flex items-center gap-1.5 min-w-0 truncate">
+                                                                📄 {typeLabel}
+                                                            </span>
+                                                            <span className="text-[10px] font-mono font-bold shrink-0 px-2 py-0.5 rounded bg-black/40 border border-white/10 group-hover:border-black/30">
+                                                                ↗ Abrir PDF
+                                                            </span>
+                                                        </div>
+                                                        {inv.fc_number && (
+                                                            <div className="text-[10px] font-mono opacity-80 truncate" title={`FC ${inv.fc_number}`}>
+                                                                FC: {inv.fc_number}
+                                                            </div>
+                                                        )}
                                                     </a>
                                                 );
                                             })}
@@ -2780,11 +2790,15 @@ const ClientPortal: React.FC = () => {
                                                 {displayInvoices.length > 0 ? (
                                                     <div className="space-y-2">
                                                         {displayInvoices.map((inv: any, idx: number) => (
-                                                            <div key={idx} className="flex items-center justify-between text-[11px] py-1.5 border-b border-white/5 last:border-0">
-                                                                <div className="flex items-center gap-2">
+                                                            <div key={idx} className="flex items-center justify-between gap-2 text-[11px] py-1.5 border-b border-white/5 last:border-0">
+                                                                <div className="flex items-center gap-2 min-w-0 flex-wrap sm:flex-nowrap">
                                                                     <span className="text-zinc-500">#{idx + 1}</span>
-                                                                    {inv.fc_number && <span className="font-mono text-nexo-lime font-bold">FC {inv.fc_number}</span>}
-                                                                    <span className="text-zinc-400">
+                                                                    {inv.fc_number && (
+                                                                        <span className="font-mono text-nexo-lime font-bold text-[10px] truncate max-w-[130px] sm:max-w-[200px]" title={`FC ${inv.fc_number}`}>
+                                                                            FC {inv.fc_number}
+                                                                        </span>
+                                                                    )}
+                                                                    <span className="text-zinc-400 shrink-0">
                                                                         {inv.type === 'credit_note' ? 'Nota de Crédito' : inv.type === 'deposit_50' ? '50% Seña' : inv.type === 'total' ? '100% Total' : 'Concepto Asignado'}
                                                                     </span>
                                                                 </div>
