@@ -532,6 +532,56 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                 });
             }
 
+            case 'deleteInvoice': {
+                const { invoice_index } = req.body;
+                if (!project_id) {
+                    return res.status(400).json({ error: 'El ID del proyecto es requerido' });
+                }
+
+                const { data: currentProject, error: readErr } = await supabase
+                    .from('projects')
+                    .select('invoices_history')
+                    .eq('id', project_id)
+                    .single();
+
+                if (readErr) throw readErr;
+
+                let history = Array.isArray(currentProject?.invoices_history) ? [...currentProject.invoices_history] : [];
+                const idx = parseInt(invoice_index, 10);
+                if (isNaN(idx) || idx < 0 || idx >= history.length) {
+                    return res.status(400).json({ error: 'Índice de factura inválido' });
+                }
+
+                // Eliminar factura seleccionada
+                history.splice(idx, 1);
+
+                const hasHistory = history.length > 0;
+                const lastInvoice = hasHistory ? history[history.length - 1] : null;
+
+                const updatePayload = {
+                    invoices_history: hasHistory ? history : null,
+                    invoice_url: lastInvoice ? lastInvoice.invoice_url : null,
+                    invoice_type: lastInvoice ? lastInvoice.type : null,
+                    invoice_amount: lastInvoice ? (lastInvoice.amount || null) : null,
+                    invoice_fc_number: lastInvoice ? (lastInvoice.fc_number || null) : null,
+                    invoice_sent: hasHistory
+                };
+
+                let { data: updatedProject, error: updateErr } = await supabase
+                    .from('projects')
+                    .update(updatePayload)
+                    .eq('id', project_id)
+                    .select()
+                    .single();
+
+                if (updateErr) throw updateErr;
+
+                return res.status(200).json({
+                    success: true,
+                    project: updatedProject
+                });
+            }
+
             case 'deleteProject': {
                 if (!project_id) {
                     return res.status(400).json({ error: 'El ID del proyecto es requerido' });

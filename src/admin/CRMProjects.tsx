@@ -983,6 +983,39 @@ const CRMProjects: React.FC = () => {
             console.error('Error marking invoice as paid:', error);
         }
     };
+
+    const handleDeleteInvoice = async (projectId: string, invoiceIndex: number) => {
+        if (!confirm('¿Estás seguro de eliminar esta factura del historial? El cliente ya no la verá en su portal y la facturación acumulada se actualizará.')) {
+            return;
+        }
+        setError('');
+        setSuccessMsg('');
+        try {
+            const res = await fetch('/api/comercial/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    password,
+                    action: 'deleteInvoice',
+                    project_id: projectId,
+                    invoice_index: invoiceIndex
+                })
+            });
+            const data = await res.json();
+            if (data.success && data.project) {
+                setProjects(projects.map(p => p.id === projectId ? data.project : p));
+                if (selectedProject?.id === projectId) {
+                    setSelectedProject(data.project);
+                }
+                setSuccessMsg('Factura eliminada del historial.');
+            } else if (data.error) {
+                setError(data.error);
+            }
+        } catch (error: any) {
+            console.error('Error deleting invoice:', error);
+            setError('Error al eliminar la factura: ' + error.message);
+        }
+    };
     const handleSendInvoiceNotification = async (projectId: string, channel: 'email' | 'whatsapp') => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
@@ -3124,6 +3157,14 @@ const CRMProjects: React.FC = () => {
                                                             {inv.invoice_url && (
                                                                 <a href={inv.invoice_url} target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-nexo-lime text-[9px] font-bold uppercase tracking-wide">↗ PDF</a>
                                                             )}
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => { e.preventDefault(); handleDeleteInvoice(selectedProject.id, idx); }}
+                                                                className="text-zinc-500 hover:text-red-400 text-xs p-1 rounded hover:bg-red-500/10 transition-colors cursor-pointer"
+                                                                title="Eliminar esta factura para rehacerla"
+                                                            >
+                                                                🗑️
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 ))}
