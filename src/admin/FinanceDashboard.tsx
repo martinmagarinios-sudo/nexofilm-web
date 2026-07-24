@@ -317,6 +317,7 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
             foto: { label: 'Fotografía', icon: '📷', count: 0, billedARS: 0, billedUSD: 0 },
             video: { label: 'Video', icon: '🎥', count: 0, billedARS: 0, billedUSD: 0 },
             streaming: { label: 'Streaming', icon: '📡', count: 0, billedARS: 0, billedUSD: 0 },
+            tecnica: { label: 'Técnica', icon: '🎛️', count: 0, billedARS: 0, billedUSD: 0 },
             drone: { label: 'Drone', icon: '🚁', count: 0, billedARS: 0, billedUSD: 0 },
             'social media': { label: 'Social Media', icon: '📱', count: 0, billedARS: 0, billedUSD: 0 },
             sin_especificar: { label: 'Sin especificar', icon: '❓', count: 0, billedARS: 0, billedUSD: 0 }
@@ -534,6 +535,7 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                             <option value="video">🎥 Video</option>
                             <option value="foto">📷 Foto</option>
                             <option value="streaming">📡 Streaming</option>
+                            <option value="tecnica">🎛️ Técnica</option>
                             <option value="drone">🚁 Drone</option>
                             <option value="social media">📱 Social Media</option>
                         </select>

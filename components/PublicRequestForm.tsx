@@ -581,15 +581,15 @@ const PublicRequestForm: React.FC = () => {
                                 <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider block flex items-center gap-1">
                                     Servicios Requeridos <span className="text-nexo-lime font-bold">*</span>
                                 </label>
-                                <div className="flex gap-2 pt-1">
-                                    {['foto', 'video', 'streaming'].map((type) => (
+                                <div className="flex gap-2 pt-1 flex-wrap">
+                                    {['foto', 'video', 'streaming', 'tecnica'].map((type) => (
                                         <button
                                             key={type}
                                             type="button"
                                             onClick={() => toggleCoverageType(type)}
-                                            className={`flex-1 py-2 rounded text-[10px] font-bold border capitalize transition-all ${coverageTypes.includes(type) ? 'bg-nexo-lime text-black border-nexo-lime shadow-[0_0_10px_rgba(204,255,0,0.2)]' : 'bg-black text-zinc-400 border-white/10 hover:border-white/20'}`}
+                                            className={`flex-1 min-w-[70px] py-2 rounded text-[10px] font-bold border capitalize transition-all ${coverageTypes.includes(type) ? 'bg-nexo-lime text-black border-nexo-lime shadow-[0_0_10px_rgba(204,255,0,0.2)]' : 'bg-black text-zinc-400 border-white/10 hover:border-white/20'}`}
                                         >
-                                            {type}
+                                            {type === 'tecnica' ? 'técnica' : type}
                                         </button>
                                     ))}
                                 </div>

@@ -2187,6 +2187,7 @@ const CRMProjects: React.FC = () => {
                                                                                     { key: 'foto', label: '📷 Foto' },
                                                                                     { key: 'video', label: '🎥 Video' },
                                                                                     { key: 'streaming', label: '📡 Streaming' },
+                                                                                    { key: 'tecnica', label: '🎛️ Técnica' },
                                                                                     { key: 'drone', label: '🚁 Drone' },
                                                                                     { key: 'social media', label: '📱 Social Media' }
                                                                                 ].map((srv) => {
