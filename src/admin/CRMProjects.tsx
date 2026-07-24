@@ -1966,8 +1966,15 @@ const CRMProjects: React.FC = () => {
                                                                 const displayInvoices = history.length > 0 ? history : (
                                                                     project.invoice_url ? [{ amount: project.invoice_amount || 0, type: project.invoice_type || 'custom', invoice_url: project.invoice_url, paid: project.invoice_paid || false }] : []
                                                                 );
-                                                                const totalInvoiced = displayInvoices.reduce((sum: number, inv: any) => sum + (inv.amount || 0), 0);
-                                                                const totalPaid = displayInvoices.reduce((sum: number, inv: any) => sum + (inv.paid ? (inv.amount || 0) : 0), 0);
+                                                                const totalInvoiced = displayInvoices.reduce((sum: number, inv: any) => {
+                                                                    const amt = Number(inv.amount) || 0;
+                                                                    return inv.type === 'credit_note' ? sum - amt : sum + amt;
+                                                                }, 0);
+                                                                const totalPaid = displayInvoices.reduce((sum: number, inv: any) => {
+                                                                    if (!inv.paid) return sum;
+                                                                    const amt = Number(inv.amount) || 0;
+                                                                    return inv.type === 'credit_note' ? sum - amt : sum + amt;
+                                                                }, 0);
                                                                 const budgetItems = projectBudget ? (projectBudget.items || []) : [];
                                                                 // Base = siempre items[0]
                                                                 const basePrice = budgetItems[0] ? (budgetItems[0].quantity * budgetItems[0].unit_price) : (projectBudget ? projectBudget.total_price : 0);
@@ -2775,7 +2782,10 @@ const CRMProjects: React.FC = () => {
                                                                         const isApproved = ['approved', 'production', 'delivered'].includes(project.status);
                                                                         const totalBudget = isApproved ? projectBudget.total_price : baseAmt;
                                                                         const totalInvoiced = Array.isArray(history) 
-                                                                            ? history.reduce((sum, inv) => sum + (inv.amount || 0), 0)
+                                                                            ? history.reduce((sum, inv) => {
+                                                                                const amt = Number(inv.amount) || 0;
+                                                                                return inv.type === 'credit_note' ? sum - amt : sum + amt;
+                                                                            }, 0)
                                                                             : 0;
                                                                         const remaining = totalBudget - totalInvoiced;
                                                                         const currency = project.currency || 'ARS';
@@ -3082,12 +3092,12 @@ const CRMProjects: React.FC = () => {
 
             {/* MODAL DE FACTURACIÓN Y PAGO */}
             {selectedProject && (
-                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="w-full max-w-lg bg-zinc-900 border border-white/10 rounded-xl p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6">
+                    <div className="w-full max-w-4xl lg:max-w-5xl bg-zinc-900 border border-white/10 rounded-xl p-4 sm:p-6 md:p-8 shadow-2xl space-y-6 max-h-[92vh] overflow-y-auto resize-y">
                         <div className="flex justify-between items-start border-b border-white/5 pb-4">
                             <div>
-                                <h3 className="text-xl font-bold text-white">Registrar Factura y CBU</h3>
-                                <p className="text-zinc-400 text-xs mt-1">Proyecto: {selectedProject.title}</p>
+                                <h3 className="text-xl font-bold text-white">Registrar Factura, Nota de Crédito y CBU</h3>
+                                <p className="text-zinc-400 text-xs mt-1">Proyecto: <span className="text-nexo-lime font-bold">{selectedProject.title}</span></p>
                             </div>
                             <button
                                 onClick={() => setSelectedProject(null)}
@@ -3134,25 +3144,31 @@ const CRMProjects: React.FC = () => {
                                         </div>
 
                                         {Array.isArray(history) && history.length > 0 ? (
-                                            <div className="space-y-1.5">
+                                            <div className="space-y-2">
                                                 {history.map((inv, idx) => (
-                                                    <div key={idx} className="flex items-center justify-between text-[11px] py-1 border-b border-white/5 last:border-0">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-zinc-500">#{idx + 1}</span>
-                                                            {inv.fc_number && <span className="font-mono text-nexo-lime font-bold">FC {inv.fc_number}</span>}
-                                                            <span className="text-zinc-400 font-medium">
+                                                    <div key={idx} className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 text-xs py-2 px-3 border border-white/5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
+                                                        <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                                            <span className="text-zinc-500 font-mono text-[10px]">#{idx + 1}</span>
+                                                            {inv.fc_number && (
+                                                                <span className="font-mono text-nexo-lime font-bold bg-nexo-lime/10 border border-nexo-lime/20 px-2 py-0.5 rounded text-[11px] break-all">
+                                                                    FC {inv.fc_number}
+                                                                </span>
+                                                            )}
+                                                            <span className={`font-semibold px-2 py-0.5 rounded text-[10px] ${
+                                                                inv.type === 'credit_note' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-zinc-800 text-zinc-300'
+                                                            }`}>
                                                                 {inv.type === 'credit_note' ? '📄 Nota de Crédito' : inv.type === 'deposit_50' ? '50% Seña' : inv.type === 'total' ? '100% Total' : 'Custom'}
                                                             </span>
-                                                            <span className="text-zinc-500">{new Date(inv.date_sent).toLocaleDateString('es-AR')}</span>
+                                                            <span className="text-zinc-500 text-[10px]">{new Date(inv.date_sent).toLocaleDateString('es-AR')}</span>
                                                         </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className={`font-bold ${inv.type === 'credit_note' ? 'text-amber-400 font-mono' : 'text-white'}`}>
+                                                        <div className="flex items-center gap-3 shrink-0 ml-auto sm:ml-0">
+                                                            <span className={`font-bold font-mono text-xs ${inv.type === 'credit_note' ? 'text-amber-400' : 'text-white'}`}>
                                                                 {inv.type === 'credit_note' ? '-' : ''}{currency} {(inv.amount || 0).toLocaleString()}
                                                             </span>
                                                             <button
                                                                 type="button"
                                                                 onClick={(e) => { e.preventDefault(); handleToggleInvoicePaid(selectedProject.id, idx, !inv.paid); }}
-                                                                className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide transition-colors cursor-pointer ${
+                                                                className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wide transition-colors cursor-pointer ${
                                                                     inv.paid 
                                                                         ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30' 
                                                                         : 'bg-zinc-800 text-zinc-400 border border-white/10 hover:bg-zinc-700 hover:text-white'
@@ -3161,13 +3177,13 @@ const CRMProjects: React.FC = () => {
                                                                 {inv.paid ? '✅ Pagada' : '⏳ Cobrar'}
                                                             </button>
                                                             {inv.invoice_url && (
-                                                                <a href={inv.invoice_url} target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-nexo-lime text-[9px] font-bold uppercase tracking-wide">↗ PDF</a>
+                                                                <a href={inv.invoice_url} target="_blank" rel="noopener noreferrer" className="bg-zinc-800 hover:bg-zinc-700 text-nexo-lime border border-white/10 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wide transition-colors">↗ PDF</a>
                                                             )}
                                                             <button
                                                                 type="button"
                                                                 onClick={(e) => { e.preventDefault(); handleDeleteInvoice(selectedProject.id, idx); }}
-                                                                className="text-zinc-500 hover:text-red-400 text-xs p-1 rounded hover:bg-red-500/10 transition-colors cursor-pointer"
-                                                                title="Eliminar esta factura para rehacerla"
+                                                                className="text-zinc-500 hover:text-red-400 text-sm p-1 rounded hover:bg-red-500/10 transition-colors cursor-pointer"
+                                                                title="Eliminar esta factura"
                                                             >
                                                                 🗑️
                                                             </button>
