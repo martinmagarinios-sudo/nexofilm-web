@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import Logo from './Logo';
 
 const calculateHours = (start: string, end: string) => {
     if (!start || !end) return 4;
@@ -358,7 +359,14 @@ const PublicRequestForm: React.FC = () => {
 
     if (formStatus === 'success') {
         return (
-            <div className="min-h-screen bg-black flex items-center justify-center p-6 pt-24">
+            <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 pt-16">
+                <a 
+                    href="/" 
+                    className="mb-8 inline-block hover:opacity-80 transition-all duration-300 transform hover:scale-105"
+                    aria-label="Volver al Inicio"
+                >
+                    <Logo size="lg" />
+                </a>
                 <div className="bg-zinc-900/40 border border-nexo-lime/30 p-10 rounded-2xl shadow-[0_0_50px_rgba(204,255,0,0.1)] text-center max-w-lg w-full">
                     <div className="text-6xl mb-6 animate-bounce">🎬</div>
                     <h2 className="text-3xl font-bold text-white uppercase tracking-tight mb-4">¡Solicitud Enviada!</h2>
@@ -376,9 +384,16 @@ const PublicRequestForm: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-black flex justify-center p-6 pt-32 pb-24">
+        <div className="min-h-screen bg-black flex justify-center p-6 pt-12 md:pt-16 pb-24">
             <div className="w-full max-w-3xl">
-                <div className="mb-10 text-center">
+                <div className="mb-10 text-center flex flex-col items-center">
+                    <a 
+                        href="/" 
+                        className="inline-block hover:opacity-80 transition-all duration-300 transform hover:scale-105 mb-6"
+                        aria-label="Volver al Inicio - NexoFilm"
+                    >
+                        <Logo size="lg" />
+                    </a>
                     <h1 className="text-4xl md:text-5xl font-bold text-white uppercase tracking-tighter mb-4">
                         CONTANOS TU IDEA Y LA COTIZAMOS
                     </h1>
