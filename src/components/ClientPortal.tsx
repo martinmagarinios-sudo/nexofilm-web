@@ -2761,7 +2761,10 @@ const ClientPortal: React.FC = () => {
                                             }] : []
                                         );
 
-                                        const totalInvoiced = displayInvoices.reduce((sum: number, inv: any) => sum + (inv.amount || 0), 0);
+                                        const totalInvoiced = displayInvoices.reduce((sum: number, inv: any) => {
+                                            const amt = Number(inv.amount) || 0;
+                                            return inv.type === 'credit_note' ? sum - amt : sum + amt;
+                                        }, 0);
                                         const remaining = Math.max(0, totalBudget - totalInvoiced);
                                         const currency = project.currency || 'ARS';
 
@@ -2786,7 +2789,9 @@ const ClientPortal: React.FC = () => {
                                                                     </span>
                                                                 </div>
                                                                 <div className="flex items-center gap-3">
-                                                                    <span className="text-white font-bold">{currency} {(inv.amount || 0).toLocaleString()}</span>
+                                                                    <span className={`font-bold ${inv.type === 'credit_note' ? 'text-amber-400 font-mono' : 'text-white'}`}>
+                                                                        {inv.type === 'credit_note' ? '-' : ''}{currency} {(inv.amount || 0).toLocaleString()}
+                                                                    </span>
                                                                     {inv.invoice_url && (
                                                                         <a href={inv.invoice_url} target="_blank" rel="noopener noreferrer" className="bg-zinc-800 hover:bg-zinc-700 text-white border border-white/10 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wide transition-colors">
                                                                             📄 Descargar PDF

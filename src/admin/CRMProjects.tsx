@@ -3116,7 +3116,10 @@ const CRMProjects: React.FC = () => {
                                 const projectBudget = budgets.find(b => b.project_id === selectedProject.id);
                                 const totalBudget = projectBudget?.total_price || 0;
                                 const totalInvoiced = Array.isArray(history) 
-                                    ? history.reduce((sum, inv) => sum + (inv.amount || 0), 0)
+                                    ? history.reduce((sum, inv) => {
+                                        const amt = Number(inv.amount) || 0;
+                                        return inv.type === 'credit_note' ? sum - amt : sum + amt;
+                                    }, 0)
                                     : 0;
                                 const remaining = totalBudget - totalInvoiced;
                                 const currency = selectedProject.currency || 'ARS';
@@ -3143,7 +3146,9 @@ const CRMProjects: React.FC = () => {
                                                             <span className="text-zinc-500">{new Date(inv.date_sent).toLocaleDateString('es-AR')}</span>
                                                         </div>
                                                         <div className="flex items-center gap-2">
-                                                            <span className="text-white font-bold">{currency} {(inv.amount || 0).toLocaleString()}</span>
+                                                            <span className={`font-bold ${inv.type === 'credit_note' ? 'text-amber-400 font-mono' : 'text-white'}`}>
+                                                                {inv.type === 'credit_note' ? '-' : ''}{currency} {(inv.amount || 0).toLocaleString()}
+                                                            </span>
                                                             <button
                                                                 type="button"
                                                                 onClick={(e) => { e.preventDefault(); handleToggleInvoicePaid(selectedProject.id, idx, !inv.paid); }}
@@ -3175,7 +3180,11 @@ const CRMProjects: React.FC = () => {
                                                 </div>
                                                 <div className="flex justify-between items-center pb-2 border-b border-white/5 mt-1">
                                                     <span className="text-[10px] font-bold uppercase text-zinc-400">Total cobrado:</span>
-                                                    <span className="text-emerald-400 font-black text-sm">{currency} {(Array.isArray(history) ? history.reduce((sum, inv) => sum + (inv.paid ? (inv.amount || 0) : 0), 0) : 0).toLocaleString()}</span>
+                                                    <span className="text-emerald-400 font-black text-sm">{currency} {(Array.isArray(history) ? history.reduce((sum, inv) => {
+                                                        if (!inv.paid) return sum;
+                                                        const amt = Number(inv.amount) || 0;
+                                                        return inv.type === 'credit_note' ? sum - amt : sum + amt;
+                                                    }, 0) : 0).toLocaleString()}</span>
                                                 </div>
                                                 {totalBudget > 0 && (
                                                     <div className={`flex justify-between items-center rounded px-3 py-2 ${remaining > 0 ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-emerald-500/10 border border-emerald-500/20'}`}>
