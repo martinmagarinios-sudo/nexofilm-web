@@ -452,9 +452,11 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                     ? [...currentHistory, newHistoryEntry]
                     : currentHistory;
 
+                const dbInvoiceType = invoice_type === 'credit_note' ? 'custom' : (invoice_type || null);
+
                 const updatePayload = {
                     invoice_url: invoice_url || null,
-                    invoice_type: invoice_type || null,
+                    invoice_type: dbInvoiceType,
                     invoice_amount: parsedAmount,
                     invoice_fc_number: invoice_fc_number || null,
                     bank_details: bank_details || null,
@@ -475,7 +477,7 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                     // Fallback: si columnas nuevas no existen aún, intentar sin ellas
                     const fallbackPayload = {
                         invoice_url: invoice_url || null,
-                        invoice_type: invoice_type || null,
+                        invoice_type: dbInvoiceType,
                         invoice_amount: parsedAmount,
                         bank_details: bank_details || null,
                         invoice_sent: invoice_url ? true : false,
@@ -557,11 +559,12 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
 
                 const hasHistory = history.length > 0;
                 const lastInvoice = hasHistory ? history[history.length - 1] : null;
+                const dbLastType = (lastInvoice && lastInvoice.type === 'credit_note') ? 'custom' : (lastInvoice ? lastInvoice.type : null);
 
                 const updatePayload = {
                     invoices_history: hasHistory ? history : null,
                     invoice_url: lastInvoice ? lastInvoice.invoice_url : null,
-                    invoice_type: lastInvoice ? lastInvoice.type : null,
+                    invoice_type: dbLastType,
                     invoice_amount: lastInvoice ? (lastInvoice.amount || null) : null,
                     invoice_fc_number: lastInvoice ? (lastInvoice.fc_number || null) : null,
                     invoice_sent: hasHistory

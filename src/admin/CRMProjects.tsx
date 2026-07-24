@@ -3258,7 +3258,10 @@ const CRMProjects: React.FC = () => {
                                         type="button"
                                         onClick={() => {
                                             setInvoiceType('credit_note');
-                                            setInvoiceAmount(0);
+                                            if (invoiceAmount === 0 && selectedProject) {
+                                                const projectBudget = budgets.find(b => b.project_id === selectedProject.id);
+                                                setInvoiceAmount(projectBudget?.total_price || 0);
+                                            }
                                         }}
                                         className={`py-2 rounded text-xs font-bold border transition-colors ${invoiceType === 'credit_note' ? 'bg-amber-500 text-black border-amber-500' : 'bg-black text-zinc-400 border-white/10 hover:border-white/20 hover:text-white'}`}
                                     >
@@ -3269,13 +3272,15 @@ const CRMProjects: React.FC = () => {
 
                             {/* Monto de Factura */}
                             <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Monto a Transferir ({selectedProject?.currency || 'ARS'})</label>
+                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">
+                                    {invoiceType === 'credit_note' ? 'Monto de la Nota de Crédito (A Descontar)' : 'Monto de la Factura'} ({selectedProject?.currency || 'ARS'})
+                                </label>
                                 <input
                                     type="number"
                                     required
                                     min="0"
                                     step="0.01"
-                                    disabled={invoiceType !== 'custom'}
+                                    disabled={invoiceType !== 'custom' && invoiceType !== 'credit_note'}
                                     value={invoiceAmount}
                                     onChange={(e) => setInvoiceAmount(parseFloat(e.target.value) || 0)}
                                     className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime disabled:opacity-50"
