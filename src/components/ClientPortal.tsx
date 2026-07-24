@@ -2475,22 +2475,78 @@ const ClientPortal: React.FC = () => {
                                 )}
                             </div>
 
-                            {/* Botón de Descarga de Factura AFIP */}
+                            {/* Botón de Descarga de Facturas y Notas de Crédito AFIP */}
                             <div>
-                                {project.invoice_url && project.invoice_sent ? (
-                                    <a
-                                        href={project.invoice_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="block text-center bg-nexo-lime text-black font-black text-xs uppercase tracking-widest py-3 rounded hover:bg-white transition-colors"
-                                    >
-                                        Descargar Factura PDF
-                                    </a>
-                                ) : (
-                                    <div className="text-center bg-white/5 border border-white/10 py-3 rounded text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
-                                        🧾 Factura en preparación
-                                    </div>
-                                )}
+                                {(() => {
+                                    const rawHistory = Array.isArray(project.invoices_history) ? project.invoices_history : [];
+                                    const history = rawHistory.filter((inv: any) => inv && inv.invoice_url);
+                                    const fallbackList = project.invoice_url ? [{
+                                        invoice_url: project.invoice_url,
+                                        fc_number: project.invoice_fc_number,
+                                        type: project.invoice_type || 'custom',
+                                        amount: project.invoice_amount || 0
+                                    }] : [];
+
+                                    const docsToDisplay = history.length > 0 ? history : fallbackList;
+
+                                    if (docsToDisplay.length === 0 || !project.invoice_sent) {
+                                        return (
+                                            <div className="text-center bg-white/5 border border-white/10 py-3 rounded text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
+                                                🧾 Factura en preparación
+                                            </div>
+                                        );
+                                    }
+
+                                    if (docsToDisplay.length === 1) {
+                                        const inv = docsToDisplay[0];
+                                        const isNC = inv.type === 'credit_note';
+                                        const label = isNC ? 'Descargar Nota de Crédito PDF' : 'Descargar Factura PDF';
+                                        return (
+                                            <a
+                                                href={inv.invoice_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className={`block text-center font-black text-xs uppercase tracking-widest py-3 rounded transition-colors ${
+                                                    isNC
+                                                        ? 'bg-amber-500 text-black hover:bg-white'
+                                                        : 'bg-nexo-lime text-black hover:bg-white'
+                                                }`}
+                                            >
+                                                {label} {inv.fc_number ? `(FC ${inv.fc_number})` : ''}
+                                            </a>
+                                        );
+                                    }
+
+                                    // Si hay múltiples comprobantes (ej: Factura + Nota de Crédito)
+                                    return (
+                                        <div className="space-y-2">
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block mb-1">
+                                                📄 Comprobantes Emitidos ({docsToDisplay.length}):
+                                            </span>
+                                            {docsToDisplay.map((inv: any, idx: number) => {
+                                                const isNC = inv.type === 'credit_note';
+                                                const typeLabel = isNC ? 'Nota de Crédito' : inv.type === 'deposit_50' ? 'Factura Seña 50%' : inv.type === 'total' ? 'Factura 100% Total' : 'Factura';
+                                                const fcText = inv.fc_number ? `FC ${inv.fc_number}` : `Comprobante #${idx + 1}`;
+                                                return (
+                                                    <a
+                                                        key={idx}
+                                                        href={inv.invoice_url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className={`flex items-center justify-between px-4 py-2.5 rounded font-extrabold text-xs uppercase tracking-wider transition-all border ${
+                                                            isNC 
+                                                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/30 hover:bg-amber-500/30' 
+                                                                : 'bg-nexo-lime text-black border-nexo-lime hover:bg-white'
+                                                        }`}
+                                                    >
+                                                        <span>📄 {typeLabel} ({fcText})</span>
+                                                        <span className="text-[10px] font-mono">↗ Abrir PDF</span>
+                                                    </a>
+                                                );
+                                            })}
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         </div>
                     </div>
@@ -2726,7 +2782,7 @@ const ClientPortal: React.FC = () => {
                                                                     <span className="text-zinc-500">#{idx + 1}</span>
                                                                     {inv.fc_number && <span className="font-mono text-nexo-lime font-bold">FC {inv.fc_number}</span>}
                                                                     <span className="text-zinc-400">
-                                                                        {inv.type === 'deposit_50' ? '50% Seña' : inv.type === 'total' ? '100% Total' : 'Concepto Asignado'}
+                                                                        {inv.type === 'credit_note' ? 'Nota de Crédito' : inv.type === 'deposit_50' ? '50% Seña' : inv.type === 'total' ? '100% Total' : 'Concepto Asignado'}
                                                                     </span>
                                                                 </div>
                                                                 <div className="flex items-center gap-3">

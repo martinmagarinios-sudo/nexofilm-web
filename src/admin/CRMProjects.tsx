@@ -323,7 +323,7 @@ const CRMProjects: React.FC = () => {
     // Estado del proyecto seleccionado para facturación
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [bankDetails, setBankDetails] = useState('');
-    const [invoiceType, setInvoiceType] = useState<'total' | 'deposit_50' | 'custom'>('deposit_50');
+    const [invoiceType, setInvoiceType] = useState<'total' | 'deposit_50' | 'custom' | 'credit_note'>('deposit_50');
     const [invoiceAmount, setInvoiceAmount] = useState<number>(0);
     const [invoiceFcNumber, setInvoiceFcNumber] = useState('');
     const [invoiceUrl, setInvoiceUrl] = useState('');
@@ -3137,8 +3137,8 @@ const CRMProjects: React.FC = () => {
                                                         <div className="flex items-center gap-2">
                                                             <span className="text-zinc-500">#{idx + 1}</span>
                                                             {inv.fc_number && <span className="font-mono text-nexo-lime font-bold">FC {inv.fc_number}</span>}
-                                                            <span className="text-zinc-400">
-                                                                {inv.type === 'deposit_50' ? '50% Seña' : inv.type === 'total' ? '100% Total' : 'Custom'}
+                                                            <span className="text-zinc-400 font-medium">
+                                                                {inv.type === 'credit_note' ? '📄 Nota de Crédito' : inv.type === 'deposit_50' ? '50% Seña' : inv.type === 'total' ? '100% Total' : 'Custom'}
                                                             </span>
                                                             <span className="text-zinc-500">{new Date(inv.date_sent).toLocaleDateString('es-AR')}</span>
                                                         </div>
@@ -3223,7 +3223,7 @@ const CRMProjects: React.FC = () => {
                             {/* Tipo de Facturación */}
                             <div className="space-y-2">
                                 <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Tipo de Cobro / Factura</label>
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                     <button
                                         type="button"
                                         onClick={() => setInvoiceType('deposit_50')}
@@ -3244,6 +3244,16 @@ const CRMProjects: React.FC = () => {
                                         className={`py-2 rounded text-xs font-bold border transition-colors ${invoiceType === 'custom' ? 'bg-nexo-lime text-black border-nexo-lime' : 'bg-black text-zinc-400 border-white/10 hover:border-white/20'}`}
                                     >
                                         Monto Custom
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setInvoiceType('credit_note');
+                                            setInvoiceAmount(0);
+                                        }}
+                                        className={`py-2 rounded text-xs font-bold border transition-colors ${invoiceType === 'credit_note' ? 'bg-amber-500 text-black border-amber-500' : 'bg-black text-zinc-400 border-white/10 hover:border-white/20 hover:text-white'}`}
+                                    >
+                                        Nota de Crédito
                                     </button>
                                 </div>
                             </div>
