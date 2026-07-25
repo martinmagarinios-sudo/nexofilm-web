@@ -1473,69 +1473,79 @@ const CRMProjects: React.FC = () => {
         <div className="min-h-screen bg-black text-white font-sans selection:bg-nexo-lime selection:text-black">
             {/* Header */}
             <header className="border-b border-white/10 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-50">
-                <div className="container mx-auto px-4 md:px-6 h-14 md:h-16 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 md:gap-4 min-w-0">
+                <div className="container mx-auto px-3 sm:px-4 md:px-6 h-14 md:h-16 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 md:gap-4 shrink-0 min-w-0">
                         <a href="/admin" className="shrink-0">
-                            <img src="/img/logo.png" alt="NexoFilm" className="h-5 md:h-6 brightness-0 invert hover:opacity-80" />
+                            <img src="/img/logo.png" alt="NexoFilm" className="h-4 sm:h-5 md:h-6 brightness-0 invert hover:opacity-80" />
                         </a>
-                        <span className="text-zinc-700 hidden sm:inline">|</span>
-                        <h1 className="text-zinc-300 font-medium text-xs sm:text-sm tracking-wide hidden sm:block truncate">CRM Comercial</h1>
+                        <span className="text-zinc-700 hidden md:inline">|</span>
+                        <h1 className="text-zinc-300 font-medium text-xs sm:text-sm tracking-wide hidden md:block truncate">CRM Comercial</h1>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                         {/* Navegacion de vistas CRM */}
-                        <div className="flex items-center gap-1 bg-black/40 border border-white/10 rounded-lg p-0.5">
+                        <div className="flex items-center gap-0.5 sm:gap-1 bg-black/40 border border-white/10 rounded-lg p-0.5 max-w-full overflow-x-auto no-scrollbar">
                             <button
                                 onClick={() => setCrmView('pipeline')}
-                                className={`text-xs px-3 py-1.5 rounded font-bold transition-all ${
+                                className={`text-xs px-2 sm:px-3 py-1.5 rounded font-bold transition-all shrink-0 flex items-center gap-1 ${
                                     crmView === 'pipeline'
                                         ? 'bg-nexo-lime text-black'
                                         : 'text-zinc-400 hover:text-white'
                                 }`}
+                                title="Pipeline de Proyectos"
                             >
-                                Proyectos
+                                <span>💼</span>
+                                <span className="hidden sm:inline">Proyectos</span>
                             </button>
                             <button
                                 onClick={() => { setCrmView('calendar'); if (crewMembers.length === 0) fetchCrewMembers(); }}
-                                className={`text-xs px-3 py-1.5 rounded font-bold transition-all ${
+                                className={`text-xs px-2 sm:px-3 py-1.5 rounded font-bold transition-all shrink-0 flex items-center gap-1 ${
                                     crmView === 'calendar'
                                         ? 'bg-nexo-lime text-black'
                                         : 'text-zinc-400 hover:text-white'
                                 }`}
+                                title="Calendario de Eventos"
                             >
-                                📅 <span className="hidden sm:inline">Calendario</span>
+                                <span>📅</span>
+                                <span className="hidden sm:inline">Calendario</span>
                             </button>
                             <button
                                 onClick={() => { setCrmView('crew'); if (crewMembers.length === 0) fetchCrewMembers(); }}
-                                className={`text-xs px-3 py-1.5 rounded font-bold transition-all ${
+                                className={`text-xs px-2 sm:px-3 py-1.5 rounded font-bold transition-all shrink-0 flex items-center gap-1 ${
                                     crmView === 'crew'
                                         ? 'bg-nexo-lime text-black'
                                         : 'text-zinc-400 hover:text-white'
                                 }`}
+                                title="Directorio de Crew"
                             >
-                                👥 <span className="hidden sm:inline">Crew</span>
+                                <span>👥</span>
+                                <span className="hidden sm:inline">Crew</span>
                             </button>
                             <button
                                 onClick={() => { setCrmView('reviews'); if (reviews.length === 0) fetchReviews(); }}
-                                className={`text-xs px-3 py-1.5 rounded font-bold transition-all ${
+                                className={`text-xs px-2 sm:px-3 py-1.5 rounded font-bold transition-all shrink-0 flex items-center gap-1 ${
                                     crmView === 'reviews'
                                         ? 'bg-nexo-lime text-black'
                                         : 'text-zinc-400 hover:text-white'
                                 }`}
+                                title="Dashboard de Reviews"
                             >
-                                Reviews
+                                <span>⭐</span>
+                                <span className="hidden sm:inline">Reviews</span>
                             </button>
                             <button
                                 onClick={() => { setCrmView('finance'); if (crewMembers.length === 0) fetchCrewMembers(); }}
-                                className={`text-xs px-3 py-1.5 rounded font-bold transition-all ${
+                                className={`text-xs px-2 sm:px-3 py-1.5 rounded font-bold transition-all shrink-0 flex items-center gap-1 ${
                                     crmView === 'finance'
                                         ? 'bg-nexo-lime text-black'
                                         : 'text-zinc-400 hover:text-white'
                                 }`}
+                                title="Dashboard Financiero"
                             >
-                                📊 <span className="hidden sm:inline">Finanzas</span>
+                                <span>📊</span>
+                                <span className="hidden sm:inline">Finanzas</span>
                             </button>
                         </div>
-                        <a href="/admin" className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded transition-colors flex items-center gap-1">
+                        <a href="/admin" className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 px-2 sm:px-3 py-1.5 rounded transition-colors flex items-center gap-1 shrink-0" title="Volver a Leads">
                             <span className="text-sm">←</span>
                             <span className="hidden sm:inline">Leads</span>
                         </a>
@@ -1545,7 +1555,8 @@ const CRMProjects: React.FC = () => {
                                 else if (crmView === 'crew') fetchCrewMembers();
                                 else { fetchData(); if (crewMembers.length === 0) fetchCrewMembers(); }
                             }}
-                            className="text-xs bg-nexo-lime text-black font-bold px-3 py-1.5 rounded hover:bg-white transition-colors flex items-center gap-1"
+                            className="text-xs bg-nexo-lime text-black font-bold px-2 sm:px-3 py-1.5 rounded hover:bg-white transition-colors flex items-center gap-1 shrink-0"
+                            title="Actualizar datos"
                         >
                             <span>↻</span>
                             <span className="hidden sm:inline">Actualizar</span>
@@ -1788,296 +1799,309 @@ const CRMProjects: React.FC = () => {
                 {crmView === 'pipeline' && (
                 <div className="w-full space-y-8 animate-in fade-in duration-300">
                     <div className="bg-zinc-900/40 border border-white/5 rounded-xl overflow-hidden shadow-2xl">
-                        <div className="p-4 md:p-6 border-b border-white/10 bg-zinc-800/20">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                <div className="flex items-center gap-3 shrink-0">
-                                    <h2 className="text-base md:text-lg font-bold text-white tracking-tight">Pipeline de Proyectos</h2>
+                        <div className="p-3.5 sm:p-4 md:p-6 border-b border-white/10 bg-zinc-800/20">
+                            <div className="flex flex-col gap-3">
+                                {/* Encabezado de la sección */}
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-2">
+                                        <h2 className="text-base md:text-lg font-bold text-white tracking-tight">Pipeline de Proyectos</h2>
+                                        <span className="bg-zinc-800 text-zinc-400 text-xs px-2 py-0.5 rounded-full font-mono font-bold">
+                                            {filteredAndSortedProjects.length}
+                                        </span>
+                                    </div>
                                     <button
                                         type="button"
                                         onClick={() => setShowCreateProjectModal(true)}
-                                        className="bg-nexo-lime text-black font-black text-[10px] uppercase tracking-widest px-3 py-1.5 rounded hover:bg-white transition-all flex items-center gap-1 shadow-md shadow-nexo-lime/10 shrink-0"
+                                        className="bg-nexo-lime text-black font-black text-[10px] sm:text-xs uppercase tracking-widest px-2.5 sm:px-3 py-1.5 rounded hover:bg-white transition-all flex items-center gap-1 shadow-md shadow-nexo-lime/10 shrink-0"
                                     >
-                                        ➕ Nuevo Proyecto
+                                        ➕ <span className="hidden xs:inline">Nuevo Proyecto</span><span className="xs:hidden">Nuevo</span>
                                     </button>
                                 </div>
                                 
-                                {/* Controles compactos */}
-                                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                                        <div className="flex gap-1 shrink-0">
+                                {/* Controles: Búsqueda + Filtros */}
+                                <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2 w-full">
+                                    {/* Campo de búsqueda */}
+                                    <div className="relative flex-1 min-w-0">
+                                        <input
+                                            type="text"
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            placeholder="Buscar cliente, empresa, mail..."
+                                            className="w-full bg-black/60 border border-white/10 rounded px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-nexo-lime"
+                                        />
+                                        {searchTerm && (
+                                            <button 
+                                                onClick={() => setSearchTerm('')}
+                                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white text-xs"
+                                            >
+                                                ✕
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Selector de filtros y orden */}
+                                    <div className="flex items-center gap-1.5 w-full lg:w-auto">
+                                        <select
+                                            value={filterStatus}
+                                            onChange={(e) => setFilterStatus(e.target.value)}
+                                            className="flex-1 lg:flex-initial bg-black/60 border border-white/10 rounded px-2 py-2 text-xs text-white focus:outline-none focus:border-nexo-lime cursor-pointer font-medium min-w-0"
+                                        >
+                                            <option value="all">Todos los Estados</option>
+                                            <option value="pending_admin">⚠️ Mis Pendientes</option>
+                                            <option value="draft">Borrador</option>
+                                            <option value="review">Por Cotizar</option>
+                                            <option value="sent">Enviado</option>
+                                            <option value="approved">Aprobado</option>
+                                            <option value="rejected">Rechazado</option>
+                                            <option value="production">Producción</option>
+                                            <option value="delivered">Entregado</option>
+                                        </select>
+                                        <select
+                                            value={sortBy}
+                                            onChange={(e) => setSortBy(e.target.value as any)}
+                                            className="flex-1 lg:flex-initial bg-black/60 border border-white/10 rounded px-2 py-2 text-xs text-white focus:outline-none focus:border-nexo-lime cursor-pointer font-medium min-w-0"
+                                        >
+                                            <option value="updated">Último Modificado</option>
+                                            <option value="date">Fecha Creación</option>
+                                            <option value="name">Nombre Cliente</option>
+                                            <option value="price">Presupuesto</option>
+                                            <option value="status">Estado</option>
+                                        </select>
+                                        <button
+                                            type="button"
+                                            onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                                            className="bg-black/60 border border-white/10 rounded px-2.5 py-2 text-xs text-white hover:border-nexo-lime transition-colors shrink-0"
+                                            title={sortOrder === 'asc' ? 'Ascendente' : 'Descendente'}
+                                        >
+                                            {sortOrder === 'asc' ? '▲' : '▼'}
+                                        </button>
+                                        <div className="flex gap-1 shrink-0 ml-auto lg:ml-0">
                                             <button
                                                 type="button"
                                                 onClick={() => setExpandedProjectIds(projects.map(p => p.id))}
-                                                className="bg-black/60 border border-white/10 rounded px-2 py-1.5 text-[10px] text-white hover:border-nexo-lime hover:text-nexo-lime transition-colors font-bold"
+                                                className="bg-black/60 border border-white/10 rounded px-2 py-2 text-[10px] text-white hover:border-nexo-lime hover:text-nexo-lime transition-colors font-bold flex items-center gap-1"
                                                 title="Expandir todas las tarjetas"
                                             >
-                                                📂 Expandir Todo
+                                                <span>📂</span>
+                                                <span className="hidden sm:inline">Expandir</span>
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setExpandedProjectIds([])}
-                                                className="bg-black/60 border border-white/10 rounded px-2 py-1.5 text-[10px] text-white hover:border-nexo-lime hover:text-nexo-lime transition-colors font-bold"
+                                                className="bg-black/60 border border-white/10 rounded px-2 py-2 text-[10px] text-white hover:border-nexo-lime hover:text-nexo-lime transition-colors font-bold flex items-center gap-1"
                                                 title="Colapsar todas las tarjetas"
                                             >
-                                                📁 Colapsar Todo
-                                            </button>
-                                        </div>
-                                        <div className="relative flex-1 min-w-0">
-                                            <input
-                                                type="text"
-                                                value={searchTerm}
-                                                onChange={(e) => setSearchTerm(e.target.value)}
-                                                placeholder="Buscar cliente, empresa, mail..."
-                                                className="w-full bg-black/60 border border-white/10 rounded px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-nexo-lime"
-                                            />
-                                            {searchTerm && (
-                                                <button 
-                                                    onClick={() => setSearchTerm('')}
-                                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white text-xs"
-                                                >
-                                                    ✕
-                                                </button>
-                                            )}
-                                        </div>
-                                        <div className="flex gap-1.5 shrink-0">
-                                            <select
-                                                value={filterStatus}
-                                                onChange={(e) => setFilterStatus(e.target.value)}
-                                                className="bg-black/60 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-nexo-lime cursor-pointer font-medium"
-                                            >
-                                                <option value="all">Todos los Estados</option>
-                                                <option value="pending_admin">⚠️ Mis Pendientes (Contestar)</option>
-                                                <option value="draft">Borrador</option>
-                                                <option value="review">Por Cotizar</option>
-                                                <option value="sent">Enviado</option>
-                                                <option value="approved">Aprobado</option>
-                                                <option value="rejected">Rechazado</option>
-                                                <option value="production">Producción</option>
-                                                <option value="delivered">Entregado</option>
-                                            </select>
-                                            <select
-                                                value={sortBy}
-                                                onChange={(e) => setSortBy(e.target.value as any)}
-                                                className="bg-black/60 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-nexo-lime cursor-pointer font-medium"
-                                            >
-                                                <option value="updated">Último Modificado</option>
-                                                <option value="date">Fecha Creación</option>
-                                                <option value="name">Nombre Cliente</option>
-                                                <option value="price">Presupuesto</option>
-                                                <option value="status">Estado</option>
-                                            </select>
-                                            <button
-                                                onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-                                                className="bg-black/60 border border-white/10 rounded px-2.5 py-1.5 text-xs text-white hover:border-nexo-lime transition-colors"
-                                                title={sortOrder === 'asc' ? 'Ascendente' : 'Descendente'}
-                                            >
-                                                {sortOrder === 'asc' ? '▲' : '▼'}
+                                                <span>📁</span>
+                                                <span className="hidden sm:inline">Colapsar</span>
                                             </button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="space-y-6 p-6">
-                                {loading ? (
-                                    <div className="p-12 text-center text-zinc-500">Cargando proyectos...</div>
-                                ) : filteredAndSortedProjects.length === 0 ? (
-                                    <div className="p-12 text-center text-zinc-500">
-                                        {projects.length === 0 ? "No hay proyectos activos creados." : "No se encontraron proyectos que coincidan con los filtros."}
+                        <div className="space-y-4 p-3.5 sm:p-4 md:p-6">
+                            {loading ? (
+                                <div className="p-12 text-center text-zinc-500">Cargando proyectos...</div>
+                            ) : filteredAndSortedProjects.length === 0 ? (
+                                <div className="p-12 text-center text-zinc-500">
+                                    {projects.length === 0 ? "No hay proyectos activos creados." : "No se encontraron proyectos que coincidan con los filtros."}
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {/* Encabezado de columnas alineado para vista de escritorio */}
+                                    <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-2.5 bg-zinc-950/80 border border-white/10 rounded-lg text-[10px] font-extrabold uppercase tracking-widest text-zinc-400 select-none mb-3">
+                                        <div className="lg:col-span-3">Cliente / Empresa</div>
+                                        <div className="lg:col-span-3">Proyecto</div>
+                                        <div className="lg:col-span-3">Fecha & Lugar</div>
+                                        <div className="lg:col-span-3 text-right">Presupuesto & Estado</div>
                                     </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {/* Encabezado de columnas alineado para vista de escritorio */}
-                                        <div className="hidden lg:grid grid-cols-12 gap-4 px-6 py-2.5 bg-zinc-950/80 border border-white/10 rounded-lg text-[10px] font-extrabold uppercase tracking-widest text-zinc-400 select-none mb-3">
-                                            <div className="lg:col-span-3">Cliente / Empresa</div>
-                                            <div className="lg:col-span-3">Proyecto</div>
-                                            <div className="lg:col-span-3">Fecha & Lugar</div>
-                                            <div className="lg:col-span-3 text-right">Presupuesto & Estado</div>
-                                        </div>
 
-                                        {filteredAndSortedProjects.map((project) => {
-                                            const projectBudget = budgets.find(b => b.project_id === project.id);
-                                            const isExpanded = expandedProjectIds.includes(project.id);
-                                            const statusColors: { [key: string]: string } = {
-                                                draft: 'bg-zinc-800 text-zinc-400 border-zinc-700',
-                                                sent: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-                                                review: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-                                                approved: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-                                                rejected: 'bg-red-500/10 text-red-400 border-red-500/20',
-                                                production: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-                                                delivered: 'bg-nexo-lime/10 text-nexo-lime border-nexo-lime/20'
-                                            };
+                                    {filteredAndSortedProjects.map((project) => {
+                                        const projectBudget = budgets.find(b => b.project_id === project.id);
+                                        const isExpanded = expandedProjectIds.includes(project.id);
+                                        const statusColors: { [key: string]: string } = {
+                                            draft: 'bg-zinc-800 text-zinc-400 border-zinc-700',
+                                            sent: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+                                            review: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                                            approved: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+                                            rejected: 'bg-red-500/10 text-red-400 border-red-500/20',
+                                            production: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+                                            delivered: 'bg-nexo-lime/10 text-nexo-lime border-nexo-lime/20'
+                                        };
 
-                                            return (
+                                        return (
+                                            <div 
+                                                key={project.id} 
+                                                id={`project-${project.id}`}
+                                                className={`border rounded-xl transition-all shadow-xl space-y-4 ${
+                                                    isExpanded 
+                                                        ? 'bg-zinc-900/90 border-nexo-lime/30 p-4 md:p-6 ring-1 ring-nexo-lime/10' 
+                                                        : 'bg-zinc-950/45 border-white/10 hover:border-white/20 p-3.5 md:p-4'
+                                                }`}
+                                            >
+                                                {/* Fila de Vista Previa Compacta (Header) Clickable con Grilla Unificada */}
                                                 <div 
-                                                    key={project.id} 
-                                                    id={`project-${project.id}`}
-                                                    className={`border rounded-xl transition-all shadow-xl space-y-4 ${
-                                                        isExpanded 
-                                                            ? 'bg-zinc-900/90 border-nexo-lime/30 p-6 ring-1 ring-nexo-lime/10' 
-                                                            : 'bg-zinc-950/45 border-white/10 hover:border-white/20 p-4'
-                                                    }`}
+                                                    onClick={() => toggleExpandProject(project.id)}
+                                                    className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 items-start lg:items-center cursor-pointer select-none"
                                                 >
-                                                    {/* Fila de Vista Previa Compacta (Header) Clickable con Grilla Unificada */}
-                                                    <div 
-                                                        onClick={() => toggleExpandProject(project.id)}
-                                                        className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center cursor-pointer select-none"
-                                                    >
-                                                        {/* Columna 1: Cliente / Empresa */}
-                                                        <div className="lg:col-span-3 min-w-0">
-                                                            <span className="text-zinc-500 text-[10px] block font-bold uppercase tracking-wider lg:hidden">Cliente / Empresa</span>
-                                                            <div className="font-extrabold text-sm text-white break-words">
-                                                                {project.contact_name}
-                                                            </div>
-                                                            {project.company_name && (
-                                                                <div className="text-[11px] text-zinc-400 break-words">
-                                                                    🏢 {project.company_name}
-                                                                </div>
-                                                            )}
+                                                    {/* Columna 1: Cliente / Empresa */}
+                                                    <div className="lg:col-span-3 min-w-0">
+                                                        <span className="text-zinc-500 text-[10px] block font-bold uppercase tracking-wider lg:hidden mb-0.5">Cliente / Empresa</span>
+                                                        <div className="font-extrabold text-sm text-white break-words">
+                                                            {project.contact_name}
                                                         </div>
+                                                        {project.company_name && (
+                                                            <div className="text-[11px] text-zinc-400 break-words mt-0.5">
+                                                                🏢 {project.company_name}
+                                                            </div>
+                                                        )}
+                                                    </div>
 
-                                                        {/* Columna 2: Título & Coberturas */}
-                                                        <div className="lg:col-span-3 min-w-0">
-                                                            <span className="text-zinc-500 text-[10px] block font-bold uppercase tracking-wider lg:hidden">Proyecto</span>
-                                                            <div className="font-bold text-xs text-nexo-lime truncate flex items-center gap-1.5 flex-wrap">
-                                                                <span>{project.title}</span>
-                                                                {renderPendingActionBadge(project)}
-                                                            </div>
-                                                            <div className="text-[10px] text-zinc-400 truncate">
-                                                                🎥 {project.coverage_types?.join(', ') || 'Sin especificar'}
-                                                            </div>
+                                                    {/* Columna 2: Título & Coberturas */}
+                                                    <div className="lg:col-span-3 min-w-0">
+                                                        <span className="text-zinc-500 text-[10px] block font-bold uppercase tracking-wider lg:hidden mb-0.5">Proyecto</span>
+                                                        <div className="font-bold text-xs text-nexo-lime flex items-center gap-1.5 flex-wrap break-words">
+                                                            <span>{project.title}</span>
+                                                            {renderPendingActionBadge(project)}
                                                         </div>
-
-                                                        {/* Columna 3: Fecha y Lugar */}
-                                                        <div className="lg:col-span-3 min-w-0">
-                                                            <span className="text-zinc-500 text-[10px] block font-bold uppercase tracking-wider lg:hidden">Fecha & Lugar</span>
-                                                            <div className="text-xs text-white truncate flex items-center gap-1">
-                                                                <span>📅</span>
-                                                                <span>{project.event_date ? formatDate(project.event_date) : 'Sin fecha'}</span>
-                                                            </div>
-                                                            <div className="text-[10px] text-zinc-400 truncate flex items-center gap-1">
-                                                                <span>📍</span>
-                                                                <span>{project.location || 'Sin locación'}</span>
-                                                            </div>
+                                                        <div className="text-[10px] text-zinc-400 break-words mt-0.5">
+                                                            🎥 {project.coverage_types?.join(', ') || 'Sin especificar'}
                                                         </div>
+                                                    </div>
 
-                                                        {/* Columna 4: Importe, Estado y Acción Pendiente */}
-                                                        <div className="lg:col-span-3 min-w-0 flex items-center justify-between lg:justify-end gap-3 text-right">
-                                                            {/* Importe Total y Saldos */}
-                                                            <div className="text-right flex flex-col justify-center min-w-0 flex-1">
-                                                                {(() => {
-                                                                    const history = project.invoices_history || [];
-                                                                    const displayInvoices = history.length > 0 ? history : (
-                                                                        project.invoice_url ? [{ amount: project.invoice_amount || 0, type: project.invoice_type || 'custom', invoice_url: project.invoice_url, paid: project.invoice_paid || false }] : []
-                                                                    );
-                                                                    const totalInvoiced = displayInvoices.reduce((sum: number, inv: any) => {
-                                                                        const amt = Number(inv.amount) || 0;
-                                                                        return inv.type === 'credit_note' ? sum - amt : sum + amt;
-                                                                    }, 0);
-                                                                    const totalPaid = displayInvoices.reduce((sum: number, inv: any) => {
-                                                                        if (!inv.paid) return sum;
-                                                                        const amt = Number(inv.amount) || 0;
-                                                                        return inv.type === 'credit_note' ? sum - amt : sum + amt;
-                                                                    }, 0);
-                                                                    const budgetItems = projectBudget ? (projectBudget.items || []) : [];
-                                                                    // Base = siempre items[0]
-                                                                    const basePrice = budgetItems[0] ? (budgetItems[0].quantity * budgetItems[0].unit_price) : (projectBudget ? projectBudget.total_price : 0);
-                                                                    const optionalsInBudget = budgetItems.filter((it: any) => it.is_optional).reduce((s: number, it: any) => s + (it.quantity * it.unit_price), 0);
-                                                                    // Si el cliente ya aprobó, total_price tiene base + extras elegidos (definitivo)
-                                                                    // Si aún no aprobó, el monto confirmado es solo el base
-                                                                    const isApproved = ['approved', 'production', 'delivered'].includes(project.status);
-                                                                    const billingTotal = isApproved ? (projectBudget ? projectBudget.total_price : basePrice) : basePrice;
-                                                                    const remainingToInvoice = Math.max(0, billingTotal - totalInvoiced);
-                                                                    const remainingToCollect = Math.max(0, totalInvoiced - totalPaid);
-                                                                    
-                                                                    return (
-                                                                        <>
-                                                                            {isApproved ? (
-                                                                                <>
-                                                                                    <span className="text-nexo-lime text-[9px] block font-black uppercase tracking-widest">Total Confirmado</span>
-                                                                                    <div className="font-mono font-black text-base text-nexo-lime">
-                                                                                        {project.currency || 'ARS'} {billingTotal.toLocaleString()}
-                                                                                    </div>
-                                                                                    <div className="text-[9px] text-zinc-500 font-bold mt-0.5 space-y-0.5">
-                                                                                        <div>Base: {project.currency || 'ARS'} {basePrice.toLocaleString()}</div>
-                                                                                        {projectBudget && projectBudget.total_price > basePrice && (
-                                                                                            <div className="text-zinc-400">+ Extras: {project.currency || 'ARS'} {(projectBudget.total_price - basePrice).toLocaleString()}</div>
-                                                                                        )}
-                                                                                    </div>
-                                                                                </>
-                                                                            ) : (
-                                                                                <>
-                                                                                    <span className="text-zinc-500 text-[9px] block font-bold uppercase tracking-wider">Presupuesto Base</span>
-                                                                                    <div className="font-mono font-bold text-sm text-white">
-                                                                                        {project.currency || 'ARS'} {basePrice.toLocaleString()}
-                                                                                    </div>
-                                                                                    {optionalsInBudget > 0 && (
-                                                                                        <div className="text-[9px] text-[#00e5ff] font-mono font-bold mt-0.5">+ {project.currency || 'ARS'} {optionalsInBudget.toLocaleString()} extras</div>
-                                                                                    )}
-                                                                                </>
-                                                                            )}
-                                                                            {totalInvoiced > 0 && (
-                                                                                <div className="mt-1.5 flex flex-col items-end gap-1">
-                                                                                    {remainingToCollect === 0 && remainingToInvoice === 0 ? (
-                                                                                        <span className="bg-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]">✅ 100% Cobrado</span>
-                                                                                    ) : (
-                                                                                        <>
-                                                                                            {totalPaid > 0 && (
-                                                                                                <span className="bg-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-emerald-500/30">✅ Cobrado: {project.currency || 'ARS'} {totalPaid.toLocaleString()}</span>
-                                                                                            )}
-                                                                                            {remainingToCollect > 0 && (
-                                                                                                <span className="bg-amber-500/20 text-amber-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-amber-500/30">⏳ A Cobrar: {project.currency || 'ARS'} {remainingToCollect.toLocaleString()}</span>
-                                                                                            )}
-                                                                                            {remainingToInvoice > 0 && (
-                                                                                                <span className="bg-zinc-800 text-zinc-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-white/5">A Facturar: {project.currency || 'ARS'} {remainingToInvoice.toLocaleString()}</span>
-                                                                                            )}
-                                                                                        </>
+                                                    {/* Columna 3: Fecha y Lugar */}
+                                                    <div className="lg:col-span-3 min-w-0">
+                                                        <span className="text-zinc-500 text-[10px] block font-bold uppercase tracking-wider lg:hidden mb-0.5">Fecha & Lugar</span>
+                                                        <div className="text-xs text-white flex items-center gap-1">
+                                                            <span>📅</span>
+                                                            <span>{project.event_date ? formatDate(project.event_date) : 'Sin fecha'}</span>
+                                                        </div>
+                                                        <div className="text-[10px] text-zinc-400 break-words flex items-start gap-1 mt-0.5">
+                                                            <span className="shrink-0">📍</span>
+                                                            <span className="break-words leading-tight">{project.location || 'Sin locación'}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Columna 4: Importe, Estado y Acción Pendiente */}
+                                                    <div className="lg:col-span-3 min-w-0 flex flex-col lg:items-end gap-2 border-t border-white/10 pt-3 lg:pt-0 lg:border-t-0 mt-1 lg:mt-0">
+                                                        {/* Importe Total y Saldos */}
+                                                        <div className="w-full lg:w-auto text-left lg:text-right flex flex-col justify-center min-w-0">
+                                                            {(() => {
+                                                                const history = project.invoices_history || [];
+                                                                const displayInvoices = history.length > 0 ? history : (
+                                                                    project.invoice_url ? [{ amount: project.invoice_amount || 0, type: project.invoice_type || 'custom', invoice_url: project.invoice_url, paid: project.invoice_paid || false }] : []
+                                                                );
+                                                                const totalInvoiced = displayInvoices.reduce((sum: number, inv: any) => {
+                                                                    const amt = Number(inv.amount) || 0;
+                                                                    return inv.type === 'credit_note' ? sum - amt : sum + amt;
+                                                                }, 0);
+                                                                const totalPaid = displayInvoices.reduce((sum: number, inv: any) => {
+                                                                    if (!inv.paid) return sum;
+                                                                    const amt = Number(inv.amount) || 0;
+                                                                    return inv.type === 'credit_note' ? sum - amt : sum + amt;
+                                                                }, 0);
+                                                                const budgetItems = projectBudget ? (projectBudget.items || []) : [];
+                                                                // Base = siempre items[0]
+                                                                const basePrice = budgetItems[0] ? (budgetItems[0].quantity * budgetItems[0].unit_price) : (projectBudget ? projectBudget.total_price : 0);
+                                                                const optionalsInBudget = budgetItems.filter((it: any) => it.is_optional).reduce((s: number, it: any) => s + (it.quantity * it.unit_price), 0);
+                                                                // Si el cliente ya aprobó, total_price tiene base + extras elegidos (definitivo)
+                                                                // Si aún no aprobó, el monto confirmado es solo el base
+                                                                const isApproved = ['approved', 'production', 'delivered'].includes(project.status);
+                                                                const billingTotal = isApproved ? (projectBudget ? projectBudget.total_price : basePrice) : basePrice;
+                                                                const remainingToInvoice = Math.max(0, billingTotal - totalInvoiced);
+                                                                const remainingToCollect = Math.max(0, totalInvoiced - totalPaid);
+                                                                
+                                                                return (
+                                                                    <>
+                                                                        {isApproved ? (
+                                                                            <>
+                                                                                <span className="text-nexo-lime text-[9px] block font-black uppercase tracking-widest">Total Confirmado</span>
+                                                                                <div className="font-mono font-black text-sm sm:text-base text-nexo-lime">
+                                                                                    {project.currency || 'ARS'} {billingTotal.toLocaleString()}
+                                                                                </div>
+                                                                                <div className="text-[9px] text-zinc-500 font-bold mt-0.5 space-y-0.5">
+                                                                                    <div>Base: {project.currency || 'ARS'} {basePrice.toLocaleString()}</div>
+                                                                                    {projectBudget && projectBudget.total_price > basePrice && (
+                                                                                        <div className="text-zinc-400">+ Extras: {project.currency || 'ARS'} {(projectBudget.total_price - basePrice).toLocaleString()}</div>
                                                                                     )}
                                                                                 </div>
-                                                                            )}
-                                                                        </>
-                                                                    );
-                                                                })()}
-                                                            </div>
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <span className="text-zinc-500 text-[9px] block font-bold uppercase tracking-wider">Presupuesto Base</span>
+                                                                                <div className="font-mono font-bold text-sm text-white">
+                                                                                    {project.currency || 'ARS'} {basePrice.toLocaleString()}
+                                                                                </div>
+                                                                                {optionalsInBudget > 0 && (
+                                                                                    <div className="text-[9px] text-[#00e5ff] font-mono font-bold mt-0.5">+ {project.currency || 'ARS'} {optionalsInBudget.toLocaleString()} extras</div>
+                                                                                )}
+                                                                            </>
+                                                                        )}
+                                                                        {totalInvoiced > 0 && (
+                                                                            <div className="mt-1 flex flex-wrap lg:flex-col items-start lg:items-end gap-1">
+                                                                                {remainingToCollect === 0 && remainingToInvoice === 0 ? (
+                                                                                    <span className="bg-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]">✅ 100% Cobrado</span>
+                                                                                ) : (
+                                                                                    <>
+                                                                                        {totalPaid > 0 && (
+                                                                                            <span className="bg-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-emerald-500/30">✅ Cobrado: {project.currency || 'ARS'} {totalPaid.toLocaleString()}</span>
+                                                                                        )}
+                                                                                        {remainingToCollect > 0 && (
+                                                                                            <span className="bg-amber-500/20 text-amber-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-amber-500/30">⏳ A Cobrar: {project.currency || 'ARS'} {remainingToCollect.toLocaleString()}</span>
+                                                                                        )}
+                                                                                        {remainingToInvoice > 0 && (
+                                                                                            <span className="bg-zinc-800 text-zinc-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-white/5">A Facturar: {project.currency || 'ARS'} {remainingToInvoice.toLocaleString()}</span>
+                                                                                        )}
+                                                                                    </>
+                                                                                )}
+                                                                            </div>
+                                                                        )}
+                                                                    </>
+                                                                );
+                                                            })()}
+                                                        </div>
 
-                                                            {/* Estado Badge */}
-                                                            <div className="shrink-0">
-                                                                <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black border ${statusColors[project.status] || ''}`}>
+                                                        {/* Badges y botón Expandir */}
+                                                        <div className="w-full lg:w-auto flex items-center justify-between lg:justify-end gap-2 pt-1.5">
+                                                            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                                                                {/* Estado Badge */}
+                                                                <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black border shrink-0 ${statusColors[project.status] || ''}`}>
                                                                     {project.status.toUpperCase()}
                                                                 </span>
-                                                            </div>
 
-                                                            {/* Acción Pendiente Badge/Botón */}
-                                                            <div className="shrink-0 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                                                                {project.admin_action_required ? (
-                                                                    <button
-                                                                        onClick={() => handleToggleAdminAction(project)}
-                                                                        className="bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 font-bold px-2.5 py-1 rounded text-[10px] animate-pulse flex items-center gap-1 transition-all"
-                                                                        title="Haz clic para marcar como contestado"
-                                                                    >
-                                                                        <span>🔔</span>
-                                                                        <span className="hidden sm:inline">Contestación Pendiente</span>
-                                                                        <span className="sm:hidden">Pendiente</span>
-                                                                    </button>
-                                                                ) : (
-                                                                    <button
-                                                                        onClick={() => handleToggleAdminAction(project)}
-                                                                        className="bg-zinc-800 hover:bg-zinc-700 border border-white/10 text-zinc-400 px-2.5 py-1 rounded text-[10px] flex items-center gap-1 transition-all"
-                                                                        title="Haz clic para marcar que requiere contestación"
-                                                                    >
-                                                                        <span>🔕</span>
-                                                                        <span className="hidden sm:inline">Sin pendientes</span>
-                                                                        <span className="sm:hidden">Ok</span>
-                                                                    </button>
-                                                                )}
+                                                                {/* Acción Pendiente Badge/Botón */}
+                                                                <div className="shrink-0 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                                                    {project.admin_action_required ? (
+                                                                        <button
+                                                                            onClick={() => handleToggleAdminAction(project)}
+                                                                            className="bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 font-bold px-2.5 py-1 rounded text-[10px] animate-pulse flex items-center gap-1 transition-all"
+                                                                            title="Haz clic para marcar como contestado"
+                                                                        >
+                                                                            <span>🔔</span>
+                                                                            <span>Pendiente</span>
+                                                                        </button>
+                                                                    ) : (
+                                                                        <button
+                                                                            onClick={() => handleToggleAdminAction(project)}
+                                                                            className="bg-zinc-800 hover:bg-zinc-700 border border-white/10 text-zinc-400 px-2.5 py-1 rounded text-[10px] flex items-center gap-1 transition-all"
+                                                                            title="Haz clic para marcar que requiere contestación"
+                                                                        >
+                                                                            <span>🔕</span>
+                                                                            <span>Ok</span>
+                                                                        </button>
+                                                                    )}
+                                                                </div>
                                                             </div>
 
                                                             {/* Flecha de Expansión */}
-                                                            <div className="text-zinc-500 text-xs shrink-0 pl-1 font-bold">
-                                                                {isExpanded ? '▲' : '▼'}
+                                                            <div className="text-zinc-500 hover:text-nexo-lime text-xs shrink-0 pl-1 font-bold flex items-center gap-1 transition-colors">
+                                                                <span className="text-[10px] hidden sm:inline">{isExpanded ? 'Ocultar' : 'Detalles'}</span>
+                                                                <span>{isExpanded ? '▲' : '▼'}</span>
                                                             </div>
-
                                                         </div>
                                                     </div>
+                                                </div>
 
                                                 {/* Cuerpo detallado (Visible solo cuando está expandido) */}
                                                 {isExpanded && (
