@@ -3900,6 +3900,7 @@ const CRMProjects: React.FC = () => {
                 const timeStr = proj.event_time
                     ? `${proj.event_time}${proj.event_end_time ? ' → ' + proj.event_end_time : ''}${proj.coverage_hours ? ' (' + proj.coverage_hours + 'hs de cobertura)' : ''}`
                     : '';
+                const locationStr = proj.location || 'No especificada';
                 const locationClean = locationStr !== 'No especificada' 
                     ? locationStr.replace(/,\s*[A-Z0-9]{5,8}\b/gi, '').split(',').slice(0, 2).join(',').trim()
                     : '';
