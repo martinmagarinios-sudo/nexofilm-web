@@ -3903,16 +3903,10 @@ const CRMProjects: React.FC = () => {
                 const locationStr = proj.location || 'No especificada';
                 const mapsLink = locationStr && locationStr !== 'No especificada' ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationStr)}` : '';
 
-                // Build Google Calendar link
+                // Build Universal Multi-platform Calendar link (iPhone, Samsung, Google, Outlook)
                 const calLink = (() => {
                     if (!proj.event_date) return '';
-                    const dateOnly = proj.event_date.replace(/-/g, '');
-                    const startTime = proj.event_time ? proj.event_time.replace(':', '') + '00' : '080000';
-                    const endTime = proj.event_end_time ? proj.event_end_time.replace(':', '') + '00' : '';
-                    const dates = endTime
-                        ? `${dateOnly}T${startTime}/${dateOnly}T${endTime}`
-                        : `${dateOnly}T${startTime}/${dateOnly}T${(Number(startTime.substring(0, 2)) + 4).toString().padStart(2,'0')}0000`;
-                    return `https://calendar.google.com/calendar/r/eventedit?text=Jornada%20NexoFilm&dates=${dates}&location=${encodeURIComponent(locationStr)}`;
+                    return `https://nexofilm.com/api/calendar?title=${encodeURIComponent('Jornada NexoFilm')}&date=${encodeURIComponent(proj.event_date)}&start=${encodeURIComponent(proj.event_time || '08:00')}&end=${encodeURIComponent(proj.event_end_time || '')}&location=${encodeURIComponent(locationStr !== 'No especificada' ? locationStr : '')}`;
                 })();
 
                 const handleMarkAsNotifiedLocal = async (crewMemberId: string) => {
@@ -4010,7 +4004,7 @@ const CRMProjects: React.FC = () => {
                                             const firstName = a.name.split(' ')[0];
                                             const notePart = crewNotificationNote.trim() ? `\n\n📝 *Nota:* ${crewNotificationNote.trim()}` : '';
                                             const mapsPart = mapsLink ? `📍 *Ver en mapa:*\n${mapsLink}\n\n` : '';
-                                            const calPart = calLink ? `🗓️ *Agregar a tu Calendar:*\n${calLink}\n\n` : '';
+                                            const calPart = calLink ? `🗓️ *Agregar a tu Calendar (iPhone / Samsung / Google):*\n${calLink}\n\n` : '';
                                             const waMsg = `🎬 *NEXOFILM* — _Confirmación de Jornada_
 🌐 *Portal:* https://nexofilm.com/?ref=crew
 ─────────────────────
@@ -4097,7 +4091,7 @@ Hola [Nombre], ¡quedaste confirmado/a!
 • *Lugar:* ${locationStr}
 • *Función:* [Función]
 
-${mapsLink ? `📍 *Ver en mapa:*\n${mapsLink}\n\n` : ''}${calLink ? `🗓️ *Agregar a tu Calendar:*\n[Link para agendar]\n\n` : ''}─────────────────────
+${mapsLink ? `📍 *Ver en mapa:*\n${mapsLink}\n\n` : ''}${calLink ? `🗓️ *Agregar a tu Calendar (iPhone / Samsung / Google):*\n[Link para agendar]\n\n` : ''}─────────────────────
 ⚠️ *Importante:* Se solicita estar *30 minutos antes* para la organización y armado de equipos.${crewNotificationNote.trim() ? `\n\n📝 *Nota:* ${crewNotificationNote.trim()}` : ''}
 
 Cualquier consulta, respondé este mensaje.

@@ -84,14 +84,7 @@ function formatEventDate(dateStr: string): string {
 
 function buildGoogleCalendarLink(project: Project): string {
     if (!project.event_date) return '';
-    const dateOnly = project.event_date.replace(/-/g, '');
-    const startTime = project.event_time ? project.event_time.replace(':', '') + '00' : '080000';
-    const endTime = project.event_end_time ? project.event_end_time.replace(':', '') + '00' : '';
-    const dates = endTime
-        ? `${dateOnly}T${startTime}/${dateOnly}T${endTime}`
-        : `${dateOnly}T${startTime}/${dateOnly}T${String(Number(startTime.substring(0, 2)) + 4).padStart(2, '0')}0000`;
-
-    return `https://calendar.google.com/calendar/r/eventedit?text=Jornada%20NexoFilm&dates=${dates}&location=${encodeURIComponent(project.location || '')}`;
+    return `https://nexofilm.com/api/calendar?title=${encodeURIComponent('Jornada NexoFilm')}&date=${encodeURIComponent(project.event_date)}&start=${encodeURIComponent(project.event_time || '08:00')}&end=${encodeURIComponent(project.event_end_time || '')}&location=${encodeURIComponent(project.location || '')}`;
 }
 
 function buildGoogleMapsLink(location: string): string {
@@ -566,7 +559,7 @@ const EventCard: React.FC<{
                                         const firstName = a.name.split(' ')[0];
                                         const notePart = crewNotificationNote.trim() ? `\n\n📝 *Nota:* ${crewNotificationNote.trim()}` : '';
                                         const mapsPart = mapsLink ? `📍 *Ver en mapa:*\n${mapsLink}\n\n` : '';
-                                        const calPart = calLink ? `🗓️ *Agregar a tu Calendar:*\n${calLink}\n\n` : '';
+                                        const calPart = calLink ? `🗓️ *Agregar a tu Calendar (iPhone / Samsung / Google):*\n${calLink}\n\n` : '';
                                         const waMsg = `🎬 *NEXOFILM* — _Confirmación de Jornada_
 🌐 *Portal:* https://nexofilm.com/?ref=crew
 ─────────────────────
@@ -653,7 +646,7 @@ Hola [Nombre], ¡quedaste confirmado/a!
 • *Lugar:* ${locationStr}
 • *Función:* [Función]
 
-${mapsLink ? `📍 *Ver en mapa:*\n${mapsLink}\n\n` : ''}${calLink ? `🗓️ *Agregar a tu Calendar:*\n[Link para agendar]\n\n` : ''}─────────────────────
+${mapsLink ? `📍 *Ver en mapa:*\n${mapsLink}\n\n` : ''}${calLink ? `🗓️ *Agregar a tu Calendar (iPhone / Samsung / Google):*\n[Link para agendar]\n\n` : ''}─────────────────────
 ⚠️ *Importante:* Se solicita estar *30 minutos antes* para la organización y armado de equipos.${crewNotificationNote.trim() ? `\n\n📝 *Nota:* ${crewNotificationNote.trim()}` : ''}
 
 Cualquier consulta, respondé este mensaje.
