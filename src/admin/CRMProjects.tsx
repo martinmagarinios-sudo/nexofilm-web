@@ -3175,6 +3175,34 @@ const CRMProjects: React.FC = () => {
 
                         <form onSubmit={handleSendInvoice} className="space-y-6">
 
+                            {/* Datos de Facturación Cargados por el Cliente */}
+                            {(selectedProject.client_billing_info || selectedProject.client_tax_certificate_url) && (
+                                <div className="bg-amber-500/8 border border-amber-500/25 rounded-lg p-4 space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-amber-400 text-base">🧾</span>
+                                        <span className="text-amber-400 text-xs font-bold uppercase tracking-widest">Datos de Facturación cargados por el Cliente</span>
+                                    </div>
+                                    {selectedProject.client_billing_info && (
+                                        <pre className="font-mono text-[11px] whitespace-pre-wrap leading-relaxed text-zinc-200 bg-black/40 border border-white/5 p-3 rounded">
+                                            {selectedProject.client_billing_info}
+                                        </pre>
+                                    )}
+                                    {selectedProject.client_tax_certificate_url && (
+                                        <div className="flex items-center justify-between bg-black/30 border border-[#00e5ff]/20 rounded p-2.5">
+                                            <span className="text-[11px] text-zinc-400 font-bold uppercase tracking-wider">📄 Constancia de CUIT/CUIL adjunta</span>
+                                            <a
+                                                href={selectedProject.client_tax_certificate_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-[10px] bg-[#00e5ff] text-black font-black px-3 py-1.5 rounded hover:bg-white transition-colors uppercase tracking-widest"
+                                            >
+                                                Descargar
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Historial de facturas emitidas para este proyecto */}
                             {(() => {
                                 const history = selectedProject.invoices_history;

@@ -2401,15 +2401,33 @@ const ClientPortal: React.FC = () => {
                             {/* Formulario de Carga de Datos de Facturación */}
                             <div className="bg-zinc-900/40 border border-white/5 p-6 md:p-8 rounded-xl shadow-2xl space-y-4 no-print">
                                 <h3 className="text-lg font-bold text-white uppercase tracking-tight">🧾 Datos de Facturación</h3>
-                                <p className="text-xs text-zinc-400">
-                                    Por favor completá los datos con los que necesitás recibir la factura electrónica de AFIP/ARCA (CUIT, Razón Social, Dirección, etc.).
-                                </p>
+
+                                {/* Banner de datos ya guardados — muestra arriba del form si ya existen */}
+                                {project.client_billing_info && (
+                                    <div className="bg-nexo-lime/8 border border-nexo-lime/30 rounded-lg p-4 space-y-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-nexo-lime text-sm">✅</span>
+                                            <span className="text-nexo-lime text-xs font-bold uppercase tracking-widest">Datos de facturación guardados correctamente</span>
+                                        </div>
+                                        <pre className="font-mono text-[11px] whitespace-pre-wrap leading-relaxed text-zinc-200 bg-black/30 p-3 rounded border border-white/5">
+                                            {project.client_billing_info}
+                                        </pre>
+                                        <p className="text-[10px] text-zinc-500">¿Necesitás actualizar los datos? Completá el formulario de abajo y guardá nuevamente.</p>
+                                    </div>
+                                )}
+
+                                {!project.client_billing_info && (
+                                    <p className="text-xs text-zinc-400">
+                                        Por favor completá los datos con los que necesitás recibir la factura electrónica de AFIP/ARCA (CUIT, Razón Social, Dirección, etc.).
+                                    </p>
+                                )}
+
                                 <form onSubmit={handleSubmitBillingInfo} className="space-y-4">
                                     <textarea
                                         value={billingInfo}
                                         onChange={(e) => setBillingInfo(e.target.value)}
                                         className="w-full bg-black border border-white/10 rounded px-4 py-3 text-xs text-white focus:outline-none focus:border-nexo-lime h-28"
-                                        placeholder="Ej: Razón Social: Empresa S.A.&#10;CUIT: 30-12345678-9&#10;Dirección: Av. de Mayo 123, CABA&#10;Tipo de Factura: Factura A o Factura B"
+                                        placeholder={`Ej: Razón Social: Empresa S.A.\nCUIT: 30-12345678-9\nDirección: Av. de Mayo 123, CABA\nTipo de Factura: Factura A o Factura B`}
                                     />
                                     <div className="space-y-2 bg-black/20 p-4 rounded-lg border border-white/5">
                                         <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider block">Adjuntar Constancia de CUIT/CUIL (Opcional - PDF, JPG, PNG)</label>
@@ -2434,15 +2452,10 @@ const ClientPortal: React.FC = () => {
                                         disabled={sendingAction}
                                         className="bg-nexo-lime hover:bg-white text-black font-bold text-xs uppercase py-2.5 px-6 rounded transition-all disabled:opacity-50 cursor-pointer"
                                     >
-                                        {sendingAction ? 'Guardando...' : 'Guardar y Enviar Datos'}
+                                        {sendingAction ? 'Guardando...' : (project.client_billing_info ? 'Actualizar Datos' : 'Guardar y Enviar Datos')}
                                     </button>
                                 </form>
-                                {project.client_billing_info && (
-                                    <div className="bg-black/20 p-4 border border-white/5 rounded text-xs text-zinc-400">
-                                        <span className="font-bold text-zinc-300 block mb-1">Datos cargados actualmente:</span>
-                                        <pre className="font-mono text-[10px] whitespace-pre-wrap leading-relaxed text-zinc-300">{project.client_billing_info}</pre>
-                                    </div>
-                                )}
+
                             </div>
                         </div>
 
