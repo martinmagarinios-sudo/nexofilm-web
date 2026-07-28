@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import WhatsAppSelectorModal, { getWAPreferredApp, buildWAUrl } from './WhatsAppSelectorModal';
 
 export interface CrewMember {
     id: string;
@@ -526,6 +527,35 @@ const CrewCard: React.FC<{
     const rolesList = cm.role ? cm.role.split(',').map(r => r.trim()).filter(Boolean) : ['Otro'];
     const [openingDni, setOpeningDni] = useState(false);
 
+    // Estado del selector de WhatsApp
+    const [waModalConfig, setWaModalConfig] = useState<{
+        isOpen: boolean;
+        phone: string;
+        message: string;
+        recipientName?: string;
+    }>({
+        isOpen: false,
+        phone: '',
+        message: ''
+    });
+
+    const handleOpenWhatsApp = (phone: string, name?: string, forceModal: boolean = false) => {
+        if (!phone) return;
+        const preferred = getWAPreferredApp();
+        const message = `¡Hola ${name || ''}! Te contacto desde NexoFilm.`;
+        if (!forceModal && preferred !== 'ask') {
+            const url = buildWAUrl(phone, message, preferred);
+            window.open(url, '_blank');
+        } else {
+            setWaModalConfig({
+                isOpen: true,
+                phone,
+                message,
+                recipientName: name
+            });
+        }
+    };
+
     const handleViewDni = async (fullUrl: string) => {
         if (!supabase) return;
         setOpeningDni(true);
@@ -593,14 +623,20 @@ const CrewCard: React.FC<{
                     </div>
                 )}
                 {cm.phone ? (
-                    <div className="flex items-center gap-2 text-xs text-zinc-400">
+                    <div className="flex items-center gap-1 text-xs text-zinc-400">
                         <span className="text-zinc-600 shrink-0">📱</span>
-                        <a
-                            href={`https://wa.me/${cm.phone.replace(/\D/g, '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:text-green-400 transition-colors"
-                        >{cm.phone}</a>
+                        <button
+                            type="button"
+                            onClick={() => handleOpenWhatsApp(cm.phone!, cm.name)}
+                            className="hover:text-green-400 transition-colors font-semibold underline decoration-zinc-700 underline-offset-2"
+                            title="Contactar por WhatsApp"
+                        >{cm.phone}</button>
+                        <button
+                            type="button"
+                            onClick={() => handleOpenWhatsApp(cm.phone!, cm.name, true)}
+                            className="text-[10px] text-zinc-500 hover:text-green-400 font-bold px-1"
+                            title="Elegir con qué WhatsApp contactar (Personal / Business / Web)"
+                        >▼</button>
                     </div>
                 ) : (
                     <div className="flex items-center gap-2 text-xs text-zinc-600 italic">
@@ -657,6 +693,15 @@ const CrewCard: React.FC<{
                     </div>
                 )}
             </div>
+
+            {/* Modal Selector de App de WhatsApp */}
+            <WhatsAppSelectorModal
+                isOpen={waModalConfig.isOpen}
+                onClose={() => setWaModalConfig(prev => ({ ...prev, isOpen: false }))}
+                phone={waModalConfig.phone}
+                message={waModalConfig.message}
+                recipientName={waModalConfig.recipientName}
+            />
         </div>
     );
 };

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import CalendarView from './CalendarView';
 import CrewDirectory, { CrewMember, CREW_ROLES, ROLE_ICONS } from './CrewDirectory';
 import FinanceDashboard from './FinanceDashboard';
+import WhatsAppSelectorModal, { getWAPreferredApp, buildWAUrl, WATargetApp } from './WhatsAppSelectorModal';
 
 interface Budget {
     id: string;
@@ -75,8 +76,10 @@ interface CrewAssignment {
     role: string;
     fee: number;
     fee_currency: 'USD' | 'ARS';
-    notified: boolean;
-    notified_at: string | null;
+    notified?: boolean;
+    notified_at?: string | null;
+    wa_notified?: boolean;
+    email_notified?: boolean;
 }
 
 const parsePhone = (phoneStr: string) => {
@@ -345,6 +348,37 @@ const CRMProjects: React.FC = () => {
     const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
     const [crewNotificationNote, setCrewNotificationNote] = useState('');
     const [sendingSingleCrewEmailId, setSendingSingleCrewEmailId] = useState<string | null>(null);
+
+    // Estado del selector de WhatsApp
+    const [waModalConfig, setWaModalConfig] = useState<{
+        isOpen: boolean;
+        phone: string;
+        message: string;
+        recipientName?: string;
+        onSent?: () => void;
+    }>({
+        isOpen: false,
+        phone: '',
+        message: ''
+    });
+
+    const handleOpenWhatsApp = (phone: string, message: string, recipientName?: string, onSent?: () => void, forceModal: boolean = false) => {
+        if (!phone) return;
+        const preferred = getWAPreferredApp();
+        if (!forceModal && preferred !== 'ask') {
+            const url = buildWAUrl(phone, message, preferred);
+            window.open(url, '_blank');
+            if (onSent) onSent();
+        } else {
+            setWaModalConfig({
+                isOpen: true,
+                phone,
+                message,
+                recipientName,
+                onSent
+            });
+        }
+    };
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const [filterStatus, setFilterStatus] = useState<string>('all');
     const [analyzingProjectId, setAnalyzingProjectId] = useState<string | null>(null);
@@ -2683,17 +2717,13 @@ const CRMProjects: React.FC = () => {
                                                                         
                                                                         if (project.status === 'approved' || project.status === 'production' || project.status === 'delivered') {
                                                                             const isSent = project.invoice_sent;
-                                                                            const invoiceWaUrl = `https://wa.me/${project.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(
-                                                                                `🧾 *NexoFilm - Facturación y Pago*\n\n¡Hola ${project.contact_name}! Ya registramos tu pago o preparamos tu factura para el proyecto "${project.title}".\n\nPodés ver los datos de transferencia Galicia, descargar tu factura y seguir el estado desde tu portal seguro:\n👉 ${window.location.origin}/portal?token=${project.access_token}`
-                                                                            )}`;
+                                                                            const invoiceWaMsg = `🧾 *NexoFilm - Facturación y Pago*\n\n¡Hola ${project.contact_name}! Ya registramos tu pago o preparamos tu factura para el proyecto "${project.title}".\n\nPodés ver los datos de transferencia Galicia, descargar tu factura y seguir el estado desde tu portal seguro:\n👉 ${window.location.origin}/portal?token=${project.access_token}`;
                                                                             return (
-                                                                                <a
-                                                                                    href={invoiceWaUrl}
-                                                                                    target="_blank"
-                                                                                    rel="noopener noreferrer"
-                                                                                    onClick={async () => {
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => handleOpenWhatsApp(project.client_phone, invoiceWaMsg, project.contact_name, async () => {
                                                                                         await handleSendInvoiceNotification(project.id, 'whatsapp');
-                                                                                    }}
+                                                                                    })}
                                                                                     className={`text-xs font-black px-3 py-1.5 rounded transition-all flex items-center justify-center gap-1 ${
                                                                                         !isSent
                                                                                             ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.2)]'
@@ -2702,19 +2732,18 @@ const CRMProjects: React.FC = () => {
                                                                                     title={!isSent ? 'Enviar Factura por WhatsApp' : 'Reenviar Factura por WhatsApp'}
                                                                                 >
                                                                                     {!isSent ? '💬 Enviar Factura' : '💬 Reenviar Factura'}
-                                                                                </a>
+                                                                                </button>
                                                                             );
                                                                         } else if (isDraftOrReview) {
-                                                                            const waUrl = `https://wa.me/${project.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(`🎬 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla en tu portal seguro haciendo clic en el siguiente enlace:\nhttps://nexofilm.com/portal?token=${project.access_token}`)}`;
+                                                                            const waProposalMsg = `🎬 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla en tu portal seguro haciendo clic en el siguiente enlace:\nhttps://nexofilm.com/portal?token=${project.access_token}`;
+                                                                            const waDataMsg = `📋 *NexoFilm - Solicitud de Información*\n\n¡Hola ${project.contact_name}!${project.admin_notes ? `\n\n${project.admin_notes}` : '\n\nNecesitamos algunos datos adicionales para terminar de armar tu presupuesto.'}\n\nPodés completarlos directamente desde tu portal ingresando aquí:\n👉 ${window.location.origin}/portal?token=${project.access_token}`;
                                                                             return (
                                                                                 <div className="flex gap-2">
-                                                                                    <a
-                                                                                        href={waUrl}
-                                                                                        target="_blank"
-                                                                                        rel="noopener noreferrer"
-                                                                                        onClick={async () => {
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => handleOpenWhatsApp(project.client_phone, waProposalMsg, project.contact_name, async () => {
                                                                                             await handleSendBudgetEmail(project.id, 'whatsapp');
-                                                                                        }}
+                                                                                        })}
                                                                                         className={`text-xs font-black px-3 py-1.5 rounded transition-all flex items-center justify-center gap-1 ${
                                                                                             isWhatsappPreferred
                                                                                                 ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.2)]'
@@ -2723,30 +2752,28 @@ const CRMProjects: React.FC = () => {
                                                                                         title={`Enviar presupuesto por WhatsApp ${pref === 'whatsapp' ? '(Método Preferido)' : ''}`}
                                                                                     >
                                                                                         💬 Enviar por WhatsApp {pref === 'whatsapp' ? '★' : ''}
-                                                                                    </a>
-                                                                                    <a
-                                                                                        href={`https://wa.me/${project.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(`📋 *NexoFilm - Solicitud de Información*\n\n¡Hola ${project.contact_name}!${project.admin_notes ? `\n\n${project.admin_notes}` : '\n\nNecesitamos algunos datos adicionales para terminar de armar tu presupuesto.'}\n\nPodés completarlos directamente desde tu portal ingresando aquí:\n👉 ${window.location.origin}/portal?token=${project.access_token}`)}`}
-                                                                                        target="_blank"
-                                                                                        rel="noopener noreferrer"
+                                                                                    </button>
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => handleOpenWhatsApp(project.client_phone, waDataMsg, project.contact_name)}
                                                                                         className="text-xs bg-amber-600 hover:bg-amber-500 text-white font-bold px-3 py-1.5 rounded transition-colors flex items-center justify-center gap-1"
                                                                                         title="Solicitar datos faltantes por WhatsApp"
                                                                                     >
                                                                                         📲 Pedir datos
-                                                                                    </a>
+                                                                                    </button>
                                                                                 </div>
                                                                             );
                                                                         } else {
-                                                                            const waUrl = `https://wa.me/${project.client_phone.replace(/\D/g, '')}?text=${encodeURIComponent(`🎬 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla en tu portal seguro haciendo clic en el siguiente enlace:\nhttps://nexofilm.com/portal?token=${project.access_token}`)}`;
+                                                                            const waProposalMsg = `🎬 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla en tu portal seguro haciendo clic en el siguiente enlace:\nhttps://nexofilm.com/portal?token=${project.access_token}`;
                                                                             return (
-                                                                                <a
-                                                                                    href={waUrl}
-                                                                                    target="_blank"
-                                                                                    rel="noopener noreferrer"
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => handleOpenWhatsApp(project.client_phone, waProposalMsg, project.contact_name)}
                                                                                     className="text-xs bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-500 px-3 py-1.5 rounded transition-all flex items-center justify-center gap-1 font-bold"
                                                                                     title="Reenviar propuesta comercial por WhatsApp."
                                                                                 >
                                                                                     💬 Reenviar por WhatsApp
-                                                                                </a>
+                                                                                </button>
                                                                             );
                                                                         }
                                                                     })()
@@ -3978,6 +4005,35 @@ const CRMProjects: React.FC = () => {
                             
                             {/* Body */}
                             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                                {/* Selector de App de WhatsApp */}
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-zinc-950/80 p-3 rounded-xl border border-white/10 gap-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-base">📱</span>
+                                        <div>
+                                            <div className="text-xs font-bold text-white">App de WhatsApp por defecto</div>
+                                            <div className="text-[10px] text-zinc-400">
+                                                Elegí qué app abrir al hacer clic en notificar
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0 self-end sm:self-auto">
+                                        <select
+                                            value={getWAPreferredApp()}
+                                            onChange={(e) => {
+                                                const val = e.target.value as WATargetApp;
+                                                localStorage.setItem('nexo_crm_wa_app', val);
+                                                setCrewNotificationNote(prev => prev);
+                                            }}
+                                            className="bg-zinc-900 border border-white/20 rounded-lg px-2.5 py-1.5 text-xs font-bold text-nexo-lime focus:outline-none cursor-pointer"
+                                        >
+                                            <option value="ask">❓ Preguntar siempre</option>
+                                            <option value="personal">📱 WhatsApp Personal (whatsapp://)</option>
+                                            <option value="business">💼 WhatsApp Business (wa.me)</option>
+                                            <option value="web">🌐 WhatsApp Web</option>
+                                        </select>
+                                    </div>
+                                </div>
+
                                 {/* Nota Personalizada */}
                                 <div className="space-y-1.5 bg-black/30 p-3 rounded-lg border border-white/5">
                                     <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">📝 Nota Personalizada para la Crew (Opcional)</label>
@@ -4049,15 +4105,24 @@ Cualquier consulta, respondé este mensaje.
                                                     
                                                     <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
                                                         {phone ? (
-                                                            <a
-                                                                href={waUrl}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                onClick={() => handleMarkAsNotifiedLocal(a.crew_member_id)}
-                                                                className="text-[10px] bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
-                                                            >
-                                                                {waNotified ? '💬 Reenviar WA' : '💬 WA'}
-                                                            </a>
+                                                            <div className="flex items-center">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleOpenWhatsApp(phone, waMsg, a.name, () => handleMarkAsNotifiedLocal(a.crew_member_id))}
+                                                                    className="text-[10px] bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/20 px-2.5 py-1.5 rounded-l transition-all font-bold flex items-center gap-0.5"
+                                                                    title="Notificar por WhatsApp"
+                                                                >
+                                                                    {waNotified ? '💬 Reenviar WA' : '💬 WA'}
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleOpenWhatsApp(phone, waMsg, a.name, () => handleMarkAsNotifiedLocal(a.crew_member_id), true)}
+                                                                    className="text-[10px] bg-green-500/15 border border-l-0 border-green-500/30 text-green-400 hover:bg-green-500/20 px-1.5 py-1.5 rounded-r transition-all font-bold"
+                                                                    title="Elegir con qué WhatsApp notificar (Personal / Business / Web)"
+                                                                >
+                                                                    ▼
+                                                                </button>
+                                                            </div>
                                                         ) : (
                                                             <span className="text-[9px] text-zinc-600 italic">No WA</span>
                                                         )}
@@ -4113,6 +4178,15 @@ Cualquier consulta, respondé este mensaje.
                     </div>
                 );
             })()}
+            {/* Modal Selector de App de WhatsApp */}
+            <WhatsAppSelectorModal
+                isOpen={waModalConfig.isOpen}
+                onClose={() => setWaModalConfig(prev => ({ ...prev, isOpen: false }))}
+                phone={waModalConfig.phone}
+                message={waModalConfig.message}
+                recipientName={waModalConfig.recipientName}
+                onSent={waModalConfig.onSent}
+            />
         </div>
     );
 };

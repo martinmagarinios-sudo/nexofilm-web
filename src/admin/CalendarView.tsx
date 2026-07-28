@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { CrewMember, ROLE_ICONS } from './CrewDirectory';
+import WhatsAppSelectorModal, { getWAPreferredApp, buildWAUrl, WATargetApp } from './WhatsAppSelectorModal';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -16,8 +17,10 @@ interface CrewAssignment {
     role: string;
     fee: number;
     fee_currency: 'USD' | 'ARS';
-    notified: boolean;
-    notified_at: string | null;
+    notified?: boolean;
+    notified_at?: string | null;
+    wa_notified?: boolean;
+    email_notified?: boolean;
 }
 
 interface Project {
@@ -254,6 +257,37 @@ const EventCard: React.FC<{
     const [showCrewNotifyModal, setShowCrewNotifyModal] = useState(false);
     const [sendingSingleCrewEmailId, setSendingSingleCrewEmailId] = useState<string | null>(null);
     const [crewNotificationNote, setCrewNotificationNote] = useState('');
+
+    // Estado del selector de WhatsApp
+    const [waModalConfig, setWaModalConfig] = useState<{
+        isOpen: boolean;
+        phone: string;
+        message: string;
+        recipientName?: string;
+        onSent?: () => void;
+    }>({
+        isOpen: false,
+        phone: '',
+        message: ''
+    });
+
+    const handleOpenWhatsApp = (phone: string, message: string, recipientName?: string, onSent?: () => void, forceModal: boolean = false) => {
+        if (!phone) return;
+        const preferred = getWAPreferredApp();
+        if (!forceModal && preferred !== 'ask') {
+            const url = buildWAUrl(phone, message, preferred);
+            window.open(url, '_blank');
+            if (onSent) onSent();
+        } else {
+            setWaModalConfig({
+                isOpen: true,
+                phone,
+                message,
+                recipientName,
+                onSent
+            });
+        }
+    };
 
     const statusStyle = STATUS_STYLES[project.status] || STATUS_STYLES.draft;
     const calLink = buildGoogleCalendarLink(project);
@@ -523,18 +557,35 @@ const EventCard: React.FC<{
                     <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
                         {/* Header */}
                         <div className="bg-zinc-950 px-6 py-4 border-b border-white/5 flex items-center justify-between">
-                            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                                <span>✉️ Notificar Equipo (Seguro y Branded)</span>
-                                <span className="text-[10px] bg-nexo-lime/15 text-nexo-lime px-2 py-0.5 rounded font-black uppercase tracking-wider">Confirmado</span>
-                            </h3>
-                            <button
-                                onClick={() => setShowCrewNotifyModal(false)}
-                                className="text-zinc-500 hover:text-white transition-colors text-lg"
-                            >&times;</button>
-                        </div>
-                        
-                        {/* Body */}
-                        <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                                           {/* Selector de App de WhatsApp */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-zinc-950/80 p-3 rounded-xl border border-white/10 gap-2 mb-3">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-base">📱</span>
+                                    <div>
+                                        <div className="text-xs font-bold text-white">App de WhatsApp por defecto</div>
+                                        <div className="text-[10px] text-zinc-400">
+                                            Elegí qué app abrir al hacer clic en notificar
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0 self-end sm:self-auto">
+                                    <select
+                                        value={getWAPreferredApp()}
+                                        onChange={(e) => {
+                                            const val = e.target.value as WATargetApp;
+                                            localStorage.setItem('nexo_crm_wa_app', val);
+                                            setCrewNotificationNote(prev => prev);
+                                        }}
+                                        className="bg-zinc-900 border border-white/20 rounded-lg px-2.5 py-1.5 text-xs font-bold text-nexo-lime focus:outline-none cursor-pointer"
+                                    >
+                                        <option value="ask">❓ Preguntar siempre</option>
+                                        <option value="personal">📱 WhatsApp Personal (whatsapp://)</option>
+                                        <option value="business">💼 WhatsApp Business (wa.me)</option>
+                                        <option value="web">🌐 WhatsApp Web</option>
+                                    </select>
+                                </div>
+                            </div>
+
                             {/* Nota Personalizada */}
                             <div className="space-y-1.5 bg-black/30 p-3 rounded-lg border border-white/5">
                                 <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">📝 Nota Personalizada para la Crew (Opcional)</label>
@@ -579,7 +630,6 @@ ${mapsPart}${calPart}───────────────────�
 
 Cualquier consulta, respondé este mensaje.
 ¡Nos vemos! — El equipo de NexoFilm 🎬`;
-                                        const waUrl = phone ? `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(waMsg)}` : '';
 
                                         return (
                                             <div key={idx} className="bg-zinc-950/40 border border-white/5 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -606,15 +656,24 @@ Cualquier consulta, respondé este mensaje.
                                                 
                                                 <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
                                                     {phone ? (
-                                                        <a
-                                                            href={waUrl}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            onClick={() => handleMarkAsNotifiedLocal(a.crew_member_id)}
-                                                            className="text-[10px] bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/20 px-2.5 py-1.5 rounded transition-all font-bold flex items-center gap-0.5"
-                                                        >
-                                                            {waNotified ? '💬 Reenviar WA' : '💬 WA'}
-                                                        </a>
+                                                        <div className="flex items-center">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleOpenWhatsApp(phone, waMsg, a.name, () => handleMarkAsNotifiedLocal(a.crew_member_id))}
+                                                                className="text-[10px] bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/20 px-2.5 py-1.5 rounded-l transition-all font-bold flex items-center gap-0.5"
+                                                                title="Notificar por WhatsApp"
+                                                            >
+                                                                {waNotified ? '💬 Reenviar WA' : '💬 WA'}
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleOpenWhatsApp(phone, waMsg, a.name, () => handleMarkAsNotifiedLocal(a.crew_member_id), true)}
+                                                                className="text-[10px] bg-green-500/15 border border-l-0 border-green-500/30 text-green-400 hover:bg-green-500/20 px-1.5 py-1.5 rounded-r transition-all font-bold"
+                                                                title="Elegir con qué WhatsApp notificar (Personal / Business / Web)"
+                                                            >
+                                                                ▼
+                                                            </button>
+                                                        </div>
                                                     ) : (
                                                         <span className="text-[9px] text-zinc-600 italic">No WA</span>
                                                     )}
@@ -669,6 +728,16 @@ Cualquier consulta, respondé este mensaje.
                     </div>
                 </div>
             )}
+
+            {/* Modal Selector de App de WhatsApp */}
+            <WhatsAppSelectorModal
+                isOpen={waModalConfig.isOpen}
+                onClose={() => setWaModalConfig(prev => ({ ...prev, isOpen: false }))}
+                phone={waModalConfig.phone}
+                message={waModalConfig.message}
+                recipientName={waModalConfig.recipientName}
+                onSent={waModalConfig.onSent}
+            />
         </div>
     );
 };
@@ -980,6 +1049,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ projects, budgets, crewMemb
                                                 project={p}
                                                 budget={budgets.find(b => b.project_id === p.id)}
                                                 password={password}
+                                                crewMembers={crewMembers}
                                                 onNotified={onDataRefresh}
                                             />
                                         ))}
@@ -1012,6 +1082,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ projects, budgets, crewMemb
                                     project={p}
                                     budget={budgets.find(b => b.project_id === p.id)}
                                     password={password}
+                                    crewMembers={crewMembers}
                                     onNotified={() => { onDataRefresh(); setSelectedDate(null); }}
                                 />
                             ))}
