@@ -1,10 +1,17 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.VITE_SUPABASE_KEY;
+const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
+
 export default async function handler(req, res) {
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
     try {
-        const {
+        let {
+            id = '',
             title = 'Jornada NexoFilm',
             date = '',
             start = '09:00',
@@ -14,13 +21,29 @@ export default async function handler(req, res) {
             format = ''
         } = req.query;
 
+        // Si se pasa id, buscar en Supabase los datos actualizados del proyecto
+        if (id && supabase) {
+            try {
+                const { data: p } = await supabase.from('projects').select('*').eq('id', id).maybeSingle();
+                if (p) {
+                    title = p.name ? `Jornada NexoFilm — ${p.name}` : title;
+                    date = date || p.event_date || '';
+                    start = start || p.event_time || '08:00';
+                    end = end || p.event_end_time || '';
+                    location = location || p.location || '';
+                }
+            } catch (err) {
+                console.error('Error buscando proyecto en Supabase:', err);
+            }
+        }
+
         const eventTitle = role ? `${title} — ${role}` : title;
-        const dateClean = date.replace(/-/g, '');
+        const dateClean = (date || '').replace(/-/g, '');
         const startClean = (start || '08:00').replace(':', '').padEnd(4, '0') + '00';
         
         let endClean = '';
         if (end) {
-            endClean = end.replace(':', '').padEnd(4, '0') + '00';
+            endClean = (end || '').replace(':', '').padEnd(4, '0') + '00';
         } else {
             const startHour = parseInt(startClean.substring(0, 2), 10) || 8;
             endClean = (startHour + 4).toString().padStart(2, '0') + '0000';
@@ -33,12 +56,12 @@ export default async function handler(req, res) {
         const googleUrl = `https://calendar.google.com/calendar/r/eventedit?text=${encodeURIComponent(eventTitle)}&dates=${dtstart}/${dtend}&location=${encodeURIComponent(location)}&details=${encodeURIComponent('Confirmación de Jornada NexoFilm. Por favor estar 30 min antes.')}`;
 
         // Outlook Link
-        const startIso = dateClean ? `${date.substring(0,4)}-${date.substring(5,7)}-${date.substring(8,10)}T${start}:00` : '';
+        const startIso = dateClean && date ? `${date.substring(0,4)}-${date.substring(5,7)}-${date.substring(8,10)}T${start}:00` : '';
         const endHourVal = (parseInt((start || '08').split(':')[0], 10) + 4).toString().padStart(2, '0');
-        const endIso = dateClean ? `${date.substring(0,4)}-${date.substring(5,7)}-${date.substring(8,10)}T${end || (endHourVal + ':00')}:00` : '';
+        const endIso = dateClean && date ? `${date.substring(0,4)}-${date.substring(5,7)}-${date.substring(8,10)}T${end || (endHourVal + ':00')}:00` : '';
         const outlookUrl = `https://outlook.live.com/calendar/0/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject=${encodeURIComponent(eventTitle)}&startdt=${encodeURIComponent(startIso)}&enddt=${encodeURIComponent(endIso)}&location=${encodeURIComponent(location)}`;
 
-        // Direct ICS Export
+        // Exportación Directa ICS
         if (format === 'ics' || format === 'apple' || format === 'samsung') {
             const icsContent = [
                 'BEGIN:VCALENDAR',
@@ -64,18 +87,13 @@ export default async function handler(req, res) {
             return res.status(200).send(icsContent);
         }
 
-        // Direct Google Redirect if specified
-        if (format === 'google') {
-            return res.redirect(302, googleUrl);
-        }
+        if (format === 'google') return res.redirect(302, googleUrl);
+        if (format === 'outlook') return res.redirect(302, outlookUrl);
 
-        // Direct Outlook Redirect if specified
-        if (format === 'outlook') {
-            return res.redirect(302, outlookUrl);
-        }
-
-        // Universal HTML Selection Page (High Aesthetics for NexoFilm)
-        const icsSelfUrl = `/api/calendar?title=${encodeURIComponent(title)}&role=${encodeURIComponent(role)}&date=${encodeURIComponent(date)}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&location=${encodeURIComponent(location)}&format=ics`;
+        // Página de selección elegante para el usuario
+        const icsSelfUrl = id 
+            ? `/api/calendar?id=${encodeURIComponent(id)}&format=ics`
+            : `/api/calendar?title=${encodeURIComponent(title)}&role=${encodeURIComponent(role)}&date=${encodeURIComponent(date)}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&location=${encodeURIComponent(location)}&format=ics`;
 
         const html = `<!DOCTYPE html>
 <html lang="es">

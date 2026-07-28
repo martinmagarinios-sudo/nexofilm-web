@@ -84,11 +84,15 @@ function formatEventDate(dateStr: string): string {
 
 function buildGoogleCalendarLink(project: Project): string {
     if (!project.event_date) return '';
-    return `https://nexofilm.com/api/calendar?title=${encodeURIComponent('Jornada NexoFilm')}&date=${encodeURIComponent(project.event_date)}&start=${encodeURIComponent(project.event_time || '08:00')}&end=${encodeURIComponent(project.event_end_time || '')}&location=${encodeURIComponent(project.location || '')}`;
+    if (project.id) return `https://nexofilm.com/api/calendar?id=${project.id}`;
+    const cleanLoc = (project.location || '').replace(/,\s*[A-Z0-9]{5,8}\b/gi, '').split(',').slice(0, 2).join(',').trim();
+    return `https://nexofilm.com/api/calendar?title=${encodeURIComponent('Jornada NexoFilm')}&date=${encodeURIComponent(project.event_date)}&start=${encodeURIComponent(project.event_time || '08:00')}&end=${encodeURIComponent(project.event_end_time || '')}&location=${encodeURIComponent(cleanLoc)}`;
 }
 
 function buildGoogleMapsLink(location: string): string {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
+    if (!location || location === 'No especificada') return '';
+    const cleanLoc = location.replace(/,\s*[A-Z0-9]{5,8}\b/gi, '').split(',').slice(0, 2).join(',').trim();
+    return `https://maps.google.com/?q=${encodeURIComponent(cleanLoc || location)}`;
 }
 
 function getDaysUntil(dateStr: string): number {
@@ -561,7 +565,7 @@ const EventCard: React.FC<{
                                         const mapsPart = mapsLink ? `📍 *Ver en mapa:*\n${mapsLink}\n\n` : '';
                                         const calPart = calLink ? `🗓️ *Agregar a tu Calendar (iPhone / Samsung / Google):*\n${calLink}\n\n` : '';
                                         const waMsg = `🎬 *NEXOFILM* — _Confirmación de Jornada_
-🌐 *Portal:* https://nexofilm.com/?ref=crew
+🌐 *Portal:* https://nexofilm.com/?v=4&ref=crew
 ─────────────────────
 Hola ${firstName}, ¡quedaste confirmado/a!
 
@@ -637,7 +641,7 @@ Cualquier consulta, respondé este mensaje.
                                 <p className="text-[10px] text-nexo-lime font-bold uppercase tracking-wider">Previsualización del Mensaje de WhatsApp</p>
                                 <div className="border border-white/8 rounded-lg p-3 bg-zinc-950/60 font-mono text-[11px] leading-relaxed text-zinc-300 whitespace-pre-line">
                                     {`🎬 *NEXOFILM* — _Confirmación de Jornada_
-🌐 *Portal:* https://nexofilm.com/?ref=crew
+🌐 *Portal:* https://nexofilm.com/?v=4&ref=crew
 ─────────────────────
 Hola [Nombre], ¡quedaste confirmado/a!
 
