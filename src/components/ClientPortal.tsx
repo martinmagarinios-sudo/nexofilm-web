@@ -2513,19 +2513,26 @@ const ClientPortal: React.FC = () => {
                                     if (docsToDisplay.length === 1) {
                                         const inv = docsToDisplay[0];
                                         const isNC = inv.type === 'credit_note';
-                                        const label = isNC ? 'Descargar Nota de Crédito PDF' : 'Descargar Factura PDF';
+                                        const typeLabel = isNC ? 'Nota de Crédito' : inv.type === 'deposit_50' ? 'Factura Seña 50%' : inv.type === 'total' ? 'Factura 100% Total' : 'Factura';
                                         return (
                                             <a
                                                 href={inv.invoice_url}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className={`block text-center font-black text-xs uppercase tracking-widest py-3 rounded transition-colors ${
+                                                className={`group flex items-center justify-between gap-3 p-3 rounded-lg border transition-all ${
                                                     isNC
-                                                        ? 'bg-amber-500 text-black hover:bg-white'
-                                                        : 'bg-nexo-lime text-black hover:bg-white'
+                                                        ? 'bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20'
+                                                        : 'bg-nexo-lime/10 text-nexo-lime border-nexo-lime/30 hover:bg-nexo-lime hover:text-black'
                                                 }`}
                                             >
-                                                {label} {inv.fc_number ? `(FC ${inv.fc_number})` : ''}
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <span className="text-base leading-none">📄</span>
+                                                    <div className="min-w-0">
+                                                        <div className="font-extrabold text-xs uppercase tracking-wider truncate">{typeLabel}</div>
+                                                        {inv.fc_number && <div className="text-[10px] font-mono opacity-70 truncate">FC: {inv.fc_number}</div>}
+                                                    </div>
+                                                </div>
+                                                <span className="text-[10px] font-mono font-bold shrink-0 px-2 py-1 rounded bg-black/30 border border-white/10 group-hover:border-black/20 whitespace-nowrap">↗ Abrir PDF</span>
                                             </a>
                                         );
                                     }

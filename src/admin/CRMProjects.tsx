@@ -2987,22 +2987,26 @@ const CRMProjects: React.FC = () => {
                                                                 )}
                                                                 {(project.client_billing_info || project.client_tax_certificate_url) && (
                                                                     <div className="border-t border-white/5 pt-2 space-y-2">
-                                                                        {project.client_billing_info && (
-                                                                            <>
-                                                                                <span className="font-bold text-amber-400 block mb-1">🧾 Datos de Facturación cargados por el Cliente:</span>
-                                                                                <pre className="font-mono text-[10px] whitespace-pre-wrap leading-relaxed text-zinc-300 bg-black/40 p-2.5 rounded">{project.client_billing_info}</pre>
-                                                                            </>
+                                                                        <span className="font-bold text-amber-400 block text-[10px] uppercase tracking-widest">🧾 Datos de Facturación del Cliente:</span>
+                                                                        {project.client_billing_info ? (
+                                                                            <pre className="font-mono text-[10px] whitespace-pre-wrap leading-relaxed text-zinc-200 bg-black/50 border border-amber-500/20 p-2.5 rounded">
+                                                                                {project.client_billing_info}
+                                                                            </pre>
+                                                                        ) : (
+                                                                            <p className="text-[10px] text-zinc-500 italic bg-black/30 p-2 rounded border border-white/5">
+                                                                                ⚠️ El cliente adjuntó la constancia pero no completó los datos de texto.
+                                                                            </p>
                                                                         )}
                                                                         {project.client_tax_certificate_url && (
-                                                                            <div className="mt-2 bg-black/40 p-2.5 rounded border border-[#00e5ff]/20 flex justify-between items-center">
-                                                                                <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">📄 Constancia de CUIT/CUIL adjunta</span>
-                                                                                <a 
-                                                                                    href={project.client_tax_certificate_url} 
-                                                                                    target="_blank" 
+                                                                            <div className="bg-black/40 p-2 rounded border border-[#00e5ff]/20 flex justify-between items-center gap-2">
+                                                                                <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">📄 Constancia CUIT/CUIL</span>
+                                                                                <a
+                                                                                    href={project.client_tax_certificate_url}
+                                                                                    target="_blank"
                                                                                     rel="noopener noreferrer"
-                                                                                    className="text-xs bg-[#00e5ff] text-black font-black px-3 py-1.5 rounded hover:bg-white transition-colors uppercase tracking-widest text-[9px]"
+                                                                                    className="text-[9px] bg-[#00e5ff] text-black font-black px-2.5 py-1 rounded hover:bg-white transition-colors uppercase tracking-widest shrink-0"
                                                                                 >
-                                                                                    Descargar
+                                                                                    Ver / Descargar
                                                                                 </a>
                                                                             </div>
                                                                         )}
