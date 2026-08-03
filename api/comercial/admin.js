@@ -121,44 +121,6 @@ function parseAfipInvoiceText(text, filename) {
     }
 
     return { issued_by, fc_number, amount };
-};
-function _old_parseAfipInvoiceText(text) {
-    const upperText = (text || '').toUpperCase();
-    
-    // 1. Detectar emisor por CUIT / Nombre / Razón Social
-    let issued_by = 'martin';
-    if (upperText.includes('BARONE') || upperText.includes('JESICA')) {
-        issued_by = 'jesica';
-    } else if (upperText.includes('MAGARIÑOS') || upperText.includes('MAGARINOS') || upperText.includes('MARTIN')) {
-        issued_by = 'martin';
-    }
-
-    // 2. Detectar N° de Comprobante AFIP (ej: Punto de Venta: 00001 Comp. Nro: 00000123 o 0001-00000123)
-    let fc_number = null;
-    const ptoVtaMatch = upperText.match(/(?:PUNTO DE VENTA|PTO\.?\s*VTA\.?)\s*:?\s*(\d{1,5})\s*(?:COMP\.?\s*NRO\.?|COMPROBANTE\s*NRO\.?)\s*:?\s*(\d{1,8})/i);
-    if (ptoVtaMatch) {
-        const pto = ptoVtaMatch[1].padStart(4, '0');
-        const nro = ptoVtaMatch[2].padStart(8, '0');
-        fc_number = `${pto}-${nro}`;
-    } else {
-        const directMatch = upperText.match(/(\d{4,5})\s*-\s*(\d{8})/);
-        if (directMatch) {
-            fc_number = `${directMatch[1].padStart(4, '0')}-${directMatch[2]}`;
-        }
-    }
-
-    // 3. Detectar Monto Total AFIP
-    let amount = null;
-    const amountMatch = upperText.match(/(?:IMPORTE\s+TOTAL|TOTAL)\s*:?\s*\$?\s*([\d\.\,]+)/i);
-    if (amountMatch) {
-        let numStr = amountMatch[1].replace(/\./g, '').replace(',', '.');
-        const parsed = parseFloat(numStr);
-        if (!isNaN(parsed) && parsed > 0) {
-            amount = parsed;
-        }
-    }
-
-    return { issued_by, fc_number, amount };
 }
 
 export default async function handler(req, res) {
@@ -220,30 +182,6 @@ export default async function handler(req, res) {
                     return res.status(200).json({
                         success: true,
                         parsed: fallbackParsed,
-                        error: parseErr.message
-                    });
-                }
-            }
-                if (!invoice_url) {
-                    return res.status(400).json({ error: 'invoice_url es requerido' });
-                }
-                try {
-                    const response = await fetch(invoice_url);
-                    if (!response.ok) throw new Error('No se pudo descargar el PDF para análisis');
-                    const arrayBuf = await response.arrayBuffer();
-                    const buffer = Buffer.from(arrayBuf);
-                    const pdfText = await extractTextFromPdf(buffer);
-                    const parsedData = parseAfipInvoiceText(pdfText);
-                    return res.status(200).json({
-                        success: true,
-                        parsed: parsedData,
-                        raw_length: pdfText.length
-                    });
-                } catch (parseErr) {
-                    console.error('Error parseInvoicePdf:', parseErr);
-                    return res.status(200).json({
-                        success: false,
-                        parsed: { issued_by: 'martin', fc_number: null, amount: null },
                         error: parseErr.message
                     });
                 }
