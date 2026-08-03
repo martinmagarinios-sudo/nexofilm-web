@@ -397,15 +397,26 @@ export default async function handler(req, res) {
                         <p style="font-size: 11px; color: #999; margin-top: 20px;">Este lead llegó desde el formulario de presupuesto en nexofilm.com/presupuesto</p>
                     </div>
                 `;
-                for (const email of adminEmails) {
-                    resend.emails.send({
-                        from: 'NexoFilm CRM <martin@nexofilm.com>',
-                        to: [email],
-                        subject: `📋 Nuevo presupuesto web: ${newLead.contact_name} — "${newLead.title}"`,
-                        html: emailHtml
-                    }).catch(e => console.error(`[EMAIL] Fallo envío a ${email}:`, e.message));
-                }
-                console.log(`[EMAIL] Notificación de nuevo lead enviada para: ${newLead.contact_name}`);
+                // CRÍTICO: usar await + Promise.allSettled para que Vercel no mate la función
+                // antes de que Resend complete el envío. El fire-and-forget con .catch() fallaba.
+                const emailResults = await Promise.allSettled(
+                    adminEmails.map(email =>
+                        resend.emails.send({
+                            from: 'NexoFilm CRM <martin@nexofilm.com>',
+                            to: [email],
+                            subject: `📋 Nuevo presupuesto web: ${newLead.contact_name} — "${newLead.title}"`,
+                            html: emailHtml
+                        })
+                    )
+                );
+                emailResults.forEach((result, i) => {
+                    if (result.status === 'fulfilled') {
+                        console.log(`[EMAIL] ✅ Enviado a ${adminEmails[i]}: ID ${result.value?.data?.id || result.value?.id}`);
+                    } else {
+                        console.error(`[EMAIL] ❌ Fallo envío a ${adminEmails[i]}:`, result.reason?.message);
+                    }
+                });
+                console.log(`[EMAIL] Notificación de nuevo lead completada para: ${newLead.contact_name}`);
             } catch (emailErr) {
                 // El error de email nunca debe romper la respuesta al cliente
                 console.error('[EMAIL] Error al enviar notificación de lead:', emailErr.message);
