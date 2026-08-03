@@ -810,10 +810,10 @@ const MonthlyGrid: React.FC<{ year: number; projects: Project[]; onSelectDate: (
                 </div>
 
                 {/* Cells */}
-                <div className="grid grid-cols-7">
+                <div className="grid grid-cols-7 divide-x divide-y divide-white/5 bg-zinc-950">
                     {cells.map((day, i) => {
                         if (day === null) {
-                            return <div key={`e-${i}`} className="h-16 border-b border-r border-white/3 last:border-r-0" />;
+                            return <div key={`e-${i}`} className="min-h-[110px] bg-black/40 border-b border-r border-white/5" />;
                         }
                         const dateStr = `${year}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                         const dayEvents = projects.filter(p => p.event_date === dateStr);
@@ -824,26 +824,51 @@ const MonthlyGrid: React.FC<{ year: number; projects: Project[]; onSelectDate: (
                             <div
                                 key={day}
                                 onClick={() => dayEvents.length > 0 && onSelectDate(dateStr)}
-                                className={`h-16 border-b border-r border-white/3 last:border-r-0 p-1 transition-colors ${
-                                    dayEvents.length > 0 ? 'cursor-pointer hover:bg-white/5' : ''
-                                } ${isWeekend ? 'bg-white/1' : ''}`}
+                                className={`min-h-[110px] p-2 transition-all flex flex-col justify-between border-b border-r border-white/5 ${
+                                    dayEvents.length > 0 ? 'cursor-pointer hover:bg-white/[0.04] bg-zinc-900/60' : isWeekend ? 'bg-black/40' : 'bg-zinc-950'
+                                }`}
                             >
-                                <div className={`text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full mb-1 ${
-                                    isToday ? 'bg-nexo-lime text-black' : 'text-zinc-500'
-                                }`}>
-                                    {day}
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <span className={`text-xs font-extrabold w-6 h-6 flex items-center justify-center rounded-full ${
+                                        isToday ? 'bg-nexo-lime text-black shadow-md shadow-nexo-lime/20 font-black' : 'text-zinc-400 font-bold'
+                                    }`}>
+                                        {day}
+                                    </span>
+                                    {dayEvents.length > 0 && (
+                                        <span className="text-[10px] bg-nexo-lime/15 text-nexo-lime px-1.5 py-0.5 rounded font-black font-mono border border-nexo-lime/20">
+                                            {dayEvents.length} {dayEvents.length === 1 ? 'evento' : 'eventos'}
+                                        </span>
+                                    )}
                                 </div>
-                                <div className="space-y-0.5">
-                                    {dayEvents.slice(0, 2).map((p, ei) => {
+                                <div className="space-y-1.5 flex-1 flex flex-col justify-start">
+                                    {dayEvents.slice(0, 3).map((p, ei) => {
                                         const s = STATUS_STYLES[p.status] || STATUS_STYLES.draft;
+                                        
+                                        const cardBg = 
+                                            p.status === 'approved' ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40 hover:border-emerald-400' :
+                                            p.status === 'production' ? 'bg-blue-950/80 text-blue-300 border-blue-500/40 hover:border-blue-400' :
+                                            p.status === 'delivered' ? 'bg-zinc-800/80 text-zinc-300 border-zinc-700' :
+                                            p.status === 'review' ? 'bg-amber-950/80 text-amber-300 border-amber-500/40' :
+                                            'bg-zinc-900 text-zinc-300 border-white/10';
+
                                         return (
-                                            <div key={ei} className={`text-[9px] px-1 py-0.5 rounded truncate font-bold ${s.text} bg-white/5`}>
-                                                {p.title.substring(0, 14)}
+                                            <div 
+                                                key={ei} 
+                                                title={`${p.title} (${s.label}) ${p.event_time ? `| ⏰ ${p.event_time}` : ''}`}
+                                                className={`p-1.5 rounded-lg border font-bold text-xs shadow-sm transition-all flex flex-col gap-0.5 leading-tight ${cardBg}`}
+                                            >
+                                                <span className="truncate font-black text-xs text-white">
+                                                    🎬 {p.title}
+                                                </span>
+                                                <div className="flex items-center justify-between text-[10px] opacity-90 font-mono mt-0.5 pt-0.5 border-t border-white/10">
+                                                    <span className="font-bold">{s.label}</span>
+                                                    {p.event_time && <span className="font-medium opacity-80">⏰ {p.event_time}</span>}
+                                                </div>
                                             </div>
                                         );
                                     })}
-                                    {dayEvents.length > 2 && (
-                                        <div className="text-[9px] text-zinc-600">+{dayEvents.length - 2} más</div>
+                                    {dayEvents.length > 3 && (
+                                        <div className="text-[10px] font-bold text-nexo-lime pt-0.5">+ {dayEvents.length - 3} más</div>
                                     )}
                                 </div>
                             </div>
