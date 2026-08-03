@@ -3465,59 +3465,120 @@ const CRMProjects: React.FC = () => {
                                 />
                             </div>
 
-
                             {/* Tipo de Facturación */}
-                            <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Tipo de Cobro / Factura</label>
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setInvoiceType('deposit_50')}
-                                        className={`py-2 rounded text-xs font-bold border transition-colors ${invoiceType === 'deposit_50' ? 'bg-nexo-lime text-black border-nexo-lime' : 'bg-black text-zinc-400 border-white/10 hover:border-white/20'}`}
-                                    >
-                                        Seña 50%
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setInvoiceType('total')}
-                                        className={`py-2 rounded text-xs font-bold border transition-colors ${invoiceType === 'total' ? 'bg-nexo-lime text-black border-nexo-lime' : 'bg-black text-zinc-400 border-white/10 hover:border-white/20'}`}
-                                    >
-                                        Total (100%)
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setInvoiceType('custom')}
-                                        className={`py-2 rounded text-xs font-bold border transition-colors ${invoiceType === 'custom' ? 'bg-nexo-lime text-black border-nexo-lime' : 'bg-black text-zinc-400 border-white/10 hover:border-white/20'}`}
-                                    >
-                                        Monto Custom
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setInvoiceType('credit_note');
-                                            if (invoiceAmount === 0 && selectedProject) {
-                                                const projectBudget = budgets.find(b => b.project_id === selectedProject.id);
-                                                setInvoiceAmount(projectBudget?.total_price || 0);
-                                            }
-                                        }}
-                                        className={`py-2 rounded text-xs font-bold border transition-colors ${invoiceType === 'credit_note' ? 'bg-amber-500 text-black border-amber-500' : 'bg-black text-zinc-400 border-white/10 hover:border-white/20 hover:text-white'}`}
-                                    >
-                                        Nota de Crédito
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => { setInvoiceType('sin_factura'); setInvoiceIsInformal(true); }}
-                                        className={`py-2 rounded text-xs font-bold border transition-colors col-span-2 sm:col-span-1 ${invoiceIsInformal ? 'bg-purple-500 text-white border-purple-500' : 'bg-black text-zinc-400 border-white/10 hover:border-white/20 hover:text-zinc-200'}`}
-                                    >
-                                        🤫 Sin Factura
-                                    </button>
-                                </div>
-                                {invoiceIsInformal && (
-                                    <div className="mt-2 bg-purple-500/8 border border-purple-500/20 rounded p-3 text-[11px] text-purple-300">
-                                        <span className="font-bold">🤫 Cobro informal:</span> Solo queda registrado en tu admin para tu contabilidad. El cliente <strong>no lo verá</strong> en su portal.
+                            {(() => {
+                                const projectBudget = budgets.find(b => b.project_id === selectedProject.id);
+                                const totalBudget = projectBudget?.total_price || 0;
+                                const history = selectedProject.invoices_history || [];
+                                const totalInvoiced = Array.isArray(history) ? history.reduce((sum, inv) => {
+                                    const amt = Number(inv.amount) || 0;
+                                    return inv.type === 'credit_note' ? sum - amt : sum + amt;
+                                }, 0) : 0;
+                                const remaining = totalBudget - totalInvoiced;
+                                const currency = selectedProject.currency || 'ARS';
+
+                                return (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Tipo de Cobro / Factura</label>
+                                            {remaining > 0 && remaining < totalBudget && (
+                                                <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded font-mono">
+                                                    ⏳ Saldo pendiente: {currency} {remaining.toLocaleString()}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                            {remaining > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setInvoiceType('custom');
+                                                        setInvoiceIsInformal(false);
+                                                        setInvoiceAmount(remaining);
+                                                    }}
+                                                    className="py-2 rounded text-xs font-bold border transition-colors text-amber-300 border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 col-span-2 sm:col-span-1 cursor-pointer"
+                                                >
+                                                    ⏳ Saldo ({currency} {remaining.toLocaleString()})
+                                                </button>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setInvoiceType('deposit_50');
+                                                    setInvoiceIsInformal(false);
+                                                    setInvoiceAmount(Math.round(totalBudget * 0.5));
+                                                }}
+                                                className={`py-2 rounded text-xs font-bold border transition-colors cursor-pointer ${invoiceType === 'deposit_50' && !invoiceIsInformal ? 'bg-nexo-lime text-black border-nexo-lime' : 'bg-black text-zinc-400 border-white/10 hover:border-white/20'}`}
+                                            >
+                                                Seña 50%
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setInvoiceType('total');
+                                                    setInvoiceIsInformal(false);
+                                                    setInvoiceAmount(totalBudget);
+                                                }}
+                                                className={`py-2 rounded text-xs font-bold border transition-colors cursor-pointer ${invoiceType === 'total' && !invoiceIsInformal ? 'bg-nexo-lime text-black border-nexo-lime' : 'bg-black text-zinc-400 border-white/10 hover:border-white/20'}`}
+                                            >
+                                                Total (100%)
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setInvoiceType('custom');
+                                                    setInvoiceIsInformal(false);
+                                                }}
+                                                className={`py-2 rounded text-xs font-bold border transition-colors cursor-pointer ${invoiceType === 'custom' && !invoiceIsInformal ? 'bg-nexo-lime text-black border-nexo-lime' : 'bg-black text-zinc-400 border-white/10 hover:border-white/20'}`}
+                                            >
+                                                Monto Custom
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setInvoiceType('credit_note');
+                                                    setInvoiceIsInformal(false);
+                                                    if (invoiceAmount === 0) setInvoiceAmount(totalBudget);
+                                                }}
+                                                className={`py-2 rounded text-xs font-bold border transition-colors cursor-pointer ${invoiceType === 'credit_note' ? 'bg-amber-500 text-black border-amber-500' : 'bg-black text-zinc-400 border-white/10 hover:border-white/20 hover:text-white'}`}
+                                            >
+                                                Nota de Crédito
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setInvoiceType('sin_factura');
+                                                    setInvoiceIsInformal(true);
+                                                    const autoAmt = remaining > 0 ? remaining : totalBudget;
+                                                    if (autoAmt > 0) setInvoiceAmount(autoAmt);
+                                                }}
+                                                className={`py-2 rounded text-xs font-bold border transition-colors col-span-2 sm:col-span-1 cursor-pointer ${invoiceIsInformal ? 'bg-purple-500 text-white border-purple-500' : 'bg-purple-950/40 text-purple-300 border-purple-500/30 hover:bg-purple-900/60'}`}
+                                            >
+                                                🤫 Sin Factura {remaining > 0 ? `(${currency} ${remaining.toLocaleString()})` : ''}
+                                            </button>
+                                        </div>
+                                        {invoiceIsInformal && (
+                                            <div className="mt-2 bg-purple-500/10 border border-purple-500/30 rounded-lg p-3 text-[11px] text-purple-200 space-y-1">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-bold text-white">🤫 Cobro informal (sin factura AFIP):</span>
+                                                    {remaining > 0 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setInvoiceAmount(remaining)}
+                                                            className="text-[10px] bg-purple-500/30 hover:bg-purple-500/50 text-white px-2 py-0.5 rounded border border-purple-400/40 font-bold transition-colors cursor-pointer"
+                                                        >
+                                                            ⚡ Cargar Saldo Pendiente ({currency} {remaining.toLocaleString()})
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <p className="text-[10px] text-purple-300">
+                                                    Queda registrado para tu contabilidad interna. El cliente <strong>no lo verá en su portal</strong>.
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </div>
+                                );
+                            })()}
 
                             {/* Monto */}
                             <div className="space-y-2">
