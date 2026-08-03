@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { CrewMember, ROLE_ICONS } from './CrewDirectory';
-import WhatsAppSelectorModal, { getWAPreferredApp, buildWAUrl, WATargetApp } from './WhatsAppSelectorModal';
+import WhatsAppSelectorModal, { getWAPreferredApp, buildWAUrl, WATargetApp, isMobileDevice } from './WhatsAppSelectorModal';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -560,11 +560,11 @@ const EventCard: React.FC<{
                                            {/* Selector de App de WhatsApp */}
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-zinc-950/80 p-3 rounded-xl border border-white/10 gap-2 mb-3">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-base">📱</span>
+                                    <span className="text-base">{isMobileDevice() ? '📱' : '💻'}</span>
                                     <div>
                                         <div className="text-xs font-bold text-white">App de WhatsApp por defecto</div>
                                         <div className="text-[10px] text-zinc-400">
-                                            Elegí qué app abrir al hacer clic en notificar
+                                            {isMobileDevice() ? '📱 Modo Celular: Elegí entre tu WhatsApp Personal o Business' : '💻 Modo PC: Abre WhatsApp Web directamente sin preguntar'}
                                         </div>
                                     </div>
                                 </div>
@@ -578,10 +578,10 @@ const EventCard: React.FC<{
                                         }}
                                         className="bg-zinc-900 border border-white/20 rounded-lg px-2.5 py-1.5 text-xs font-bold text-nexo-lime focus:outline-none cursor-pointer"
                                     >
-                                        <option value="ask">❓ Preguntar siempre</option>
+                                        <option value="web">🌐 WhatsApp Web (Directo en PC)</option>
                                         <option value="personal">📱 WhatsApp Personal (whatsapp://)</option>
                                         <option value="business">💼 WhatsApp Business (wa.me)</option>
-                                        <option value="web">🌐 WhatsApp Web</option>
+                                        <option value="ask">❓ Preguntar siempre (Ideal Celular)</option>
                                     </select>
                                 </div>
                             </div>

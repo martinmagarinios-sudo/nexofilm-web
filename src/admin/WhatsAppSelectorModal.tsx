@@ -2,9 +2,17 @@ import React, { useState, useEffect } from 'react';
 
 export type WATargetApp = 'personal' | 'business' | 'web' | 'ask';
 
+export const isMobileDevice = (): boolean => {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+};
+
 export const getWAPreferredApp = (): WATargetApp => {
     const saved = localStorage.getItem('nexo_crm_wa_app') as WATargetApp;
-    return saved || 'ask';
+    if (saved) return saved;
+    // En PC la preferencia por defecto es WhatsApp Web ('web')
+    // En Celular la preferencia por defecto es 'ask' (Preguntar entre Personal y Business)
+    return isMobileDevice() ? 'ask' : 'web';
 };
 
 export const setWAPreferredApp = (app: WATargetApp) => {
