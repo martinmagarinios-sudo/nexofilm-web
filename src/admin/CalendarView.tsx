@@ -1008,6 +1008,34 @@ const CalendarView: React.FC<CalendarViewProps> = ({ projects, budgets, crewMemb
                 </div>
             </div>
 
+            {/* Banner de Superposición / Conflictos de Fechas */}
+            {conflicts.size > 0 && (
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center gap-2 text-amber-300 font-extrabold text-sm">
+                        <span className="text-base animate-pulse">⚠️</span>
+                        <span>ALERTA DE SUPERPOSICIÓN: Se detectaron {conflicts.size} fecha(s) con múltiples eventos o presupuestos cotizados</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                        {Array.from(conflicts.entries()).map(([dateStr, projs]) => (
+                            <button
+                                key={dateStr}
+                                type="button"
+                                onClick={() => {
+                                    const d = new Date(dateStr + 'T12:00:00');
+                                    setSelectedDate(dateStr);
+                                }}
+                                className="bg-amber-500/20 hover:bg-amber-500/40 border border-amber-500/40 text-amber-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+                            >
+                                <span>📅 {formatEventDate(dateStr)}:</span>
+                                <span className="bg-amber-400 text-black px-2 py-0.5 rounded font-black text-[10px]">
+                                    {projs.length} proyectos / pptos.
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* KPI bar */}
             <KPIBar projects={projects} budgets={budgets} />
 
