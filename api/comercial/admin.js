@@ -59,6 +59,47 @@ async function extractTextFromPdf(buffer) {
     }
 }
 
+
+// Helper para analizar factura de AFIP y extraer emisor, N° de FC y monto
+function parseAfipInvoiceText(text) {
+    const upperText = (text || '').toUpperCase();
+    
+    // 1. Detectar emisor por CUIT / Nombre / Razón Social
+    let issued_by = 'martin';
+    if (upperText.includes('BARONE') || upperText.includes('JESICA')) {
+        issued_by = 'jesica';
+    } else if (upperText.includes('MAGARIÑOS') || upperText.includes('MAGARINOS') || upperText.includes('MARTIN')) {
+        issued_by = 'martin';
+    }
+
+    // 2. Detectar N° de Comprobante AFIP (ej: Punto de Venta: 00001 Comp. Nro: 00000123 o 0001-00000123)
+    let fc_number = null;
+    const ptoVtaMatch = upperText.match(/(?:PUNTO DE VENTA|PTO\.?\s*VTA\.?)\s*:?\s*(\d{1,5})\s*(?:COMP\.?\s*NRO\.?|COMPROBANTE\s*NRO\.?)\s*:?\s*(\d{1,8})/i);
+    if (ptoVtaMatch) {
+        const pto = ptoVtaMatch[1].padStart(4, '0');
+        const nro = ptoVtaMatch[2].padStart(8, '0');
+        fc_number = `${pto}-${nro}`;
+    } else {
+        const directMatch = upperText.match(/(\d{4,5})\s*-\s*(\d{8})/);
+        if (directMatch) {
+            fc_number = `${directMatch[1].padStart(4, '0')}-${directMatch[2]}`;
+        }
+    }
+
+    // 3. Detectar Monto Total AFIP
+    let amount = null;
+    const amountMatch = upperText.match(/(?:IMPORTE\s+TOTAL|TOTAL)\s*:?\s*\$?\s*([\d\.\,]+)/i);
+    if (amountMatch) {
+        let numStr = amountMatch[1].replace(/\./g, '').replace(',', '.');
+        const parsed = parseFloat(numStr);
+        if (!isNaN(parsed) && parsed > 0) {
+            amount = parsed;
+        }
+    }
+
+    return { issued_by, fc_number, amount };
+}
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
@@ -94,6 +135,32 @@ export default async function handler(req, res) {
 
     try {
         switch (action) {
+            case 'parseInvoicePdf': {
+                const { invoice_url } = req.body;
+                if (!invoice_url) {
+                    return res.status(400).json({ error: 'invoice_url es requerido' });
+                }
+                try {
+                    const response = await fetch(invoice_url);
+                    if (!response.ok) throw new Error('No se pudo descargar el PDF para análisis');
+                    const arrayBuf = await response.arrayBuffer();
+                    const buffer = Buffer.from(arrayBuf);
+                    const pdfText = await extractTextFromPdf(buffer);
+                    const parsedData = parseAfipInvoiceText(pdfText);
+                    return res.status(200).json({
+                        success: true,
+                        parsed: parsedData,
+                        raw_length: pdfText.length
+                    });
+                } catch (parseErr) {
+                    console.error('Error parseInvoicePdf:', parseErr);
+                    return res.status(200).json({
+                        success: false,
+                        parsed: { issued_by: 'martin', fc_number: null, amount: null },
+                        error: parseErr.message
+                    });
+                }
+            }
             case 'listProjects': {
                 const { data: projects, error: projErr } = await supabase
                     .from('projects')
@@ -414,7 +481,10 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                     invoice_type, 
                     invoice_amount,
                     invoice_fc_number,
-                    bank_details
+                    bank_details,
+                    invoice_issued_by,
+                    invoice_is_informal,
+                    invoice_payment_method
                 } = req.body;
 
                 if (!project_id) {
@@ -432,12 +502,40 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
 
                 // Construir la nueva entrada del historial
                 const parsedAmount = invoice_amount ? parseFloat(invoice_amount) : null;
-                const newHistoryEntry = invoice_url ? {
-                    fc_number: invoice_fc_number || null,
-                    amount: parsedAmount,
+                const isInformal = invoice_is_informal === true || invoice_is_informal === 'true';
+                // Para pagos informales siempre generamos entrada (no requieren invoice_url)
+                const shouldCreateEntry = invoice_url || isInformal;
+                                // Auto-analizar PDF si se proporcionó invoice_url y no se forzó emisor
+                let detectedIssuedBy = invoice_issued_by || 'martin';
+                let detectedFcNumber = invoice_fc_number || null;
+                let detectedAmount = parsedAmount;
+
+                if (invoice_url && !isInformal) {
+                    try {
+                        const pdfRes = await fetch(invoice_url);
+                        if (pdfRes.ok) {
+                            const pdfBuf = Buffer.from(await pdfRes.arrayBuffer());
+                            const pdfTxt = await extractTextFromPdf(pdfBuf);
+                            const parsed = parseAfipInvoiceText(pdfTxt);
+                            if (parsed.issued_by) detectedIssuedBy = parsed.issued_by;
+                            if (parsed.fc_number && !detectedFcNumber) detectedFcNumber = parsed.fc_number;
+                            if (parsed.amount && !detectedAmount) detectedAmount = parsed.amount;
+                        }
+                    } catch (e) {
+                        console.error('Error auto-parsing in sendInvoice:', e);
+                    }
+                }
+
+                const newHistoryEntry = shouldCreateEntry ? {
+                    fc_number: isInformal ? null : (detectedFcNumber || null),
+                    amount: detectedAmount,
                     type: invoice_type || null,
                     date_sent: new Date().toISOString(),
-                    invoice_url: invoice_url
+                    invoice_url: isInformal ? null : (invoice_url || null),
+                    paid: false,
+                    issued_by: detectedIssuedBy,
+                    is_informal: isInformal,
+                    payment_method: isInformal ? (invoice_payment_method || 'efectivo') : null
                 } : null;
 
                 // Obtener historial existente y agregar nueva entrada

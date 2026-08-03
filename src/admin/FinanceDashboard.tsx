@@ -14,6 +14,12 @@ interface Project {
     coverage_types?: string[] | null;
     crew_assignments?: CrewAssignment[] | null;
     extra_expenses?: ExtraExpense[] | null;
+    invoices_history?: Array<{
+        amount: number | null;
+        type: string | null;
+        paid?: boolean;
+        is_informal?: boolean;
+    }> | null;
 }
 
 interface CrewAssignment {
@@ -101,6 +107,15 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
             const margin = income - totalExpenses;
             const marginPercent = income > 0 ? Math.round((margin / income) * 100) : 0;
 
+            // Cobrado real: solo entradas del historial marcadas como pagadas
+            const invoicesHist = Array.isArray(proj.invoices_history) ? proj.invoices_history : [];
+            const cobradoReal = invoicesHist.reduce((sum, inv) => {
+                if (!inv.paid) return sum;
+                const amt = Number(inv.amount) || 0;
+                return inv.type === 'credit_note' ? sum - amt : sum + amt;
+            }, 0);
+            const saldoPendiente = income - cobradoReal;
+
             return {
                 ...proj,
                 income,
@@ -109,7 +124,9 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                 totalExpenses,
                 margin,
                 marginPercent,
-                currency
+                currency,
+                cobradoReal,
+                saldoPendiente
             };
         });
     }, [projects, budgets]);
@@ -173,10 +190,13 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
         let expensesARS = 0;
         let revenueUSD = 0;
         let expensesUSD = 0;
+        let cobradoARS = 0;
+        let cobradoUSD = 0;
 
         filteredProjects.forEach(p => {
             if (p.currency === 'USD') {
                 revenueUSD += p.income;
+                cobradoUSD += (p as any).cobradoReal || 0;
                 const assignments = Array.isArray(p.crew_assignments) ? p.crew_assignments : [];
                 const extras = Array.isArray(p.extra_expenses) ? p.extra_expenses : [];
                 assignments.forEach(a => {
@@ -191,6 +211,7 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                 });
             } else {
                 revenueARS += Number(p.income) || 0;
+                cobradoARS += (p as any).cobradoReal || 0;
                 const assignments = Array.isArray(p.crew_assignments) ? p.crew_assignments : [];
                 const extras = Array.isArray(p.extra_expenses) ? p.extra_expenses : [];
                 assignments.forEach(a => {
@@ -219,7 +240,9 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
             revenueUSD,
             expensesUSD,
             marginUSD,
-            marginPercentUSD
+            marginPercentUSD,
+            cobradoARS,
+            cobradoUSD
         };
     }, [filteredProjects]);
 
@@ -594,7 +617,7 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                 
                 <div className="bg-zinc-900/40 border border-white/5 rounded-2xl p-5 shadow-2xl space-y-2">
                     <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest block">📥 Facturación Bruta (Ingresos)</span>
@@ -624,6 +647,39 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                             <span className="text-xs bg-white/10 text-white px-2 py-0.5 rounded font-black font-mono">{summaryStats.marginPercentUSD}%</span>
                         </div>
                     </div>
+                </div>
+
+                {/* Card Cobrado Real */}
+                <div className="bg-zinc-900/40 border border-emerald-500/20 rounded-2xl p-5 shadow-2xl space-y-2 bg-gradient-to-br from-emerald-500/[0.03] to-transparent">
+                    <span className="text-emerald-400 text-[10px] uppercase font-bold tracking-widest block">💰 Cobrado Real</span>
+                    <div className="space-y-1">
+                        {summaryStats.cobradoARS > 0 ? (
+                            <p className="text-2xl font-black text-emerald-400 font-mono">{formatMoney(summaryStats.cobradoARS, 'ARS')}</p>
+                        ) : (
+                            <p className="text-zinc-600 text-sm font-bold font-mono">$0</p>
+                        )}
+                        {summaryStats.cobradoUSD > 0 && (
+                            <p className="text-lg font-black text-emerald-300 font-mono">{formatMoney(summaryStats.cobradoUSD, 'USD')}</p>
+                        )}
+                        <p className="text-[10px] text-zinc-500 mt-1">FC + informales marcados como pagados</p>
+                    </div>
+                    {(summaryStats.revenueARS > 0 || summaryStats.revenueUSD > 0) && (
+                        <div className="pt-1.5 border-t border-white/5">
+                            <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-wider">Saldo por cobrar:</p>
+                            <div className="flex flex-wrap gap-2 mt-0.5">
+                                {summaryStats.revenueARS > 0 && (
+                                    <span className={`text-sm font-black font-mono ${
+                                        summaryStats.revenueARS - summaryStats.cobradoARS > 0 ? 'text-amber-400' : 'text-emerald-400'
+                                    }`}>{formatMoney(Math.max(0, summaryStats.revenueARS - summaryStats.cobradoARS), 'ARS')}</span>
+                                )}
+                                {summaryStats.revenueUSD > 0 && (
+                                    <span className={`text-sm font-black font-mono ${
+                                        summaryStats.revenueUSD - summaryStats.cobradoUSD > 0 ? 'text-amber-400' : 'text-emerald-400'
+                                    }`}>{formatMoney(Math.max(0, summaryStats.revenueUSD - summaryStats.cobradoUSD), 'USD')}</span>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
             </div>
@@ -936,6 +992,8 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                                 <th className="px-4 py-3.5 text-right">Gastos Extras</th>
                                 <th className="px-4 py-3.5 text-right">Ganancia Proyectada</th>
                                 <th className="px-4 py-3.5 text-center">Margen %</th>
+                                <th className="px-4 py-3.5 text-right">Cobrado</th>
+                                <th className="px-4 py-3.5 text-right">Saldo</th>
                                 <th className="px-4 py-3.5">Estado</th>
                             </tr>
                         </thead>
@@ -977,6 +1035,24 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                                                 {p.marginPercent}%
                                             </span>
                                         </td>
+                                        {/* Cobrado Real */}
+                                        <td className="px-4 py-3.5 text-right font-mono">
+                                            {(p as any).cobradoReal > 0 ? (
+                                                <span className="text-emerald-400 font-bold">{formatMoney((p as any).cobradoReal, p.currency || 'ARS')}</span>
+                                            ) : (
+                                                <span className="text-zinc-600">-</span>
+                                            )}
+                                        </td>
+                                        {/* Saldo Pendiente */}
+                                        <td className="px-4 py-3.5 text-right font-mono">
+                                            {(p as any).saldoPendiente > 0 ? (
+                                                <span className="text-amber-400 font-bold">{formatMoney((p as any).saldoPendiente, p.currency || 'ARS')}</span>
+                                            ) : (p as any).cobradoReal > 0 ? (
+                                                <span className="text-emerald-400 font-bold text-[10px]">✅ Saldado</span>
+                                            ) : (
+                                                <span className="text-zinc-600">-</span>
+                                            )}
+                                        </td>
                                         <td className="px-4 py-3.5 whitespace-nowrap">
                                             <span className={`text-[9px] uppercase font-black px-2 py-0.5 rounded border ${
                                                 p.status === 'delivered' ? 'bg-zinc-800 border-zinc-700 text-zinc-400' :
@@ -991,7 +1067,7 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                             })}
                             {filteredProjects.length === 0 && (
                                 <tr>
-                                    <td colSpan={9} className="px-4 py-12 text-center text-zinc-600 italic">No se encontraron proyectos correspondientes a las búsquedas aplicadas.</td>
+                                    <td colSpan={11} className="px-4 py-12 text-center text-zinc-600 italic">No se encontraron proyectos correspondientes a las búsquedas aplicadas.</td>
                                 </tr>
                             )}
                         </tbody>

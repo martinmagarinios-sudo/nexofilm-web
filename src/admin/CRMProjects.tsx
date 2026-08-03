@@ -25,9 +25,13 @@ interface BudgetItem {
 interface InvoiceHistoryEntry {
     fc_number: string | null;
     amount: number | null;
-    type: 'total' | 'deposit_50' | 'custom' | null;
+    type: 'total' | 'deposit_50' | 'custom' | 'credit_note' | 'sin_factura' | null;
     date_sent: string;
     invoice_url: string;
+    paid?: boolean;
+    issued_by?: 'martin' | 'jesica' | null;
+    is_informal?: boolean;           // true = pago en negro, no visible al cliente
+    payment_method?: string | null;  // 'transferencia' | 'efectivo' | 'mercadopago' | 'otro'
 }
 
 interface Project {
@@ -326,11 +330,16 @@ const CRMProjects: React.FC = () => {
     // Estado del proyecto seleccionado para facturación
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [bankDetails, setBankDetails] = useState('');
-    const [invoiceType, setInvoiceType] = useState<'total' | 'deposit_50' | 'custom' | 'credit_note'>('deposit_50');
+    const [invoiceType, setInvoiceType] = useState<'total' | 'deposit_50' | 'custom' | 'credit_note' | 'sin_factura'>('deposit_50');
     const [invoiceAmount, setInvoiceAmount] = useState<number>(0);
     const [invoiceFcNumber, setInvoiceFcNumber] = useState('');
     const [invoiceUrl, setInvoiceUrl] = useState('');
     const [uploading, setUploading] = useState(false);
+    // Emisor de factura y pagos informales
+    const [invoiceIssuedBy, setInvoiceIssuedBy] = useState<'martin' | 'jesica'>('martin');
+    const [invoiceIsInformal, setInvoiceIsInformal] = useState(false);
+    const [invoicePaymentMethod, setInvoicePaymentMethod] = useState('transferencia');
+    const [pdfParsedInfo, setPdfParsedInfo] = useState<{ issued_by?: string; fc_number?: string; amount?: number } | null>(null);
 
     // Estado de presupuesto de proyecto existente
     const [budgetingProject, setBudgetingProject] = useState<Project | null>(null);
@@ -1337,11 +1346,14 @@ const CRMProjects: React.FC = () => {
                 body: JSON.stringify({
                     action: 'sendInvoice',
                     project_id: selectedProject.id,
-                    invoice_url: invoiceUrl,
+                    invoice_url: invoiceIsInformal ? '' : invoiceUrl,
                     invoice_type: invoiceType,
                     invoice_amount: invoiceAmount,
-                    invoice_fc_number: invoiceFcNumber,
+                    invoice_fc_number: invoiceIsInformal ? '' : invoiceFcNumber,
                     bank_details: bankDetails,
+                    invoice_issued_by: invoiceIssuedBy,
+                    invoice_is_informal: invoiceIsInformal,
+                    invoice_payment_method: invoiceIsInformal ? invoicePaymentMethod : null,
                     password
                 })
             });
@@ -1349,11 +1361,15 @@ const CRMProjects: React.FC = () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error al guardar factura');
 
-            setSuccessMsg(`Factura ${invoiceFcNumber ? `N° ${invoiceFcNumber} ` : ''}registrada para ${selectedProject.contact_name}. El cliente ya puede verla.`);
+            setSuccessMsg(`${invoiceIsInformal ? 'Cobro informal' : `Factura ${invoiceFcNumber ? `N° ${invoiceFcNumber} ` : ''}`}registrado para ${selectedProject.contact_name}.${invoiceIsInformal ? ' Solo visible en el admin.' : ' El cliente ya puede verla.'}`);
             setSelectedProject(null);
             setInvoiceUrl('');
             setInvoiceFcNumber('');
             setBankDetails('');
+            setInvoiceIssuedBy('martin');
+            setInvoiceIsInformal(false);
+            setInvoicePaymentMethod('transferencia');
+        setPdfParsedInfo(null);
             fetchData();
         } catch (err: any) {
             setError(err.message);
@@ -1368,6 +1384,10 @@ const CRMProjects: React.FC = () => {
         setInvoiceType(proj.invoice_type || 'deposit_50');
         setInvoiceAmount(proj.invoice_amount || 0);
         setInvoiceFcNumber(proj.invoice_fc_number || '');
+        // Resetear campos nuevos
+        setInvoiceIssuedBy('martin');
+        setInvoiceIsInformal(false);
+        setInvoicePaymentMethod('transferencia');
     };
 
     const copyClientLink = (token: string) => {
@@ -3236,17 +3256,33 @@ const CRMProjects: React.FC = () => {
                                                     <div key={idx} className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 text-xs py-2 px-3 border border-white/5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
                                                         <div className="flex items-center gap-2 flex-wrap min-w-0">
                                                             <span className="text-zinc-500 font-mono text-[10px]">#{idx + 1}</span>
-                                                            {inv.fc_number && (
+                                                            {inv.is_informal ? (
+                                                                <span className="font-semibold px-2 py-0.5 rounded text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30">🤫 Sin FC</span>
+                                                            ) : inv.fc_number ? (
                                                                 <span className="font-mono text-nexo-lime font-bold bg-nexo-lime/10 border border-nexo-lime/20 px-2 py-0.5 rounded text-[11px] break-all">
                                                                     FC {inv.fc_number}
                                                                 </span>
-                                                            )}
+                                                            ) : null}
                                                             <span className={`font-semibold px-2 py-0.5 rounded text-[10px] ${
-                                                                inv.type === 'credit_note' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-zinc-800 text-zinc-300'
+                                                                inv.type === 'credit_note' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                                                                inv.is_informal ? 'bg-purple-500/10 text-purple-300' :
+                                                                'bg-zinc-800 text-zinc-300'
                                                             }`}>
-                                                                {inv.type === 'credit_note' ? '📄 Nota de Crédito' : inv.type === 'deposit_50' ? '50% Seña' : inv.type === 'total' ? '100% Total' : 'Custom'}
+                                                                {inv.type === 'credit_note' ? '📄 Nota de Crédito' :
+                                                                 inv.is_informal ? `💵 ${inv.payment_method === 'efectivo' ? 'Efectivo' : inv.payment_method === 'mercadopago' ? 'MercadoPago' : inv.payment_method === 'otro' ? 'Otro' : 'Transferencia'}` :
+                                                                 inv.type === 'deposit_50' ? '50% Seña' :
+                                                                 inv.type === 'total' ? '100% Total' : 'Custom'}
                                                             </span>
                                                             <span className="text-zinc-500 text-[10px]">{new Date(inv.date_sent).toLocaleDateString('es-AR')}</span>
+                                                            {inv.issued_by && (
+                                                                <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider border ${
+                                                                    inv.issued_by === 'jesica'
+                                                                        ? 'bg-pink-500/10 text-pink-300 border-pink-500/20'
+                                                                        : 'bg-sky-500/10 text-sky-300 border-sky-500/20'
+                                                                }`}>
+                                                                    {inv.issued_by === 'jesica' ? '👩‍💼 Jesi' : '👨‍💼 Martín'}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                         <div className="flex items-center gap-3 shrink-0 ml-auto sm:ml-0">
                                                             <span className={`font-bold font-mono text-xs ${inv.type === 'credit_note' ? 'text-amber-400' : 'text-white'}`}>
@@ -3307,7 +3343,37 @@ const CRMProjects: React.FC = () => {
                                 );
                             })()}
 
-                            {/* Número de factura AFIP */}
+                            {/* Emisor de la Factura */}
+                            <div className="space-y-2">
+                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Emitida / Firmada por</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setInvoiceIssuedBy('martin')}
+                                        className={`py-2.5 rounded text-xs font-bold border transition-colors flex items-center justify-center gap-2 ${
+                                            invoiceIssuedBy === 'martin'
+                                                ? 'bg-sky-500/20 text-sky-300 border-sky-500/40'
+                                                : 'bg-black text-zinc-500 border-white/10 hover:border-white/20 hover:text-zinc-300'
+                                        }`}
+                                    >
+                                        👨‍💼 Martín Magariños
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setInvoiceIssuedBy('jesica')}
+                                        className={`py-2.5 rounded text-xs font-bold border transition-colors flex items-center justify-center gap-2 ${
+                                            invoiceIssuedBy === 'jesica'
+                                                ? 'bg-pink-500/20 text-pink-300 border-pink-500/40'
+                                                : 'bg-black text-zinc-500 border-white/10 hover:border-white/20 hover:text-zinc-300'
+                                        }`}
+                                    >
+                                        👩‍💼 Jesica Barone Franco
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Número de factura AFIP (oculto si es informal) */}
+                            {!invoiceIsInformal && (
                             <div className="space-y-2">
                                 <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">N° de Comprobante AFIP <span className="text-zinc-600 normal-case font-normal">(opcional)</span></label>
                                 <input
@@ -3318,6 +3384,7 @@ const CRMProjects: React.FC = () => {
                                     className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm text-white font-mono focus:outline-none focus:border-nexo-lime"
                                 />
                             </div>
+                            )}
 
                             {/* Datos de cuenta */}
                             <div className="space-y-2">
@@ -3370,27 +3437,65 @@ const CRMProjects: React.FC = () => {
                                     >
                                         Nota de Crédito
                                     </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setInvoiceType('sin_factura'); setInvoiceIsInformal(true); }}
+                                        className={`py-2 rounded text-xs font-bold border transition-colors col-span-2 sm:col-span-1 ${invoiceIsInformal ? 'bg-purple-500 text-white border-purple-500' : 'bg-black text-zinc-400 border-white/10 hover:border-white/20 hover:text-zinc-200'}`}
+                                    >
+                                        🤫 Sin Factura
+                                    </button>
                                 </div>
+                                {invoiceIsInformal && (
+                                    <div className="mt-2 bg-purple-500/8 border border-purple-500/20 rounded p-3 text-[11px] text-purple-300">
+                                        <span className="font-bold">🤫 Cobro informal:</span> Solo queda registrado en tu admin para tu contabilidad. El cliente <strong>no lo verá</strong> en su portal.
+                                    </div>
+                                )}
                             </div>
 
-                            {/* Monto de Factura */}
+                            {/* Monto */}
                             <div className="space-y-2">
                                 <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">
-                                    {invoiceType === 'credit_note' ? 'Monto de la Nota de Crédito (A Descontar)' : 'Monto de la Factura'} ({selectedProject?.currency || 'ARS'})
+                                    {invoiceType === 'credit_note' ? 'Monto de la Nota de Crédito (A Descontar)' :
+                                     invoiceIsInformal ? 'Monto Cobrado (sin factura)' :
+                                     'Monto de la Factura'} ({selectedProject?.currency || 'ARS'})
                                 </label>
                                 <input
                                     type="number"
                                     required
                                     min="0"
                                     step="0.01"
-                                    disabled={invoiceType !== 'custom' && invoiceType !== 'credit_note'}
+                                    disabled={invoiceType !== 'custom' && invoiceType !== 'credit_note' && !invoiceIsInformal}
                                     value={invoiceAmount}
                                     onChange={(e) => setInvoiceAmount(parseFloat(e.target.value) || 0)}
                                     className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime disabled:opacity-50"
                                 />
                             </div>
 
-                            {/* Adjuntar PDF de Factura */}
+                            {/* Método de pago (solo para informales) */}
+                            {invoiceIsInformal && (
+                                <div className="space-y-2">
+                                    <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Método de Cobro</label>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                        {([['transferencia','🏦 Transferencia'],['efectivo','💵 Efectivo'],['mercadopago','📱 MercadoPago'],['otro','❓ Otro']] as [string,string][]).map(([val, label]) => (
+                                            <button
+                                                key={val}
+                                                type="button"
+                                                onClick={() => setInvoicePaymentMethod(val)}
+                                                className={`py-2 rounded text-xs font-bold border transition-colors ${
+                                                    invoicePaymentMethod === val
+                                                        ? 'bg-purple-500/30 text-purple-200 border-purple-500/50'
+                                                        : 'bg-black text-zinc-500 border-white/10 hover:border-white/20 hover:text-zinc-300'
+                                                }`}
+                                            >
+                                                {label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Adjuntar PDF (oculto si es informal) */}
+                            {!invoiceIsInformal && (
                             <div className="space-y-2">
                                 <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider block">Subir Factura PDF (AFIP/ARCA)</label>
                                 <input
@@ -3401,8 +3506,10 @@ const CRMProjects: React.FC = () => {
                                 />
                                 {uploading && <p className="text-xs text-nexo-lime animate-pulse">Subiendo PDF a Supabase Storage...</p>}
                             </div>
+                            )}
 
-                            {/* Campo de link alternativo */}
+                            {/* Campo de link alternativo (solo si no es informal) */}
+                            {!invoiceIsInformal && (
                             <div className="space-y-2">
                                 <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider block">O pegá el enlace directo al PDF manualmente:</label>
                                 <input
@@ -3413,9 +3520,18 @@ const CRMProjects: React.FC = () => {
                                     className="w-full bg-black border border-white/10 rounded px-4 py-1.5 text-xs text-white focus:outline-none focus:border-nexo-lime"
                                 />
                             </div>
+                            )}
 
-                            {/* Indicador de estado: ¿El cliente podrá ver la factura? */}
-                            {invoiceUrl ? (
+                            {/* Indicador de estado */}
+                            {invoiceIsInformal ? (
+                                <div className="flex items-start gap-2 bg-purple-500/10 border border-purple-500/20 rounded p-3">
+                                    <span className="text-purple-400 text-base leading-none mt-0.5">🤫</span>
+                                    <p className="text-purple-300 text-[11px] leading-relaxed">
+                                        <strong>Cobro informal:</strong> Queda en tu historial de pagos interno. El cliente <strong>no lo verá</strong> en su portal.
+                                        Vas a poder confirmar si lo cobraste desde el historial.
+                                    </p>
+                                </div>
+                            ) : invoiceUrl ? (
                                 <div className="flex items-start gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded p-3">
                                     <span className="text-emerald-400 text-base leading-none mt-0.5">✅</span>
                                     <p className="text-emerald-400 text-[11px] leading-relaxed">
@@ -3435,12 +3551,16 @@ const CRMProjects: React.FC = () => {
                             <button
                                 type="submit"
                                 className={`w-full font-black text-xs uppercase tracking-widest py-3 rounded transition-colors ${
-                                    invoiceUrl
+                                    invoiceIsInformal
+                                        ? 'bg-purple-500 text-white hover:bg-purple-400'
+                                        : invoiceUrl
                                         ? 'bg-nexo-lime text-black hover:bg-white'
                                         : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
                                 }`}
                             >
-                                {invoiceUrl ? '🧾 Guardar y Habilitar Descarga al Cliente' : 'Guardar Datos (Sin PDF aún)'}
+                                {invoiceIsInformal ? '🤫 Registrar Cobro Informal' :
+                                 invoiceUrl ? '🧾 Guardar y Habilitar Descarga al Cliente' :
+                                 'Guardar Datos (Sin PDF aún)'}
                             </button>
                         </form>
                     </div>
