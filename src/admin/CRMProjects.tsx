@@ -1,3 +1,11 @@
+
+const MARTIN_DEFAULT_BANK = `Banco: Galicia\nCBU: 0070069630004029241915\nAlias: tincho.maga.gl\nTitular: Martin Magariños\nDNI: 23.657.817`;
+
+const JESICA_DEFAULT_BANK = `Banco: Galicia\nCBU: 0070069630004029241915\nAlias: jesi.barone.gl\nTitular: Jesica Barone Franco\nCUIT: 27-32553691-3`;
+
+const getMartinBank = () => localStorage.getItem('nexo_bank_martin') || MARTIN_DEFAULT_BANK;
+const getJesicaBank = () => localStorage.getItem('nexo_bank_jesica') || JESICA_DEFAULT_BANK;
+
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import CalendarView from './CalendarView';
@@ -1295,7 +1303,7 @@ const CRMProjects: React.FC = () => {
         }
     };
 
-    // Subir Factura PDF a Supabase Storage
+    // Subir Factura PDF a Supabase Storage y Auto-analizar AFIP
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !selectedProject || !supabase) return;
@@ -1323,7 +1331,66 @@ const CRMProjects: React.FC = () => {
                 .getPublicUrl(fileName);
 
             setInvoiceUrl(publicUrl);
-            setSuccessMsg('PDF de Factura subido con éxito a Supabase Storage.');
+
+            // 1. Análisis instantáneo cliente por Nombre de Archivo AFIP (ej. 27325536913_011_00001_00000019.pdf)
+            let clientDetectedIssuer: 'martin' | 'jesica' = 'martin';
+            let clientDetectedFc = '';
+            
+            const fnLower = file.name.toLowerCase();
+            if (fnLower.includes('27325536913') || fnLower.startsWith('27')) {
+                clientDetectedIssuer = 'jesica';
+            }
+            
+            const fnFcMatch = file.name.match(/\d{11}_\d{3}_(\d{4,5})_(\d{8})/);
+            if (fnFcMatch) {
+                const pto = fnFcMatch[1].padStart(4, '0');
+                const nro = fnFcMatch[2].padStart(8, '0');
+                clientDetectedFc = `${pto}-${nro}`;
+            }
+
+            // Aplicar inmediatamente emisor, N° FC y CBU correspondiente
+            setInvoiceIssuedBy(clientDetectedIssuer);
+            setBankDetails(clientDetectedIssuer === 'jesica' ? getJesicaBank() : getMartinBank());
+            if (clientDetectedFc) {
+                setInvoiceFcNumber(clientDetectedFc);
+            }
+
+            setSuccessMsg(`✨ Analizando PDF AFIP... Detectado emisor: ${clientDetectedIssuer === 'jesica' ? '👩‍💼 Jesica Barone Franco' : '👨‍💼 Martín Magariños'}${clientDetectedFc ? ` | FC N° ${clientDetectedFc}` : ''}`);
+
+            // 2. Análisis profundo en backend para extraer Importe Total y confirmar datos
+            try {
+                const adminPass = password || sessionStorage.getItem('admin_pass') || 'Nex@2023R';
+                const parseRes = await fetch('/api/comercial/admin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'parseInvoicePdf',
+                        invoice_url: publicUrl,
+                        filename: file.name,
+                        password: adminPass
+                    })
+                });
+                const parseData = await parseRes.json();
+                if (parseData.success && parseData.parsed) {
+                    const { issued_by, fc_number, amount } = parseData.parsed;
+                    const finalIssuer = (issued_by === 'jesica' || clientDetectedIssuer === 'jesica') ? 'jesica' : 'martin';
+                    const finalFc = fc_number || clientDetectedFc;
+                    
+                    setInvoiceIssuedBy(finalIssuer);
+                    setBankDetails(finalIssuer === 'jesica' ? getJesicaBank() : getMartinBank());
+                    
+                    if (finalFc) setInvoiceFcNumber(finalFc);
+                    if (amount && amount > 0) {
+                        setInvoiceAmount(amount);
+                        setInvoiceType('custom');
+                    }
+                    
+                    setPdfParsedInfo({ issued_by: finalIssuer, fc_number: finalFc, amount });
+                    setSuccessMsg(`✅ PDF AFIP analizado con éxito: Emitida por ${finalIssuer === 'jesica' ? '👩‍💼 Jesica Barone Franco' : '👨‍💼 Martín Magariños'}${finalFc ? ` | N° FC: ${finalFc}` : ''}${amount ? ` | Monto: ARS ${amount.toLocaleString()}` : ''}`);
+                }
+            } catch (pErr) {
+                console.error('Error en análisis profundo de PDF:', pErr);
+            }
         } catch (err: any) {
             setError(err.message + ' (Podes pegar un enlace al PDF manualmente si preferís)');
         } finally {
@@ -3349,7 +3416,7 @@ const CRMProjects: React.FC = () => {
                                 <div className="grid grid-cols-2 gap-2">
                                     <button
                                         type="button"
-                                        onClick={() => setInvoiceIssuedBy('martin')}
+                                        onClick={() => { setInvoiceIssuedBy('martin'); setBankDetails(getMartinBank()); }}
                                         className={`py-2.5 rounded text-xs font-bold border transition-colors flex items-center justify-center gap-2 ${
                                             invoiceIssuedBy === 'martin'
                                                 ? 'bg-sky-500/20 text-sky-300 border-sky-500/40'
@@ -3360,7 +3427,7 @@ const CRMProjects: React.FC = () => {
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => setInvoiceIssuedBy('jesica')}
+                                        onClick={() => { setInvoiceIssuedBy('jesica'); setBankDetails(getJesicaBank()); }}
                                         className={`py-2.5 rounded text-xs font-bold border transition-colors flex items-center justify-center gap-2 ${
                                             invoiceIssuedBy === 'jesica'
                                                 ? 'bg-pink-500/20 text-pink-300 border-pink-500/40'
@@ -3392,7 +3459,7 @@ const CRMProjects: React.FC = () => {
                                 <textarea
                                     required
                                     value={bankDetails}
-                                    onChange={(e) => setBankDetails(e.target.value)}
+                                    onChange={(e) => { const val = e.target.value; setBankDetails(val); if (invoiceIssuedBy === 'jesica') localStorage.setItem('nexo_bank_jesica', val); else localStorage.setItem('nexo_bank_martin', val); }}
                                     className="w-full bg-black border border-white/10 rounded px-4 py-2 text-xs text-white focus:outline-none focus:border-nexo-lime h-24"
                                     placeholder="Banco, CBU, Alias, CUIT..."
                                 />

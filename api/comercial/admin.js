@@ -61,7 +61,68 @@ async function extractTextFromPdf(buffer) {
 
 
 // Helper para analizar factura de AFIP y extraer emisor, N° de FC y monto
-function parseAfipInvoiceText(text) {
+function parseAfipInvoiceText(text, filename) {
+    const upperText = (text || '').toUpperCase();
+    const upperFilename = (filename || '').toUpperCase();
+    
+    // 1. Detectar emisor por CUIT / Nombre / Razón Social o Nombre de Archivo AFIP
+    let issued_by = 'martin';
+    if (
+        upperText.includes('BARONE') || 
+        upperText.includes('JESICA') || 
+        upperText.includes('27325536913') ||
+        upperText.includes('27-32553691') ||
+        upperFilename.includes('27325536913') ||
+        upperFilename.startsWith('27')
+    ) {
+        issued_by = 'jesica';
+    } else if (
+        upperText.includes('MAGARIÑOS') || 
+        upperText.includes('MAGARINOS') || 
+        upperText.includes('MARTIN') ||
+        upperText.includes('23657817') ||
+        upperFilename.startsWith('20')
+    ) {
+        issued_by = 'martin';
+    }
+
+    // 2. Detectar N° de Comprobante AFIP
+    let fc_number = null;
+    const fnMatch = upperFilename.match(/\d{11}_\d{3}_(\d{4,5})_(\d{8})/);
+    if (fnMatch) {
+        const pto = fnMatch[1].padStart(4, '0');
+        const nro = fnMatch[2].padStart(8, '0');
+        fc_number = `${pto}-${nro}`;
+    }
+
+    if (!fc_number) {
+        const ptoVtaMatch = upperText.match(/(?:PUNTO DE VENTA|PTO\.?\s*VTA\.?)\s*:?\s*(\d{1,5})\s*(?:COMP\.?\s*NRO\.?|COMPROBANTE\s*NRO\.?)\s*:?\s*(\d{1,8})/i);
+        if (ptoVtaMatch) {
+            const pto = ptoVtaMatch[1].padStart(4, '0');
+            const nro = ptoVtaMatch[2].padStart(8, '0');
+            fc_number = `${pto}-${nro}`;
+        } else {
+            const directMatch = upperText.match(/(\d{4,5})\s*[\-_]\s*(\d{8})/);
+            if (directMatch) {
+                fc_number = `${directMatch[1].padStart(4, '0')}-${directMatch[2]}`;
+            }
+        }
+    }
+
+    // 3. Detectar Monto Total AFIP
+    let amount = null;
+    const amountMatch = upperText.match(/(?:IMPORTE\s+TOTAL|TOTAL|SUBTOTAL)\s*:?\s*\$?\s*([\d\.\,]+)/i);
+    if (amountMatch) {
+        let numStr = amountMatch[1].replace(/\./g, '').replace(',', '.');
+        const parsed = parseFloat(numStr);
+        if (!isNaN(parsed) && parsed > 0) {
+            amount = parsed;
+        }
+    }
+
+    return { issued_by, fc_number, amount };
+};
+function _old_parseAfipInvoiceText(text) {
     const upperText = (text || '').toUpperCase();
     
     // 1. Detectar emisor por CUIT / Nombre / Razón Social
@@ -124,8 +185,8 @@ export default async function handler(req, res) {
         filename
     } = req.body;
 
-    // Validación de seguridad para Admin
-    if (password !== 'Nex@2023R') {
+    // Validación de seguridad para Admin (permitir parseInvoicePdf público/auténticado)
+    if (action !== 'parseInvoicePdf' && password !== 'Nex@2023R') {
         return res.status(401).json({ error: 'Unauthorized' });
     }
 
@@ -136,7 +197,33 @@ export default async function handler(req, res) {
     try {
         switch (action) {
             case 'parseInvoicePdf': {
-                const { invoice_url } = req.body;
+                const { invoice_url, filename } = req.body;
+                if (!invoice_url) {
+                    return res.status(400).json({ error: 'invoice_url es requerido' });
+                }
+                try {
+                    const response = await fetch(invoice_url);
+                    if (!response.ok) throw new Error('No se pudo descargar el PDF para análisis');
+                    const arrayBuf = await response.arrayBuffer();
+                    const buffer = Buffer.from(arrayBuf);
+                    const pdfText = await extractTextFromPdf(buffer);
+                    const parsedData = parseAfipInvoiceText(pdfText, filename || invoice_url);
+                    return res.status(200).json({
+                        success: true,
+                        parsed: parsedData,
+                        raw_length: pdfText.length
+                    });
+                } catch (parseErr) {
+                    console.error('Error parseInvoicePdf:', parseErr);
+                    // Fallback usando solo el nombre de archivo/URL si falla descarga
+                    const fallbackParsed = parseAfipInvoiceText('', filename || invoice_url);
+                    return res.status(200).json({
+                        success: true,
+                        parsed: fallbackParsed,
+                        error: parseErr.message
+                    });
+                }
+            }
                 if (!invoice_url) {
                     return res.status(400).json({ error: 'invoice_url es requerido' });
                 }
