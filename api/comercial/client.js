@@ -799,19 +799,20 @@ export default async function handler(req, res) {
                 const budgetItems = activeBudget.items || [];
                 for (let idx = 0; idx < budgetItems.length; idx++) {
                     const item = budgetItems[idx];
-                    const isOptionalItem = idx > 0 && item.is_optional !== false;
 
-                    if (!isOptionalItem) {
+                    if (idx === 0) {
                         finalItems.push({
                             ...item,
+                            is_optional: false,
                             approved_by_client: true
                         });
                         calculatedTotal += (item.quantity || 1) * item.unit_price;
                     } else {
-                        const isSelected = Array.isArray(selected_optional_indices) && selected_optional_indices.includes(optionalIndexCounter);
+                        const extraOptIdx = idx - 1;
+                        const isSelected = Array.isArray(selected_optional_indices) && selected_optional_indices.includes(extraOptIdx);
                         let itemQty = item.quantity || 1;
-                        if (optional_quantities && optional_quantities[optionalIndexCounter] !== undefined) {
-                            const parsedQty = parseInt(optional_quantities[optionalIndexCounter], 10);
+                        if (optional_quantities && optional_quantities[extraOptIdx] !== undefined) {
+                            const parsedQty = parseInt(optional_quantities[extraOptIdx], 10);
                             if (!isNaN(parsedQty) && parsedQty > 0) {
                                 itemQty = parsedQty;
                             }
@@ -819,6 +820,7 @@ export default async function handler(req, res) {
 
                         finalItems.push({
                             ...item,
+                            is_optional: true,
                             quantity: itemQty,
                             approved_by_client: isSelected
                         });
@@ -827,7 +829,6 @@ export default async function handler(req, res) {
                             calculatedTotal += itemQty * item.unit_price;
                             approvedOptionalCount++;
                         }
-                        optionalIndexCounter++;
                     }
                 }
 

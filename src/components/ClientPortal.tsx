@@ -506,8 +506,7 @@ const ClientPortal: React.FC = () => {
                 setSelectedOptionals([]);
                 const initialQty: Record<number, number> = {};
                 const extraItems = data.budget.items.slice(1);
-                const optionalItems = extraItems.filter((item: any) => item.is_optional !== false);
-                optionalItems.forEach((item: any, idx: number) => {
+                extraItems.forEach((item: any, idx: number) => {
                     initialQty[idx] = item.quantity || 1;
                 });
                 setOptionalQuantities(initialQty);
@@ -1102,8 +1101,7 @@ const ClientPortal: React.FC = () => {
         const baseItem = budget.items[0];
         const baseTotal = baseItem ? (baseItem.quantity * baseItem.unit_price) : 0;
         const extraItems = budget.items.slice(1);
-        const optionalItems = extraItems.filter(item => item.is_optional !== false);
-        const selectedOptionalsTotal = optionalItems.reduce((sum, item, optIdx) => {
+        const selectedOptionalsTotal = extraItems.reduce((sum, item, optIdx) => {
             if (selectedOptionals.includes(optIdx)) {
                 const qty = optionalQuantities[optIdx] ?? item.quantity ?? 1;
                 return sum + (qty * item.unit_price);
@@ -1157,7 +1155,7 @@ const ClientPortal: React.FC = () => {
                                     <td colSpan={3} className="px-6 py-3 text-right text-zinc-400 text-xs font-normal">Presupuesto Base (Monto a Aprobar):</td>
                                     <td className="px-6 py-3 text-right text-nexo-lime text-sm font-black whitespace-nowrap">{project.currency || 'USD'} {baseTotal.toLocaleString()}</td>
                                 </tr>
-                                {optionalItems.length > 0 && (
+                                {extraItems.length > 0 && (
                                     <tr className="bg-[#00e5ff]/5">
                                         <td colSpan={3} className="px-6 py-2.5 text-right text-zinc-400 text-xs font-normal">Adicionales seleccionados:</td>
                                         <td className="px-6 py-2.5 text-right text-[#00e5ff] text-sm font-black whitespace-nowrap">
@@ -1196,7 +1194,7 @@ const ClientPortal: React.FC = () => {
                                 <span className="text-zinc-400 text-[10px] uppercase tracking-wider font-bold shrink-0">Total base</span>
                                 <span className="text-sm font-black text-nexo-lime whitespace-nowrap">{project.currency || 'USD'} {baseTotal.toLocaleString()}</span>
                             </div>
-                            {optionalItems.length > 0 && (
+                            {extraItems.length > 0 && (
                                 <div className="flex justify-between items-center gap-4 border-t border-white/5 pt-2.5">
                                     <span className="text-zinc-400 text-[10px] uppercase tracking-wider font-bold shrink-0">Adicionales</span>
                                     <span className="text-sm font-black text-[#00e5ff] whitespace-nowrap">
@@ -1242,15 +1240,14 @@ const ClientPortal: React.FC = () => {
                                 </thead>
                                 <tbody className="divide-y divide-white/5 text-sm text-zinc-300">
                                     {extraItems.map((item, idx) => {
-                                        const isOptionalSelectable = item.is_optional !== false;
-                                        const optIdx = optionalItems.indexOf(item);
+                                        const optIdx = idx;
                                         const isChecked = isEditable 
-                                            ? (isOptionalSelectable && optIdx !== -1 && selectedOptionals.includes(optIdx))
+                                            ? selectedOptionals.includes(optIdx)
                                             : (item.approved_by_client !== false);
                                         
                                         const showStrikeThrough = !isEditable && item.approved_by_client === false;
                                         const currentQty = isEditable 
-                                            ? (optIdx !== -1 ? (optionalQuantities[optIdx] ?? item.quantity ?? 1) : (item.quantity || 1))
+                                            ? (optionalQuantities[optIdx] ?? item.quantity ?? 1)
                                             : item.quantity;
                                         const currentSubtotal = currentQty * item.unit_price;
 
@@ -1258,22 +1255,18 @@ const ClientPortal: React.FC = () => {
                                             <tr key={idx} className={isChecked ? "bg-nexo-lime/5" : showStrikeThrough ? "opacity-35 line-through text-zinc-500 bg-zinc-950/20" : ""}>
                                                 {isEditable && (
                                                     <td className="px-6 py-3 text-center">
-                                                        {isOptionalSelectable && optIdx !== -1 ? (
-                                                            <input 
-                                                                type="checkbox" 
-                                                                checked={isChecked}
-                                                                onChange={() => {
-                                                                    if (isChecked) {
-                                                                        setSelectedOptionals(selectedOptionals.filter(i => i !== optIdx));
-                                                                    } else {
-                                                                        setSelectedOptionals([...selectedOptionals, optIdx]);
-                                                                    }
-                                                                }}
-                                                                className="accent-nexo-lime w-4 h-4 cursor-pointer"
-                                                            />
-                                                        ) : (
-                                                            <span className="text-zinc-600 text-[9px]">—</span>
-                                                        )}
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={isChecked}
+                                                            onChange={() => {
+                                                                if (isChecked) {
+                                                                    setSelectedOptionals(selectedOptionals.filter(i => i !== optIdx));
+                                                                } else {
+                                                                    setSelectedOptionals([...selectedOptionals, optIdx]);
+                                                                }
+                                                            }}
+                                                            className="accent-nexo-lime w-4 h-4 cursor-pointer"
+                                                        />
                                                     </td>
                                                 )}
                                                 <td className="px-6 py-3 align-top" style={{ minWidth: '220px' }}>
@@ -1293,7 +1286,7 @@ const ClientPortal: React.FC = () => {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-3 text-center">
-                                                    {isEditable && isOptionalSelectable && optIdx !== -1 ? (
+                                                    {isEditable ? (
                                                         <div className="flex items-center justify-center gap-1">
                                                             <button 
                                                                 type="button"
@@ -1346,15 +1339,14 @@ const ClientPortal: React.FC = () => {
                         {/* Vista Móvil (Tarjetas Stacked) */}
                         <div className="block lg:hidden space-y-3">
                             {extraItems.map((item, idx) => {
-                                const isOptionalSelectable = item.is_optional !== false;
-                                const optIdx = optionalItems.indexOf(item);
+                                const optIdx = idx;
                                 const isChecked = isEditable 
-                                    ? (isOptionalSelectable && optIdx !== -1 && selectedOptionals.includes(optIdx))
+                                    ? selectedOptionals.includes(optIdx)
                                     : (item.approved_by_client !== false);
                                 
                                 const showStrikeThrough = !isEditable && item.approved_by_client === false;
                                 const currentQty = isEditable 
-                                    ? (optIdx !== -1 ? (optionalQuantities[optIdx] ?? item.quantity ?? 1) : (item.quantity || 1))
+                                    ? (optionalQuantities[optIdx] ?? item.quantity ?? 1)
                                     : item.quantity;
                                 const currentSubtotal = currentQty * item.unit_price;
                                 
@@ -1362,7 +1354,7 @@ const ClientPortal: React.FC = () => {
                                     <div 
                                         key={idx} 
                                         onClick={() => {
-                                            if (!isEditable || !isOptionalSelectable || optIdx === -1) return;
+                                            if (!isEditable) return;
                                             if (isChecked) {
                                                 setSelectedOptionals(selectedOptionals.filter(i => i !== optIdx));
                                             } else {
@@ -1370,7 +1362,7 @@ const ClientPortal: React.FC = () => {
                                             }
                                         }}
                                         className={`border p-5 rounded-xl space-y-3 shadow-md transition-all ${
-                                            isEditable && isOptionalSelectable ? 'cursor-pointer' : ''
+                                            isEditable ? 'cursor-pointer' : ''
                                         } ${
                                             isChecked
                                                 ? 'bg-nexo-lime/10 border-nexo-lime/40' 
@@ -1390,7 +1382,7 @@ const ClientPortal: React.FC = () => {
                                                     <span className="text-[10px] text-nexo-lime font-bold block mt-1">(Aprobado / Incluido)</span>
                                                 )}
                                             </div>
-                                            {isEditable && isOptionalSelectable && optIdx !== -1 && (
+                                            {isEditable && (
                                                 <input 
                                                     type="checkbox" 
                                                     checked={isChecked}
@@ -1402,7 +1394,7 @@ const ClientPortal: React.FC = () => {
                                         <div className="flex justify-between items-center gap-2 pt-3 border-t border-white/5 text-xs text-zinc-400">
                                             <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                                                 <span>Cant: </span>
-                                                {isEditable && isOptionalSelectable && optIdx !== -1 ? (
+                                                {isEditable ? (
                                                     <div className="flex items-center gap-1">
                                                         <button
                                                             type="button"
@@ -2305,9 +2297,7 @@ const ClientPortal: React.FC = () => {
                                 const baseItem = budget.items[0];
                                 const baseTotal = baseItem ? (baseItem.quantity * baseItem.unit_price) : 0;
                                 const extraItems = budget.items.slice(1);
-                                const optionalItems = extraItems.filter(item => item.is_optional !== false);
-                                
-                                const selectedOptionalItems = optionalItems
+                                const selectedOptionalItems = extraItems
                                     .map((item, optIdx) => ({
                                         item,
                                         optIdx,
