@@ -214,6 +214,18 @@ const ClientPortal: React.FC = () => {
     const [feedbackText, setFeedbackText] = useState('');
     const [actionView, setActionView] = useState<'normal' | 'feedback' | 'reject' | 'approve_confirm'>('normal');
     const [selectedOptionals, setSelectedOptionals] = useState<number[]>([]);
+    const [optionalQuantities, setOptionalQuantities] = useState<Record<number, number>>({});
+
+    const handleQuantityChange = (optIdx: number, newQty: number) => {
+        const qty = Math.max(1, isNaN(newQty) ? 1 : newQty);
+        setOptionalQuantities(prev => ({
+            ...prev,
+            [optIdx]: qty
+        }));
+        if (!selectedOptionals.includes(optIdx)) {
+            setSelectedOptionals(prev => [...prev, optIdx]);
+        }
+    };
 
     // Drive Bridge
     const [driveFiles, setDriveFiles] = useState<DriveFile[]>([]);
@@ -492,6 +504,13 @@ const ClientPortal: React.FC = () => {
             if (data.budget && data.budget.items) {
                 // Los opcionales arrancan SIN seleccionar: el cliente elige cuáles agregar
                 setSelectedOptionals([]);
+                const initialQty: Record<number, number> = {};
+                const extraItems = data.budget.items.slice(1);
+                const optionalItems = extraItems.filter((item: any) => item.is_optional !== false);
+                optionalItems.forEach((item: any, idx: number) => {
+                    initialQty[idx] = item.quantity || 1;
+                });
+                setOptionalQuantities(initialQty);
             }
             setHasReviewed(data.hasReviewed || false);
             setOtherProjects(data.otherProjects || []);
@@ -768,7 +787,8 @@ const ClientPortal: React.FC = () => {
                     action: 'approve',
                     billing_info: billingInfo,
                     tax_certificate_url: taxCertificateUrl,
-                    selected_optional_indices: selectedOptionals
+                    selected_optional_indices: selectedOptionals,
+                    optional_quantities: optionalQuantities
                 })
             });
 
@@ -1082,10 +1102,14 @@ const ClientPortal: React.FC = () => {
         const baseItem = budget.items[0];
         const baseTotal = baseItem ? (baseItem.quantity * baseItem.unit_price) : 0;
         const extraItems = budget.items.slice(1);
-        const optionalItems = extraItems.filter(item => item.is_optional);
-        const selectedOptionalsTotal = optionalItems
-            .filter((_, idx) => selectedOptionals.includes(idx))
-            .reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
+        const optionalItems = extraItems.filter(item => item.is_optional !== false);
+        const selectedOptionalsTotal = optionalItems.reduce((sum, item, optIdx) => {
+            if (selectedOptionals.includes(optIdx)) {
+                const qty = optionalQuantities[optIdx] ?? item.quantity ?? 1;
+                return sum + (qty * item.unit_price);
+            }
+            return sum;
+        }, 0);
         const finalCalculatedTotal = baseTotal + selectedOptionalsTotal;
 
         return (
@@ -1199,7 +1223,7 @@ const ClientPortal: React.FC = () => {
                             </h4>
                             {isEditable && (
                                 <span className="text-[10px] text-zinc-500 font-medium italic">
-                                    *(Tildá o destildá para incluir o excluir del presupuesto)
+                                    *(Tildá o destildá para incluir o excluir del presupuesto, y ajustá la cantidad si es necesario)
                                 </span>
                             )}
                         </div>
@@ -1211,26 +1235,30 @@ const ClientPortal: React.FC = () => {
                                     <tr className="bg-zinc-800/20 text-[#00e5ff] text-xs tracking-wider uppercase border-b border-[#00e5ff]/20">
                                         {isEditable && <th className="px-6 py-3 font-semibold w-16 text-center">Incluir</th>}
                                         <th className="px-6 py-3 font-semibold">Servicio Opcional</th>
-                                        <th className="px-6 py-3 font-semibold w-24 text-center">Cant.</th>
+                                        <th className="px-6 py-3 font-semibold w-32 text-center">Cant.</th>
                                         <th className="px-6 py-3 font-semibold w-32 text-right">Precio Unit.</th>
                                         <th className="px-6 py-3 font-semibold w-32 text-right">Subtotal</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5 text-sm text-zinc-300">
                                     {extraItems.map((item, idx) => {
-                                        const isOptionalSelectable = item.is_optional;
+                                        const isOptionalSelectable = item.is_optional !== false;
                                         const optIdx = optionalItems.indexOf(item);
                                         const isChecked = isEditable 
-                                            ? (isOptionalSelectable && selectedOptionals.includes(optIdx))
+                                            ? (isOptionalSelectable && optIdx !== -1 && selectedOptionals.includes(optIdx))
                                             : (item.approved_by_client !== false);
                                         
                                         const showStrikeThrough = !isEditable && item.approved_by_client === false;
+                                        const currentQty = isEditable 
+                                            ? (optIdx !== -1 ? (optionalQuantities[optIdx] ?? item.quantity ?? 1) : (item.quantity || 1))
+                                            : item.quantity;
+                                        const currentSubtotal = currentQty * item.unit_price;
 
                                         return (
                                             <tr key={idx} className={isChecked ? "bg-nexo-lime/5" : showStrikeThrough ? "opacity-35 line-through text-zinc-500 bg-zinc-950/20" : ""}>
                                                 {isEditable && (
                                                     <td className="px-6 py-3 text-center">
-                                                        {isOptionalSelectable ? (
+                                                        {isOptionalSelectable && optIdx !== -1 ? (
                                                             <input 
                                                                 type="checkbox" 
                                                                 checked={isChecked}
@@ -1264,12 +1292,48 @@ const ClientPortal: React.FC = () => {
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-3 text-center">{item.quantity}</td>
+                                                <td className="px-6 py-3 text-center">
+                                                    {isEditable && isOptionalSelectable && optIdx !== -1 ? (
+                                                        <div className="flex items-center justify-center gap-1">
+                                                            <button 
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleQuantityChange(optIdx, currentQty - 1);
+                                                                }}
+                                                                disabled={currentQty <= 1}
+                                                                className="w-6 h-6 rounded bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 text-white font-bold text-xs flex items-center justify-center border border-white/10 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                                                            >
+                                                                -
+                                                            </button>
+                                                            <input 
+                                                                type="number" 
+                                                                min="1" 
+                                                                max="999"
+                                                                value={currentQty}
+                                                                onChange={(e) => handleQuantityChange(optIdx, parseInt(e.target.value, 10))}
+                                                                className="w-12 text-center bg-black border border-white/20 rounded py-0.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-[#00e5ff]"
+                                                            />
+                                                            <button 
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleQuantityChange(optIdx, currentQty + 1);
+                                                                }}
+                                                                className="w-6 h-6 rounded bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs flex items-center justify-center border border-white/10 transition-colors cursor-pointer"
+                                                            >
+                                                                +
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <span>{currentQty}</span>
+                                                    )}
+                                                </td>
                                                 <td className="px-6 py-3 text-right">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</td>
-                                                <td className="px-6 py-3 text-right text-[#00e5ff]">
+                                                <td className="px-6 py-3 text-right text-[#00e5ff] font-mono font-bold">
                                                     {showStrikeThrough 
                                                         ? <span className="text-zinc-500 line-through">No incl.</span>
-                                                        : `${project.currency || 'USD'} ${(item.quantity * item.unit_price).toLocaleString()}`
+                                                        : `${project.currency || 'USD'} ${currentSubtotal.toLocaleString()}`
                                                     }
                                                 </td>
                                             </tr>
@@ -1282,19 +1346,23 @@ const ClientPortal: React.FC = () => {
                         {/* Vista Móvil (Tarjetas Stacked) */}
                         <div className="block lg:hidden space-y-3">
                             {extraItems.map((item, idx) => {
-                                const isOptionalSelectable = item.is_optional;
+                                const isOptionalSelectable = item.is_optional !== false;
                                 const optIdx = optionalItems.indexOf(item);
                                 const isChecked = isEditable 
-                                    ? (isOptionalSelectable && selectedOptionals.includes(optIdx))
+                                    ? (isOptionalSelectable && optIdx !== -1 && selectedOptionals.includes(optIdx))
                                     : (item.approved_by_client !== false);
                                 
                                 const showStrikeThrough = !isEditable && item.approved_by_client === false;
+                                const currentQty = isEditable 
+                                    ? (optIdx !== -1 ? (optionalQuantities[optIdx] ?? item.quantity ?? 1) : (item.quantity || 1))
+                                    : item.quantity;
+                                const currentSubtotal = currentQty * item.unit_price;
                                 
                                 return (
                                     <div 
                                         key={idx} 
                                         onClick={() => {
-                                            if (!isEditable || !isOptionalSelectable) return;
+                                            if (!isEditable || !isOptionalSelectable || optIdx === -1) return;
                                             if (isChecked) {
                                                 setSelectedOptionals(selectedOptionals.filter(i => i !== optIdx));
                                             } else {
@@ -1322,7 +1390,7 @@ const ClientPortal: React.FC = () => {
                                                     <span className="text-[10px] text-nexo-lime font-bold block mt-1">(Aprobado / Incluido)</span>
                                                 )}
                                             </div>
-                                            {isEditable && isOptionalSelectable && (
+                                            {isEditable && isOptionalSelectable && optIdx !== -1 && (
                                                 <input 
                                                     type="checkbox" 
                                                     checked={isChecked}
@@ -1332,12 +1400,49 @@ const ClientPortal: React.FC = () => {
                                             )}
                                         </div>
                                         <div className="flex justify-between items-center gap-2 pt-3 border-t border-white/5 text-xs text-zinc-400">
-                                            <div><span>Cant: </span><strong className="text-white">{item.quantity}</strong></div>
+                                            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                                <span>Cant: </span>
+                                                {isEditable && isOptionalSelectable && optIdx !== -1 ? (
+                                                    <div className="flex items-center gap-1">
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleQuantityChange(optIdx, currentQty - 1);
+                                                            }}
+                                                            disabled={currentQty <= 1}
+                                                            className="w-6 h-6 rounded bg-zinc-800 text-white font-bold text-xs flex items-center justify-center border border-white/10"
+                                                        >
+                                                            -
+                                                        </button>
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            max="999"
+                                                            value={currentQty}
+                                                            onChange={(e) => handleQuantityChange(optIdx, parseInt(e.target.value, 10))}
+                                                            className="w-10 text-center bg-black border border-white/20 rounded py-0.5 text-xs text-white font-mono font-bold"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleQuantityChange(optIdx, currentQty + 1);
+                                                            }}
+                                                            className="w-6 h-6 rounded bg-zinc-800 text-white font-bold text-xs flex items-center justify-center border border-white/10"
+                                                        >
+                                                            +
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <strong className="text-white">{currentQty}</strong>
+                                                )}
+                                            </div>
                                             <div><span>Precio U: </span><strong className="text-white">{project.currency || 'USD'} {item.unit_price.toLocaleString()}</strong></div>
                                             <div className="text-right">
                                                 <span>Subtotal: </span>
                                                 <strong className={showStrikeThrough ? "text-zinc-500 line-through" : "text-[#00e5ff] font-bold"}>
-                                                    {showStrikeThrough ? "No incl." : `${project.currency || 'USD'} ${(item.quantity * item.unit_price).toLocaleString()}`}
+                                                    {showStrikeThrough ? "No incl." : `${project.currency || 'USD'} ${currentSubtotal.toLocaleString()}`}
                                                 </strong>
                                             </div>
                                         </div>
@@ -2197,24 +2302,55 @@ const ClientPortal: React.FC = () => {
 
                             {/* Recálculo de Total en Tiempo Real (Resaltado) */}
                             {(() => {
-                                const optionalItems = budget.items.filter(item => item.is_optional);
-                                const selectedOptionalsTotal = optionalItems
-                                    .filter((_, idx) => selectedOptionals.includes(idx))
-                                    .reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
-                                const finalCalculatedTotal = budget.total_price + selectedOptionalsTotal;
+                                const baseItem = budget.items[0];
+                                const baseTotal = baseItem ? (baseItem.quantity * baseItem.unit_price) : 0;
+                                const extraItems = budget.items.slice(1);
+                                const optionalItems = extraItems.filter(item => item.is_optional !== false);
+                                
+                                const selectedOptionalItems = optionalItems
+                                    .map((item, optIdx) => ({
+                                        item,
+                                        optIdx,
+                                        quantity: optionalQuantities[optIdx] ?? item.quantity ?? 1,
+                                    }))
+                                    .filter(o => selectedOptionals.includes(o.optIdx));
+
+                                const selectedOptionalsTotal = selectedOptionalItems.reduce((sum, o) => sum + (o.quantity * o.item.unit_price), 0);
+                                const finalCalculatedTotal = baseTotal + selectedOptionalsTotal;
 
                                 return (
-                                    <div className="bg-nexo-lime/10 border-2 border-nexo-lime p-6 rounded-xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-center sm:text-left shadow-[0_0_20px_rgba(225,249,55,0.1)]">
-                                        <div className="text-left space-y-1">
-                                            <span className="text-zinc-400 text-[10px] uppercase tracking-widest font-black block">Monto Total Final a Facturar:</span>
-                                            <span className="text-3xl font-black text-nexo-lime block">{project.currency || 'USD'} {finalCalculatedTotal.toLocaleString()}</span>
+                                    <div className="space-y-4">
+                                        <div className="bg-nexo-lime/10 border-2 border-nexo-lime p-6 rounded-xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-center sm:text-left shadow-[0_0_20px_rgba(225,249,55,0.1)]">
+                                            <div className="text-left space-y-1">
+                                                <span className="text-zinc-400 text-[10px] uppercase tracking-widest font-black block">Monto Total Final a Facturar:</span>
+                                                <span className="text-3xl font-black text-nexo-lime block">{project.currency || 'USD'} {finalCalculatedTotal.toLocaleString()}</span>
+                                            </div>
+                                            <div className="text-xs text-zinc-400 max-w-xs leading-relaxed sm:text-right font-medium">
+                                                {selectedOptionalItems.length > 0 
+                                                    ? `Incluye el servicio base y ${selectedOptionalItems.length} adicionales seleccionados.` 
+                                                    : "Incluye únicamente los servicios del presupuesto base."
+                                                }
+                                            </div>
                                         </div>
-                                        <div className="text-xs text-zinc-400 max-w-xs leading-relaxed sm:text-right font-medium">
-                                            {selectedOptionals.length > 0 
-                                                ? `Incluye el servicio base y ${selectedOptionals.length} adicionales seleccionados.` 
-                                                : "Incluye únicamente los servicios del presupuesto base."
-                                            }
-                                        </div>
+
+                                        {selectedOptionalItems.length > 0 && (
+                                            <div className="bg-black/40 border border-white/10 rounded-lg p-4 space-y-2 text-xs">
+                                                <span className="text-zinc-400 font-bold uppercase text-[10px] tracking-wider block">Adicionales Elegidos:</span>
+                                                <div className="space-y-1.5 divide-y divide-white/5">
+                                                    {selectedOptionalItems.map((opt, i) => (
+                                                        <div key={i} className="flex justify-between items-center pt-1.5 text-zinc-300">
+                                                            <div className="truncate max-w-[200px] sm:max-w-xs">
+                                                                • {opt.item.description ? opt.item.description.split('\n')[0] : 'Adicional'}
+                                                            </div>
+                                                            <div className="font-mono text-right text-xs">
+                                                                <span className="text-zinc-400 mr-2">{opt.quantity} u. x {project.currency || 'USD'} {opt.item.unit_price.toLocaleString()}</span>
+                                                                <span className="text-nexo-lime font-bold">= {project.currency || 'USD'} {(opt.quantity * opt.item.unit_price).toLocaleString()}</span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })()}

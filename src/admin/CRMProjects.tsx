@@ -1101,7 +1101,7 @@ const CRMProjects: React.FC = () => {
 
     // Agregar fila de presupuesto (Creación)
     const addNewBudgetItem = () => {
-        setNewBudgetItems([...newBudgetItems, { description: '', quantity: 1, unit_price: 0 }]);
+        setNewBudgetItems([...newBudgetItems, { description: '', quantity: 1, unit_price: 0, is_optional: true }]);
     };
 
     // Modificar fila de presupuesto (Creación)
@@ -1122,7 +1122,7 @@ const CRMProjects: React.FC = () => {
 
     // Agregar fila de presupuesto (Edición)
     const addEditingBudgetItem = () => {
-        setEditingBudgetItems([...editingBudgetItems, { description: '', quantity: 1, unit_price: 0 }]);
+        setEditingBudgetItems([...editingBudgetItems, { description: '', quantity: 1, unit_price: 0, is_optional: true }]);
     };
 
     // Modificar fila de presupuesto (Edición)

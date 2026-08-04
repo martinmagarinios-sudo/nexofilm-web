@@ -775,7 +775,7 @@ export default async function handler(req, res) {
                 });
 
             } else if (action === 'approve') {
-                const { selected_optional_indices, billing_info, tax_certificate_url } = req.body;
+                const { selected_optional_indices, optional_quantities, billing_info, tax_certificate_url } = req.body;
 
                 // 1. Obtener presupuesto activo
                 const { data: activeBudget, error: getBudgErr } = await supabase
@@ -796,21 +796,35 @@ export default async function handler(req, res) {
                 let optionalIndexCounter = 0;
                 let approvedOptionalCount = 0;
 
-                for (const item of activeBudget.items) {
-                    if (!item.is_optional) {
+                const budgetItems = activeBudget.items || [];
+                for (let idx = 0; idx < budgetItems.length; idx++) {
+                    const item = budgetItems[idx];
+                    const isOptionalItem = idx > 0 && item.is_optional !== false;
+
+                    if (!isOptionalItem) {
                         finalItems.push({
                             ...item,
                             approved_by_client: true
                         });
-                        calculatedTotal += item.quantity * item.unit_price;
+                        calculatedTotal += (item.quantity || 1) * item.unit_price;
                     } else {
                         const isSelected = Array.isArray(selected_optional_indices) && selected_optional_indices.includes(optionalIndexCounter);
+                        let itemQty = item.quantity || 1;
+                        if (optional_quantities && optional_quantities[optionalIndexCounter] !== undefined) {
+                            const parsedQty = parseInt(optional_quantities[optionalIndexCounter], 10);
+                            if (!isNaN(parsedQty) && parsedQty > 0) {
+                                itemQty = parsedQty;
+                            }
+                        }
+
                         finalItems.push({
                             ...item,
+                            quantity: itemQty,
                             approved_by_client: isSelected
                         });
+
                         if (isSelected) {
-                            calculatedTotal += item.quantity * item.unit_price;
+                            calculatedTotal += itemQty * item.unit_price;
                             approvedOptionalCount++;
                         }
                         optionalIndexCounter++;
