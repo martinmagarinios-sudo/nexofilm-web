@@ -528,8 +528,11 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                 // Construir la nueva entrada del historial
                 const parsedAmount = invoice_amount ? parseFloat(invoice_amount) : null;
                 const isInformal = invoice_is_informal === true || invoice_is_informal === 'true';
-                // Para pagos informales siempre generamos entrada (no requieren invoice_url)
-                const shouldCreateEntry = invoice_url || isInformal;
+                const hasValidAmount = parsedAmount !== null && parsedAmount > 0;
+                const hasInvoiceUrl = Boolean(invoice_url && String(invoice_url).trim() !== '');
+
+                // Solo crear entrada de factura/cobro si realmente se especificó un monto > 0 o una URL de factura
+                const shouldCreateEntry = isInformal ? hasValidAmount : (hasInvoiceUrl || hasValidAmount);
                                 // Auto-analizar PDF si se proporcionó invoice_url y no se forzó emisor
                 let detectedIssuedBy = invoice_issued_by || 'martin';
                 let detectedFcNumber = invoice_fc_number || null;
@@ -577,17 +580,24 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
 
                 const dbInvoiceType = invoice_type === 'credit_note' ? 'custom' : (invoice_type || null);
 
+                const allPaid = updatedHistory.length > 0 && updatedHistory.every(inv => inv.paid);
+
                 const updatePayload = {
-                    invoice_url: invoice_url || null,
-                    invoice_type: dbInvoiceType,
-                    invoice_amount: parsedAmount,
-                    invoice_fc_number: invoice_fc_number || null,
-                    bank_details: bank_details || null,
-                    // Si hay invoice_url, la factura queda visible para el cliente de inmediato.
-                    invoice_sent: invoice_url ? true : false,
-                    // Historial acumulativo de facturas emitidas
-                    invoices_history: updatedHistory.length > 0 ? updatedHistory : null
+                    bank_details: bank_details !== undefined ? bank_details : (currentProject?.bank_details || null)
                 };
+
+                if (newHistoryEntry) {
+                    updatePayload.invoice_url = invoice_url || null;
+                    updatePayload.invoice_type = dbInvoiceType;
+                    updatePayload.invoice_amount = parsedAmount;
+                    updatePayload.invoice_fc_number = invoice_fc_number || null;
+                    updatePayload.invoice_sent = invoice_url ? true : false;
+                    updatePayload.invoices_history = updatedHistory;
+                    updatePayload.invoice_paid = allPaid;
+                } else if (updatedHistory.length > 0) {
+                    updatePayload.invoices_history = updatedHistory;
+                    updatePayload.invoice_paid = allPaid;
+                }
 
                 let { data: updatedProject, error: updateErr } = await supabase
                     .from('projects')
@@ -641,10 +651,14 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                 }
 
                 history[invoice_index].paid = is_paid;
+                const allPaid = history.length > 0 && history.every(inv => inv.paid);
 
                 const { data: updatedProject, error: updateErr } = await supabase
                     .from('projects')
-                    .update({ invoices_history: history })
+                    .update({ 
+                        invoices_history: history,
+                        invoice_paid: allPaid
+                    })
                     .eq('id', project_id)
                     .select()
                     .single();
