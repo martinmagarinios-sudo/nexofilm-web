@@ -3223,7 +3223,7 @@ const ClientPortal: React.FC = () => {
                                                 <td style={{ padding: '14px 12px', verticalAlign: 'top', fontFamily: 'Arial, Helvetica, sans-serif' }}>
                                                     <div style={{ marginBottom: '7px' }}>
                                                         <span style={{ display: 'inline-block', fontSize: '7px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', color: '#000', background: '#e1f937', padding: '2px 7px', borderRadius: '2px', fontFamily: 'Arial, Helvetica, sans-serif' }}>
-                                                            Presupuesto Base
+                                                            Presupuesto Base (Obligatorio)
                                                         </span>
                                                     </div>
                                                     {renderDescription(bi.description, true)}
@@ -3235,7 +3235,7 @@ const ClientPortal: React.FC = () => {
                                         </tbody>
                                     </table>
                                     <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', borderTop: '2px solid #e1f937', padding: '10px 12px', gap: '16px', background: 'rgba(225,249,55,0.05)' }}>
-                                        <span style={{ fontSize: '10px', color: '#ccc', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.5px', fontFamily: 'Arial, Helvetica, sans-serif' }}>Presupuesto Base (Monto a Aprobar):</span>
+                                        <span style={{ fontSize: '10px', color: '#ccc', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.5px', fontFamily: 'Arial, Helvetica, sans-serif' }}>Presupuesto Base Obligatorio:</span>
                                         <span style={{ fontSize: '15px', color: '#e1f937', fontWeight: '900', fontFamily: 'Arial, Helvetica, sans-serif', whiteSpace: 'nowrap' }}>{project.currency || 'ARS'} {baseAmt.toLocaleString('es-AR')}</span>
                                     </div>
                                 </div>
@@ -3247,7 +3247,7 @@ const ClientPortal: React.FC = () => {
                             <div style={{ marginTop: '22px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                                     <div style={{ flex: 1, height: '1px', background: '#2a2a2a' }}></div>
-                                    <span style={{ fontSize: '8px', color: '#888', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: '700', fontFamily: 'Arial, Helvetica, sans-serif', whiteSpace: 'nowrap' }}>Adicionales Sugeridos (Opcionales)</span>
+                                    <span style={{ fontSize: '8px', color: '#888', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: '700', fontFamily: 'Arial, Helvetica, sans-serif', whiteSpace: 'nowrap' }}>Adicionales Recomendados / Pedidos (Opcionales)</span>
                                     <div style={{ flex: 1, height: '1px', background: '#2a2a2a' }}></div>
                                 </div>
                                 <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #2a2a2a', tableLayout: 'fixed' }}>
@@ -3266,16 +3266,22 @@ const ClientPortal: React.FC = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {budget.items.slice(1).map((item, idx) => (
-                                            <tr key={idx} style={{ borderBottom: idx < budget.items.slice(1).length - 1 ? '1px solid #1a1a1a' : 'none' }}>
-                                                <td style={{ padding: '12px 12px', verticalAlign: 'top', fontFamily: 'Arial, Helvetica, sans-serif' }}>
-                                                    {renderDescription(item.description, true)}
-                                                </td>
-                                                <td style={{ fontSize: '11px', color: '#ccc', padding: '12px 6px', textAlign: 'center', verticalAlign: 'top', fontFamily: 'Arial, Helvetica, sans-serif' }}>{item.quantity}</td>
-                                                <td style={{ fontSize: '11px', color: '#aaa', padding: '12px 12px', textAlign: 'right', verticalAlign: 'top', fontFamily: 'Arial, Helvetica, sans-serif', wordBreak: 'keep-all' }}>{project.currency || 'ARS'} {item.unit_price.toLocaleString('es-AR')}</td>
-                                                <td style={{ fontSize: '11px', color: '#e1f937', padding: '12px 12px', textAlign: 'right', verticalAlign: 'top', fontWeight: '700', fontFamily: 'Arial, Helvetica, sans-serif', wordBreak: 'keep-all' }}>{project.currency || 'ARS'} {(item.quantity * item.unit_price).toLocaleString('es-AR')}</td>
-                                            </tr>
-                                        ))}
+                                        {budget.items.slice(1).map((item, idx) => {
+                                            const qty = (project.status === 'sent' && optionalQuantities[idx] !== undefined)
+                                                ? optionalQuantities[idx]
+                                                : item.quantity;
+                                            const sub = qty * item.unit_price;
+                                            return (
+                                                <tr key={idx} style={{ borderBottom: idx < budget.items.slice(1).length - 1 ? '1px solid #1a1a1a' : 'none' }}>
+                                                    <td style={{ padding: '12px 12px', verticalAlign: 'top', fontFamily: 'Arial, Helvetica, sans-serif' }}>
+                                                        {renderDescription(item.description, true)}
+                                                    </td>
+                                                    <td style={{ fontSize: '11px', color: '#ccc', padding: '12px 6px', textAlign: 'center', verticalAlign: 'top', fontFamily: 'Arial, Helvetica, sans-serif' }}>{qty}</td>
+                                                    <td style={{ fontSize: '11px', color: '#aaa', padding: '12px 12px', textAlign: 'right', verticalAlign: 'top', fontFamily: 'Arial, Helvetica, sans-serif', wordBreak: 'keep-all' }}>{project.currency || 'ARS'} {item.unit_price.toLocaleString('es-AR')}</td>
+                                                    <td style={{ fontSize: '11px', color: '#00e5ff', padding: '12px 12px', textAlign: 'right', verticalAlign: 'top', fontWeight: '700', fontFamily: 'Arial, Helvetica, sans-serif', wordBreak: 'keep-all' }}>{project.currency || 'ARS'} {sub.toLocaleString('es-AR')}</td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
