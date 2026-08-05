@@ -2975,7 +2975,7 @@ const CRMProjects: React.FC = () => {
                                                                                 <div className="flex justify-between items-center border-b border-white/5 pb-1.5 mb-2 text-[9px] text-zinc-500 font-bold uppercase tracking-wider">
                                                                                     <span>
                                                                                         {i === 0 
-                                                                                            ? <span className="text-nexo-lime">★ Base Obligatorio</span>
+                                                                                            ? <span className="text-nexo-lime">★ Presupuesto Base</span>
                                                                                             : (
                                                                                                 <>
                                                                                                     Concepto #{i + 1}
@@ -3875,7 +3875,7 @@ const CRMProjects: React.FC = () => {
                                         <div key={idx} className={`flex flex-col gap-3 p-3 border rounded-xl ${idx === 0 ? 'bg-nexo-lime/5 border-nexo-lime/20' : 'bg-black/40 border-white/5'}`}>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-                                                    {idx === 0 ? '★ Presupuesto Base (Obligatorio)' : `Adicional #${idx}`}
+                                                    {idx === 0 ? '★ Presupuesto Base' : `Adicional #${idx}`}
                                                 </span>
                                                 {newBudgetItems.length > 1 && idx > 0 && (
                                                     <button
@@ -3895,7 +3895,7 @@ const CRMProjects: React.FC = () => {
                                                     value={item.description}
                                                     onChange={(e) => updateNewBudgetItem(idx, 'description', e.target.value)}
                                                     className="w-full bg-black/60 border border-white/10 rounded-b-lg px-3 py-2 text-xs text-white resize-y leading-relaxed placeholder:text-zinc-600 focus:outline-none focus:border-nexo-lime/30"
-                                                    placeholder={idx === 0 ? "Descripción del servicio principal (monto a aprobar obligatorio)" : "Detalle del servicio extra / opcional"}
+                                                    placeholder={idx === 0 ? "Descripción del servicio principal (monto base)" : "Detalle del servicio extra / opcional"}
                                                     rows={idx === 0 ? 12 : 5}
                                                     style={{ minHeight: idx === 0 ? '240px' : '100px' }}
                                                     spellCheck="true"
@@ -4060,7 +4060,7 @@ const CRMProjects: React.FC = () => {
                                                 value={item.description}
                                                 onChange={(e) => updateEditingBudgetItem(idx, 'description', e.target.value)}
                                                 className="w-full bg-black/60 border border-white/10 rounded-b-lg px-3 py-2.5 text-sm text-white resize-y leading-relaxed placeholder:text-zinc-600 focus:outline-none focus:border-nexo-lime/30 focus:ring-1 focus:ring-nexo-lime/20"
-                                                placeholder={idx === 0 ? "Descripción del servicio principal (monto a aprobar obligatorio)" : "Detalle del servicio extra / opcional"}
+                                                placeholder={idx === 0 ? "Descripción del servicio principal (monto base)" : "Detalle del servicio extra / opcional"}
                                                 rows={idx === 0 ? 12 : 6}
                                                 style={{ minHeight: idx === 0 ? '240px' : '120px' }}
                                                 spellCheck="true"

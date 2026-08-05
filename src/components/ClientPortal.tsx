@@ -3223,7 +3223,7 @@ const ClientPortal: React.FC = () => {
                                                 <td style={{ padding: '14px 12px', verticalAlign: 'top', fontFamily: 'Arial, Helvetica, sans-serif' }}>
                                                     <div style={{ marginBottom: '7px' }}>
                                                         <span style={{ display: 'inline-block', fontSize: '7px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px', color: '#000', background: '#e1f937', padding: '2px 7px', borderRadius: '2px', fontFamily: 'Arial, Helvetica, sans-serif' }}>
-                                                            Presupuesto Base (Obligatorio)
+                                                            Presupuesto Base
                                                         </span>
                                                     </div>
                                                     {renderDescription(bi.description, true)}
@@ -3235,7 +3235,7 @@ const ClientPortal: React.FC = () => {
                                         </tbody>
                                     </table>
                                     <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', borderTop: '2px solid #e1f937', padding: '10px 12px', gap: '16px', background: 'rgba(225,249,55,0.05)' }}>
-                                        <span style={{ fontSize: '10px', color: '#ccc', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.5px', fontFamily: 'Arial, Helvetica, sans-serif' }}>Presupuesto Base Obligatorio:</span>
+                                        <span style={{ fontSize: '10px', color: '#ccc', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.5px', fontFamily: 'Arial, Helvetica, sans-serif' }}>Presupuesto Base:</span>
                                         <span style={{ fontSize: '15px', color: '#e1f937', fontWeight: '900', fontFamily: 'Arial, Helvetica, sans-serif', whiteSpace: 'nowrap' }}>{project.currency || 'ARS'} {baseAmt.toLocaleString('es-AR')}</span>
                                     </div>
                                 </div>
@@ -3244,7 +3244,7 @@ const ClientPortal: React.FC = () => {
 
                         {/* ADICIONALES — items.slice(1) */}
                         {budget.items.slice(1).length > 0 && (
-                            <div style={{ marginTop: '22px' }}>
+                            <div style={{ marginTop: '22px', pageBreakBefore: 'always', breakBefore: 'page' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                                     <div style={{ flex: 1, height: '1px', background: '#2a2a2a' }}></div>
                                     <span style={{ fontSize: '8px', color: '#888', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: '700', fontFamily: 'Arial, Helvetica, sans-serif', whiteSpace: 'nowrap' }}>Adicionales Recomendados / Pedidos (Opcionales)</span>
