@@ -107,14 +107,43 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
             const margin = income - totalExpenses;
             const marginPercent = income > 0 ? Math.round((margin / income) * 100) : 0;
 
-            // Cobrado real: solo entradas del historial marcadas como pagadas
+            // Desglose de Facturación y Cobros
             const invoicesHist = Array.isArray(proj.invoices_history) ? proj.invoices_history : [];
-            const cobradoReal = invoicesHist.reduce((sum, inv) => {
-                if (!inv.paid) return sum;
+            let cobradoReal = 0;
+            let cobradoFormal = 0;
+            let cobradoInformal = 0;
+            let facturadoTotalAFIP = 0;
+
+            invoicesHist.forEach(inv => {
                 const amt = Number(inv.amount) || 0;
-                return inv.type === 'credit_note' ? sum - amt : sum + amt;
-            }, 0);
-            const saldoPendiente = income - cobradoReal;
+                const isCreditNote = inv.type === 'credit_note';
+                const effectiveAmt = isCreditNote ? -amt : amt;
+
+                if (!inv.is_informal && !isCreditNote) {
+                    facturadoTotalAFIP += amt;
+                }
+
+                if (inv.paid) {
+                    cobradoReal += effectiveAmt;
+                    if (inv.is_informal) {
+                        cobradoInformal += effectiveAmt;
+                    } else {
+                        cobradoFormal += effectiveAmt;
+                    }
+                }
+            });
+
+            // Fallback para proyectos históricos sin invoices_history
+            if (invoicesHist.length === 0 && proj.invoice_url) {
+                const amt = Number(proj.invoice_amount) || 0;
+                facturadoTotalAFIP += amt;
+                if (proj.invoice_paid) {
+                    cobradoReal += amt;
+                    cobradoFormal += amt;
+                }
+            }
+
+            const saldoPendiente = Math.max(0, income - cobradoReal);
 
             return {
                 ...proj,
@@ -126,6 +155,9 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                 marginPercent,
                 currency,
                 cobradoReal,
+                cobradoFormal,
+                cobradoInformal,
+                facturadoTotalAFIP,
                 saldoPendiente
             };
         });
@@ -192,11 +224,26 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
         let expensesUSD = 0;
         let cobradoARS = 0;
         let cobradoUSD = 0;
+        let cobradoFormalARS = 0;
+        let cobradoFormalUSD = 0;
+        let cobradoInformalARS = 0;
+        let cobradoInformalUSD = 0;
+        let facturadoAFIPARS = 0;
+        let facturadoAFIPUSD = 0;
 
         filteredProjects.forEach(p => {
+            const pCobradoReal = (p as any).cobradoReal || 0;
+            const pCobradoFormal = (p as any).cobradoFormal || 0;
+            const pCobradoInformal = (p as any).cobradoInformal || 0;
+            const pFacturadoAFIP = (p as any).facturadoTotalAFIP || 0;
+
             if (p.currency === 'USD') {
                 revenueUSD += p.income;
-                cobradoUSD += (p as any).cobradoReal || 0;
+                cobradoUSD += pCobradoReal;
+                cobradoFormalUSD += pCobradoFormal;
+                cobradoInformalUSD += pCobradoInformal;
+                facturadoAFIPUSD += pFacturadoAFIP;
+
                 const assignments = Array.isArray(p.crew_assignments) ? p.crew_assignments : [];
                 const extras = Array.isArray(p.extra_expenses) ? p.extra_expenses : [];
                 assignments.forEach(a => {
@@ -211,7 +258,11 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                 });
             } else {
                 revenueARS += Number(p.income) || 0;
-                cobradoARS += (p as any).cobradoReal || 0;
+                cobradoARS += pCobradoReal;
+                cobradoFormalARS += pCobradoFormal;
+                cobradoInformalARS += pCobradoInformal;
+                facturadoAFIPARS += pFacturadoAFIP;
+
                 const assignments = Array.isArray(p.crew_assignments) ? p.crew_assignments : [];
                 const extras = Array.isArray(p.extra_expenses) ? p.extra_expenses : [];
                 assignments.forEach(a => {
@@ -242,7 +293,13 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
             marginUSD,
             marginPercentUSD,
             cobradoARS,
-            cobradoUSD
+            cobradoUSD,
+            cobradoFormalARS,
+            cobradoFormalUSD,
+            cobradoInformalARS,
+            cobradoInformalUSD,
+            facturadoAFIPARS,
+            facturadoAFIPUSD
         };
     }, [filteredProjects]);
 
@@ -617,69 +674,84 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 
-                <div className="bg-zinc-900/40 border border-white/5 rounded-2xl p-5 shadow-2xl space-y-2">
-                    <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest block">📥 Facturación Bruta (Ingresos)</span>
+                {/* 1. Facturación Bruta (Ingresos Proyectados) */}
+                <div className="bg-zinc-900/40 border border-white/5 rounded-2xl p-4 shadow-2xl space-y-2">
+                    <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest block">📥 Cotizado Proyectado</span>
                     <div className="space-y-1">
-                        <p className="text-2xl font-black text-white font-mono">{formatMoney(summaryStats.revenueARS, 'ARS')}</p>
-                        <p className="text-lg font-black text-nexo-lime font-mono">{formatMoney(summaryStats.revenueUSD, 'USD')}</p>
+                        <p className="text-xl font-black text-white font-mono">{formatMoney(summaryStats.revenueARS, 'ARS')}</p>
+                        {summaryStats.revenueUSD > 0 && <p className="text-base font-black text-nexo-lime font-mono">{formatMoney(summaryStats.revenueUSD, 'USD')}</p>}
                     </div>
+                    <p className="text-[10px] text-zinc-500 pt-1 border-t border-white/5">Total presupuestos aprobados</p>
                 </div>
 
-                <div className="bg-zinc-900/40 border border-white/5 rounded-2xl p-5 shadow-2xl space-y-2">
-                    <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest block">📤 Egresos Totales (Crew + Extras)</span>
+                {/* 2. Facturado AFIP */}
+                <div className="bg-zinc-900/40 border border-sky-500/20 rounded-2xl p-4 shadow-2xl space-y-2 bg-gradient-to-br from-sky-500/[0.02] to-transparent">
+                    <span className="text-sky-400 text-[10px] uppercase font-bold tracking-widest block">🧾 Facturado AFIP</span>
                     <div className="space-y-1">
-                        <p className="text-2xl font-black text-white font-mono">{formatMoney(summaryStats.expensesARS, 'ARS')}</p>
-                        <p className="text-lg font-black text-zinc-400 font-mono">{formatMoney(summaryStats.expensesUSD, 'USD')}</p>
+                        <p className="text-xl font-black text-sky-300 font-mono">{formatMoney(summaryStats.facturadoAFIPARS, 'ARS')}</p>
+                        {summaryStats.facturadoAFIPUSD > 0 && <p className="text-base font-black text-sky-400 font-mono">{formatMoney(summaryStats.facturadoAFIPUSD, 'USD')}</p>}
                     </div>
+                    <p className="text-[10px] text-zinc-500 pt-1 border-t border-white/5">Comprobantes emitidos oficialmente</p>
                 </div>
 
-                <div className="bg-zinc-900/40 border border-white/5 rounded-2xl p-5 shadow-2xl space-y-2 bg-gradient-to-br from-nexo-lime/[0.02] to-transparent">
-                    <span className="text-zinc-400 text-[10px] uppercase font-bold tracking-widest block">💎 Ganancia Real (Margen Neto)</span>
-                    <div className="space-y-1">
-                        <div className="flex items-baseline justify-between">
-                            <span className="text-2xl font-black text-nexo-lime font-mono">{formatMoney(summaryStats.marginARS, 'ARS')}</span>
-                            <span className="text-xs bg-nexo-lime/10 text-nexo-lime px-2 py-0.5 rounded font-black font-mono">{summaryStats.marginPercentARS}%</span>
-                        </div>
-                        <div className="flex items-baseline justify-between">
-                            <span className="text-lg font-black text-white font-mono">{formatMoney(summaryStats.marginUSD, 'USD')}</span>
-                            <span className="text-xs bg-white/10 text-white px-2 py-0.5 rounded font-black font-mono">{summaryStats.marginPercentUSD}%</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Card Cobrado Real */}
-                <div className="bg-zinc-900/40 border border-emerald-500/20 rounded-2xl p-5 shadow-2xl space-y-2 bg-gradient-to-br from-emerald-500/[0.03] to-transparent">
+                {/* 3. Cobrado Real */}
+                <div className="bg-zinc-900/40 border border-emerald-500/30 rounded-2xl p-4 shadow-2xl space-y-2 bg-gradient-to-br from-emerald-500/[0.04] to-transparent">
                     <span className="text-emerald-400 text-[10px] uppercase font-bold tracking-widest block">💰 Cobrado Real</span>
                     <div className="space-y-1">
-                        {summaryStats.cobradoARS > 0 ? (
-                            <p className="text-2xl font-black text-emerald-400 font-mono">{formatMoney(summaryStats.cobradoARS, 'ARS')}</p>
-                        ) : (
-                            <p className="text-zinc-600 text-sm font-bold font-mono">$0</p>
+                        <p className="text-xl font-black text-emerald-400 font-mono">{formatMoney(summaryStats.cobradoARS, 'ARS')}</p>
+                        {summaryStats.cobradoUSD > 0 && <p className="text-base font-black text-emerald-300 font-mono">{formatMoney(summaryStats.cobradoUSD, 'USD')}</p>}
+                    </div>
+                    {/* Desglose Formal vs Informal */}
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                        {summaryStats.cobradoFormalARS > 0 && (
+                            <span className="text-[9px] bg-sky-500/10 text-sky-300 border border-sky-500/20 px-1.5 py-0.5 rounded font-mono font-bold" title="Cobrado con factura AFIP">
+                                📄 FC: {formatMoney(summaryStats.cobradoFormalARS, 'ARS')}
+                            </span>
                         )}
-                        {summaryStats.cobradoUSD > 0 && (
-                            <p className="text-lg font-black text-emerald-300 font-mono">{formatMoney(summaryStats.cobradoUSD, 'USD')}</p>
+                        {summaryStats.cobradoInformalARS > 0 && (
+                            <span className="text-[9px] bg-purple-500/10 text-purple-300 border border-purple-500/20 px-1.5 py-0.5 rounded font-mono font-bold" title="Cobrado informal (sin factura AFIP)">
+                                🤫 Sin FC: {formatMoney(summaryStats.cobradoInformalARS, 'ARS')}
+                            </span>
                         )}
-                        <p className="text-[10px] text-zinc-500 mt-1">FC + informales marcados como pagados</p>
                     </div>
                     {(summaryStats.revenueARS > 0 || summaryStats.revenueUSD > 0) && (
-                        <div className="pt-1.5 border-t border-white/5">
-                            <p className="text-[9px] text-zinc-500 uppercase font-bold tracking-wider">Saldo por cobrar:</p>
-                            <div className="flex flex-wrap gap-2 mt-0.5">
-                                {summaryStats.revenueARS > 0 && (
-                                    <span className={`text-sm font-black font-mono ${
-                                        summaryStats.revenueARS - summaryStats.cobradoARS > 0 ? 'text-amber-400' : 'text-emerald-400'
-                                    }`}>{formatMoney(Math.max(0, summaryStats.revenueARS - summaryStats.cobradoARS), 'ARS')}</span>
-                                )}
-                                {summaryStats.revenueUSD > 0 && (
-                                    <span className={`text-sm font-black font-mono ${
-                                        summaryStats.revenueUSD - summaryStats.cobradoUSD > 0 ? 'text-amber-400' : 'text-emerald-400'
-                                    }`}>{formatMoney(Math.max(0, summaryStats.revenueUSD - summaryStats.cobradoUSD), 'USD')}</span>
-                                )}
-                            </div>
+                        <div className="pt-1.5 border-t border-white/5 flex items-center justify-between">
+                            <span className="text-[9px] text-zinc-500 uppercase font-bold">Pendiente:</span>
+                            <span className={`text-xs font-black font-mono ${
+                                summaryStats.revenueARS - summaryStats.cobradoARS > 0 ? 'text-amber-400' : 'text-emerald-400'
+                            }`}>{formatMoney(Math.max(0, summaryStats.revenueARS - summaryStats.cobradoARS), 'ARS')}</span>
                         </div>
                     )}
+                </div>
+
+                {/* 4. Egresos Totales */}
+                <div className="bg-zinc-900/40 border border-white/5 rounded-2xl p-4 shadow-2xl space-y-2">
+                    <span className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest block">📤 Egresos (Crew + Gastos)</span>
+                    <div className="space-y-1">
+                        <p className="text-xl font-black text-white font-mono">{formatMoney(summaryStats.expensesARS, 'ARS')}</p>
+                        {summaryStats.expensesUSD > 0 && <p className="text-base font-black text-zinc-400 font-mono">{formatMoney(summaryStats.expensesUSD, 'USD')}</p>}
+                    </div>
+                    <p className="text-[10px] text-zinc-500 pt-1 border-t border-white/5">Honorarios de equipo + costos extras</p>
+                </div>
+
+                {/* 5. Ganancia Real / Margen */}
+                <div className="bg-zinc-900/40 border border-nexo-lime/20 rounded-2xl p-4 shadow-2xl space-y-2 bg-gradient-to-br from-nexo-lime/[0.02] to-transparent">
+                    <span className="text-nexo-lime text-[10px] uppercase font-bold tracking-widest block">💎 Margen Neto (Ganancia)</span>
+                    <div className="space-y-1">
+                        <div className="flex items-baseline justify-between">
+                            <span className="text-xl font-black text-nexo-lime font-mono">{formatMoney(summaryStats.marginARS, 'ARS')}</span>
+                            <span className="text-[10px] bg-nexo-lime/10 text-nexo-lime px-1.5 py-0.5 rounded font-black font-mono">{summaryStats.marginPercentARS}%</span>
+                        </div>
+                        {summaryStats.marginUSD > 0 && (
+                            <div className="flex items-baseline justify-between">
+                                <span className="text-base font-black text-white font-mono">{formatMoney(summaryStats.marginUSD, 'USD')}</span>
+                                <span className="text-[10px] bg-white/10 text-white px-1.5 py-0.5 rounded font-black font-mono">{summaryStats.marginPercentUSD}%</span>
+                            </div>
+                        )}
+                    </div>
+                    <p className="text-[10px] text-zinc-500 pt-1 border-t border-white/5">Ingresos menos egresos totales</p>
                 </div>
 
             </div>
@@ -1038,7 +1110,17 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                                         {/* Cobrado Real */}
                                         <td className="px-4 py-3.5 text-right font-mono">
                                             {(p as any).cobradoReal > 0 ? (
-                                                <span className="text-emerald-400 font-bold">{formatMoney((p as any).cobradoReal, p.currency || 'ARS')}</span>
+                                                <div className="space-y-0.5">
+                                                    <span className="text-emerald-400 font-bold block">{formatMoney((p as any).cobradoReal, p.currency || 'ARS')}</span>
+                                                    <div className="flex items-center justify-end gap-1 text-[9px]">
+                                                        {(p as any).cobradoFormal > 0 && (
+                                                            <span className="text-sky-300 bg-sky-500/10 px-1 rounded" title="Cobrado con factura AFIP">📄 {formatMoney((p as any).cobradoFormal, p.currency || 'ARS')}</span>
+                                                        )}
+                                                        {(p as any).cobradoInformal > 0 && (
+                                                            <span className="text-purple-300 bg-purple-500/10 px-1 rounded" title="Cobrado informal (sin factura)">🤫 {formatMoney((p as any).cobradoInformal, p.currency || 'ARS')}</span>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             ) : (
                                                 <span className="text-zinc-600">-</span>
                                             )}
