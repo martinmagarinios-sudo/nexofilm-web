@@ -578,7 +578,8 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                     ? [...currentHistory, newHistoryEntry]
                     : currentHistory;
 
-                const dbInvoiceType = invoice_type === 'credit_note' ? 'custom' : (invoice_type || null);
+                const allowedTypes = ['total', 'deposit_50', 'custom'];
+                const dbInvoiceType = invoice_type ? (allowedTypes.includes(invoice_type) ? invoice_type : 'custom') : null;
 
                 const allPaid = updatedHistory.length > 0 && updatedHistory.every(inv => inv.paid);
 
@@ -696,7 +697,8 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
 
                 const hasHistory = history.length > 0;
                 const lastInvoice = hasHistory ? history[history.length - 1] : null;
-                const dbLastType = (lastInvoice && lastInvoice.type === 'credit_note') ? 'custom' : (lastInvoice ? lastInvoice.type : null);
+                const allowedTypes = ['total', 'deposit_50', 'custom'];
+                const dbLastType = (lastInvoice && lastInvoice.type) ? (allowedTypes.includes(lastInvoice.type) ? lastInvoice.type : 'custom') : null;
 
                 const updatePayload = {
                     invoices_history: hasHistory ? history : null,
