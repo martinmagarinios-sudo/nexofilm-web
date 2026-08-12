@@ -1410,6 +1410,12 @@ const CRMProjects: React.FC = () => {
             return;
         }
 
+        // Validar monto > 0 para cobros informales
+        if (invoiceIsInformal && (!invoiceAmount || invoiceAmount <= 0)) {
+            setError('Para registrar un cobro sin factura, ingresá el monto cobrado (mayor a 0).');
+            return;
+        }
+
         setError('');
         setSuccessMsg('');
 
@@ -3695,9 +3701,9 @@ const CRMProjects: React.FC = () => {
 
                                                                 {/* Monto */}
                                                                 <div className="space-y-2">
-                                                                    <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">
+                                                                    <label className={`text-xs font-bold uppercase tracking-wider ${invoiceIsInformal ? 'text-purple-300' : 'text-zinc-400'}`}>
                                                                         {invoiceType === 'credit_note' ? 'Monto de la Nota de Crédito (A Descontar)' :
-                                                                         invoiceIsInformal ? 'Monto Cobrado (sin factura)' :
+                                                                         invoiceIsInformal ? '💵 MONTO COBRADO en mano (sin factura AFIP)' :
                                                                          'Monto de la Nueva Factura'} ({selectedProject?.currency || 'ARS'})
                                                                     </label>
                                                                     <input
@@ -3707,7 +3713,7 @@ const CRMProjects: React.FC = () => {
                                                                         disabled={invoiceType !== 'custom' && invoiceType !== 'credit_note' && !invoiceIsInformal}
                                                                         value={invoiceAmount}
                                                                         onChange={(e) => setInvoiceAmount(parseFloat(e.target.value) || 0)}
-                                                                        className="w-full bg-black border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-nexo-lime disabled:opacity-50 font-mono"
+                                                                        className={`w-full border rounded px-4 py-2.5 text-sm text-white focus:outline-none disabled:opacity-50 font-mono font-bold ${invoiceIsInformal ? 'bg-purple-950/40 border-purple-500/30 focus:border-purple-400 text-lg' : 'bg-black border-white/10 focus:border-nexo-lime'}`}
                                                                     />
                                                                 </div>
 
@@ -3789,18 +3795,23 @@ const CRMProjects: React.FC = () => {
                                                                 <button
                                                                     type="submit"
                                                                     disabled={!invoiceUrl && !invoiceIsInformal && (!invoiceAmount || invoiceAmount <= 0)}
-                                                                    className={`w-full font-black text-xs uppercase tracking-widest py-3 rounded transition-colors cursor-pointer ${
-                                                                        invoiceIsInformal
-                                                                            ? 'bg-purple-500 text-white hover:bg-purple-400'
+                                                                    className={`w-full font-black text-sm uppercase tracking-widest py-3.5 rounded transition-all cursor-pointer ${
+                                                                        invoiceIsInformal && invoiceAmount > 0
+                                                                            ? 'bg-purple-500 text-white hover:bg-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.3)] border-2 border-purple-400'
+                                                                            : invoiceIsInformal
+                                                                            ? 'bg-purple-800 text-purple-300 cursor-not-allowed border border-purple-500/30'
                                                                             : (invoiceUrl || invoiceAmount > 0)
                                                                             ? 'bg-nexo-lime text-black hover:bg-white'
                                                                             : 'bg-zinc-800 text-zinc-600 cursor-not-allowed border border-white/5'
                                                                     }`}
                                                                 >
-                                                                    {invoiceIsInformal ? '🤫 Registrar Nuevo Cobro Informal' :
-                                                                     invoiceUrl ? '🧾 Agregar Nueva Factura con PDF' :
-                                                                     invoiceAmount > 0 ? '➕ Agregar Nueva Factura al Historial' :
-                                                                     '➕ Completar Datos para Agregar Nueva Factura'}
+                                                                    {invoiceIsInformal && invoiceAmount > 0
+                                                                        ? `✅ REGISTRAR COBRO DE ${(selectedProject?.currency || 'ARS')} ${invoiceAmount.toLocaleString()} COMO COBRADO`
+                                                                        : invoiceIsInformal
+                                                                        ? '⚠️ Ingresá el monto cobrado arriba'
+                                                                        : invoiceUrl ? '🧾 Agregar Nueva Factura con PDF'
+                                                                        : invoiceAmount > 0 ? '➕ Agregar Nueva Factura al Historial'
+                                                                        : '➕ Completar Datos para Agregar Nueva Factura'}
                                                                 </button>
                                                             </div>
                         </form>
