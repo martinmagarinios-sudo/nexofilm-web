@@ -560,7 +560,7 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                     type: invoice_type || null,
                     date_sent: new Date().toISOString(),
                     invoice_url: isInformal ? null : (invoice_url || null),
-                    paid: false,
+                    paid: isInformal ? true : false,
                     issued_by: detectedIssuedBy,
                     is_informal: isInformal,
                     payment_method: isInformal ? (invoice_payment_method || 'efectivo') : null

@@ -2169,8 +2169,8 @@ const CRMProjects: React.FC = () => {
                                                                 // Si aún no aprobó, el monto confirmado es solo el base
                                                                 const isApproved = ['approved', 'production', 'delivered'].includes(project.status);
                                                                 const billingTotal = isApproved ? (projectBudget ? projectBudget.total_price : basePrice) : basePrice;
-                                                                const remainingToInvoice = Math.max(0, billingTotal - totalInvoiced);
-                                                                const remainingToCollect = Math.max(0, totalInvoiced - totalPaid);
+                                                                 const remainingToInvoice = Math.max(0, billingTotal - totalInvoiced);
+                                                                const remainingToCollect = Math.max(0, billingTotal - totalPaid);
                                                                 
                                                                 return (
                                                                     <>
@@ -2198,9 +2198,9 @@ const CRMProjects: React.FC = () => {
                                                                                 )}
                                                                             </>
                                                                         )}
-                                                                        {totalInvoiced > 0 && (
+                                                                        {(totalInvoiced > 0 || totalPaid > 0) && (
                                                                             <div className="mt-1 flex flex-wrap lg:flex-col items-start lg:items-end gap-1">
-                                                                                {remainingToCollect === 0 && remainingToInvoice === 0 ? (
+                                                                                {remainingToCollect === 0 ? (
                                                                                     <span className="bg-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]">✅ 100% Cobrado</span>
                                                                                 ) : (
                                                                                     <>
@@ -2961,16 +2961,20 @@ const CRMProjects: React.FC = () => {
                                                                         // Si no aprobó: el monto comprometido es solo el base
                                                                         const isApproved = ['approved', 'production', 'delivered'].includes(project.status);
                                                                         const totalBudget = isApproved ? projectBudget.total_price : baseAmt;
-                                                                        const totalInvoiced = Array.isArray(history) 
-                                                                            ? history.reduce((sum, inv) => {
-                                                                                const amt = Number(inv.amount) || 0;
-                                                                                return inv.type === 'credit_note' ? sum - amt : sum + amt;
-                                                                            }, 0)
-                                                                            : 0;
-                                                                        const remaining = totalBudget - totalInvoiced;
+                                                                        const historyList = Array.isArray(history) ? history : [];
+                                                                        const totalInvoiced = historyList.reduce((sum, inv) => {
+                                                                            const amt = Number(inv.amount) || 0;
+                                                                            return inv.type === 'credit_note' ? sum - amt : sum + amt;
+                                                                        }, 0);
+                                                                        const totalPaid = historyList.reduce((sum, inv) => {
+                                                                            if (!inv.paid) return sum;
+                                                                            const amt = Number(inv.amount) || 0;
+                                                                            return inv.type === 'credit_note' ? sum - amt : sum + amt;
+                                                                        }, 0);
+                                                                        const remainingToCollect = Math.max(0, totalBudget - totalPaid);
                                                                         const currency = project.currency || 'ARS';
                                                                         
-                                                                        if (totalInvoiced > 0 || remaining > 0) {
+                                                                        if (totalInvoiced > 0 || totalPaid > 0 || remainingToCollect > 0) {
                                                                             return (
                                                                                 <div className="flex items-center gap-3 bg-black/40 border border-white/10 px-3 py-1.5 rounded-lg shrink-0">
                                                                                     {isApproved && optionalsSum === 0 && projectBudget.total_price > baseAmt && (
@@ -2979,14 +2983,25 @@ const CRMProjects: React.FC = () => {
                                                                                             <span className="text-nexo-lime text-xs font-bold">{currency} {projectBudget.total_price.toLocaleString()}</span>
                                                                                         </div>
                                                                                     )}
-                                                                                    <div className="flex flex-col">
-                                                                                        <span className="text-[9px] uppercase tracking-wider text-zinc-500 font-bold">Facturado</span>
-                                                                                        <span className="text-white text-xs font-bold">{currency} {totalInvoiced.toLocaleString()}</span>
-                                                                                    </div>
+                                                                                    {totalInvoiced > 0 && (
+                                                                                        <div className="flex flex-col">
+                                                                                            <span className="text-[9px] uppercase tracking-wider text-zinc-500 font-bold">Facturado</span>
+                                                                                            <span className="text-white text-xs font-bold">{currency} {totalInvoiced.toLocaleString()}</span>
+                                                                                        </div>
+                                                                                    )}
+                                                                                    {totalPaid > 0 && (
+                                                                                        <>
+                                                                                            {totalInvoiced > 0 && <div className="w-px h-6 bg-white/10"></div>}
+                                                                                            <div className="flex flex-col">
+                                                                                                <span className="text-[9px] uppercase tracking-wider text-emerald-400/90 font-bold">Cobrado</span>
+                                                                                                <span className="text-emerald-400 text-xs font-bold">{currency} {totalPaid.toLocaleString()}</span>
+                                                                                            </div>
+                                                                                        </>
+                                                                                    )}
                                                                                     <div className="w-px h-6 bg-white/10"></div>
                                                                                     <div className="flex flex-col">
-                                                                                        <span className={`text-[9px] uppercase tracking-wider font-bold ${remaining > 0 ? 'text-amber-500/80' : 'text-emerald-500/80'}`}>Pendiente</span>
-                                                                                        <span className={`text-xs font-bold ${remaining > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>{currency} {remaining.toLocaleString()}</span>
+                                                                                        <span className={`text-[9px] uppercase tracking-wider font-bold ${remainingToCollect > 0 ? 'text-amber-500/80' : 'text-emerald-500/80'}`}>A Cobrar</span>
+                                                                                        <span className={`text-xs font-bold ${remainingToCollect > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>{currency} {remainingToCollect.toLocaleString()}</span>
                                                                                     </div>
                                                                                 </div>
                                                                             );
@@ -3344,13 +3359,21 @@ const CRMProjects: React.FC = () => {
                                         return inv.type === 'credit_note' ? sum - amt : sum + amt;
                                     }, 0)
                                     : 0;
-                                const remaining = totalBudget - totalInvoiced;
+                                const totalPaid = Array.isArray(history) 
+                                    ? history.reduce((sum, inv) => {
+                                        if (!inv.paid) return sum;
+                                        const amt = Number(inv.amount) || 0;
+                                        return inv.type === 'credit_note' ? sum - amt : sum + amt;
+                                    }, 0)
+                                    : 0;
+                                const remainingToCollect = Math.max(0, totalBudget - totalPaid);
+                                const remainingToInvoice = Math.max(0, totalBudget - totalInvoiced);
                                 const currency = selectedProject.currency || 'ARS';
 
                                 return (
                                     <div className="bg-black/40 border border-white/5 rounded-lg p-4 space-y-3">
                                         <div className="flex justify-between items-center">
-                                            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Resumen de Facturación</span>
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Resumen de Facturación y Cobros</span>
                                             {totalBudget > 0 && (
                                                 <span className="text-[10px] text-zinc-500">Total cotizado: <span className="text-zinc-300 font-bold">{currency} {totalBudget.toLocaleString()}</span></span>
                                             )}
@@ -3390,64 +3413,68 @@ const CRMProjects: React.FC = () => {
                                                                 </span>
                                                             )}
                                                         </div>
-                                                                                        <div className="flex items-center gap-3 shrink-0 ml-auto sm:ml-0">
-                                                                                            <span className={`font-bold font-mono text-xs ${inv.type === 'credit_note' ? 'text-amber-400' : 'text-white'}`}>
-                                                                                                {inv.type === 'credit_note' ? '-' : ''}{currency} {(inv.amount || 0).toLocaleString()}
-                                                                                            </span>
-                                                                                            <button
-                                                                                                type="button"
-                                                                                                onClick={(e) => { e.preventDefault(); handleToggleInvoicePaid(selectedProject.id, idx, !inv.paid); }}
-                                                                                                className={`px-3 py-1.5 rounded text-[11px] font-bold uppercase tracking-wide transition-all cursor-pointer shadow-sm flex items-center gap-1 ${
-                                                                                                    inv.paid 
-                                                                                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30' 
-                                                                                                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.2)]'
-                                                                                                }`}
-                                                                                                title={inv.paid ? 'Clic para cambiar a NO cobrada' : 'Clic para marcar esta factura como COBRADA'}
-                                                                                            >
-                                                                                                {inv.paid ? '✅ Cobrada' : '⏳ Marcar como Cobrada'}
-                                                                                            </button>
-                                                                                            {inv.invoice_url && (
-                                                                                                <a href={inv.invoice_url} target="_blank" rel="noopener noreferrer" className="bg-zinc-800 hover:bg-zinc-700 text-nexo-lime border border-white/10 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wide transition-colors">↗ PDF</a>
-                                                                                            )}
-                                                                                            <button
-                                                                                                type="button"
-                                                                                                onClick={(e) => { e.preventDefault(); handleDeleteInvoice(selectedProject.id, idx); }}
-                                                                                                className="text-zinc-500 hover:text-red-400 text-sm p-1.5 rounded hover:bg-red-500/10 transition-colors cursor-pointer"
-                                                                                                title="Eliminar esta factura del historial"
-                                                                                            >
-                                                                                                🗑️
-                                                                                            </button>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                ))}
-                                                                                <div className="flex justify-between items-center pt-2">
-                                                                                    <span className="text-[10px] font-bold uppercase text-zinc-400">Total facturado:</span>
-                                                                                    <span className="text-white font-black text-sm">{currency} {totalInvoiced.toLocaleString()}</span>
-                                                                                </div>
-                                                                                <div className="flex justify-between items-center pb-2 border-b border-white/5 mt-1">
-                                                                                    <span className="text-[10px] font-bold uppercase text-zinc-400">Total cobrado:</span>
-                                                                                    <span className="text-emerald-400 font-black text-sm">{currency} {(Array.isArray(history) ? history.reduce((sum, inv) => {
-                                                                                        if (!inv.paid) return sum;
-                                                                                        const amt = Number(inv.amount) || 0;
-                                                                                        return inv.type === 'credit_note' ? sum - amt : sum + amt;
-                                                                                    }, 0) : 0).toLocaleString()}</span>
-                                                                                </div>
-                                                                                {totalBudget > 0 && (
-                                                                                    <div className={`flex justify-between items-center rounded px-3 py-2 ${remaining > 0 ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-emerald-500/10 border border-emerald-500/20'}`}>
-                                                                                        <span className={`text-[10px] font-bold uppercase ${remaining > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                                                                                            {remaining > 0 ? '⏳ Saldo pendiente a facturar:' : '✅ Totalmente facturado'}
-                                                                                        </span>
-                                                                                        {remaining > 0 && (
-                                                                                            <span className="text-amber-300 font-black text-sm">{currency} {remaining.toLocaleString()}</span>
-                                                                                        )}
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        ) : (
-                                                                            <p className="text-zinc-600 text-[11px] italic">Sin facturas emitidas aún para este proyecto.</p>
-                                                                        )}
-                                                                    </div>
-                                                                );
+                                                        <div className="flex items-center gap-3 shrink-0 ml-auto sm:ml-0">
+                                                            <span className={`font-bold font-mono text-xs ${inv.type === 'credit_note' ? 'text-amber-400' : 'text-white'}`}>
+                                                                {inv.type === 'credit_note' ? '-' : ''}{currency} {(inv.amount || 0).toLocaleString()}
+                                                            </span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => { e.preventDefault(); handleToggleInvoicePaid(selectedProject.id, idx, !inv.paid); }}
+                                                                className={`px-3 py-1.5 rounded text-[11px] font-bold uppercase tracking-wide transition-all cursor-pointer shadow-sm flex items-center gap-1 ${
+                                                                    inv.paid 
+                                                                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30' 
+                                                                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.2)]'
+                                                                }`}
+                                                                title={inv.paid ? 'Clic para cambiar a NO cobrada' : 'Clic para marcar esta factura como COBRADA'}
+                                                            >
+                                                                {inv.paid ? '✅ Cobrada' : '⏳ Marcar como Cobrada'}
+                                                            </button>
+                                                            {inv.invoice_url && (
+                                                                <a href={inv.invoice_url} target="_blank" rel="noopener noreferrer" className="bg-zinc-800 hover:bg-zinc-700 text-nexo-lime border border-white/10 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wide transition-colors">↗ PDF</a>
+                                                            )}
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => { e.preventDefault(); handleDeleteInvoice(selectedProject.id, idx); }}
+                                                                className="text-zinc-500 hover:text-red-400 text-sm p-1.5 rounded hover:bg-red-500/10 transition-colors cursor-pointer"
+                                                                title="Eliminar esta factura del historial"
+                                                            >
+                                                                🗑️
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                <div className="flex justify-between items-center pt-2">
+                                                    <span className="text-[10px] font-bold uppercase text-zinc-400">Total facturado:</span>
+                                                    <span className="text-white font-black text-sm">{currency} {totalInvoiced.toLocaleString()}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center pb-2 border-b border-white/5 mt-1">
+                                                    <span className="text-[10px] font-bold uppercase text-zinc-400">Total cobrado:</span>
+                                                    <span className="text-emerald-400 font-black text-sm">{currency} {totalPaid.toLocaleString()}</span>
+                                                </div>
+                                                {totalBudget > 0 && (
+                                                    <div className="space-y-1.5 mt-2">
+                                                        <div className={`flex justify-between items-center rounded px-3 py-2 ${remainingToCollect > 0 ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-emerald-500/10 border border-emerald-500/20'}`}>
+                                                            <span className={`text-[10px] font-bold uppercase ${remainingToCollect > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                                                                {remainingToCollect > 0 ? '⏳ Saldo pendiente a cobrar:' : '✅ Totalmente cobrado'}
+                                                            </span>
+                                                            {remainingToCollect > 0 && (
+                                                                <span className="text-amber-300 font-black text-sm">{currency} {remainingToCollect.toLocaleString()}</span>
+                                                            )}
+                                                        </div>
+                                                        {remainingToInvoice > 0 && (
+                                                            <div className="flex justify-between items-center rounded px-3 py-1.5 bg-zinc-800/40 border border-white/5">
+                                                                <span className="text-[10px] font-bold uppercase text-zinc-400">📄 Pendiente a facturar (AFIP):</span>
+                                                                <span className="text-zinc-300 font-bold text-xs">{currency} {remainingToInvoice.toLocaleString()}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <p className="text-zinc-600 text-[11px] italic">Sin facturas emitidas aún para este proyecto.</p>
+                                        )}
+                                    </div>
+                                );
                                                             })()}
 
                                                             {/* Datos de cuenta bancaria */}
