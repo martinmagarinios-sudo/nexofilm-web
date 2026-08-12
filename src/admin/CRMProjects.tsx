@@ -2972,7 +2972,10 @@ const CRMProjects: React.FC = () => {
                                                                     
                                                                     {/* Resumen Facturado / Pendiente */}
                                                                     {(() => {
-                                                                        const history = project.invoices_history;
+                                                                        const rawHistory = project.invoices_history;
+                                                                        const historyList = (Array.isArray(rawHistory) && rawHistory.length > 0) ? rawHistory : (
+                                                                            project.invoice_url ? [{ amount: Number(project.invoice_amount) || 0, type: project.invoice_type || 'custom', invoice_url: project.invoice_url, paid: Boolean(project.invoice_paid) }] : []
+                                                                        );
                                                                         const bItems = projectBudget.items || [];
                                                                         const baseAmt = bItems[0] ? (bItems[0].quantity * bItems[0].unit_price) : projectBudget.total_price || 0;
                                                                         const optionalsSum = bItems.filter((it: any) => it.is_optional).reduce((s: number, it: any) => s + (it.quantity * it.unit_price), 0);
@@ -2980,7 +2983,6 @@ const CRMProjects: React.FC = () => {
                                                                         // Si no aprobó: el monto comprometido es solo el base
                                                                         const isApproved = ['approved', 'production', 'delivered'].includes(project.status);
                                                                         const totalBudget = isApproved ? projectBudget.total_price : baseAmt;
-                                                                        const historyList = Array.isArray(history) ? history : [];
                                                                         const totalInvoiced = historyList.reduce((sum, inv) => {
                                                                             const amt = Number(inv.amount) || 0;
                                                                             return inv.type === 'credit_note' ? sum - amt : sum + amt;
@@ -3370,7 +3372,21 @@ const CRMProjects: React.FC = () => {
 
                             {/* Historial de facturas emitidas para este proyecto */}
                             {(() => {
-                                const history = selectedProject.invoices_history;
+                                const rawHistory = selectedProject.invoices_history;
+                                const history = (Array.isArray(rawHistory) && rawHistory.length > 0) ? rawHistory : (
+                                    selectedProject.invoice_url ? [{
+                                        fc_number: selectedProject.invoice_fc_number || null,
+                                        amount: Number(selectedProject.invoice_amount) || 0,
+                                        type: selectedProject.invoice_type || 'custom',
+                                        date_sent: selectedProject.created_at || new Date().toISOString(),
+                                        invoice_url: selectedProject.invoice_url,
+                                        paid: Boolean(selectedProject.invoice_paid),
+                                        issued_by: 'martin',
+                                        is_informal: false,
+                                        payment_method: null,
+                                        migrated_from_legacy: true
+                                    }] : []
+                                );
                                 const projectBudget = budgets.find(b => b.project_id === selectedProject.id);
                                 const totalBudget = projectBudget?.total_price || 0;
                                 const totalInvoiced = Array.isArray(history) 
@@ -3578,9 +3594,23 @@ const CRMProjects: React.FC = () => {
 
                                                                 {/* Tipo de Facturación */}
                                                                 {(() => {
+                                                                    const rawHistory = selectedProject.invoices_history;
+                                                                    const history = (Array.isArray(rawHistory) && rawHistory.length > 0) ? rawHistory : (
+                                                                        selectedProject.invoice_url ? [{
+                                                                            fc_number: selectedProject.invoice_fc_number || null,
+                                                                            amount: Number(selectedProject.invoice_amount) || 0,
+                                                                            type: selectedProject.invoice_type || 'custom',
+                                                                            date_sent: selectedProject.created_at || new Date().toISOString(),
+                                                                            invoice_url: selectedProject.invoice_url,
+                                                                            paid: Boolean(selectedProject.invoice_paid),
+                                                                            issued_by: 'martin',
+                                                                            is_informal: false,
+                                                                            payment_method: null,
+                                                                            migrated_from_legacy: true
+                                                                        }] : []
+                                                                    );
                                                                     const projectBudget = budgets.find(b => b.project_id === selectedProject.id);
                                                                     const totalBudget = projectBudget?.total_price || 0;
-                                                                    const history = selectedProject.invoices_history || [];
                                                                     const totalInvoiced = Array.isArray(history) ? history.reduce((sum, inv) => {
                                                                         const amt = Number(inv.amount) || 0;
                                                                         return inv.type === 'credit_note' ? sum - amt : sum + amt;

@@ -659,25 +659,42 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
 
                 const { data: currentProject, error: readErr } = await supabase
                     .from('projects')
-                    .select('invoices_history')
+                    .select('invoices_history, invoice_url, invoice_amount, invoice_type, invoice_fc_number, created_at')
                     .eq('id', project_id)
                     .single();
 
                 if (readErr) throw readErr;
 
-                let history = currentProject.invoices_history || [];
-                if (!Array.isArray(history) || history.length <= invoice_index) {
+                let history = Array.isArray(currentProject?.invoices_history) ? [...currentProject.invoices_history] : [];
+                
+                // Si no hay historial pero existe factura legacy
+                if (history.length === 0 && currentProject?.invoice_url) {
+                    const legacyAmount = Number(currentProject.invoice_amount) || 0;
+                    history = [{
+                        fc_number: currentProject.invoice_fc_number || null,
+                        amount: legacyAmount,
+                        type: currentProject.invoice_type || 'custom',
+                        date_sent: currentProject.created_at || new Date().toISOString(),
+                        invoice_url: currentProject.invoice_url,
+                        paid: false,
+                        issued_by: 'martin',
+                        is_informal: false,
+                        payment_method: null,
+                        migrated_from_legacy: true
+                    }];
+                }
+
+                const idx = parseInt(invoice_index, 10);
+                if (isNaN(idx) || idx < 0 || idx >= history.length) {
                     return res.status(400).json({ error: 'Índice de factura inválido' });
                 }
 
-                history[invoice_index].paid = is_paid;
-                const allPaid = history.length > 0 && history.every(inv => inv.paid);
+                history[idx].paid = is_paid;
 
                 const { data: updatedProject, error: updateErr } = await supabase
                     .from('projects')
                     .update({ 
-                        invoices_history: history,
-                        invoice_paid: allPaid
+                        invoices_history: history
                     })
                     .eq('id', project_id)
                     .select()
@@ -699,13 +716,29 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
 
                 const { data: currentProject, error: readErr } = await supabase
                     .from('projects')
-                    .select('invoices_history')
+                    .select('invoices_history, invoice_url, invoice_amount, invoice_type, invoice_fc_number, created_at')
                     .eq('id', project_id)
                     .single();
 
                 if (readErr) throw readErr;
 
                 let history = Array.isArray(currentProject?.invoices_history) ? [...currentProject.invoices_history] : [];
+                if (history.length === 0 && currentProject?.invoice_url) {
+                    const legacyAmount = Number(currentProject.invoice_amount) || 0;
+                    history = [{
+                        fc_number: currentProject.invoice_fc_number || null,
+                        amount: legacyAmount,
+                        type: currentProject.invoice_type || 'custom',
+                        date_sent: currentProject.created_at || new Date().toISOString(),
+                        invoice_url: currentProject.invoice_url,
+                        paid: false,
+                        issued_by: 'martin',
+                        is_informal: false,
+                        payment_method: null,
+                        migrated_from_legacy: true
+                    }];
+                }
+
                 const idx = parseInt(invoice_index, 10);
                 if (isNaN(idx) || idx < 0 || idx >= history.length) {
                     return res.status(400).json({ error: 'Índice de factura inválido' });
