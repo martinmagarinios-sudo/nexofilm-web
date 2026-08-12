@@ -123,7 +123,8 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                     facturadoTotalAFIP += amt;
                 }
 
-                if (inv.paid) {
+                const isPaid = Boolean(inv.paid || inv.is_informal);
+                if (isPaid) {
                     cobradoReal += effectiveAmt;
                     if (inv.is_informal) {
                         cobradoInformal += effectiveAmt;

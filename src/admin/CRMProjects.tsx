@@ -2157,7 +2157,8 @@ const CRMProjects: React.FC = () => {
                                                                     return inv.type === 'credit_note' ? sum - amt : sum + amt;
                                                                 }, 0);
                                                                 const totalPaid = displayInvoices.reduce((sum: number, inv: any) => {
-                                                                    if (!inv.paid) return sum;
+                                                                    const isPaid = Boolean(inv.paid || inv.is_informal);
+                                                                    if (!isPaid) return sum;
                                                                     const amt = Number(inv.amount) || 0;
                                                                     return inv.type === 'credit_note' ? sum - amt : sum + amt;
                                                                 }, 0);
@@ -2967,7 +2968,8 @@ const CRMProjects: React.FC = () => {
                                                                             return inv.type === 'credit_note' ? sum - amt : sum + amt;
                                                                         }, 0);
                                                                         const totalPaid = historyList.reduce((sum, inv) => {
-                                                                            if (!inv.paid) return sum;
+                                                                            const isPaid = Boolean(inv.paid || inv.is_informal);
+                                                                            if (!isPaid) return sum;
                                                                             const amt = Number(inv.amount) || 0;
                                                                             return inv.type === 'credit_note' ? sum - amt : sum + amt;
                                                                         }, 0);
@@ -3361,7 +3363,8 @@ const CRMProjects: React.FC = () => {
                                     : 0;
                                 const totalPaid = Array.isArray(history) 
                                     ? history.reduce((sum, inv) => {
-                                        if (!inv.paid) return sum;
+                                        const isPaid = Boolean(inv.paid || inv.is_informal);
+                                        if (!isPaid) return sum;
                                         const amt = Number(inv.amount) || 0;
                                         return inv.type === 'credit_note' ? sum - amt : sum + amt;
                                     }, 0)
@@ -3381,7 +3384,9 @@ const CRMProjects: React.FC = () => {
 
                                         {Array.isArray(history) && history.length > 0 ? (
                                             <div className="space-y-2">
-                                                {history.map((inv, idx) => (
+                                                {history.map((inv, idx) => {
+                                                    const isItemPaid = Boolean(inv.paid || inv.is_informal);
+                                                    return (
                                                     <div key={idx} className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 text-xs py-2 px-3 border border-white/5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
                                                         <div className="flex items-center gap-2 flex-wrap min-w-0">
                                                             <span className="text-zinc-500 font-mono text-[10px]">#{idx + 1}</span>
@@ -3421,13 +3426,13 @@ const CRMProjects: React.FC = () => {
                                                                 type="button"
                                                                 onClick={(e) => { e.preventDefault(); handleToggleInvoicePaid(selectedProject.id, idx, !inv.paid); }}
                                                                 className={`px-3 py-1.5 rounded text-[11px] font-bold uppercase tracking-wide transition-all cursor-pointer shadow-sm flex items-center gap-1 ${
-                                                                    inv.paid 
+                                                                    isItemPaid 
                                                                         ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30' 
                                                                         : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.2)]'
                                                                 }`}
-                                                                title={inv.paid ? 'Clic para cambiar a NO cobrada' : 'Clic para marcar esta factura como COBRADA'}
+                                                                title={isItemPaid ? 'Clic para cambiar a NO cobrada' : 'Clic para marcar esta factura como COBRADA'}
                                                             >
-                                                                {inv.paid ? '✅ Cobrada' : '⏳ Marcar como Cobrada'}
+                                                                {isItemPaid ? '✅ Cobrada' : '⏳ Marcar como Cobrada'}
                                                             </button>
                                                             {inv.invoice_url && (
                                                                 <a href={inv.invoice_url} target="_blank" rel="noopener noreferrer" className="bg-zinc-800 hover:bg-zinc-700 text-nexo-lime border border-white/10 px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wide transition-colors">↗ PDF</a>
@@ -3442,7 +3447,8 @@ const CRMProjects: React.FC = () => {
                                                             </button>
                                                         </div>
                                                     </div>
-                                                ))}
+                                                );
+                                                })}
                                                 <div className="flex justify-between items-center pt-2">
                                                     <span className="text-[10px] font-bold uppercase text-zinc-400">Total facturado:</span>
                                                     <span className="text-white font-black text-sm">{currency} {totalInvoiced.toLocaleString()}</span>
