@@ -134,13 +134,19 @@ const FinanceDashboard: React.FC<FinanceDashboardProps> = ({ projects, budgets, 
                 }
             });
 
-            // Fallback para proyectos históricos sin invoices_history
-            if (invoicesHist.length === 0 && proj.invoice_url) {
-                const amt = Number(proj.invoice_amount) || 0;
-                facturadoTotalAFIP += amt;
-                if (proj.invoice_paid) {
-                    cobradoReal += amt;
-                    cobradoFormal += amt;
+            // Fallback: inyectar datos legacy si existen y no están ya representados en invoices_history
+            if (proj.invoice_url) {
+                const legacyAmt = Number(proj.invoice_amount) || 0;
+                const legacyAlreadyInHistory = invoicesHist.some(inv => 
+                    inv.migrated_from_legacy === true || 
+                    (inv.invoice_url === proj.invoice_url && Number(inv.amount) === legacyAmt)
+                );
+                if (!legacyAlreadyInHistory) {
+                    facturadoTotalAFIP += legacyAmt;
+                    if (proj.invoice_paid) {
+                        cobradoReal += legacyAmt;
+                        cobradoFormal += legacyAmt;
+                    }
                 }
             }
 

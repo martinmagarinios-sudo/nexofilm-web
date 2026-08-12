@@ -509,7 +509,8 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                     bank_details,
                     invoice_issued_by,
                     invoice_is_informal,
-                    invoice_payment_method
+                    invoice_payment_method,
+                    mark_as_paid
                 } = req.body;
 
                 if (!project_id) {
@@ -526,7 +527,7 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                 if (readErr) throw readErr;
 
                 // Construir la nueva entrada del historial
-                const parsedAmount = invoice_amount ? parseFloat(invoice_amount) : null;
+                const parsedAmount = (invoice_amount !== undefined && invoice_amount !== null && invoice_amount !== '') ? parseFloat(invoice_amount) : null;
                 const isInformal = invoice_is_informal === true || invoice_is_informal === 'true';
                 const hasValidAmount = parsedAmount !== null && parsedAmount > 0;
                 const hasInvoiceUrl = Boolean(invoice_url && String(invoice_url).trim() !== '');
@@ -560,7 +561,7 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                     type: invoice_type || null,
                     date_sent: new Date().toISOString(),
                     invoice_url: isInformal ? null : (invoice_url || null),
-                    paid: isInformal ? true : false,
+                    paid: isInformal ? true : (mark_as_paid === true ? true : false),
                     issued_by: detectedIssuedBy,
                     is_informal: isInformal,
                     payment_method: isInformal ? (invoice_payment_method || 'efectivo') : null
@@ -573,6 +574,24 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                         ? currentProject.invoices_history 
                         : [];
                 } catch(e) { currentHistory = []; }
+
+                // Migración: si hay datos legacy (invoice_url/invoice_amount) que NO están en el historial, inyectarlos
+                if (currentHistory.length === 0 && currentProject.invoice_url) {
+                    const legacyAmount = Number(currentProject.invoice_amount) || 0;
+                    const legacyEntry = {
+                        fc_number: null,
+                        amount: legacyAmount,
+                        type: currentProject.invoice_type || 'custom',
+                        date_sent: new Date().toISOString(),
+                        invoice_url: currentProject.invoice_url,
+                        paid: true, // Si ya estaba como dato legacy, es que ya se cobró
+                        issued_by: 'martin',
+                        is_informal: false,
+                        payment_method: null,
+                        migrated_from_legacy: true
+                    };
+                    currentHistory = [legacyEntry];
+                }
 
                 const updatedHistory = newHistoryEntry 
                     ? [...currentHistory, newHistoryEntry]

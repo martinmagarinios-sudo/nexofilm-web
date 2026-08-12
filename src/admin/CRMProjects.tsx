@@ -347,6 +347,7 @@ const CRMProjects: React.FC = () => {
     // Emisor de factura y pagos informales
     const [invoiceIssuedBy, setInvoiceIssuedBy] = useState<'martin' | 'jesica'>('martin');
     const [invoiceIsInformal, setInvoiceIsInformal] = useState(false);
+    const [invoiceMarkAsPaid, setInvoiceMarkAsPaid] = useState(false);
     const [invoicePaymentMethod, setInvoicePaymentMethod] = useState('transferencia');
     const [pdfParsedInfo, setPdfParsedInfo] = useState<{ issued_by?: string; fc_number?: string; amount?: number } | null>(null);
 
@@ -1434,6 +1435,7 @@ const CRMProjects: React.FC = () => {
                     invoice_issued_by: invoiceIssuedBy,
                     invoice_is_informal: invoiceIsInformal,
                     invoice_payment_method: invoiceIsInformal ? invoicePaymentMethod : null,
+                    mark_as_paid: invoiceMarkAsPaid,
                     password
                 })
             });
@@ -1451,6 +1453,7 @@ const CRMProjects: React.FC = () => {
             setInvoiceAmount(0);
             setInvoiceType('custom');
             setInvoiceIsInformal(false);
+            setInvoiceMarkAsPaid(false);
             setInvoicePaymentMethod('transferencia');
             setPdfParsedInfo(null);
             fetchData();
@@ -2155,9 +2158,18 @@ const CRMProjects: React.FC = () => {
                                                         <div className="w-full lg:w-auto text-left lg:text-right flex flex-col justify-center min-w-0">
                                                             {(() => {
                                                                 const history = project.invoices_history || [];
-                                                                const displayInvoices = history.length > 0 ? history : (
-                                                                    project.invoice_url ? [{ amount: project.invoice_amount || 0, type: project.invoice_type || 'custom', invoice_url: project.invoice_url, paid: project.invoice_paid || false }] : []
-                                                                );
+                                                                // Si hay datos legacy (invoice_url) que no están en el historial, inyectarlos
+                                                                let displayInvoices = [...history];
+                                                                if (project.invoice_url) {
+                                                                    const legacyAmt = Number(project.invoice_amount) || 0;
+                                                                    const legacyAlreadyInHistory = history.some((inv: any) => 
+                                                                        inv.migrated_from_legacy === true || 
+                                                                        (inv.invoice_url === project.invoice_url && Number(inv.amount) === legacyAmt)
+                                                                    );
+                                                                    if (!legacyAlreadyInHistory && history.length === 0) {
+                                                                        displayInvoices = [{ amount: legacyAmt, type: project.invoice_type || 'custom', invoice_url: project.invoice_url, paid: project.invoice_paid || false }];
+                                                                    }
+                                                                }
                                                                 const totalInvoiced = displayInvoices.reduce((sum: number, inv: any) => {
                                                                     const amt = Number(inv.amount) || 0;
                                                                     return inv.type === 'credit_note' ? sum - amt : sum + amt;
@@ -3791,6 +3803,32 @@ const CRMProjects: React.FC = () => {
                                                                         </p>
                                                                     </div>
                                                                 ) : null}
+
+                                                                {/* Opción: Marcar como cobrada al guardar */}
+                                                                {!invoiceIsInformal && (invoiceUrl || invoiceAmount > 0) && (
+                                                                    <div 
+                                                                        onClick={() => setInvoiceMarkAsPaid(!invoiceMarkAsPaid)}
+                                                                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                                                                            invoiceMarkAsPaid 
+                                                                                ? 'bg-emerald-500/15 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.15)]' 
+                                                                                : 'bg-zinc-900/50 border-white/10 hover:border-white/20'
+                                                                        }`}
+                                                                    >
+                                                                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all shrink-0 ${
+                                                                            invoiceMarkAsPaid 
+                                                                                ? 'bg-emerald-500 border-emerald-400' 
+                                                                                : 'border-zinc-600 hover:border-zinc-400'
+                                                                        }`}>
+                                                                            {invoiceMarkAsPaid && <span className="text-white text-xs font-black">✓</span>}
+                                                                        </div>
+                                                                        <div>
+                                                                            <span className={`text-xs font-bold ${invoiceMarkAsPaid ? 'text-emerald-400' : 'text-zinc-400'}`}>
+                                                                                ✅ Ya cobré esta factura — Marcar como COBRADA al guardar
+                                                                            </span>
+                                                                            <p className="text-[10px] text-zinc-500 mt-0.5">Si ya recibiste el pago, activá esto para que quede registrada como cobrada directamente.</p>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
 
                                                                 <button
                                                                     type="submit"
