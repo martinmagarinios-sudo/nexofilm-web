@@ -3567,31 +3567,51 @@ const CRMProjects: React.FC = () => {
                                                                         const amt = Number(inv.amount) || 0;
                                                                         return inv.type === 'credit_note' ? sum - amt : sum + amt;
                                                                     }, 0) : 0;
-                                                                    const remaining = totalBudget - totalInvoiced;
+                                                                    const totalPaid = Array.isArray(history) ? history.reduce((sum, inv) => {
+                                                                        const isPaid = Boolean(inv.paid || inv.is_informal);
+                                                                        if (!isPaid) return sum;
+                                                                        const amt = Number(inv.amount) || 0;
+                                                                        return inv.type === 'credit_note' ? sum - amt : sum + amt;
+                                                                    }, 0) : 0;
+                                                                    const remainingToCollect = Math.max(0, totalBudget - totalPaid);
+                                                                    const remainingToInvoice = Math.max(0, totalBudget - totalInvoiced);
                                                                     const currency = selectedProject.currency || 'ARS';
 
                                                                     return (
                                                                         <div className="space-y-2">
                                                                             <div className="flex items-center justify-between">
                                                                                 <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Tipo de Cobro / Factura</label>
-                                                                                {remaining > 0 && remaining < totalBudget && (
+                                                                                {remainingToCollect > 0 && (
                                                                                     <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded font-mono">
-                                                                                        ⏳ Saldo pendiente: {currency} {remaining.toLocaleString()}
+                                                                                        ⏳ Saldo a cobrar: {currency} {remainingToCollect.toLocaleString()}
                                                                                     </span>
                                                                                 )}
                                                                             </div>
                                                                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                                                                {remaining > 0 && (
+                                                                                {remainingToCollect > 0 && (
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => {
+                                                                                            setInvoiceType('sin_factura');
+                                                                                            setInvoiceIsInformal(true);
+                                                                                            setInvoiceAmount(remainingToCollect);
+                                                                                        }}
+                                                                                        className="py-2.5 rounded text-xs font-black border transition-all text-purple-200 border-purple-500/50 bg-purple-500/20 hover:bg-purple-500/40 shadow-[0_0_12px_rgba(168,85,247,0.25)] col-span-2 sm:col-span-1 cursor-pointer flex items-center justify-center gap-1"
+                                                                                    >
+                                                                                        <span>🤫 Saldo Sin Factura ({currency} {remainingToCollect.toLocaleString()})</span>
+                                                                                    </button>
+                                                                                )}
+                                                                                {remainingToInvoice > 0 && (
                                                                                     <button
                                                                                         type="button"
                                                                                         onClick={() => {
                                                                                             setInvoiceType('custom');
                                                                                             setInvoiceIsInformal(false);
-                                                                                            setInvoiceAmount(remaining);
+                                                                                            setInvoiceAmount(remainingToInvoice);
                                                                                         }}
-                                                                                        className="py-2 rounded text-xs font-bold border transition-colors text-amber-300 border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 col-span-2 sm:col-span-1 cursor-pointer"
+                                                                                        className="py-2 rounded text-xs font-bold border transition-colors text-amber-300 border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 cursor-pointer"
                                                                                     >
-                                                                                        ⏳ Saldo ({currency} {remaining.toLocaleString()})
+                                                                                        📄 Saldo AFIP ({currency} {remainingToInvoice.toLocaleString()})
                                                                                     </button>
                                                                                 )}
                                                                                 <button
@@ -3642,30 +3662,30 @@ const CRMProjects: React.FC = () => {
                                                                                     onClick={() => {
                                                                                         setInvoiceType('sin_factura');
                                                                                         setInvoiceIsInformal(true);
-                                                                                        const autoAmt = remaining > 0 ? remaining : totalBudget;
+                                                                                        const autoAmt = remainingToCollect > 0 ? remainingToCollect : totalBudget;
                                                                                         if (autoAmt > 0) setInvoiceAmount(autoAmt);
                                                                                     }}
-                                                                                    className={`py-2 rounded text-xs font-bold border transition-colors col-span-2 sm:col-span-1 cursor-pointer ${invoiceIsInformal ? 'bg-purple-500 text-white border-purple-500' : 'bg-purple-950/40 text-purple-300 border-purple-500/30 hover:bg-purple-900/60'}`}
+                                                                                    className={`py-2 rounded text-xs font-bold border transition-colors cursor-pointer ${invoiceIsInformal ? 'bg-purple-500 text-white border-purple-500' : 'bg-purple-950/40 text-purple-300 border-purple-500/30 hover:bg-purple-900/60'}`}
                                                                                 >
-                                                                                    🤫 Sin Factura {remaining > 0 ? `(${currency} ${remaining.toLocaleString()})` : ''}
+                                                                                    🤫 Sin Factura {remainingToCollect > 0 ? `(${currency} ${remainingToCollect.toLocaleString()})` : ''}
                                                                                 </button>
                                                                             </div>
                                                                             {invoiceIsInformal && (
                                                                                 <div className="mt-2 bg-purple-500/10 border border-purple-500/30 rounded-lg p-3 text-[11px] text-purple-200 space-y-1">
                                                                                     <div className="flex items-center justify-between">
                                                                                         <span className="font-bold text-white">🤫 Cobro informal (sin factura AFIP):</span>
-                                                                                        {remaining > 0 && (
+                                                                                        {remainingToCollect > 0 && (
                                                                                             <button
                                                                                                 type="button"
-                                                                                                onClick={() => setInvoiceAmount(remaining)}
+                                                                                                onClick={() => setInvoiceAmount(remainingToCollect)}
                                                                                                 className="text-[10px] bg-purple-500/30 hover:bg-purple-500/50 text-white px-2 py-0.5 rounded border border-purple-400/40 font-bold transition-colors cursor-pointer"
                                                                                             >
-                                                                                                ⚡ Cargar Saldo Pendiente ({currency} {remaining.toLocaleString()})
+                                                                                                ⚡ Cargar Saldo a Cobrar ({currency} {remainingToCollect.toLocaleString()})
                                                                                             </button>
                                                                                         )}
                                                                                     </div>
                                                                                     <p className="text-[10px] text-purple-300">
-                                                                                        Queda registrado para tu contabilidad interna. El cliente <strong>no lo verá en su portal</strong>.
+                                                                                        Al guardar este registro se marcará automáticamente como <strong>COBRADO</strong> y dejará el proyecto totalmente cobrado. El cliente <strong>no lo verá en su portal</strong>.
                                                                                     </p>
                                                                                 </div>
                                                                             )}
