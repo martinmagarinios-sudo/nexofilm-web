@@ -351,6 +351,9 @@ const CRMProjects: React.FC = () => {
     const [invoicePaymentMethod, setInvoicePaymentMethod] = useState('transferencia');
     const [pdfParsedInfo, setPdfParsedInfo] = useState<{ issued_by?: string; fc_number?: string; amount?: number } | null>(null);
 
+    // Modal de Notificación de Cambio de Estado
+    const [statusNotifyModal, setStatusNotifyModal] = useState<{ project: Project; newStatus: string } | null>(null);
+
     // Estado de presupuesto de proyecto existente
     const [budgetingProject, setBudgetingProject] = useState<Project | null>(null);
 
@@ -1249,8 +1252,77 @@ const CRMProjects: React.FC = () => {
             }
             fetchData();
             setSuccessMsg('Estado actualizado correctamente.');
+
+            const currentProj = projects.find(p => p.id === projectId);
+            if (currentProj) {
+                setStatusNotifyModal({
+                    project: { ...currentProj, status: newStatus as any },
+                    newStatus
+                });
+            }
         } catch (err: any) {
             setError(err.message);
+        }
+    };
+
+    // Enviar notificación de estado por Mail o WhatsApp
+    const handleSendStatusNotification = async (project: Project, targetStatus: string, channel: 'email' | 'whatsapp') => {
+        if (channel === 'email') {
+            try {
+                const res = await fetch('/api/comercial/admin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'sendStatusNotification',
+                        project_id: project.id,
+                        status: targetStatus,
+                        channel: 'email',
+                        password
+                    })
+                });
+                if (!res.ok) {
+                    const data = await res.json();
+                    throw new Error(data.error || 'Error al enviar notificación');
+                }
+                setSuccessMsg(`Notificación por Mail enviada al cliente (${targetStatus.toUpperCase()}).`);
+                setStatusNotifyModal(null);
+            } catch (err: any) {
+                setError(err.message);
+            }
+        } else if (channel === 'whatsapp' && project.client_phone) {
+            const statusLabels: Record<string, string> = {
+                draft: 'Borrador',
+                sent: 'Propuesta Enviada',
+                review: 'En Revisión',
+                approved: 'Aprobado / Confirmado',
+                production: 'En Producción',
+                delivered: 'Entregado / Finalizado'
+            };
+
+            const statusEmoji: Record<string, string> = {
+                approved: '✅',
+                production: '🎬',
+                delivered: '📦',
+                review: '📝',
+                sent: '📋'
+            };
+
+            const statusMessages: Record<string, string> = {
+                approved: 'Tu proyecto fue aprobado y confirmado. Estamos organizando la producción.',
+                production: 'Tu proyecto ingresó oficialmente en etapa de producción (rodaje / edición / entregables).',
+                delivered: '¡Excelente noticia! Tu proyecto ha sido entregado. Ya podés ver y descargar los entregables finales desde tu portal.',
+                review: 'Hemos actualizado el presupuesto / propuesta de tu proyecto para que la revises.',
+                sent: 'Te enviamos la cotización detallada para tu proyecto.'
+            };
+
+            const emoji = statusEmoji[targetStatus] || '📢';
+            const title = statusLabels[targetStatus] || targetStatus.toUpperCase();
+            const desc = statusMessages[targetStatus] || `Tu proyecto "${project.title}" pasó al estado de *${title}*.`;
+
+            const waMsg = `${emoji} *NexoFilm - Actualización de Proyecto*\n\n¡Hola ${project.contact_name}! Te informamos que tu proyecto "*${project.title}*" pasó al estado de *${title}*.\n\n${desc}\n\nPodés ingresar a tu portal seguro para más detalles:\n👉 ${window.location.origin}/portal?token=${project.access_token}`;
+
+            handleOpenWhatsApp(project.client_phone, waMsg, project.contact_name);
+            setStatusNotifyModal(null);
         }
     };
 
@@ -2930,12 +3002,21 @@ const CRMProjects: React.FC = () => {
                                                                     📝 Presupuestar
                                                                 </button>
                                                                 {(project.status === 'approved' || project.status === 'production' || project.status === 'delivered') && (
-                                                                    <button
-                                                                        onClick={() => openInvoiceModal(project)}
-                                                                        className="text-xs bg-nexo-lime text-black font-bold px-3 py-1.5 rounded hover:bg-white transition-colors flex items-center justify-center gap-1"
-                                                                    >
-                                                                        🧾 Factura / Pagos
-                                                                    </button>
+                                                                    <>
+                                                                        <button
+                                                                            onClick={() => openInvoiceModal(project)}
+                                                                            className="text-xs bg-nexo-lime text-black font-bold px-3 py-1.5 rounded hover:bg-white transition-colors flex items-center justify-center gap-1"
+                                                                        >
+                                                                            🧾 Factura / Pagos
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => setStatusNotifyModal({ project, newStatus: project.status })}
+                                                                            className="text-xs bg-zinc-900 hover:bg-zinc-800 border border-nexo-lime/40 text-nexo-lime font-bold px-3 py-1.5 rounded transition-colors flex items-center justify-center gap-1"
+                                                                            title={`Avisar estado (${project.status.toUpperCase()}) al cliente por Mail o WhatsApp`}
+                                                                        >
+                                                                            📢 Avisar Estado
+                                                                        </button>
+                                                                    </>
                                                                 )}
                                                                 <button
                                                                     onClick={() => handleDeleteProject(project.id, project.contact_name)}
@@ -4650,6 +4731,66 @@ Cualquier consulta, respondé este mensaje.
                     </div>
                 );
             })()}
+            {/* Modal de Notificación de Cambio de Estado */}
+            {statusNotifyModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5">
+                        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                            <h3 className="text-base font-bold text-white flex items-center gap-2">
+                                📢 Notificar Estado al Cliente
+                            </h3>
+                            <button
+                                onClick={() => setStatusNotifyModal(null)}
+                                className="text-zinc-500 hover:text-white text-lg font-bold"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="space-y-3 text-sm text-zinc-300">
+                            <p>El proyecto <strong className="text-white">"{statusNotifyModal.project.title}"</strong> se encuentra en:</p>
+                            <div className="inline-block px-3 py-1 bg-nexo-lime/10 border border-nexo-lime/30 text-nexo-lime font-black rounded text-xs uppercase tracking-wider">
+                                {statusNotifyModal.newStatus === 'production' ? '🎬 EN PRODUCCIÓN' : statusNotifyModal.newStatus === 'delivered' ? '📦 ENTREGADO' : statusNotifyModal.newStatus === 'approved' ? '✅ APROBADO' : statusNotifyModal.newStatus.toUpperCase()}
+                            </div>
+                            <p className="text-xs text-zinc-400">
+                                Seleccioná la vía por la que querés enviar el mensaje de actualización a <strong>{statusNotifyModal.project.contact_name}</strong>:
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col gap-2.5 pt-2">
+                            {statusNotifyModal.project.client_email ? (
+                                <button
+                                    onClick={() => handleSendStatusNotification(statusNotifyModal.project, statusNotifyModal.newStatus, 'email')}
+                                    className="w-full bg-nexo-lime text-black font-black py-2.5 px-4 rounded-xl hover:bg-white transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(204,255,0,0.2)] text-xs uppercase tracking-wider"
+                                >
+                                    ✉️ Enviar Notificación por Mail
+                                </button>
+                            ) : (
+                                <div className="text-[11px] text-zinc-500 italic text-center">Sin email registrado para este cliente</div>
+                            )}
+
+                            {statusNotifyModal.project.client_phone ? (
+                                <button
+                                    onClick={() => handleSendStatusNotification(statusNotifyModal.project, statusNotifyModal.newStatus, 'whatsapp')}
+                                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.2)] text-xs uppercase tracking-wider"
+                                >
+                                    💬 Enviar por WhatsApp
+                                </button>
+                            ) : (
+                                <div className="text-[11px] text-zinc-500 italic text-center">Sin teléfono registrado para este cliente</div>
+                            )}
+
+                            <button
+                                onClick={() => setStatusNotifyModal(null)}
+                                className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 font-bold py-2 px-4 rounded-xl transition-all text-xs"
+                            >
+                                No notificar por ahora
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Modal Selector de App de WhatsApp */}
             <WhatsAppSelectorModal
                 isOpen={waModalConfig.isOpen}

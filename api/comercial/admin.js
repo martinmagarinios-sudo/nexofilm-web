@@ -1188,6 +1188,29 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                 });
             }
 
+            case 'sendStatusNotification': {
+                if (!project_id) {
+                    return res.status(400).json({ error: 'El ID del proyecto es requerido' });
+                }
+
+                const { channel, status: targetStatus } = req.body;
+
+                const { data: project, error: getErr } = await supabase
+                    .from('projects')
+                    .select('*')
+                    .eq('id', project_id)
+                    .single();
+
+                if (getErr) throw getErr;
+
+                await notifyClientStatusUpdate(project, req.headers.host || 'nexofilm.com', targetStatus || project.status, channel);
+
+                return res.status(200).json({
+                    success: true,
+                    project
+                });
+            }
+
             case 'getReviews': {
                 // Obtener todas las reviews con datos del proyecto vinculado
                 const { data: reviewsRaw, error: reviewsErr } = await supabase
@@ -1894,6 +1917,81 @@ async function notifyClientInvoice(project, host, forceChannel = null) {
                 console.error('Error al enviar WhatsApp de factura al cliente:', err.message);
                 throw new Error(`Error al enviar WhatsApp de Factura: ${err.message}`);
             }
+        }
+    }
+}
+
+async function notifyClientStatusUpdate(project, host, newStatus, channel = 'email') {
+    const preference = channel || project.notification_preference || 'both';
+    const baseUrl = host.includes('localhost') ? `http://${host}` : `https://${host}`;
+    const portalUrl = `${baseUrl}/portal?token=${project.access_token}`;
+
+    const statusLabels = {
+        draft: 'Borrador / Cotización',
+        sent: 'Propuesta Enviada',
+        review: 'En Revisión',
+        approved: 'Aprobado / Confirmado',
+        production: 'En Producción',
+        delivered: 'Entregado / Finalizado',
+        rejected: 'Rechazado'
+    };
+
+    const statusMessages = {
+        approved: 'Tu proyecto fue aprobado y confirmado. Estamos organizando el equipo técnico y el plan de rodaje/producción.',
+        production: 'Tu proyecto ingresó oficialmente en etapa de producción (rodaje, edición o postproducción).',
+        delivered: '¡Excelente noticia! Tu proyecto ha sido entregado. Ya podés visualizar y descargar los entregables finales desde tu portal.',
+        review: 'Hemos actualizado el presupuesto/propuesta de tu proyecto para que puedas revisarlo.',
+        sent: 'Te enviamos la propuesta comercial formal para tu proyecto.'
+    };
+
+    const statusTitle = statusLabels[newStatus] || (newStatus || '').toUpperCase();
+    const customMessage = statusMessages[newStatus] || `Tu proyecto "${project.title}" pasó al estado de ${statusTitle}.`;
+    const subject = `🎬 Actualización de Proyecto (${statusTitle}): ${project.title} - NexoFilm`;
+
+    if ((preference === 'email' || preference === 'both') && project.client_email && process.env.RESEND_API_KEY) {
+        try {
+            await resend.emails.send({
+                from: 'NexoFilm <hola@nexofilm.com>',
+                to: [project.client_email],
+                subject: subject,
+                html: `
+                    <div style="font-family: sans-serif; padding: 24px; border-top: 4px solid #ccff00; background-color: #0d0d0d; color: #ffffff; max-width: 600px; margin: 0 auto; border-radius: 8px;">
+                        <div style="text-align: center; margin-bottom: 24px;">
+                            <img src="https://nexofilm.com/favicon.png" alt="NexoFilm" style="height: 40px; filter: brightness(0) invert(1);" />
+                            <h1 style="color: #ccff00; font-size: 20px; margin: 15px 0 0 0; text-transform: uppercase; letter-spacing: 1px;">Actualización de Proyecto</h1>
+                        </div>
+                        <div style="background-color: #1a1a1a; padding: 20px; border-radius: 6px; border: 1px solid #333; line-height: 1.6;">
+                            <p style="font-size: 16px; margin: 0 0 10px 0; color: #ffffff;">Hola <strong>${project.contact_name}</strong>,</p>
+                            <p style="font-size: 14px; margin: 0 0 20px 0; color: #e0e0e0;">
+                                Te informamos sobre una novedad en el estado de tu proyecto "<strong>${project.title}</strong>":
+                            </p>
+                            
+                            <div style="background-color: #0d0d0d; border: 1px solid #ccff00; border-radius: 6px; padding: 16px; margin-bottom: 20px;">
+                                <p style="margin: 0; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Estado Actual:</p>
+                                <p style="margin: 4px 0 0 0; font-size: 20px; font-weight: 900; color: #ccff00;">${statusTitle}</p>
+                                <p style="margin: 8px 0 0 0; font-size: 13px; color: #d0d0d0; border-top: 1px solid #222; padding-top: 8px;">${customMessage}</p>
+                            </div>
+
+                            <p style="font-size: 14px; margin: 20px 0 20px 0; color: #e0e0e0;">
+                                Podés ver los detalles actualizados, entregables y comunicarte directamente ingresando a tu portal seguro:
+                            </p>
+                            <div style="text-align: center; margin-top: 20px; margin-bottom: 10px;">
+                                <a href="${portalUrl}" style="background-color: #ccff00; color: #000000; padding: 14px 28px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 13px; text-transform: uppercase; display: inline-block; box-shadow: 0 4px 10px rgba(204,255,0,0.2);">
+                                    Ingresar al Portal de Cliente 🎬
+                                </a>
+                            </div>
+                        </div>
+                        <p style="font-size: 10px; color: #666; text-align: center; margin-top: 24px; line-height: 1.4;">
+                            Este enlace es único y seguro para tu proyecto. No lo compartas con terceros.<br/>
+                            NexoFilm Productora Audiovisual · Buenos Aires, Argentina.
+                        </p>
+                    </div>
+                `
+            });
+            console.log(`Email de cambio de estado enviado a: ${project.client_email}`);
+        } catch (e) {
+            console.error(`Error enviando email de estado al cliente:`, e.message);
+            throw new Error(`Error al enviar Email de Estado: ${e.message}`);
         }
     }
 }
