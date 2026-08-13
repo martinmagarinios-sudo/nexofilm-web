@@ -211,6 +211,32 @@ const CrewDirectory: React.FC<CrewDirectoryProps> = ({ password, crewMembers, on
         }
     };
 
+    const handleDelete = async (cm: CrewMember) => {
+        if (!confirm(`¿Estás seguro de eliminar a "${cm.name}" del directorio de colaboradores? Esta acción no se puede deshacer.`)) {
+            return;
+        }
+        setErrorMsg('');
+        setSuccessMsg('');
+        try {
+            const res = await fetch('/api/comercial/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'deleteCrewMember',
+                    password,
+                    crew_member_id: cm.id
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al eliminar colaborador');
+            setSuccessMsg(`✅ ${cm.name} eliminado correctamente del directorio.`);
+            onCrewUpdated();
+            setTimeout(() => setSuccessMsg(''), 4000);
+        } catch (err: any) {
+            setErrorMsg('Error al eliminar: ' + err.message);
+        }
+    };
+
     const filtered = crewMembers.filter(cm => {
         const matchRole = filterRole === 'all' || 
             (cm.role || '').split(',').map(r => r.trim()).includes(filterRole);
@@ -497,7 +523,7 @@ const CrewDirectory: React.FC<CrewDirectoryProps> = ({ password, crewMembers, on
             {active.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {active.map(cm => (
-                        <CrewCard key={cm.id} cm={cm} onEdit={startEdit} onToggle={handleToggleActive} />
+                        <CrewCard key={cm.id} cm={cm} onEdit={startEdit} onToggle={handleToggleActive} onDelete={handleDelete} />
                     ))}
                 </div>
             )}
@@ -510,7 +536,7 @@ const CrewDirectory: React.FC<CrewDirectoryProps> = ({ password, crewMembers, on
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 opacity-40 hover:opacity-60 transition-opacity">
                         {inactive.map(cm => (
-                            <CrewCard key={cm.id} cm={cm} onEdit={startEdit} onToggle={handleToggleActive} />
+                            <CrewCard key={cm.id} cm={cm} onEdit={startEdit} onToggle={handleToggleActive} onDelete={handleDelete} />
                         ))}
                     </div>
                 </div>
@@ -523,7 +549,8 @@ const CrewCard: React.FC<{
     cm: CrewMember;
     onEdit: (cm: CrewMember) => void;
     onToggle: (cm: CrewMember) => void;
-}> = ({ cm, onEdit, onToggle }) => {
+    onDelete: (cm: CrewMember) => void;
+}> = ({ cm, onEdit, onToggle, onDelete }) => {
     const rolesList = cm.role ? cm.role.split(',').map(r => r.trim()).filter(Boolean) : ['Otro'];
     const [openingDni, setOpeningDni] = useState(false);
 
@@ -595,6 +622,11 @@ const CrewCard: React.FC<{
                     title={cm.is_active ? 'Archivar' : 'Reactivar'}
                     className="text-xs bg-white/5 hover:bg-white/15 border border-white/10 w-7 h-7 rounded flex items-center justify-center transition-colors"
                 >{cm.is_active ? '🗄️' : '♻️'}</button>
+                <button
+                    onClick={() => onDelete(cm)}
+                    title="Eliminar permanentemente"
+                    className="text-xs bg-red-500/10 hover:bg-red-500/30 border border-red-500/30 text-red-400 w-7 h-7 rounded flex items-center justify-center transition-colors"
+                >🗑️</button>
             </div>
 
             <div className="flex items-center gap-3 mb-3">

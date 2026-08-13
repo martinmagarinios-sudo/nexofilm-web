@@ -1269,6 +1269,18 @@ Respondé EXCLUSIVAMENTE con un JSON con esta estructura exacta (no agregues exp
                 return res.status(200).json({ success: true });
             }
 
+            // ─── CREW: Eliminar persona ────────────────────────────────────────────
+            case 'deleteCrewMember': {
+                const { crew_member_id } = req.body;
+                if (!crew_member_id) return res.status(400).json({ error: 'crew_member_id requerido.' });
+                const { error: delErr } = await supabase
+                    .from('crew_members')
+                    .delete()
+                    .eq('id', crew_member_id);
+                if (delErr) throw delErr;
+                return res.status(200).json({ success: true });
+            }
+
             // ─── CREW: Guardar asignaciones en un proyecto ────────────────────────
             case 'updateCrewAssignments': {
                 const { project_id, crew_assignments, extra_expenses } = req.body;
