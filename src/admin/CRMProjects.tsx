@@ -2820,7 +2820,7 @@ const CRMProjects: React.FC = () => {
                                                                                     }`}
                                                                                     title={!isSent ? 'Enviar Factura por Mail' : 'Reenviar Factura por Mail'}
                                                                                 >
-                                                                                    {!isSent ? '✉️ Enviar Factura' : '✉️ Reenviar Factura'}
+                                                                                    {!isSent ? '✉️ Factura por Mail' : '✉️ Reenviar Mail'}
                                                                                 </button>
                                                                             );
                                                                         } else if (isDraftOrReview) {
@@ -2876,7 +2876,7 @@ const CRMProjects: React.FC = () => {
                                                                                     }`}
                                                                                     title={!isSent ? 'Enviar Factura por WhatsApp' : 'Reenviar Factura por WhatsApp'}
                                                                                 >
-                                                                                    {!isSent ? '💬 Enviar Factura' : '💬 Reenviar Factura'}
+                                                                                    {!isSent ? '💬 Factura por WA' : '💬 Reenviar WA'}
                                                                                 </button>
                                                                             );
                                                                         } else if (isDraftOrReview) {
