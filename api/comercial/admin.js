@@ -607,16 +607,14 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                 };
 
                 if (newHistoryEntry) {
-                    updatePayload.invoice_url = invoice_url || null;
+                    if (invoice_url) updatePayload.invoice_url = invoice_url;
                     updatePayload.invoice_type = dbInvoiceType;
-                    updatePayload.invoice_amount = parsedAmount;
-                    updatePayload.invoice_fc_number = invoice_fc_number || null;
-                    updatePayload.invoice_sent = invoice_url ? true : false;
+                    if (parsedAmount !== null) updatePayload.invoice_amount = parsedAmount;
+                    if (invoice_fc_number) updatePayload.invoice_fc_number = invoice_fc_number;
+                    if (invoice_url) updatePayload.invoice_sent = true;
                     updatePayload.invoices_history = updatedHistory;
-                    updatePayload.invoice_paid = allPaid;
                 } else if (updatedHistory.length > 0) {
                     updatePayload.invoices_history = updatedHistory;
-                    updatePayload.invoice_paid = allPaid;
                 }
 
                 let { data: updatedProject, error: updateErr } = await supabase
@@ -627,14 +625,15 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                     .single();
 
                 if (updateErr) {
-                    // Fallback: si columnas nuevas no existen aún, intentar sin ellas
+                    console.error('Error in sendInvoice primary update:', updateErr);
+                    // Fallback sin campos que puedan no existir pero garantizando invoices_history
                     const fallbackPayload = {
-                        invoice_url: invoice_url || null,
-                        invoice_type: dbInvoiceType,
-                        invoice_amount: parsedAmount,
                         bank_details: bank_details || null,
-                        invoice_sent: invoice_url ? true : false,
+                        invoices_history: updatedHistory
                     };
+                    if (invoice_url) fallbackPayload.invoice_url = invoice_url;
+                    if (parsedAmount !== null) fallbackPayload.invoice_amount = parsedAmount;
+                    
                     const retry = await supabase
                         .from('projects')
                         .update(fallbackPayload)
