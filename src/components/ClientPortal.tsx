@@ -2889,109 +2889,78 @@ const ClientPortal: React.FC = () => {
                             </div>
                         )}
 
-                        {/* 3. Módulo de Facturación, Saldos y Datos de Pago */}
+                        {/* 3. Módulo de Facturación y Documentos */}
                         <div className="bg-zinc-900/40 border border-white/5 p-6 md:p-8 rounded-xl shadow-2xl space-y-6">
                             <div className="space-y-2 border-b border-white/5 pb-4">
-                                <h3 className="text-xl font-bold text-white uppercase tracking-tight">Estado de Facturación y Pago</h3>
+                                <h3 className="text-xl font-bold text-white uppercase tracking-tight">Facturación y Documentos</h3>
                                 <p className="text-xs text-zinc-400">
-                                    Resumen de las facturas emitidas, saldos pendientes y datos para realizar transferencias.
+                                    Descarga de comprobantes oficiales y datos para realizar transferencias bancarias.
                                 </p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                {/* Historial de Facturas y Saldos */}
+                                {/* Facturas y Comprobantes Oficiales */}
                                 <div className="space-y-4">
-                                    <h4 className="text-sm font-bold text-white uppercase tracking-wider">Historial y Saldos</h4>
+                                    <h4 className="text-sm font-bold text-white uppercase tracking-wider">Facturas y Comprobantes</h4>
                                     
                                     {(() => {
-                                        const totalBudget = budget ? budget.total_price : 0;
-                                        const history = project.invoices_history || [];
-                                        
-                                        // Support legacy invoice if history is empty but there's a main invoice
-                                        const displayInvoices = history.length > 0 ? history : (
-                                            project.invoice_url ? [{
-                                                amount: project.invoice_amount || 0,
-                                                type: project.invoice_type || 'custom',
-                                                invoice_url: project.invoice_url,
-                                                date_sent: new Date().toISOString()
-                                            }] : []
-                                        );
+                                        const history = Array.isArray(project.invoices_history) ? project.invoices_history : [];
+                                        const officialInvoices = history.filter((inv: any) => inv && inv.invoice_url);
+                                        const fallbackInvoice = (!officialInvoices.length && project.invoice_url) ? [{
+                                            invoice_url: project.invoice_url,
+                                            fc_number: project.invoice_fc_number,
+                                            type: project.invoice_type || 'custom',
+                                            amount: project.invoice_amount || 0
+                                        }] : [];
 
-                                        const totalInvoiced = displayInvoices.reduce((sum: number, inv: any) => {
-                                            const amt = Number(inv.amount) || 0;
-                                            return inv.type === 'credit_note' ? sum - amt : sum + amt;
-                                        }, 0);
-                                        const remaining = Math.max(0, totalBudget - totalInvoiced);
-                                        const currency = project.currency || 'ARS';
-                                        const hasOnlyOfficialInvoices = displayInvoices.length > 0 && displayInvoices.every((inv: any) => !!inv.invoice_url);
+                                        const docsToDisplay = officialInvoices.length > 0 ? officialInvoices : fallbackInvoice;
 
                                         return (
                                             <div className="bg-black/40 border border-white/5 rounded-lg p-4 space-y-3">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Resumen de Cuenta</span>
-                                                    {totalBudget > 0 && (
-                                                        <span className="text-[10px] text-zinc-500">Cotización Total: <span className="text-zinc-300 font-bold">{currency} {totalBudget.toLocaleString()}</span></span>
-                                                    )}
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Comprobantes Disponibles</span>
                                                 </div>
 
-                                                {displayInvoices.length > 0 ? (
-                                                    <div className="space-y-2">
-                                                        {displayInvoices.map((inv: any, idx: number) => {
-                                                            const hasPdf = !!inv.invoice_url;
+                                                {docsToDisplay.length > 0 ? (
+                                                    <div className="space-y-2.5">
+                                                        {docsToDisplay.map((inv: any, idx: number) => {
+                                                            const isNC = inv.type === 'credit_note';
+                                                            const typeLabel = isNC 
+                                                                ? 'Nota de Crédito' 
+                                                                : inv.type === 'deposit_50' 
+                                                                    ? 'Factura Seña 50%' 
+                                                                    : inv.type === 'total' 
+                                                                        ? 'Factura 100% Total' 
+                                                                        : 'Factura Oficial';
                                                             return (
-                                                                <div key={idx} className="flex items-center justify-between gap-2 text-[11px] py-1.5 border-b border-white/5 last:border-0">
-                                                                    <div className="flex items-center gap-2 min-w-0 flex-wrap sm:flex-nowrap">
-                                                                        <span className="text-zinc-500 font-mono text-[10px]">#{idx + 1}</span>
-                                                                        {inv.fc_number && (
-                                                                            <span className="font-mono text-nexo-lime font-bold text-[10px] truncate max-w-[130px] sm:max-w-[200px]" title={`FC ${inv.fc_number}`}>
-                                                                                FC {inv.fc_number}
-                                                                            </span>
-                                                                        )}
-                                                                        <span className="text-zinc-300 font-medium shrink-0">
-                                                                            {inv.type === 'credit_note' ? 'Nota de Crédito' : inv.type === 'deposit_50' ? '50% Seña' : inv.type === 'total' ? '100% Total' : (hasPdf ? 'Factura Emitida' : 'Pago / Cobro')}
-                                                                        </span>
+                                                                <a
+                                                                    key={idx}
+                                                                    href={inv.invoice_url}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className={`group flex items-center justify-between gap-3 p-3 rounded-lg border transition-all ${
+                                                                        isNC
+                                                                            ? 'bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20'
+                                                                            : 'bg-nexo-lime/10 text-nexo-lime border-nexo-lime/30 hover:bg-nexo-lime hover:text-black'
+                                                                    }`}
+                                                                >
+                                                                    <div className="flex items-center gap-2.5 min-w-0">
+                                                                        <span className="text-lg">📄</span>
+                                                                        <div className="min-w-0">
+                                                                            <div className="font-extrabold text-xs uppercase tracking-wider truncate">{typeLabel}</div>
+                                                                            {inv.fc_number && <div className="text-[10px] font-mono opacity-80 truncate">FC: {inv.fc_number}</div>}
+                                                                        </div>
                                                                     </div>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className={`font-bold ${inv.type === 'credit_note' ? 'text-amber-400 font-mono' : 'text-white'}`}>
-                                                                            {inv.type === 'credit_note' ? '-' : ''}{currency} {(inv.amount || 0).toLocaleString()}
-                                                                        </span>
-                                                                        {hasPdf ? (
-                                                                            <a href={inv.invoice_url} target="_blank" rel="noopener noreferrer" className="bg-zinc-800 hover:bg-zinc-700 text-nexo-lime border border-nexo-lime/30 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide transition-colors flex items-center gap-1">
-                                                                                📄 Descargar PDF
-                                                                            </a>
-                                                                        ) : (
-                                                                            <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold px-2 py-0.5 rounded text-[9px] uppercase tracking-wider flex items-center gap-1">
-                                                                                ✓ Cobro Saldado
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
+                                                                    <span className="text-[10px] font-black uppercase tracking-wider shrink-0 px-3 py-1.5 rounded bg-black/40 border border-white/10 group-hover:border-black/30">
+                                                                        Descargar PDF ↗
+                                                                    </span>
+                                                                </a>
                                                             );
                                                         })}
-                                                        
-                                                        <div className="flex justify-between items-center pt-3 mt-2 border-t border-white/10">
-                                                            <span className="text-[10px] font-bold uppercase text-zinc-400">Total registrado:</span>
-                                                            <span className="text-white font-black text-sm">{currency} {totalInvoiced.toLocaleString()}</span>
-                                                        </div>
-                                                        
-                                                        {totalBudget > 0 && (
-                                                            <div className={`flex justify-between items-center rounded px-3 py-2 mt-2 ${remaining > 0 ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-emerald-500/10 border border-emerald-500/20'}`}>
-                                                                <span className={`text-[10px] font-black uppercase tracking-wider ${remaining > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                                                                    {remaining > 0 
-                                                                        ? '⏳ Saldo pendiente a cobrar:' 
-                                                                        : (hasOnlyOfficialInvoices 
-                                                                            ? '✅ Totalmente Facturado y Saldado' 
-                                                                            : '✅ Totalmente Saldado')}
-                                                                </span>
-                                                                {remaining > 0 && (
-                                                                    <span className="text-amber-300 font-black text-sm">{currency} {remaining.toLocaleString()}</span>
-                                                                )}
-                                                            </div>
-                                                        )}
                                                     </div>
                                                 ) : (
                                                     <div className="text-center py-6 text-zinc-500 text-xs italic border border-white/5 rounded">
-                                                        Aún no se han emitido facturas ni registrado pagos.
+                                                        🧾 Las facturas en PDF se habilitan una vez emitidas por la productora.
                                                     </div>
                                                 )}
                                             </div>
