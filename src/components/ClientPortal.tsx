@@ -2923,6 +2923,7 @@ const ClientPortal: React.FC = () => {
                                         }, 0);
                                         const remaining = Math.max(0, totalBudget - totalInvoiced);
                                         const currency = project.currency || 'ARS';
+                                        const hasOnlyOfficialInvoices = displayInvoices.length > 0 && displayInvoices.every((inv: any) => !!inv.invoice_url);
 
                                         return (
                                             <div className="bg-black/40 border border-white/5 rounded-lg p-4 space-y-3">
@@ -2935,41 +2936,52 @@ const ClientPortal: React.FC = () => {
 
                                                 {displayInvoices.length > 0 ? (
                                                     <div className="space-y-2">
-                                                        {displayInvoices.map((inv: any, idx: number) => (
-                                                            <div key={idx} className="flex items-center justify-between gap-2 text-[11px] py-1.5 border-b border-white/5 last:border-0">
-                                                                <div className="flex items-center gap-2 min-w-0 flex-wrap sm:flex-nowrap">
-                                                                    <span className="text-zinc-500">#{idx + 1}</span>
-                                                                    {inv.fc_number && (
-                                                                        <span className="font-mono text-nexo-lime font-bold text-[10px] truncate max-w-[130px] sm:max-w-[200px]" title={`FC ${inv.fc_number}`}>
-                                                                            FC {inv.fc_number}
+                                                        {displayInvoices.map((inv: any, idx: number) => {
+                                                            const hasPdf = !!inv.invoice_url;
+                                                            return (
+                                                                <div key={idx} className="flex items-center justify-between gap-2 text-[11px] py-1.5 border-b border-white/5 last:border-0">
+                                                                    <div className="flex items-center gap-2 min-w-0 flex-wrap sm:flex-nowrap">
+                                                                        <span className="text-zinc-500 font-mono text-[10px]">#{idx + 1}</span>
+                                                                        {inv.fc_number && (
+                                                                            <span className="font-mono text-nexo-lime font-bold text-[10px] truncate max-w-[130px] sm:max-w-[200px]" title={`FC ${inv.fc_number}`}>
+                                                                                FC {inv.fc_number}
+                                                                            </span>
+                                                                        )}
+                                                                        <span className="text-zinc-300 font-medium shrink-0">
+                                                                            {inv.type === 'credit_note' ? 'Nota de Crédito' : inv.type === 'deposit_50' ? '50% Seña' : inv.type === 'total' ? '100% Total' : (hasPdf ? 'Factura Emitida' : 'Pago / Cobro')}
                                                                         </span>
-                                                                    )}
-                                                                    <span className="text-zinc-400 shrink-0">
-                                                                        {inv.type === 'credit_note' ? 'Nota de Crédito' : inv.type === 'deposit_50' ? '50% Seña' : inv.type === 'total' ? '100% Total' : 'Concepto Asignado'}
-                                                                    </span>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className={`font-bold ${inv.type === 'credit_note' ? 'text-amber-400 font-mono' : 'text-white'}`}>
+                                                                            {inv.type === 'credit_note' ? '-' : ''}{currency} {(inv.amount || 0).toLocaleString()}
+                                                                        </span>
+                                                                        {hasPdf ? (
+                                                                            <a href={inv.invoice_url} target="_blank" rel="noopener noreferrer" className="bg-zinc-800 hover:bg-zinc-700 text-nexo-lime border border-nexo-lime/30 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide transition-colors flex items-center gap-1">
+                                                                                📄 Descargar PDF
+                                                                            </a>
+                                                                        ) : (
+                                                                            <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold px-2 py-0.5 rounded text-[9px] uppercase tracking-wider flex items-center gap-1">
+                                                                                ✓ Cobro Saldado
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
-                                                                <div className="flex items-center gap-3">
-                                                                    <span className={`font-bold ${inv.type === 'credit_note' ? 'text-amber-400 font-mono' : 'text-white'}`}>
-                                                                        {inv.type === 'credit_note' ? '-' : ''}{currency} {(inv.amount || 0).toLocaleString()}
-                                                                    </span>
-                                                                    {inv.invoice_url && (
-                                                                        <a href={inv.invoice_url} target="_blank" rel="noopener noreferrer" className="bg-zinc-800 hover:bg-zinc-700 text-white border border-white/10 px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wide transition-colors">
-                                                                            📄 Descargar PDF
-                                                                        </a>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        ))}
+                                                            );
+                                                        })}
                                                         
                                                         <div className="flex justify-between items-center pt-3 mt-2 border-t border-white/10">
-                                                            <span className="text-[10px] font-bold uppercase text-zinc-400">Total facturado:</span>
+                                                            <span className="text-[10px] font-bold uppercase text-zinc-400">Total registrado:</span>
                                                             <span className="text-white font-black text-sm">{currency} {totalInvoiced.toLocaleString()}</span>
                                                         </div>
                                                         
                                                         {totalBudget > 0 && (
                                                             <div className={`flex justify-between items-center rounded px-3 py-2 mt-2 ${remaining > 0 ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-emerald-500/10 border border-emerald-500/20'}`}>
-                                                                <span className={`text-[10px] font-bold uppercase ${remaining > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                                                                    {remaining > 0 ? '⏳ Saldo pendiente a facturar:' : '✅ Totalmente facturado'}
+                                                                <span className={`text-[10px] font-black uppercase tracking-wider ${remaining > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                                                                    {remaining > 0 
+                                                                        ? '⏳ Saldo pendiente a cobrar:' 
+                                                                        : (hasOnlyOfficialInvoices 
+                                                                            ? '✅ Totalmente Facturado y Saldado' 
+                                                                            : '✅ Totalmente Saldado')}
                                                                 </span>
                                                                 {remaining > 0 && (
                                                                     <span className="text-amber-300 font-black text-sm">{currency} {remaining.toLocaleString()}</span>
@@ -2979,7 +2991,7 @@ const ClientPortal: React.FC = () => {
                                                     </div>
                                                 ) : (
                                                     <div className="text-center py-6 text-zinc-500 text-xs italic border border-white/5 rounded">
-                                                        Aún no se han emitido facturas.
+                                                        Aún no se han emitido facturas ni registrado pagos.
                                                     </div>
                                                 )}
                                             </div>
