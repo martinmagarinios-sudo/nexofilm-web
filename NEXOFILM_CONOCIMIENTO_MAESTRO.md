@@ -39,7 +39,7 @@
 | **Backend/API** | Vercel Serverless Functions (Node.js) | — |
 | **Base de Datos** | Supabase (PostgreSQL) | ^2.97.0 |
 | **Email** | Resend | ^6.9.4 |
-| **IA** | Groq SDK (`llama-3.3-70b-versatile`) | ^0.37.0 |
+| **IA** | Groq SDK (`openai/gpt-oss-120b`) | ^0.37.0 |
 | **WhatsApp** | Meta WhatsApp Business API | v21.0 |
 | **IA Google** | `@google/genai` | ^1.41.0 |
 | **Hosting** | Vercel | — |
@@ -221,7 +221,7 @@ Todas las APIs están en `/api/` como **Vercel Serverless Functions** (Node.js E
 **Bot de WhatsApp conversacional con IA**
 - **Webhook GET**: Verificación de Meta (`hub.mode`, `hub.verify_token`, `hub.challenge`)
 - **Webhook POST**: Recibe mensajes entrantes de usuarios de WhatsApp
-- **Flujo de conversación con Groq AI** (`llama-3.3-70b-versatile`):
+- **Flujo de conversación con Groq AI** (`openai/gpt-oss-120b`):
   1. Saludo y solicitud de nombre
   2. Menú interactivo con botones (servicios disponibles)
   3. Captura de necesidades y calificación de lead
@@ -381,7 +381,7 @@ Endpoints (todos requieren autenticación con Supabase service role):
 
 ### Groq AI
 - **URL**: [console.groq.com](https://console.groq.com/keys)
-- **Modelo**: `llama-3.3-70b-versatile`
+- **Modelo**: `openai/gpt-oss-120b`
 - **Usos**:
   1. Bot de WhatsApp: genera respuestas conversacionales
   2. Análisis de briefings PDF en el CRM (extracción de datos)

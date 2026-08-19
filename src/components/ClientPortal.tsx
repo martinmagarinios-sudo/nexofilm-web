@@ -1818,7 +1818,10 @@ const ClientPortal: React.FC = () => {
                         <div className="border-t border-white/5 pt-4 grid grid-cols-1 md:grid-cols-4 gap-4 text-xs text-zinc-400 no-print">
                             <div>
                                 <span className="text-zinc-500 font-bold block uppercase tracking-wider text-[9px]">📅 Fecha y Hora</span>
-                                <span className="text-zinc-300 font-semibold">{project.event_date ? formatDateAR(project.event_date) : 'A confirmar'} {project.event_time || ''}</span>
+                                <span className="text-zinc-300 font-semibold">
+                                    {project.event_date ? formatDateAR(project.event_date) : 'A confirmar'}
+                                    {project.event_time ? ` · ${project.event_time}${project.event_end_time ? ` a ${project.event_end_time}` : ''}` : ''}
+                                </span>
                             </div>
                             <div>
                                 <span className="text-zinc-500 font-bold block uppercase tracking-wider text-[9px]">📍 Locación</span>

@@ -1601,6 +1601,27 @@ const CRMProjects: React.FC = () => {
         return dateStr;
     };
 
+    const formatEventSchedule = (time: string | null | undefined, endTime: string | null | undefined) => {
+        if (!time && !endTime) return null;
+        const t = time?.trim() || '';
+        const et = endTime?.trim() || '';
+
+        if (t && et) {
+            if (t.toLowerCase().includes(' a ') || t.includes('-') || t.toLowerCase().includes('hasta')) {
+                return t.endsWith('hs') ? t : `${t} hs`;
+            }
+            return `${t} a ${et} hs`;
+        }
+        if (t) {
+            if (t.toLowerCase().includes(' a ') || t.includes('-') || t.endsWith('hs')) return t;
+            return `${t} hs`;
+        }
+        if (et) {
+            return `Hasta ${et} hs`;
+        }
+        return null;
+    };
+
     const getPendingAction = (project: Project) => {
         if (project.admin_action_required) {
             return { text: "⚠️ Reformular / Contestar", isRed: true };
@@ -2217,6 +2238,14 @@ const CRMProjects: React.FC = () => {
                                                         <div className="text-xs text-white flex items-center gap-1">
                                                             <span>📅</span>
                                                             <span>{project.event_date ? formatDate(project.event_date) : 'Sin fecha'}</span>
+                                                        </div>
+                                                        <div className="text-[10px] text-nexo-lime font-semibold break-words flex items-center gap-1 mt-0.5">
+                                                            <span className="shrink-0">⏰</span>
+                                                            <span className="break-words leading-tight">
+                                                                {formatEventSchedule(project.event_time, project.event_end_time) || (
+                                                                    <span className="text-zinc-500 italic font-normal">Horario a definir</span>
+                                                                )}
+                                                            </span>
                                                         </div>
                                                         <div className="text-[10px] text-zinc-400 break-words flex items-start gap-1 mt-0.5">
                                                             <span className="shrink-0">📍</span>
@@ -3215,8 +3244,9 @@ const CRMProjects: React.FC = () => {
                                                                             </button>
                                                                         </div>
                                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-zinc-400">
-                                                                            <p>📅 Fecha: <span className="text-white font-medium">{project.event_date ? formatDate(project.event_date) : ''} {project.event_time || ''}</span></p>
-                                                                            <p>📍 Locación: <span className="text-white font-medium">{project.location}</span></p>
+                                                                            <p>📅 Fecha: <span className="text-white font-medium">{project.event_date ? formatDate(project.event_date) : 'Sin fecha'}</span></p>
+                                                                            <p>⏰ Horario: <span className="text-nexo-lime font-bold">{formatEventSchedule(project.event_time, project.event_end_time) || 'Sin horario especificado'}</span></p>
+                                                                            <p>📍 Locación: <span className="text-white font-medium">{project.location || 'Sin locación'}</span></p>
                                                                             <p>⏱️ Cobertura: <span className="text-white font-medium">{project.coverage_hours ? `${project.coverage_hours} hs` : '-'}</span></p>
                                                                             <p>🎥 Servicios: <span className="text-white font-medium capitalize">{project.coverage_types?.join(', ') || '-'}</span></p>
                                                                             {project.guests_count && <p>👥 Invitados: <span className="text-white font-medium">{project.guests_count} personas</span></p>}
@@ -4277,10 +4307,11 @@ const CRMProjects: React.FC = () => {
                                 <div>
                                     <span className="font-bold text-nexo-lime block mb-1">📋 Requerimientos del Cliente:</span>
                                     <div className="grid grid-cols-2 gap-2 text-zinc-300">
-                                        <p>📅 Fecha: <span className="text-white font-semibold">{budgetingProject.event_date ? formatDate(budgetingProject.event_date) : ''} {budgetingProject.event_time}</span></p>
-                                        <p>📍 Lugar: <span className="text-white font-semibold">{budgetingProject.location}</span></p>
-                                        <p>⏱️ Duración: <span className="text-white font-semibold">{budgetingProject.coverage_hours} horas</span></p>
-                                        <p>🎥 Combo: <span className="text-white font-semibold capitalize">{budgetingProject.coverage_types?.join(', ')}</span></p>
+                                        <p>📅 Fecha: <span className="text-white font-semibold">{budgetingProject.event_date ? formatDate(budgetingProject.event_date) : 'Sin fecha'}</span></p>
+                                        <p>⏰ Horario: <span className="text-nexo-lime font-bold">{formatEventSchedule(budgetingProject.event_time, budgetingProject.event_end_time) || 'Sin horario especificado'}</span></p>
+                                        <p>📍 Lugar: <span className="text-white font-semibold">{budgetingProject.location || 'Sin locación'}</span></p>
+                                        <p>⏱️ Duración: <span className="text-white font-semibold">{budgetingProject.coverage_hours ? `${budgetingProject.coverage_hours} hs` : '-'}</span></p>
+                                        <p>🎥 Combo: <span className="text-white font-semibold capitalize">{budgetingProject.coverage_types?.join(', ') || '-'}</span></p>
                                         {budgetingProject.guests_count && <p>👥 Invitados: <span className="text-white font-semibold">{budgetingProject.guests_count} personas</span></p>}
                                     </div>
                                 </div>
