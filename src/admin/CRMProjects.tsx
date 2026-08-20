@@ -1319,7 +1319,7 @@ const CRMProjects: React.FC = () => {
             const title = statusLabels[targetStatus] || targetStatus.toUpperCase();
             const desc = statusMessages[targetStatus] || `Tu proyecto "${project.title}" pasó al estado de *${title}*.`;
 
-            const waMsg = `${emoji} *NexoFilm - Actualización de Proyecto*\n\n¡Hola ${project.contact_name}! Te informamos que tu proyecto "*${project.title}*" pasó al estado de *${title}*.\n\n${desc}\n\nPodés ingresar a tu portal seguro para más detalles:\n👉 ${window.location.origin}/portal?token=${project.access_token}`;
+            const waMsg = `${emoji} *NexoFilm - Actualización de Proyecto*\n\n¡Hola ${project.contact_name}! Te informamos que tu proyecto "*${project.title}*" pasó al estado de *${title}*.\n\n${desc}\n\nPodés ingresar a tu portal seguro para más detalles:\n👉 ${window.location.origin}/portal?token=${project.access_token}&st=${targetStatus}`;
 
             handleOpenWhatsApp(project.client_phone, waMsg, project.contact_name);
             setStatusNotifyModal(null);
@@ -1577,8 +1577,9 @@ const CRMProjects: React.FC = () => {
         setPdfParsedInfo(null);
     };
 
-    const copyClientLink = (token: string) => {
-        const url = `${window.location.origin}/portal?token=${token}`;
+    const copyClientLink = (token: string, status?: string) => {
+        const statusParam = status ? `&st=${status}` : '';
+        const url = `${window.location.origin}/portal?token=${token}${statusParam}`;
         navigator.clipboard.writeText(url);
         setSuccessMsg('Link copiado al portapapeles.');
         setTimeout(() => setSuccessMsg(''), 3000);
@@ -2963,7 +2964,7 @@ const CRMProjects: React.FC = () => {
                                                                         
                                                                         if (project.status === 'approved' || project.status === 'production' || project.status === 'delivered') {
                                                                             const isSent = project.invoice_sent;
-                                                                            const invoiceWaMsg = `🧾 *NexoFilm - Facturación y Pago*\n\n¡Hola ${project.contact_name}! Ya registramos tu pago o preparamos tu factura para el proyecto "${project.title}".\n\nPodés ver los datos de transferencia Galicia, descargar tu factura y seguir el estado desde tu portal seguro:\n👉 ${window.location.origin}/portal?token=${project.access_token}`;
+                                                                            const invoiceWaMsg = `🧾 *NexoFilm - Facturación y Pago*\n\n¡Hola ${project.contact_name}! Ya registramos tu pago o preparamos tu factura para el proyecto "${project.title}".\n\nPodés ver los datos de transferencia Galicia, descargar tu factura y seguir el estado desde tu portal seguro:\n👉 ${window.location.origin}/portal?token=${project.access_token}&st=${project.status}`;
                                                                             return (
                                                                                 <button
                                                                                     type="button"
@@ -2981,8 +2982,8 @@ const CRMProjects: React.FC = () => {
                                                                                 </button>
                                                                             );
                                                                         } else if (isDraftOrReview) {
-                                                                            const waProposalMsg = `🎬 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla en tu portal seguro haciendo clic en el siguiente enlace:\nhttps://nexofilm.com/portal?token=${project.access_token}`;
-                                                                            const waDataMsg = `📋 *NexoFilm - Solicitud de Información*\n\n¡Hola ${project.contact_name}!${project.admin_notes ? `\n\n${project.admin_notes}` : '\n\nNecesitamos algunos datos adicionales para terminar de armar tu presupuesto.'}\n\nPodés completarlos directamente desde tu portal ingresando aquí:\n👉 ${window.location.origin}/portal?token=${project.access_token}`;
+                                                                            const waProposalMsg = `🎬 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla en tu portal seguro haciendo clic en el siguiente enlace:\nhttps://nexofilm.com/portal?token=${project.access_token}&st=${project.status}`;
+                                                                            const waDataMsg = `📋 *NexoFilm - Solicitud de Información*\n\n¡Hola ${project.contact_name}!${project.admin_notes ? `\n\n${project.admin_notes}` : '\n\nNecesitamos algunos datos adicionales para terminar de armar tu presupuesto.'}\n\nPodés completarlos directamente desde tu portal ingresando aquí:\n👉 ${window.location.origin}/portal?token=${project.access_token}&st=${project.status}`;
                                                                             return (
                                                                                 <div className="flex gap-2">
                                                                                     <button
@@ -3010,7 +3011,7 @@ const CRMProjects: React.FC = () => {
                                                                                 </div>
                                                                             );
                                                                         } else {
-                                                                            const waProposalMsg = `🎬 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla en tu portal seguro haciendo clic en el siguiente enlace:\nhttps://nexofilm.com/portal?token=${project.access_token}`;
+                                                                            const waProposalMsg = `🎬 *NexoFilm - Propuesta Comercial*\n\n¡Hola ${project.contact_name}! Ya preparamos la cotización detallada para tu proyecto "${project.title}".\n\nPodés verla, solicitar modificaciones o aprobarla en tu portal seguro haciendo clic en el siguiente enlace:\nhttps://nexofilm.com/portal?token=${project.access_token}&st=${project.status}`;
                                                                             return (
                                                                                 <button
                                                                                     type="button"
