@@ -11,7 +11,10 @@
         "api/presupuesto.js": {
             "includeFiles": "dist/index.html"
         },
-        "api/comercial/admin.js": { "maxDuration": 30 }
+        "api/comercial/admin.js": { "maxDuration": 30 },
+        "api/lang-serve.js": {
+            "includeFiles": "dist/index.html"
+        }
     },
     "rewrites": [
         { "source": "/portal/login", "destination": "/index.html" },
@@ -19,6 +22,16 @@
         { "source": "/presupuesto", "destination": "/api/presupuesto" },
         { "source": "/portfolio/:id", "destination": "/api/portfolio" },
         { "source": "/api/(.*)", "destination": "/api/$1" },
+        {
+            "source": "/",
+            "has": [{ "type": "query", "key": "lng", "value": "en" }],
+            "destination": "/api/lang-serve?lng=en"
+        },
+        {
+            "source": "/",
+            "has": [{ "type": "query", "key": "lng", "value": "pt" }],
+            "destination": "/api/lang-serve?lng=pt"
+        },
         { "source": "/((?!api/).*)", "destination": "/index.html" }
     ],
     "crons": [{ "path": "/api/cron", "schedule": "0 3 * * *" }]
