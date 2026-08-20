@@ -95,9 +95,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
                         muted
                         playsInline
                         preload="metadata"
+                        poster={project.imageUrl || "/og-image.jpg"}
                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                     >
-                        <source src={`${project.videoUrl}#t=0.5`} type="video/mp4" />
+                        <source src={project.videoUrl} type="video/mp4" />
                     </video>
                 ) : isPortrait && project.gallery && isHovering ? (
                     /* --- MODO PORTRAIT (TRIPTICO) --- */

@@ -27,12 +27,19 @@ const Hero: React.FC = () => {
 
   return (
     <section className="relative h-dvh w-full overflow-hidden bg-black">
+      {/* H1 SEO — Oculto visualmente pero indexable por Googlebot.
+          Resolución del problema del H1 rotatorio sin geo-keywords. */}
+      <h1 className="sr-only">
+        NexoFilm — Productora Audiovisual en Buenos Aires y Latam
+      </h1>
+
       {/* Etiqueta lateral decorativa */}
       <div className="absolute top-1/2 right-12 -translate-y-1/2 z-40 hidden lg:block rotate-90 origin-right">
         <p className="text-[9px] font-bold uppercase tracking-[0.8em] text-white/10">
           NexoFilm • {t('hero.visual_tag')}
         </p>
       </div>
+
 
       {CONFIG.heroSlides.map((slide, idx) => (
         <div
@@ -95,13 +102,13 @@ const Hero: React.FC = () => {
             </div>
 
             {idx === current ? (
-              <h1 className="flex flex-wrap text-center md:text-left justify-center md:justify-start gap-x-4 md:gap-x-8 text-4xl md:text-[8rem] lg:text-[10rem] font-black mb-6 md:mb-8 leading-[0.9] md:leading-[0.85] max-w-5xl uppercase tracking-tighter mix-blend-lighten break-words pl-1 md:pl-2">
+              <h2 className="flex flex-wrap text-center md:text-left justify-center md:justify-start gap-x-4 md:gap-x-8 text-4xl md:text-[8rem] lg:text-[10rem] font-black mb-6 md:mb-8 leading-[0.9] md:leading-[0.85] max-w-5xl uppercase tracking-tighter mix-blend-lighten break-words pl-1 md:pl-2">
                 {t(`hero.slides.${idx}.title`).trim().split(/\s+/).map((word, i) => (
                   <span key={i} className="inline-block transition-all duration-[1200ms] opacity-100 translate-y-0" style={{ transitionDelay: `${500 + i * 150}ms` }}>
                     {word}
                   </span>
                 ))}
-              </h1>
+              </h2>
             ) : (
               <div aria-hidden="true" className="flex flex-wrap text-center md:text-left justify-center md:justify-start gap-x-4 md:gap-x-8 text-4xl md:text-[8rem] lg:text-[10rem] font-black mb-6 md:mb-8 leading-[0.9] md:leading-[0.85] max-w-5xl uppercase tracking-tighter mix-blend-lighten break-words pl-1 md:pl-2">
                 {t(`hero.slides.${idx}.title`).trim().split(/\s+/).map((word, i) => (

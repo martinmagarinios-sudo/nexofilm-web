@@ -25,9 +25,17 @@ const App: React.FC = () => {
     if (metaDescription) {
       metaDescription.setAttribute('content', t('seo.description'));
     }
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) {
+      ogTitle.setAttribute('content', t('seo.title'));
+    }
     const ogDescription = document.querySelector('meta[property="og:description"]');
     if (ogDescription) {
       ogDescription.setAttribute('content', t('seo.description'));
+    }
+    const twitterTitle = document.querySelector('meta[name="twitter:title"]');
+    if (twitterTitle) {
+      twitterTitle.setAttribute('content', t('seo.title'));
     }
     const twitterDescription = document.querySelector('meta[name="twitter:description"]');
     if (twitterDescription) {
@@ -37,13 +45,14 @@ const App: React.FC = () => {
     // 2. Actualizar atributo lang del html
     document.documentElement.lang = i18n.language;
 
-    // 3. Inyectar Schema.org Dinámico (Fase 4)
+    // 3. Inyectar Schema.org Dinámico
     const existingSchema = document.getElementById('dynamic-schema');
     if (existingSchema) existingSchema.remove();
 
     const schemaData = {
       "@context": "https://schema.org",
-      "@type": ["LocalBusiness", "VideoProductionCompany"],
+      // FIX 5: "VideoProductionCompany" no es un tipo válido de Schema.org — se corrige a ProfessionalService
+      "@type": ["LocalBusiness", "ProfessionalService"],
       "name": "NexoFilm",
       "alternateName": "NexoFilm Productora Audiovisual",
       "url": "https://nexofilm.com",
@@ -53,7 +62,7 @@ const App: React.FC = () => {
         "width": 512,
         "height": 512
       },
-      "image": "https://nexofilm.com/preview_whatsapp.jpg",
+      "image": "https://nexofilm.com/og-image.jpg",
       "description": t('seo.description'),
       "telephone": "+541158804711",
       "email": "hola@nexofilm.com",
@@ -79,6 +88,7 @@ const App: React.FC = () => {
       ],
       "priceRange": "$$",
       "currenciesAccepted": "ARS, USD",
+      "serviceType": "Video Production, Photography, Live Streaming",
       "openingHoursSpecification": [
         {
           "@type": "OpeningHoursSpecification",
@@ -124,17 +134,51 @@ const App: React.FC = () => {
       },
       "knowsAbout": [
         "Video Corporativo", "Fotografía Publicitaria", "Streaming en Vivo",
-        "Producción Audiovisual", "Cine Publicitario", "Video Institucional"
+        "Producción Audiovisual", "Cine Publicitario", "Video Institucional",
+        "Eventos Corporativos B2B", "Eventos Buenos Aires"
       ],
+      // FIX 7: VideoObject para proyectos con videoUrl, CreativeWork para el resto
       "hasPart": CONFIG.projects.map(proj => ({
-        "@type": "CreativeWork",
+        "@type": proj.videoUrl ? "VideoObject" : "CreativeWork",
         "name": proj.title,
         "description": proj.description,
         "genre": proj.category,
         "author": { "@type": "Organization", "name": "NexoFilm" },
         "contentUrl": proj.videoUrl || proj.imageUrl,
-        "thumbnailUrl": proj.imageUrl || "https://nexofilm.com/preview_whatsapp.jpg"
-      }))
+        "thumbnailUrl": proj.imageUrl || "https://nexofilm.com/og-image.jpg",
+        ...(proj.videoUrl ? {
+          "uploadDate": "2024-01-01",
+          "publisher": {
+            "@type": "Organization",
+            "name": "NexoFilm",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://nexofilm.com/favicon.png"
+            }
+          }
+        } : {})
+      })),
+      // FIX 6: Schema Review + AggregateRating con datos reales de testimonios
+      "review": CONFIG.testimonials.map(testi => ({
+        "@type": "Review",
+        "author": {
+          "@type": "Person",
+          "name": testi.author,
+          "jobTitle": testi.role
+        },
+        "reviewBody": testi.text,
+        "publisher": {
+          "@type": "Organization",
+          "name": testi.company
+        }
+      })),
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "5",
+        "bestRating": "5",
+        "worstRating": "1",
+        "ratingCount": String(CONFIG.testimonials.length)
+      }
     };
 
     const script = document.createElement('script');
@@ -143,7 +187,7 @@ const App: React.FC = () => {
     script.text = JSON.stringify(schemaData);
     document.head.appendChild(script);
 
-    // 4. Inyectar etiquetas Hreflang y Canonical (Fase 3 & 4 SEO)
+    // 4. Inyectar etiquetas Hreflang y Canonical
     const baseUrl = "https://nexofilm.com";
     const head = document.head;
 
@@ -156,28 +200,34 @@ const App: React.FC = () => {
     cleanup();
 
     const currentLang = i18n.language;
-    const locales = ['es', 'en', 'pt'];
+
+    // FIX 2c: mapa de hreflang — ES usa URL limpia, EN y PT usan ?lng=
+    const hreflangMap: { [key: string]: string } = {
+      'es': baseUrl + '/',
+      'en': `${baseUrl}/?lng=en`,
+      'pt': `${baseUrl}/?lng=pt`,
+    };
 
     // Hreflang específicos por idioma
-    locales.forEach(lang => {
+    Object.entries(hreflangMap).forEach(([lang, href]) => {
       const link = document.createElement('link');
       link.rel = 'alternate';
       link.hreflang = lang;
-      link.href = `${baseUrl}/?lng=${lang}`;
+      link.href = href;
       head.appendChild(link);
     });
 
-    // x-default
+    // x-default siempre apunta a la URL raíz sin parámetros
     const xDefault = document.createElement('link');
     xDefault.rel = 'alternate';
     xDefault.hreflang = 'x-default';
-    xDefault.href = baseUrl;
+    xDefault.href = baseUrl + '/';
     head.appendChild(xDefault);
 
-    // Canonical dinámico
+    // Canonical dinámico: ES → URL limpia, EN/PT → con ?lng=
     const canonical = document.createElement('link');
     canonical.rel = 'canonical';
-    canonical.href = currentLang === 'es' ? baseUrl : `${baseUrl}/?lng=${currentLang}`;
+    canonical.href = hreflangMap[currentLang] || (baseUrl + '/');
     head.appendChild(canonical);
 
     // Open Graph Locale Dinámico

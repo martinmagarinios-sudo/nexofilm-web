@@ -1,3 +1,14 @@
 User-agent: *
 Allow: /
+Disallow: /api/
+
+# Preservar crawl budget: bloquear parámetros de sesión o tokens
+Disallow: /*?*session=
+Disallow: /*?*token=
+
+# Permitir indexación explícita de medios propios
+User-agent: Googlebot-Image
+Allow: /img/
+Allow: /public/
+
 Sitemap: https://nexofilm.com/sitemap.xml
