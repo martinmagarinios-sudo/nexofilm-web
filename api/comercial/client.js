@@ -135,17 +135,40 @@ export default async function handler(req, res) {
             try {
                 const { data } = await supabase
                     .from('projects')
-                    .select('title, contact_name')
+                    .select('title, contact_name, status')
                     .eq('access_token', token)
                     .maybeSingle();
                 if (data) {
                     project = data;
-                    if (project.title && project.title.trim()) {
-                        title = `Propuesta Comercial: ${project.title} - NexoFilm`;
-                    }
                     const contactName = project.contact_name ? project.contact_name.trim() : '';
-                    if (contactName) {
-                        description = `¡Hola ${contactName}! Ya preparamos la cotización para tu proyecto${project.title ? ` "${project.title}"` : ''}. Ingresá a tu portal seguro para ver el desglose, solicitar modificaciones o aprobar la propuesta.`;
+                    const projectTitle = project.title ? project.title.trim() : '';
+                    const status = project.status || 'sent';
+
+                    if (status === 'delivered') {
+                        title = projectTitle ? `Material Entregado: ${projectTitle} - NexoFilm` : `Material Entregado - NexoFilm`;
+                        description = contactName
+                            ? `¡Hola ${contactName}! Tu proyecto${projectTitle ? ` "${projectTitle}"` : ''} ya fue entregado. Ingresá a tu portal para acceder a tu carpeta y descargar todos los archivos finales.`
+                            : `Tu proyecto ya fue entregado. Ingresá a tu portal para acceder y descargar todos tus archivos finales.`;
+                    } else if (status === 'production') {
+                        title = projectTitle ? `Proyecto en Producción: ${projectTitle} - NexoFilm` : `Proyecto en Producción - NexoFilm`;
+                        description = contactName
+                            ? `¡Hola ${contactName}! Tu proyecto${projectTitle ? ` "${projectTitle}"` : ''} está en producción. Ingresá a tu portal seguro para seguir los avances y novedades.`
+                            : `Tu proyecto está en producción. Ingresá a tu portal seguro para seguir las novedades y avances.`;
+                    } else if (status === 'approved') {
+                        title = projectTitle ? `Proyecto Aprobado: ${projectTitle} - NexoFilm` : `Proyecto Aprobado - NexoFilm`;
+                        description = contactName
+                            ? `¡Hola ${contactName}! Confirmamos la aprobación de tu proyecto${projectTitle ? ` "${projectTitle}"` : ''}. Ingresá a tu portal seguro para ver los detalles y próximos pasos.`
+                            : `Confirmamos la aprobación de tu proyecto. Ingresá a tu portal seguro para ver los detalles.`;
+                    } else if (status === 'review') {
+                        title = projectTitle ? `Propuesta en Revisión: ${projectTitle} - NexoFilm` : `Propuesta en Revisión - NexoFilm`;
+                        description = contactName
+                            ? `¡Hola ${contactName}! Estamos revisando la propuesta de tu proyecto${projectTitle ? ` "${projectTitle}"` : ''}. Ingresá a tu portal seguro para consultar las notas e información.`
+                            : `Estamos revisando la propuesta de tu proyecto. Ingresá a tu portal seguro para consultar la información.`;
+                    } else { // sent, draft, rejected, o por defecto
+                        title = projectTitle ? `Propuesta Comercial: ${projectTitle} - NexoFilm` : `Propuesta Comercial - NexoFilm`;
+                        description = contactName
+                            ? `¡Hola ${contactName}! Ya preparamos la cotización para tu proyecto${projectTitle ? ` "${projectTitle}"` : ''}. Ingresá a tu portal seguro para ver el desglose, solicitar modificaciones o aprobar la propuesta.`
+                            : `Ya preparamos la cotización para tu proyecto. Ingresá a tu portal seguro para ver el desglose o aprobar la propuesta.`;
                     }
                 }
             } catch (dbErr) {
@@ -176,18 +199,23 @@ export default async function handler(req, res) {
             const imageUrl = `${protocol}://${host}/preview_whatsapp.jpg`;
             const portalUrl = `${protocol}://${host}/portal${token ? `?token=${token}` : ''}`;
 
+            const safeTitle = title.replace(/"/g, '&quot;');
+            const safeDescription = description.replace(/"/g, '&quot;');
+
             html = html.replace(/<title>[^<]*<\/title>/g, `<title>${title}</title>`);
-            html = html.replace(/<meta[\s\r\n]+name="description"[\s\r\n]+content="[^"]*"/g, `<meta name="description" content="${description}"`);
-            html = html.replace(/<meta[\s\r\n]+property="og:title"[\s\r\n]+content="[^"]*"/g, `<meta property="og:title" content="${title}"`);
-            html = html.replace(/<meta[\s\r\n]+property="og:description"[\s\r\n]+content="[^"]*"/g, `<meta property="og:description" content="${description}"`);
-            html = html.replace(/<meta[\s\r\n]+property="og:image"[\s\r\n]+content="[^"]*"/g, `<meta property="og:image" content="${imageUrl}"`);
-            html = html.replace(/<meta[\s\r\n]+property="og:image:secure_url"[\s\r\n]+content="[^"]*"/g, `<meta property="og:image:secure_url" content="${imageUrl}"`);
-            html = html.replace(/<meta[\s\r\n]+property="og:url"[\s\r\n]+content="[^"]*"/g, `<meta property="og:url" content="${portalUrl}"`);
-            html = html.replace(/<meta[\s\r\n]+property="twitter:title"[\s\r\n]+content="[^"]*"/g, `<meta property="twitter:title" content="${title}"`);
-            html = html.replace(/<meta[\s\r\n]+property="twitter:description"[\s\r\n]+content="[^"]*"/g, `<meta property="twitter:description" content="${description}"`);
-            html = html.replace(/<meta[\s\r\n]+property="twitter:image"[\s\r\n]+content="[^"]*"/g, `<meta property="twitter:image" content="${imageUrl}"`);
-            html = html.replace(/<meta[\s\r\n]+itemprop="image"[\s\r\n]+content="[^"]*"/g, `<meta itemprop="image" content="${imageUrl}"`);
-            html = html.replace(/<link[\s\r\n]+rel="image_src"[\s\r\n]+href="[^"]*"/g, `<link rel="image_src" href="${imageUrl}"`);
+            html = html.replace(/<meta[\s\r\n]+name="description"[\s\r\n]+content="[^"]*"/gi, `<meta name="description" content="${safeDescription}"`);
+            html = html.replace(/<meta[\s\r\n]+(property|name)="og:title"[\s\r\n]+content="[^"]*"/gi, `<meta property="og:title" content="${safeTitle}"`);
+            html = html.replace(/<meta[\s\r\n]+(property|name)="og:description"[\s\r\n]+content="[^"]*"/gi, `<meta property="og:description" content="${safeDescription}"`);
+            html = html.replace(/<meta[\s\r\n]+(property|name)="og:image"[\s\r\n]+content="[^"]*"/gi, `<meta property="og:image" content="${imageUrl}"`);
+            html = html.replace(/<meta[\s\r\n]+(property|name)="og:image:secure_url"[\s\r\n]+content="[^"]*"/gi, `<meta property="og:image:secure_url" content="${imageUrl}"`);
+            html = html.replace(/<meta[\s\r\n]+(property|name)="og:url"[\s\r\n]+content="[^"]*"/gi, `<meta property="og:url" content="${portalUrl}"`);
+            html = html.replace(/<meta[\s\r\n]+(property|name)="twitter:title"[\s\r\n]+content="[^"]*"/gi, `<meta name="twitter:title" content="${safeTitle}"`);
+            html = html.replace(/<meta[\s\r\n]+(property|name)="twitter:description"[\s\r\n]+content="[^"]*"/gi, `<meta name="twitter:description" content="${safeDescription}"`);
+            html = html.replace(/<meta[\s\r\n]+(property|name)="twitter:image"[\s\r\n]+content="[^"]*"/gi, `<meta name="twitter:image" content="${imageUrl}"`);
+            html = html.replace(/<meta[\s\r\n]+itemprop="name"[\s\r\n]+content="[^"]*"/gi, `<meta itemprop="name" content="${safeTitle}"`);
+            html = html.replace(/<meta[\s\r\n]+itemprop="description"[\s\r\n]+content="[^"]*"/gi, `<meta itemprop="description" content="${safeDescription}"`);
+            html = html.replace(/<meta[\s\r\n]+itemprop="image"[\s\r\n]+content="[^"]*"/gi, `<meta itemprop="image" content="${imageUrl}"`);
+            html = html.replace(/<link[\s\r\n]+rel="image_src"[\s\r\n]+href="[^"]*"/gi, `<link rel="image_src" href="${imageUrl}"`);
 
             res.setHeader('Content-Type', 'text/html; charset=utf-8');
             res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
