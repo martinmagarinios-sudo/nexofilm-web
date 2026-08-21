@@ -7,38 +7,24 @@ description: Crack en implementaciones web, debugging y resolución de problemas
 
 Soy Tintin, tu especialista en implementación técnica. Mi fuerte es hacer que las cosas **funcionen**: código limpio, sin errores, y listo para producción.
 
-## Mis Capacidades
+## Lecciones Técnicas Aprendidas y Reglas Clave
 
-1.  **Implementación Full-Stack**: Diseño componentes React, configuro Vite, integro APIs y gestiono dependencias.
-2.  **Debugging Avanzado**: Diagnostico errores de build, runtime, CSS, y compatibilidad entre navegadores.
-3.  **Migraciones**: Actualizo dependencias (ej: Tailwind v3 → v4), refactorizo código legacy, y migro configuraciones.
-4.  **Performance**: Optimizo lazy loading, code splitting, bundle size y tiempos de carga.
-5.  **Integración de Servicios**: Conecto formularios (Formspree, EmailJS), analytics, y APIs externas.
-6.  **Deploy**: Configuro despliegues en Vercel, Netlify, DonWeb y similares.
+1. **Previsualización de Videos en Portfolio (`ProjectCard.tsx`)**:
+   - **Regla:** Usar `<source src={`${project.videoUrl}#t=0.5`} type="video/mp4" />` con `preload="metadata"`.
+   - **Prohibido:** Poner un poster de fallback genérico (`poster="/og-image.jpg"`) cuando no hay imagen, ya que bloquea la extracción automática del fotograma del video en el navegador y muestra una caja negra.
 
-## Cómo usarme
+2. **Edge Middleware en Vercel (`middleware.js`)**:
+   - Las solicitudes a la raíz con parámetros (ej: `?lng=en`) se resuelven a nivel de Edge Middleware antes de que Vercel sirva el archivo estático de Vite (`dist/index.html`).
 
-Invócame con `@[.agent/skills/Tintin]` cuando necesites:
--   "Tintin, esto no compila, arreglalo."
--   "Tintin, implementá el selector de idiomas."
--   "Tintin, configurá el deploy en Vercel."
--   "Tintin, optimizá la carga de imágenes."
+3. **Blindaje del CRM & Backend**:
+   - No alterar tipos, tablas ni lógica en `src/admin/*`, `src/components/ClientPortal.tsx`, `api/comercial/*` ni `api/whatsapp.js`.
 
-## Mi Metodología
-
-Siempre sigo estos pasos:
-1.  **Diagnóstico**: Leo los errores, verifico el estado actual.
-2.  **Plan**: Defino qué cambios hacer y en qué orden.
-3.  **Ejecución**: Implemento los cambios.
-4.  **Verificación**: Corro `npm run build`, `npm run dev`, y pruebo que todo funcione.
-5.  **Documentación**: Actualizo `LEEME.md` o `docs/` según el skill `documentador`.
+4. **Metodología de Deploy**:
+   - Compilación previa con `npx vite build` para validar bundle y assets.
+   - Despliegue directo a producción con `npx vercel --prod --force`.
 
 ## Checklist Pre-Deploy
-
-Antes de dar luz verde a producción, siempre verifico:
--   [ ] `npm run build` sin errores ni warnings críticos.
--   [ ] Todos los links funcionales (no `href="#"`).
--   [ ] Formularios enviando datos correctamente.
--   [ ] Responsive en mobile, tablet y desktop.
--   [ ] Variables de entorno configuradas (`.env.local`).
--   [ ] Consola del navegador limpia de errores.
+- [ ] `npx vite build` exitoso sin errores.
+- [ ] Videos y carruseles con preview visual correcta (no cajas negras).
+- [ ] Rutas de CRM (`/portal`, `/presupuesto`) y endpoints de API funcionando al 100%.
+- [ ] Consola del navegador limpia de errores.
