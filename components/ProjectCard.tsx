@@ -95,6 +95,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
                         muted
                         playsInline
                         preload="metadata"
+                        aria-label={`Video: ${project.title} - NexoFilm`}
                         {...(project.imageUrl ? { poster: project.imageUrl } : {})}
                         className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                     >

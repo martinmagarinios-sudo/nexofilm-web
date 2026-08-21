@@ -100,7 +100,11 @@ const ShaderPlane = ({ imageSrc, isHovering }: { imageSrc: string, isHovering: b
 // Componente principal
 const WebGLHoverImage: React.FC<WebGLHoverImageProps> = ({ imageSrc, isHovering, className, alt }) => {
     return (
-        <div className={`w-full h-full relative ${className || ''}`}>
+        <div 
+            className={`w-full h-full relative ${className || ''}`}
+            role="img"
+            aria-label={alt || "Proyecto NexoFilm"}
+        >
             {/* 
               Usamos la cámara ortográfica para que el plano llene exactamente la pantalla
               sin perspectivas raras, funcionando exactamente igual que una <img> cover
