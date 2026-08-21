@@ -16,6 +16,14 @@
             "includeFiles": "dist/index.html"
         }
     },
+    "redirects": [
+        {
+            "source": "/:path*",
+            "has": [{ "type": "host", "value": "www.nexofilm.com" }],
+            "destination": "https://nexofilm.com/:path*",
+            "permanent": true
+        }
+    ],
     "rewrites": [
         { "source": "/portal/login", "destination": "/index.html" },
         { "source": "/portal", "destination": "/api/comercial/client?action=render" },

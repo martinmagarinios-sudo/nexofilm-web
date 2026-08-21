@@ -14,11 +14,15 @@
 
 ## 4. Lecciones Aprendidas y Patrones Comprobados
 
-### A. Previsualización de Videos en Portfolio (`ProjectCard.tsx`)
+### A. Canonicidad de Dominio (301 de www a no-www)
+- ❌ **Qué NO funciona:** Dejar que tanto `https://www.nexofilm.com` como `https://nexofilm.com` devuelvan HTTP 200 por separado. Diluye la autoridad de dominio en Google.
+- ✅ **Qué SÍ funciona:** Redirección 301 permanente en `vercel.json` (`redirects`) y en `middleware.js` desde `www.nexofilm.com` hacia `https://nexofilm.com`.
+
+### B. Previsualización de Videos en Portfolio (`ProjectCard.tsx`)
 - ❌ **Qué NO funciona:** Poner un poster de fallback genérico como `poster={project.imageUrl || "/og-image.jpg"}` cuando `imageUrl` es vacío. Provoca que el video se vea como una caja negra estática con el logo antes de hacer hover.
 - ✅ **Qué SÍ funciona:** Dejar `<source src={`${project.videoUrl}#t=0.5`} type="video/mp4" />` con `preload="metadata"` y sin poster si no hay imagen real. El navegador extrae y renderiza automáticamente el frame del segundo 0.5 como thumbnail visual.
 
-### B. SEO Internacional y Hreflang en SPA (Vercel + Vite)
+### C. SEO Internacional y Hreflang en SPA (Vercel + Vite)
 - ❌ **Qué NO funciona:** 
   1. Depender solo de `useEffect` en `App.tsx` para cambiar `<html lang="...">` y canonicals (los crawlers sin JS ven siempre la versión base en español).
   2. Usar solo `rewrites` en `vercel.json` para `/` con query params (el sistema de archivos estáticos de Vercel sirve `dist/index.html` antes de evaluar los rewrites de la raíz).
@@ -26,10 +30,10 @@
   - Usar un **Vercel Edge Middleware** (`middleware.js` en raíz) que intercepta `?lng=en` y `?lng=pt` antes de la resolución de archivos estáticos.
   - Redirigir a `api/lang-serve.js` para modificar en el servidor los strings `<html lang="xx">` y canonicals hacia la URL correspondiente.
 
-### C. Datos Estructurados (Schema.org / JSON-LD)
+### D. Datos Estructurados (Schema.org / JSON-LD)
 - ❌ **Qué NO funciona:** Usar tipos inexistentes como `@type: "VideoProductionCompany"`.
 - ✅ **Qué SÍ funciona:** Usar `@type: ["LocalBusiness", "ProfessionalService"]`, acompañado de `Review` + `AggregateRating` para testimonios y `VideoObject` para los videos del portfolio. (Validado con 19 elementos ricos en Google Rich Results Test).
 
-### D. Jerarquía Semántica H1/H2/H3
-- ❌ **Qué NO funciona:** Tener un `<h1>` que cambie dinámicamente con slides de carrusel sin palabras clave de ubicación o negocio. Tener `<h3>` antes de `<h2>` en el DOM.
-- ✅ **Qué SÍ funciona:** Usar un único `<h1 className="sr-only">` accesible con palabras clave geolocalizadas ("NexoFilm — Productora Audiovisual en Buenos Aires y Latam") y convertir los títulos del carrusel en `<h2>`.
+### E. Jerarquía Semántica H1/H2/H3 y Metadatos Limpios
+- ❌ **Qué NO funciona:** Tener un `<h1>` que cambie dinámicamente con slides de carrusel sin palabras clave de ubicación o negocio. Tener `<h3>` antes de `<h2>` en el DOM. Incluir etiquetas obsoletas como `<meta name="keywords">`.
+- ✅ **Qué SÍ funciona:** Usar un único `<h1 className="sr-only">` accesible con palabras clave geolocalizadas ("NexoFilm — Productora Audiovisual en Buenos Aires y Latam") y convertir los títulos del carrusel en `<h2>`. Limpiar meta keywords.
