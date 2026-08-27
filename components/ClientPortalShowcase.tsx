@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import BunnyStreamModal from './BunnyStreamModal';
 
 const ClientPortalShowcase: React.FC = () => {
     const { t } = useTranslation();
-    const [isVideoOpen, setIsVideoOpen] = useState(false);
+    const [isPlaying, setIsPlaying] = useState(false);
     const bunnyVideoId = "da216142-982e-447f-9dd5-db8ec683e5f4";
     const bunnyLibraryId = "738019";
 
@@ -86,48 +85,61 @@ const ClientPortalShowcase: React.FC = () => {
 
                 {/* Contenido principal: Video / Showcase a la izquierda + Features a la derecha */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center max-w-6xl mx-auto mb-16">
-                    {/* Columna Izquierda: Video Card del Portal con IA */}
+                    {/* Columna Izquierda: Video Card del Portal con IA (Reproducción Directa) */}
                     <div className="lg:col-span-6 relative">
                         <div
-                            onClick={() => setIsVideoOpen(true)}
-                            className="group relative aspect-video rounded-sm overflow-hidden bg-zinc-950 ring-1 ring-white/10 hover:ring-nexo-lime/40 transition-all duration-500 cursor-pointer shadow-[0_20px_50px_rgba(0,0,0,0.8)] hover:shadow-[0_0_40px_rgba(191,224,35,0.2)]"
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsVideoOpen(true); } }}
-                            aria-label="Reproducir video de presentación del Portal de Clientes con IA"
+                            className="relative aspect-video rounded-sm overflow-hidden bg-zinc-950 ring-1 ring-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
                         >
-                            {/* Imagen de Portada / Screenshot */}
-                            <img
-                                src="/img/portfolio/FotoPortalClienteIA.jpg"
-                                alt="Portal de Clientes NexoFilm - Gestión y Producción Audiovisual con Inteligencia Artificial"
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 filter brightness-90 group-hover:brightness-100"
-                                loading="lazy"
-                            />
+                            {isPlaying ? (
+                                <iframe
+                                    src={`https://iframe.mediadelivery.net/embed/${bunnyLibraryId}/${bunnyVideoId}?autoplay=true&loop=false&muted=false&preload=true&responsive=true`}
+                                    title={t('portal_showcase.video_caption')}
+                                    className="w-full h-full border-0"
+                                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                                    allowFullScreen
+                                />
+                            ) : (
+                                <div
+                                    onClick={() => setIsPlaying(true)}
+                                    className="group relative w-full h-full cursor-pointer"
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsPlaying(true); } }}
+                                    aria-label="Reproducir video de presentación del Portal de Clientes con IA"
+                                >
+                                    {/* Imagen de Portada con Carga Inmediata y Alta Prioridad */}
+                                    <img
+                                        src="/img/portfolio/FotoPortalClienteIA.jpg"
+                                        alt="Portal de Clientes NexoFilm - Gestión y Producción Audiovisual con Inteligencia Artificial"
+                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 filter brightness-95 group-hover:brightness-100"
+                                        loading="eager"
+                                        fetchPriority="high"
+                                        decoding="async"
+                                    />
 
-                            {/* Badge IA sobre el video */}
-                            <div className="absolute top-4 left-4 z-10 bg-black/80 backdrop-blur-md border border-nexo-lime/40 text-nexo-lime text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-sm flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-nexo-lime animate-ping" />
-                                {t('portal_showcase.video_tag')}
-                            </div>
+                                    {/* Badge IA sobre el video */}
+                                    <div className="absolute top-4 left-4 z-10 bg-black/80 backdrop-blur-md border border-nexo-lime/40 text-nexo-lime text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-sm flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-nexo-lime animate-ping" />
+                                        {t('portal_showcase.video_tag')}
+                                    </div>
 
-                            {/* Overlay y Botón Play */}
-                            <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 flex items-center justify-center transition-all duration-500">
-                                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-black/80 border-2 border-nexo-lime text-nexo-lime flex items-center justify-center group-hover:bg-nexo-lime group-hover:text-black group-hover:scale-110 transition-all duration-500 shadow-2xl">
-                                    <svg className="w-7 h-7 md:w-8 md:h-8 fill-current translate-x-0.5" viewBox="0 0 24 24">
-                                        <path d="M8 5v14l11-7z" />
-                                    </svg>
+                                    {/* Overlay y Botón Play */}
+                                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 flex items-center justify-center transition-all duration-500">
+                                        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-black/80 border-2 border-nexo-lime text-nexo-lime flex items-center justify-center group-hover:bg-nexo-lime group-hover:text-black group-hover:scale-110 transition-all duration-500 shadow-2xl">
+                                            <svg className="w-7 h-7 md:w-8 md:h-8 fill-current translate-x-0.5" viewBox="0 0 24 24">
+                                                <path d="M8 5v14l11-7z" />
+                                            </svg>
+                                        </div>
+                                    </div>
+
+                                    {/* Pie del Video (Limpio, sin textos redundantes) */}
+                                    <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
+                                        <span className="text-[11px] uppercase tracking-wider text-white font-bold">
+                                            {t('portal_showcase.video_caption')}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-
-                            {/* Pie del Video */}
-                            <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black via-black/80 to-transparent flex items-center justify-between">
-                                <span className="text-[11px] uppercase tracking-wider text-white font-bold">
-                                    {t('portal_showcase.video_caption')}
-                                </span>
-                                <span className="text-[9px] uppercase tracking-widest text-nexo-lime font-mono">
-                                    ▶ {t('portal_showcase.video_play_btn')}
-                                </span>
-                            </div>
+                            )}
                         </div>
                     </div>
 
@@ -208,16 +220,6 @@ const ClientPortalShowcase: React.FC = () => {
                     </a>
                 </div>
             </div>
-
-            {/* Modal Bunny Stream Oficial (HLS Adaptativo 1080p con Nexo-Lime) */}
-            {isVideoOpen && (
-                <BunnyStreamModal
-                    libraryId={bunnyLibraryId}
-                    videoId={bunnyVideoId}
-                    title={t('portal_showcase.video_modal_title')}
-                    onClose={() => setIsVideoOpen(false)}
-                />
-            )}
         </section>
     );
 };

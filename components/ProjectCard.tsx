@@ -14,20 +14,46 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
     const { t } = useTranslation();
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isHovering, setIsHovering] = useState(false);
+    const [isPlayingInline, setIsPlayingInline] = useState(false);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
 
     const isPortrait = project.orientation === 'portrait';
 
+    // Helpers de Video
+    const isBunny = project.embedUrl && project.embedUrl.includes('mediadelivery.net');
+    const isYT = project.embedUrl && (project.embedUrl.includes('youtube.com') || project.embedUrl.includes('youtu.be'));
+
+    const getBunnyEmbedSrc = (url: string) => {
+        let lib = "738019";
+        let vid = url;
+        if (url.includes('mediadelivery.net')) {
+            const parts = url.split('?')[0].split('/');
+            if (parts.length >= 2) {
+                vid = parts[parts.length - 1];
+                lib = parts[parts.length - 2];
+            }
+        }
+        return `https://iframe.mediadelivery.net/embed/${lib}/${vid}?autoplay=true&loop=false&muted=false&preload=true&responsive=true`;
+    };
+
+    const getYouTubeEmbedSrc = (url: string) => {
+        let id = url;
+        if (url.includes('youtu.be/')) {
+            id = url.split('youtu.be/')[1]?.split('?')[0] || url;
+        } else if (url.includes('youtube.com/watch')) {
+            id = new URL(url).searchParams.get('v') || url;
+        }
+        return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1`;
+    };
+
     // Lógica para Galerías
     useEffect(() => {
-        // Si es galería (más de 1 foto) y está en hover
-        if (project.gallery && project.gallery.length > 1 && isHovering) {
+        if (project.gallery && project.gallery.length > 1 && isHovering && !isPlayingInline) {
             intervalRef.current = setInterval(() => {
                 setCurrentImageIndex((prev) => (prev + 1) % project.gallery!.length);
-            }, 1500); // 1.5s para dar tiempo a ver
+            }, 1500);
         } else {
-            // Al salir del hover, volvemos al principio (opcional, o dejar donde quedó)
             setCurrentImageIndex(0);
             if (intervalRef.current) clearInterval(intervalRef.current);
         }
@@ -35,9 +61,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
         return () => {
             if (intervalRef.current) clearInterval(intervalRef.current);
         };
-    }, [isHovering, project.gallery]);
+    }, [isHovering, project.gallery, isPlayingInline]);
 
     const handleMouseEnter = () => {
+        if (isPlayingInline) return;
         setIsHovering(true);
         if (project.videoUrl && videoRef.current) {
             videoRef.current.play().catch(e => console.log("Autoplay prevented", e));
@@ -45,6 +72,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
     };
 
     const handleMouseLeave = () => {
+        if (isPlayingInline) return;
         setIsHovering(false);
         if (project.videoUrl && videoRef.current) {
             videoRef.current.pause();
@@ -53,10 +81,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
     };
 
     const handleClick = () => {
-        if (project.embedUrl) {
-            onVideoClick(project.embedUrl);
-        } else if (project.videoUrl) {
-            onVideoClick(project.videoUrl);
+        if (project.embedUrl || project.videoUrl) {
+            setIsPlayingInline(true);
         } else if (project.category !== 'Foto Producto') {
             window.open(project.behanceUrl, '_blank');
         }
@@ -75,7 +101,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
 
     const displayImage = (project.gallery && project.gallery.length > 0 && isHovering && !isPortrait)
         ? project.gallery[currentImageIndex]
-        : project.imageUrl;
+        : (project.imageUrl || (isBunny && project.embedUrl ? `https://vz-738019-b.b-cdn.net/${project.embedUrl.split('/').pop()}/thumbnail.jpg` : ''));
 
     return (
         <div className="group cursor-pointer">
@@ -88,19 +114,68 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
             >
-                {project.videoUrl ? (
-                    /* --- MODO VIDEO --- */
-                    <video
-                        ref={videoRef}
-                        muted
-                        playsInline
-                        preload="metadata"
-                        aria-label={`Video: ${project.title} - NexoFilm`}
-                        {...(project.imageUrl ? { poster: project.imageUrl } : {})}
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-                    >
-                        <source src={`${project.videoUrl}#t=0.5`} type="video/mp4" />
-                    </video>
+                {isPlayingInline ? (
+                    /* --- MODO REPRODUCCIÓN DIRECTA EN TARJETA --- */
+                    <div className="relative w-full h-full bg-black z-20" onClick={(e) => e.stopPropagation()}>
+                        {isBunny ? (
+                            <iframe
+                                src={getBunnyEmbedSrc(project.embedUrl!)}
+                                title={project.title}
+                                className="w-full h-full border-0"
+                                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                                allowFullScreen
+                            />
+                        ) : isYT ? (
+                            <iframe
+                                src={getYouTubeEmbedSrc(project.embedUrl!)}
+                                title={project.title}
+                                className="w-full h-full border-0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                            />
+                        ) : (
+                            <video
+                                autoPlay
+                                controls
+                                playsInline
+                                className="w-full h-full object-contain"
+                            >
+                                <source src={project.videoUrl} type="video/mp4" />
+                            </video>
+                        )}
+
+                        {/* Botón para volver a la portada */}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setIsPlayingInline(false); }}
+                            className="absolute top-3 right-3 z-30 p-2 bg-black/80 hover:bg-nexo-lime hover:text-black text-white rounded-full transition-colors cursor-pointer shadow-lg border border-white/10"
+                            aria-label="Cerrar video"
+                            title="Volver a la portada"
+                        >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+                ) : project.videoUrl ? (
+                    /* --- MODO PREVIEW VIDEO (HOVER) --- */
+                    <>
+                        <video
+                            ref={videoRef}
+                            muted
+                            playsInline
+                            preload="metadata"
+                            aria-label={`Video: ${project.title} - NexoFilm`}
+                            {...(project.imageUrl ? { poster: project.imageUrl } : {})}
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                        >
+                            <source src={`${project.videoUrl}#t=0.5`} type="video/mp4" />
+                        </video>
+
+                        {/* Overlay con botón Play */}
+                        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 flex items-center justify-center transition-all duration-500">
+                            <div className="w-16 h-16 md:w-20 md:h-20 border-2 border-nexo-lime rounded-full flex items-center justify-center text-nexo-lime scale-90 group-hover:scale-100 transition-all duration-500 group-hover:bg-nexo-lime group-hover:text-black shadow-2xl">
+                                <svg className="w-7 h-7 md:w-8 md:h-8 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            </div>
+                        </div>
+                    </>
                 ) : isPortrait && project.gallery && isHovering ? (
                     /* --- MODO PORTRAIT (TRIPTICO) --- */
                     <div className="flex w-full h-full">
@@ -123,6 +198,16 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
                             isHovering={isHovering}
                             alt={project.title}
                         />
+                        {/* Overlay para fotos / behance */}
+                        <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-500 ${isHovering ? 'opacity-100 bg-black/60' : 'opacity-0'}`}>
+                            <div className="w-16 h-16 md:w-20 md:h-20 border-2 border-nexo-lime rounded-full flex items-center justify-center text-nexo-lime scale-90 group-hover:scale-100 transition-all duration-500 group-hover:bg-nexo-lime group-hover:text-black">
+                                {(project.embedUrl || project.videoUrl) ? (
+                                    <svg className="w-7 h-7 md:w-8 md:h-8 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                ) : (
+                                    <svg className="w-7 h-7 md:w-8 md:h-8 fill-current" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" /></svg>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 )}
 
