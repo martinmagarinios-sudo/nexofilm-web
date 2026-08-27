@@ -14,12 +14,9 @@ const ValueProp: React.FC = () => {
 
       <div className="container mx-auto px-6 relative z-10">
         <div className="max-w-5xl mx-auto text-center md:text-left">
-          <div className="flex items-center gap-4 mb-8 justify-center md:justify-start">
-            <span className="w-12 h-[1px] bg-nexo-lime/40" />
-            <span className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.5em]">
-              {t('value_prop.badge')}
-            </span>
-          </div>
+          <p className="text-nexo-lime text-[10px] md:text-[11px] font-black uppercase tracking-[0.4em] mb-4">
+            {t('value_prop.badge')}
+          </p>
 
           <h2 className="uppercase tracking-tighter leading-[1.1] mb-12">
             <span className="font-bold text-white text-4xl md:text-7xl block mb-4">{t('value_prop.title_main')}</span>

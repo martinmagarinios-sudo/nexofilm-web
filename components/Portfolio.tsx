@@ -36,10 +36,9 @@ const Portfolio: React.FC = () => {
       <div className="container mx-auto px-6">
         <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-24 gap-8">
           <div className="space-y-6 text-center md:text-left">
-            <div className="flex items-center gap-4 justify-center md:justify-start">
-              <span className="w-12 h-[2px] bg-nexo-lime"></span>
-              <span className="text-[10px] uppercase tracking-[0.5em] text-nexo-lime font-bold">{t('projects.title')}</span>
-            </div>
+            <p className="text-nexo-lime text-[10px] md:text-[11px] font-black uppercase tracking-[0.4em]">
+              {t('projects.title')}
+            </p>
             <h2 className="text-4xl md:text-7xl font-bold uppercase tracking-tighter">{t('projects.subtitle')}</h2>
           </div>
           <p className="text-zinc-300 max-w-xl text-lg font-normal leading-relaxed mb-4 text-center md:text-left">

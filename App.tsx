@@ -310,9 +310,9 @@ const App: React.FC = () => {
               </div>
               <div className="w-full md:w-1/2 space-y-10 text-center md:text-left">
                 <div className="space-y-4">
-                  <div className="inline-block px-3 py-1 bg-nexo-lime text-black text-[10px] font-bold uppercase tracking-[0.3em]">
+                  <p className="text-nexo-lime text-[10px] md:text-[11px] font-black uppercase tracking-[0.4em]">
                     {t('history.badge')}
-                  </div>
+                  </p>
                   <h2 className="text-4xl md:text-6xl font-bold leading-[1.05] uppercase tracking-tighter">
                     {t('history.title_span')} <img src="/img/logo.png" alt="NexoFilm" className="h-10 md:h-16 inline-block align-middle ml-2 -mt-2 brightness-0 invert" /> <br />
                     <span className="text-nexo-lime italic font-light">{t('history.subtitle_italic')}</span> <br />
