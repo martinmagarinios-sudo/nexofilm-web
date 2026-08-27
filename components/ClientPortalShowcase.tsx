@@ -92,35 +92,22 @@ const ClientPortalShowcase: React.FC = () => {
                             className="relative aspect-video rounded-sm overflow-hidden bg-zinc-950 ring-1 ring-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
                         >
                             {isPlaying ? (
-                                <div className="relative w-full h-full bg-black">
-                                    {isIframeLoading && (
-                                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/90 pointer-events-none transition-opacity duration-300">
-                                            <div className="w-10 h-10 border-2 border-nexo-lime/20 border-t-nexo-lime rounded-full animate-spin mb-3" />
-                                            <span className="text-[10px] uppercase font-bold tracking-widest text-nexo-lime">Cargando Video...</span>
-                                        </div>
-                                    )}
-                                    <iframe
-                                        src={`https://iframe.mediadelivery.net/embed/${bunnyLibraryId}/${bunnyVideoId}?autoplay=true&loop=false&muted=false&preload=true&responsive=true`}
-                                        title={t('portal_showcase.video_caption')}
-                                        className="w-full h-full border-0 relative z-20"
-                                        allow="accelerometer; gyroscope; autoplay *; encrypted-media *; picture-in-picture *; fullscreen *;"
-                                        allowFullScreen
-                                        onLoad={() => setIsIframeLoading(false)}
-                                    />
-                                </div>
+                                <iframe
+                                    src={`https://iframe.mediadelivery.net/embed/${bunnyLibraryId}/${bunnyVideoId}?autoplay=true&loop=false&muted=false&preload=true&responsive=true`}
+                                    title={t('portal_showcase.video_caption')}
+                                    className="w-full h-full border-0"
+                                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                                    allowFullScreen
+                                />
                             ) : (
                                 <div
-                                    onClick={() => {
-                                        setIsIframeLoading(true);
-                                        setIsPlaying(true);
-                                    }}
+                                    onClick={() => setIsPlaying(true)}
                                     className="group relative w-full h-full cursor-pointer"
                                     role="button"
                                     tabIndex={0}
                                     onKeyDown={(e) => { 
                                         if (e.key === 'Enter' || e.key === ' ') { 
                                             e.preventDefault(); 
-                                            setIsIframeLoading(true);
                                             setIsPlaying(true); 
                                         } 
                                     }}
