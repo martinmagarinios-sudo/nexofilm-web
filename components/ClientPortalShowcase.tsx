@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import BunnyStreamModal from './BunnyStreamModal';
 
 const ClientPortalShowcase: React.FC = () => {
     const { t } = useTranslation();
     const [isVideoOpen, setIsVideoOpen] = useState(false);
+    const bunnyVideoId = "da216142-982e-447f-9dd5-db8ec683e5f4";
+    const bunnyLibraryId = "738019";
 
     const features = [
         {
@@ -206,47 +209,14 @@ const ClientPortalShowcase: React.FC = () => {
                 </div>
             </div>
 
-            {/* Modal de Video Nativo NexoFilm (100% Privado y Alta Calidad) */}
+            {/* Modal Bunny Stream Oficial (HLS Adaptativo 1080p con Nexo-Lime) */}
             {isVideoOpen && (
-                <div
-                    className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-3 sm:p-6 md:p-12 animate-fade-in"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label={t('portal_showcase.video_modal_title')}
-                    onClick={() => setIsVideoOpen(false)}
-                >
-                    <div
-                        className="relative w-full max-w-6xl aspect-video bg-black border border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.9)] rounded-sm overflow-hidden"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Barra Superior */}
-                        <div className="absolute top-0 inset-x-0 z-30 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none">
-                            <span className="text-white/90 text-xs sm:text-sm font-bold uppercase tracking-wider truncate pr-12 drop-shadow">
-                                {t('portal_showcase.video_modal_title')}
-                            </span>
-                            <button
-                                onClick={() => setIsVideoOpen(false)}
-                                className="pointer-events-auto ml-auto w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/70 hover:bg-nexo-lime text-white hover:text-black flex items-center justify-center transition-all duration-300 border border-white/10 hover:border-nexo-lime group shadow-lg cursor-pointer"
-                                aria-label="Cerrar video"
-                            >
-                                <svg className="w-4 h-4 stroke-current stroke-2 group-hover:rotate-90 transition-transform duration-300" viewBox="0 0 24 24" fill="none">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        {/* Reproductor de Video Nativo */}
-                        <video
-                            autoPlay
-                            controls
-                            playsInline
-                            className="w-full h-full object-contain"
-                        >
-                            <source src="/video/portfolio/VideoPortalClienteIA.mp4" type="video/mp4" />
-                            Tu navegador no soporta la reproducción de video.
-                        </video>
-                    </div>
-                </div>
+                <BunnyStreamModal
+                    libraryId={bunnyLibraryId}
+                    videoId={bunnyVideoId}
+                    title={t('portal_showcase.video_modal_title')}
+                    onClose={() => setIsVideoOpen(false)}
+                />
             )}
         </section>
     );

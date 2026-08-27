@@ -4,6 +4,7 @@ import { CONFIG } from '../data/config';
 import ProjectCard from './ProjectCard';
 
 import YouTubeModal from './YouTubeModal';
+import BunnyStreamModal from './BunnyStreamModal';
 
 const Portfolio: React.FC = () => {
   const { t } = useTranslation();
@@ -29,6 +30,10 @@ const Portfolio: React.FC = () => {
 
   const isYouTubeUrl = (url: string) => {
     return url.includes('youtube.com') || url.includes('youtu.be');
+  };
+
+  const isBunnyUrl = (url: string) => {
+    return url.includes('mediadelivery.net');
   };
 
   return (
@@ -58,9 +63,14 @@ const Portfolio: React.FC = () => {
           ))}
         </div>
 
-        {/* Modal de Video: Híbrido YouTube / MP4 */}
+        {/* Modal de Video: Bunny Stream / YouTube / MP4 Nativo */}
         {activeVideo && (
-          isYouTubeUrl(activeVideo) ? (
+          isBunnyUrl(activeVideo) ? (
+            <BunnyStreamModal
+              videoId={activeVideo}
+              onClose={() => setActiveVideo(null)}
+            />
+          ) : isYouTubeUrl(activeVideo) ? (
             <YouTubeModal
               videoId={activeVideo}
               onClose={() => setActiveVideo(null)}
