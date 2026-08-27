@@ -31,6 +31,15 @@ const COUNTRY_CODES = [
     { name: 'Francia', code: '+33' }
 ];
 
+const AVAILABLE_SERVICES = [
+    { id: 'video', label: 'Video Comercial / Corp.', icon: '🎬' },
+    { id: 'foto', label: 'Fotografía Profesional', icon: '📸' },
+    { id: 'streaming', label: 'Streaming en Vivo', icon: '📡' },
+    { id: 'ia_video', label: 'Producción con IA', icon: '⚡' },
+    { id: 'tecnica', label: 'Técnica & Pantallas', icon: '🎛️' },
+    { id: 'otros', label: 'Otros Servicios', icon: '✨' },
+];
+
 const PublicRequestForm: React.FC = () => {
     const { t } = useTranslation();
     const [projectTitle, setProjectTitle] = useState('');
@@ -42,7 +51,7 @@ const PublicRequestForm: React.FC = () => {
     const [coverageHours, setCoverageHours] = useState<number>(4);
     const [coverageTypes, setCoverageTypes] = useState<string[]>([]);
     const [guestsCount, setGuestsCount] = useState<number | ''>('');
-    const [phoneCountryCode, setPhoneCountryCode] = useState('');
+    const [phoneCountryCode, setPhoneCountryCode] = useState('+54 9');
     const [phoneLocalNumber, setPhoneLocalNumber] = useState('');
     const [clientEmail, setClientEmail] = useState('');
     const [clientNotes, setClientNotes] = useState('');
@@ -166,35 +175,15 @@ const PublicRequestForm: React.FC = () => {
                     zoom: 15,
                     disableDefaultUI: true,
                     styles: [
-                        { elementType: "geometry", stylers: [{ color: "#1a1a1a" }] },
+                        { elementType: "geometry", stylers: [{ color: "#121212" }] },
                         { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
-                        { elementType: "labels.text.fill", stylers: [{ color: "#888888" }] },
-                        { elementType: "labels.text.stroke", stylers: [{ color: "#1a1a1a" }] },
-                        {
-                            featureType: "administrative",
-                            elementType: "geometry",
-                            stylers: [{ color: "#555555" }]
-                        },
-                        {
-                            featureType: "poi",
-                            elementType: "geometry",
-                            stylers: [{ color: "#121212" }]
-                        },
-                        {
-                            featureType: "road",
-                            elementType: "geometry.fill",
-                            stylers: [{ color: "#252525" }]
-                        },
-                        {
-                            featureType: "road.highway",
-                            elementType: "geometry.fill",
-                            stylers: [{ color: "#333333" }]
-                        },
-                        {
-                            featureType: "water",
-                            elementType: "geometry",
-                            stylers: [{ color: "#0d0d0d" }]
-                        }
+                        { elementType: "labels.text.fill", stylers: [{ color: "#777777" }] },
+                        { elementType: "labels.text.stroke", stylers: [{ color: "#121212" }] },
+                        { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#444444" }] },
+                        { featureType: "poi", elementType: "geometry", stylers: [{ color: "#181818" }] },
+                        { featureType: "road", elementType: "geometry.fill", stylers: [{ color: "#222222" }] },
+                        { featureType: "road.highway", elementType: "geometry.fill", stylers: [{ color: "#2c2c2c" }] },
+                        { featureType: "water", elementType: "geometry", stylers: [{ color: "#0a0a0a" }] }
                     ]
                 });
 
@@ -202,7 +191,7 @@ const PublicRequestForm: React.FC = () => {
                     map: mapRef.current,
                     icon: {
                         path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-                        fillColor: '#ccff00',
+                        fillColor: '#bfe023',
                         fillOpacity: 1,
                         strokeWeight: 1.5,
                         strokeColor: '#000000',
@@ -307,7 +296,7 @@ const PublicRequestForm: React.FC = () => {
         try {
             if (coverageTypes.length === 0) {
                 setFormStatus('idle');
-                setErrorMsg('Por favor selecciona al menos un servicio requerido (Foto, Video o Streaming).');
+                setErrorMsg('Por favor seleccioná al menos un servicio requerido.');
                 return;
             }
 
@@ -345,7 +334,6 @@ const PublicRequestForm: React.FC = () => {
                     await handleFileUpload(selectedFile, data.project.access_token);
                 } catch (uploadErr) {
                     console.error("Error al subir el archivo:", uploadErr);
-                    // Seguimos igual para mostrar éxito del lead, aunque falló el archivo.
                 }
             }
 
@@ -359,7 +347,7 @@ const PublicRequestForm: React.FC = () => {
 
     if (formStatus === 'success') {
         return (
-            <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 pt-16">
+            <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 pt-16 font-sans">
                 <a 
                     href="/" 
                     className="mb-8 inline-block hover:opacity-80 transition-all duration-300 transform hover:scale-105"
@@ -367,16 +355,21 @@ const PublicRequestForm: React.FC = () => {
                 >
                     <Logo size="lg" />
                 </a>
-                <div className="bg-zinc-900/40 border border-nexo-lime/30 p-10 rounded-2xl shadow-[0_0_50px_rgba(204,255,0,0.1)] text-center max-w-lg w-full">
-                    <div className="text-6xl mb-6 animate-bounce">🎬</div>
-                    <h2 className="text-3xl font-bold text-white uppercase tracking-tight mb-4">¡Solicitud Enviada!</h2>
+                <div className="bg-zinc-950 border border-nexo-lime/40 p-10 md:p-12 rounded-2xl shadow-[0_0_60px_rgba(191,224,35,0.15)] text-center max-w-lg w-full">
+                    <div className="w-16 h-16 rounded-full bg-nexo-lime/10 border border-nexo-lime flex items-center justify-center mx-auto mb-6 text-nexo-lime text-2xl">
+                        ✓
+                    </div>
+                    <h2 className="text-3xl font-extrabold text-white uppercase tracking-tight mb-4">¡Solicitud Recibida!</h2>
                     <p className="text-zinc-400 text-sm leading-relaxed mb-8">
-                        Muchas gracias <span className="text-white font-semibold">{contactName}</span>. Hemos recibido tu solicitud para "{projectTitle}". 
+                        Muchas gracias <span className="text-white font-semibold">{contactName}</span>. Registramos tu proyecto <span className="text-nexo-lime">"{projectTitle}"</span> en nuestro sistema.
                         <br/><br/>
-                        Nuestro equipo se pondrá en contacto a la brevedad para armar tu propuesta a medida.
+                        Nuestro equipo comercial revisará tus requerimientos y te enviará una propuesta detallada a la brevedad.
                     </p>
-                    <a href="/" className="inline-block bg-nexo-lime hover:bg-white text-black font-bold uppercase tracking-widest text-xs px-8 py-4 rounded-lg transition-all shadow-lg hover:shadow-nexo-lime/20">
-                        Volver al Inicio
+                    <a 
+                        href="/" 
+                        className="inline-block bg-nexo-lime hover:bg-white text-black font-bold uppercase tracking-widest text-xs px-8 py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(191,224,35,0.3)] hover:shadow-white/20"
+                    >
+                        Volver a NexoFilm
                     </a>
                 </div>
             </div>
@@ -384,8 +377,9 @@ const PublicRequestForm: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-black flex justify-center p-6 pt-12 md:pt-16 pb-24">
+        <div className="min-h-screen bg-black flex justify-center p-6 pt-12 md:pt-16 pb-24 font-sans text-white">
             <div className="w-full max-w-3xl">
+                {/* Cabecera Principal */}
                 <div className="mb-10 text-center flex flex-col items-center">
                     <a 
                         href="/" 
@@ -394,257 +388,335 @@ const PublicRequestForm: React.FC = () => {
                     >
                         <Logo size="lg" />
                     </a>
-                    <h1 className="text-4xl md:text-5xl font-bold text-white uppercase tracking-tighter mb-4">
-                        CONTANOS TU IDEA Y LA COTIZAMOS
+                    <p className="text-nexo-lime text-[10px] md:text-[11px] font-black uppercase tracking-[0.4em] mb-2">
+                        Cotizador Online
+                    </p>
+                    <h1 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tight mb-3">
+                        Contanos tu idea y la cotizamos
                     </h1>
-                    <p className="text-zinc-400 max-w-xl mx-auto">
-                        Completá esta breve información y nosotros armamos un presupuesto detallado para tu próximo evento
+                    <p className="text-zinc-400 text-sm md:text-base font-light max-w-xl mx-auto leading-relaxed">
+                        Completá esta información clave y te armamos un presupuesto detallado y personalizado para tu proyecto.
                     </p>
                 </div>
 
-                <div className="bg-zinc-900/40 border border-white/5 p-6 md:p-8 rounded-xl shadow-2xl space-y-6">
+                {/* Tarjeta del Formulario */}
+                <div className="bg-zinc-950/80 border border-white/10 p-6 md:p-10 rounded-2xl shadow-2xl backdrop-blur-xl space-y-8">
                     {formStatus === 'error' && (
-                        <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded text-sm text-center">
+                        <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl text-sm text-center font-medium">
                             {errorMsg}
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Tu Nombre / Contacto <span className="text-nexo-lime">*</span></label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={contactName}
-                                    onChange={(e) => setContactName(e.target.value)}
-                                    className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                    placeholder="Ej: Sofía o Juan"
-                                />
+                    <form onSubmit={handleSubmit} className="space-y-8">
+                        {/* Bloque 1: Identificación y Contacto */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-2 border-b border-white/10 pb-3">
+                                <span className="text-nexo-lime text-xs font-black tracking-widest uppercase">01.</span>
+                                <h3 className="text-white text-xs font-bold uppercase tracking-wider">Información de Contacto</h3>
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Nombre del Evento / Proyecto <span className="text-nexo-lime">*</span></label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={projectTitle}
-                                    onChange={(e) => setProjectTitle(e.target.value)}
-                                    className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                    placeholder="Ej: Boda de Sofía / Comercial Marca X"
-                                />
-                            </div>
-                        </div>
 
-                        {/* Contacto */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-white/5 pt-6">
-                            <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Tu Correo Electrónico <span className="text-nexo-lime">*</span></label>
-                                <input
-                                    type="email"
-                                    required
-                                    value={clientEmail}
-                                    onChange={(e) => setClientEmail(e.target.value)}
-                                    className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                    placeholder="Ej: juan@correo.com"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Tu WhatsApp <span className="text-nexo-lime">*</span></label>
-                                <div className="flex gap-2 relative">
-                                    <div className="relative shrink-0">
-                                        <div 
-                                            onClick={() => setShowPhoneDropdown(!showPhoneDropdown)}
-                                            className="bg-black border border-white/10 rounded px-3 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime w-[90px] flex items-center justify-between cursor-pointer"
-                                        >
-                                            <span className={phoneCountryCode ? "text-white" : "text-zinc-500"}>{phoneCountryCode || 'Cód.'}</span>
-                                            <span className="text-[10px] text-zinc-500">▼</span>
-                                        </div>
-                                        
-                                        {showPhoneDropdown && (
-                                            <>
-                                                <div className="fixed inset-0 z-40" onClick={() => setShowPhoneDropdown(false)}></div>
-                                                <div className="absolute top-full left-0 mt-1 w-[200px] bg-zinc-900 border border-white/10 rounded-lg shadow-xl z-50 overflow-hidden">
-                                                    <div className="p-2 border-b border-white/10 relative z-50">
-                                                        <input 
-                                                            type="text" 
-                                                            placeholder="Buscar país o cód..." 
-                                                            value={phoneSearch}
-                                                            onChange={(e) => setPhoneSearch(e.target.value)}
-                                                            className="w-full bg-black border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-nexo-lime"
-                                                            autoFocus
-                                                        />
-                                                    </div>
-                                                    <div className="max-h-48 overflow-y-auto relative z-50">
-                                                        {COUNTRY_CODES.filter(c => c.name.toLowerCase().includes(phoneSearch.toLowerCase()) || c.code.includes(phoneSearch)).map((country, idx) => (
-                                                            <div 
-                                                                key={idx}
-                                                                onClick={() => {
-                                                                    setPhoneCountryCode(country.code);
-                                                                    setShowPhoneDropdown(false);
-                                                                    setPhoneSearch('');
-                                                                }}
-                                                                className="px-3 py-2 text-xs text-zinc-300 hover:bg-nexo-lime hover:text-black cursor-pointer flex justify-between items-center"
-                                                            >
-                                                                <span>{country.name}</span>
-                                                                <span className="font-bold opacity-70">{country.code}</span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider block">
+                                        Tu Nombre / Contacto <span className="text-nexo-lime">*</span>
+                                    </label>
                                     <input
                                         type="text"
                                         required
-                                        value={phoneLocalNumber}
-                                        onChange={(e) => setPhoneLocalNumber(e.target.value)}
-                                        className="flex-1 min-w-0 bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                        placeholder="11 5892 2379"
+                                        value={contactName}
+                                        onChange={(e) => setContactName(e.target.value)}
+                                        className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-nexo-lime focus:ring-1 focus:ring-nexo-lime transition-all placeholder:text-zinc-600"
+                                        placeholder="Ej: Sofía o Juan"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider block">
+                                        Nombre del Evento / Empresa <span className="text-nexo-lime">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={projectTitle}
+                                        onChange={(e) => setProjectTitle(e.target.value)}
+                                        className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-nexo-lime focus:ring-1 focus:ring-nexo-lime transition-all placeholder:text-zinc-600"
+                                        placeholder="Ej: Lanzamiento Marca X / Evento Anual"
                                     />
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-white/5 pt-6">
-                            <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Fecha Tentativa</label>
-                                <input
-                                    type="date"
-                                    value={eventDate}
-                                    onChange={(e) => setEventDate(e.target.value)}
-                                    className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Horario de Inicio</label>
-                                <input
-                                    type="time"
-                                    value={eventTime}
-                                    onChange={(e) => {
-                                        const start = e.target.value;
-                                        setEventTime(start);
-                                        if (eventEndTime) {
-                                            setCoverageHours(calculateHours(start, eventEndTime));
-                                        }
-                                    }}
-                                    className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Horario de Fin</label>
-                                <input
-                                    type="time"
-                                    value={eventEndTime}
-                                    onChange={(e) => {
-                                        const end = e.target.value;
-                                        setEventEndTime(end);
-                                        setCoverageHours(calculateHours(eventTime, end));
-                                    }}
-                                    className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Locación / Dirección</label>
-                            <input
-                                ref={inputRef}
-                                type="text"
-                                value={location}
-                                onChange={(e) => setLocation(e.target.value)}
-                                className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                placeholder="Ej: Salón Lahusen, CABA (Opcional si no lo tenés definido)"
-                            />
-                            {/* Mapa Preview */}
-                            <div className={`mt-2 rounded-xl overflow-hidden border transition-all duration-500 ${location ? 'h-[200px] border-white/10' : 'h-0 border-transparent'}`}>
-                                <div id="map-preview" className="w-full h-full bg-zinc-900/50 flex items-center justify-center">
-                                    <span className="text-zinc-600 text-sm">Buscando locación...</span>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider block">
+                                        Tu Correo Electrónico <span className="text-nexo-lime">*</span>
+                                    </label>
+                                    <input
+                                        type="email"
+                                        required
+                                        value={clientEmail}
+                                        onChange={(e) => setClientEmail(e.target.value)}
+                                        className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-nexo-lime focus:ring-1 focus:ring-nexo-lime transition-all placeholder:text-zinc-600"
+                                        placeholder="Ej: juan@empresa.com"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider block">
+                                        Tu WhatsApp <span className="text-nexo-lime">*</span>
+                                    </label>
+                                    <div className="flex gap-2 relative">
+                                        <div className="relative shrink-0">
+                                            <div 
+                                                onClick={() => setShowPhoneDropdown(!showPhoneDropdown)}
+                                                className="bg-black/60 border border-white/10 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:border-nexo-lime hover:border-white/20 w-[95px] flex items-center justify-between cursor-pointer transition-all"
+                                            >
+                                                <span className={phoneCountryCode ? "text-white font-medium text-xs" : "text-zinc-500"}>
+                                                    {phoneCountryCode || 'Cód.'}
+                                                </span>
+                                                <span className="text-[9px] text-zinc-500">▼</span>
+                                            </div>
+                                            
+                                            {showPhoneDropdown && (
+                                                <>
+                                                    <div className="fixed inset-0 z-40" onClick={() => setShowPhoneDropdown(false)}></div>
+                                                    <div className="absolute top-full left-0 mt-1.5 w-[220px] bg-zinc-950 border border-white/15 rounded-xl shadow-2xl z-50 overflow-hidden">
+                                                        <div className="p-2 border-b border-white/10 relative z-50">
+                                                            <input 
+                                                                type="text" 
+                                                                placeholder="Buscar país..." 
+                                                                value={phoneSearch}
+                                                                onChange={(e) => setPhoneSearch(e.target.value)}
+                                                                className="w-full bg-black border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-nexo-lime"
+                                                                autoFocus
+                                                            />
+                                                        </div>
+                                                        <div className="max-h-48 overflow-y-auto relative z-50">
+                                                            {COUNTRY_CODES.filter(c => c.name.toLowerCase().includes(phoneSearch.toLowerCase()) || c.code.includes(phoneSearch)).map((country, idx) => (
+                                                                <div 
+                                                                    key={idx}
+                                                                    onClick={() => {
+                                                                        setPhoneCountryCode(country.code);
+                                                                        setShowPhoneDropdown(false);
+                                                                        setPhoneSearch('');
+                                                                    }}
+                                                                    className="px-3 py-2 text-xs text-zinc-300 hover:bg-nexo-lime hover:text-black cursor-pointer flex justify-between items-center transition-colors"
+                                                                >
+                                                                    <span>{country.name}</span>
+                                                                    <span className="font-bold opacity-70">{country.code}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={phoneLocalNumber}
+                                            onChange={(e) => setPhoneLocalNumber(e.target.value)}
+                                            className="flex-1 min-w-0 bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-nexo-lime focus:ring-1 focus:ring-nexo-lime transition-all placeholder:text-zinc-600"
+                                            placeholder="11 5892 2379"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="space-y-2 bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.1)]">
-                                <label className="text-amber-500 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                                    <span>⏱️</span> Horas de Cobertura Estimadas <span className="text-amber-500">*</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    required
-                                    min="1"
-                                    value={coverageHours}
-                                    onChange={(e) => setCoverageHours(parseInt(e.target.value) || 0)}
-                                    className="w-full bg-black/50 border border-amber-500/50 rounded px-4 py-2.5 text-lg font-bold text-amber-400 focus:outline-none focus:border-amber-400 shadow-inner"
-                                />
-                                <span className="text-[10px] text-amber-500/70 block mt-1 leading-tight">Obligatorio. Podés estimarlo e ir ajustándolo luego.</span>
+                        {/* Bloque 2: Servicios Requeridos */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-nexo-lime text-xs font-black tracking-widest uppercase">02.</span>
+                                    <h3 className="text-white text-xs font-bold uppercase tracking-wider">
+                                        Servicios Requeridos <span className="text-nexo-lime">*</span>
+                                    </h3>
+                                </div>
+                                <span className="text-zinc-500 text-[11px]">Podés elegir múltiples</span>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Cantidad de Invitados</label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    value={guestsCount}
-                                    onChange={(e) => setGuestsCount(e.target.value === '' ? '' : parseInt(e.target.value) || 0)}
-                                    className="w-full bg-black border border-white/10 rounded px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
-                                    placeholder="Ej: 150"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider block flex items-center gap-1">
-                                    Servicios Requeridos <span className="text-nexo-lime font-bold">*</span>
-                                </label>
-                                <div className="flex gap-2 pt-1 flex-wrap">
-                                    {['foto', 'video', 'streaming', 'tecnica'].map((type) => (
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                {AVAILABLE_SERVICES.map((srv) => {
+                                    const isSelected = coverageTypes.includes(srv.id);
+                                    return (
                                         <button
-                                            key={type}
+                                            key={srv.id}
                                             type="button"
-                                            onClick={() => toggleCoverageType(type)}
-                                            className={`flex-1 min-w-[70px] py-2 rounded text-[10px] font-bold border capitalize transition-all ${coverageTypes.includes(type) ? 'bg-nexo-lime text-black border-nexo-lime shadow-[0_0_10px_rgba(204,255,0,0.2)]' : 'bg-black text-zinc-400 border-white/10 hover:border-white/20'}`}
+                                            onClick={() => toggleCoverageType(srv.id)}
+                                            className={`p-3.5 rounded-xl text-left border flex items-center gap-3 transition-all cursor-pointer ${
+                                                isSelected 
+                                                    ? 'bg-nexo-lime/10 border-nexo-lime text-nexo-lime shadow-[0_0_15px_rgba(191,224,35,0.2)] scale-[1.02]' 
+                                                    : 'bg-black/50 border-white/10 text-zinc-300 hover:border-white/25 hover:text-white'
+                                            }`}
                                         >
-                                            {type === 'tecnica' ? 'técnica' : type}
+                                            <span className="text-lg">{srv.icon}</span>
+                                            <span className="text-xs font-bold tracking-tight">{srv.label}</span>
                                         </button>
-                                    ))}
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Bloque 3: Fechas, Horas y Escala del Proyecto */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-2 border-b border-white/10 pb-3">
+                                <span className="text-nexo-lime text-xs font-black tracking-widest uppercase">03.</span>
+                                <h3 className="text-white text-xs font-bold uppercase tracking-wider">Tiempos y Escala</h3>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider block">
+                                        Fecha Tentativa
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={eventDate}
+                                        onChange={(e) => setEventDate(e.target.value)}
+                                        className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-nexo-lime focus:ring-1 focus:ring-nexo-lime transition-all"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider block">
+                                        Horario de Inicio
+                                    </label>
+                                    <input
+                                        type="time"
+                                        value={eventTime}
+                                        onChange={(e) => {
+                                            const start = e.target.value;
+                                            setEventTime(start);
+                                            if (eventEndTime) {
+                                                setCoverageHours(calculateHours(start, eventEndTime));
+                                            }
+                                        }}
+                                        className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-nexo-lime focus:ring-1 focus:ring-nexo-lime transition-all"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-zinc-400 text-xs font-semibold uppercase tracking-wider block">
+                                        Horario de Fin
+                                    </label>
+                                    <input
+                                        type="time"
+                                        value={eventEndTime}
+                                        onChange={(e) => {
+                                            const end = e.target.value;
+                                            setEventEndTime(end);
+                                            setCoverageHours(calculateHours(eventTime, end));
+                                        }}
+                                        className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-nexo-lime focus:ring-1 focus:ring-nexo-lime transition-all"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Cajas Armónicas de Horas e Invitados */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2 bg-black/40 border border-white/10 p-4 rounded-xl">
+                                    <label className="text-zinc-300 text-xs font-bold uppercase tracking-wider flex items-center justify-between">
+                                        <span className="flex items-center gap-1.5">
+                                            <span>⏱️</span> Horas Estimadas de Cobertura
+                                        </span>
+                                        <span className="text-nexo-lime font-mono text-xs">{coverageHours} hs</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        required
+                                        min="1"
+                                        max="72"
+                                        value={coverageHours}
+                                        onChange={(e) => setCoverageHours(parseInt(e.target.value) || 1)}
+                                        className="w-full bg-black/80 border border-white/10 rounded-lg px-4 py-2.5 text-base font-bold text-white focus:outline-none focus:border-nexo-lime focus:ring-1 focus:ring-nexo-lime transition-all"
+                                    />
+                                    <p className="text-[11px] text-zinc-500">
+                                        Jornada o duración aproximada del rodaje/cobertura.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-2 bg-black/40 border border-white/10 p-4 rounded-xl">
+                                    <label className="text-zinc-300 text-xs font-bold uppercase tracking-wider flex items-center justify-between">
+                                        <span className="flex items-center gap-1.5">
+                                            <span>👥</span> Invitados / Audiencia (Opcional)
+                                        </span>
+                                        <span className="text-zinc-500 text-[10px]">Si aplica</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={guestsCount}
+                                        onChange={(e) => setGuestsCount(e.target.value === '' ? '' : parseInt(e.target.value) || 0)}
+                                        className="w-full bg-black/80 border border-white/10 rounded-lg px-4 py-2.5 text-base font-medium text-white focus:outline-none focus:border-nexo-lime focus:ring-1 focus:ring-nexo-lime transition-all placeholder:text-zinc-700"
+                                        placeholder="Ej: 150 (Para eventos presenciales)"
+                                    />
+                                    <p className="text-[11px] text-zinc-500">
+                                        Ayuda a dimensionar la cantidad de cámaras y equipo.
+                                    </p>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="space-y-2 border-t border-white/5 pt-6">
-                            <label className="text-zinc-400 text-xs font-bold uppercase tracking-wider">Cuentanos más detalles sobre tu idea</label>
+                        {/* Bloque 4: Locación / Dirección */}
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2 border-b border-white/10 pb-3">
+                                <span className="text-nexo-lime text-xs font-black tracking-widest uppercase">04.</span>
+                                <h3 className="text-white text-xs font-bold uppercase tracking-wider">Locación o Espacio</h3>
+                            </div>
+
+                            <div className="space-y-2">
+                                <input
+                                    ref={inputRef}
+                                    type="text"
+                                    value={location}
+                                    onChange={(e) => setLocation(e.target.value)}
+                                    className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-nexo-lime focus:ring-1 focus:ring-nexo-lime transition-all placeholder:text-zinc-600"
+                                    placeholder="Ej: Salón Lahusen, CABA (Opcional si es en estudio o remoto)"
+                                />
+                                {/* Mapa Preview con Estilo Dark Minimalista */}
+                                <div className={`rounded-xl overflow-hidden border transition-all duration-500 ${location ? 'h-[200px] border-white/10 mt-3' : 'h-0 border-transparent'}`}>
+                                    <div id="map-preview" className="w-full h-full bg-zinc-900/50 flex items-center justify-center">
+                                        <span className="text-zinc-500 text-xs">Cargando visualización del mapa...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Bloque 5: Detalles y Notas */}
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2 border-b border-white/10 pb-3">
+                                <span className="text-nexo-lime text-xs font-black tracking-widest uppercase">05.</span>
+                                <h3 className="text-white text-xs font-bold uppercase tracking-wider">Detalles Adicionales</h3>
+                            </div>
+
                             <textarea
                                 value={clientNotes}
                                 onChange={(e) => setClientNotes(e.target.value)}
-                                className="w-full bg-black border border-white/10 rounded px-4 py-3 text-sm text-white focus:outline-none focus:border-nexo-lime h-24 resize-none"
-                                placeholder="Cualquier información adicional que nos ayude a armar la cotización ideal..."
-                            ></textarea>
+                                className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-nexo-lime focus:ring-1 focus:ring-nexo-lime h-28 resize-none transition-all placeholder:text-zinc-600"
+                                placeholder="Contanos cualquier detalle sobre el estilo, objetivo comercial, referencias o necesidades particulares..."
+                            />
                         </div>
 
-                        {/* Zona de Ingesta de Documentos */}
-                        <div className="border-t border-white/5 pt-6 space-y-3">
-                            <h3 className="text-zinc-400 text-xs font-bold uppercase tracking-wider block">⚡ ¿Ya tenés tu solicitud armada?</h3>
-                            <p className="text-zinc-500 text-[11px]">
-                                Subí tu pliego, briefing técnico o documento en formato PDF o Word para adjuntarlo a tu solicitud.
-                            </p>
+                        {/* Bloque 6: Ingesta de Briefing / Pliego */}
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2 border-b border-white/10 pb-3">
+                                <span className="text-nexo-lime text-xs font-black tracking-widest uppercase">06.</span>
+                                <h3 className="text-white text-xs font-bold uppercase tracking-wider">¿Tenés un Brief o Pliego Técnico?</h3>
+                            </div>
                             
                             <div 
                                 onDragEnter={handleDrag}
                                 onDragOver={handleDrag}
                                 onDragLeave={handleDrag}
                                 onDrop={handleDrop}
-                                className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-all ${
+                                className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${
                                     dragActive 
-                                        ? 'border-nexo-lime bg-nexo-lime/5 shadow-[0_0_15px_rgba(204,255,0,0.1)]' 
-                                        : 'border-white/10 hover:border-white/20 bg-black/20'
+                                        ? 'border-nexo-lime bg-nexo-lime/10 shadow-[0_0_20px_rgba(191,224,35,0.15)]' 
+                                        : 'border-white/10 hover:border-white/25 bg-black/30'
                                 }`}
                             >
-                                <div className="space-y-3">
-                                    <div className="text-3xl opacity-50 mb-2">📄</div>
+                                <div className="space-y-2">
+                                    <div className="text-3xl opacity-70 mb-1">📄</div>
                                     <p className="text-sm text-white font-medium">
                                         Arrastrá tu archivo acá o{' '}
-                                        <label className="text-nexo-lime hover:underline cursor-pointer">
-                                            examiná
+                                        <label className="text-nexo-lime font-bold hover:underline cursor-pointer">
+                                            examiná en tu equipo
                                             <input 
                                                 type="file" 
                                                 className="hidden" 
@@ -657,26 +729,34 @@ const PublicRequestForm: React.FC = () => {
                                             />
                                         </label>
                                     </p>
-                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest">PDF, DOC, DOCX (Max 5MB)</p>
+                                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest">
+                                        Formatos admitidos: PDF, DOC, DOCX (Hasta 5MB)
+                                    </p>
                                 </div>
                             </div>
                             
                             {uploadError && (
-                                <p className="text-red-400 text-xs text-center mt-2">{uploadError}</p>
+                                <p className="text-red-400 text-xs text-center mt-2 font-medium">{uploadError}</p>
                             )}
                             {uploadSuccess && (
-                                <p className="text-nexo-lime text-xs text-center mt-2">{uploadSuccess}</p>
+                                <p className="text-nexo-lime text-xs text-center mt-2 font-medium flex items-center justify-center gap-1">
+                                    <span>✓</span> {uploadSuccess}
+                                </p>
                             )}
                         </div>
 
+                        {/* Botón de Envío */}
                         <div className="pt-4">
                             <button
                                 type="submit"
                                 disabled={formStatus === 'sending'}
-                                className="w-full bg-nexo-lime hover:bg-white text-black font-bold uppercase tracking-widest text-sm py-4 rounded-lg transition-all shadow-[0_0_20px_rgba(204,255,0,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full bg-nexo-lime hover:bg-white text-black font-extrabold uppercase tracking-widest text-sm py-4 rounded-xl transition-all shadow-[0_0_25px_rgba(191,224,35,0.3)] hover:shadow-[0_0_35px_rgba(255,255,255,0.4)] disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-0.5 cursor-pointer"
                             >
-                                {formStatus === 'sending' ? 'Enviando...' : 'Solicitar Presupuesto'}
+                                {formStatus === 'sending' ? 'Procesando Solicitud...' : 'Solicitar Presupuesto'}
                             </button>
+                            <p className="text-center text-[11px] text-zinc-500 mt-3">
+                                Respuesta garantizada en 24 horas hábiles con asesoramiento técnico directo.
+                            </p>
                         </div>
                     </form>
                 </div>
