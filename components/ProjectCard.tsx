@@ -15,6 +15,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isHovering, setIsHovering] = useState(false);
     const [isPlayingInline, setIsPlayingInline] = useState(false);
+    const [isIframeLoading, setIsIframeLoading] = useState(true);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -82,6 +83,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
 
     const handleClick = () => {
         if (project.embedUrl || project.videoUrl) {
+            setIsIframeLoading(true);
             setIsPlayingInline(true);
         } else if (project.category !== 'Foto Producto') {
             window.open(project.behanceUrl, '_blank');
@@ -117,28 +119,39 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
                 {isPlayingInline ? (
                     /* --- MODO REPRODUCCIÓN DIRECTA EN TARJETA --- */
                     <div className="relative w-full h-full bg-black z-20" onClick={(e) => e.stopPropagation()}>
+                        {/* Spinner de carga inmediata mientras se inicializa el reproductor */}
+                        {isIframeLoading && (
+                            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/90 pointer-events-none transition-opacity duration-300">
+                                <div className="w-10 h-10 border-2 border-nexo-lime/20 border-t-nexo-lime rounded-full animate-spin mb-3" />
+                                <span className="text-[10px] uppercase font-bold tracking-widest text-nexo-lime">Cargando Video...</span>
+                            </div>
+                        )}
+
                         {isBunny ? (
                             <iframe
                                 src={getBunnyEmbedSrc(project.embedUrl!)}
                                 title={project.title}
-                                className="w-full h-full border-0"
-                                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                                className="w-full h-full border-0 relative z-20"
+                                allow="accelerometer; gyroscope; autoplay *; encrypted-media *; picture-in-picture *; fullscreen *;"
                                 allowFullScreen
+                                onLoad={() => setIsIframeLoading(false)}
                             />
                         ) : isYT ? (
                             <iframe
                                 src={getYouTubeEmbedSrc(project.embedUrl!)}
                                 title={project.title}
-                                className="w-full h-full border-0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                className="w-full h-full border-0 relative z-20"
+                                allow="accelerometer; autoplay *; clipboard-write; encrypted-media *; gyroscope; picture-in-picture *; fullscreen *;"
                                 allowFullScreen
+                                onLoad={() => setIsIframeLoading(false)}
                             />
                         ) : (
                             <video
                                 autoPlay
                                 controls
                                 playsInline
-                                className="w-full h-full object-contain"
+                                onLoadedData={() => setIsIframeLoading(false)}
+                                className="w-full h-full object-contain relative z-20"
                             >
                                 <source src={project.videoUrl} type="video/mp4" />
                             </video>
