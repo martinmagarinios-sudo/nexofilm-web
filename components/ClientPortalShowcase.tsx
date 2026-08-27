@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 const ClientPortalShowcase: React.FC = () => {
     const { t } = useTranslation();
     const [isPlaying, setIsPlaying] = useState(false);
+    const [isCopied, setIsCopied] = useState(false);
     const bunnyVideoId = "da216142-982e-447f-9dd5-db8ec683e5f4";
     const bunnyLibraryId = "738019";
 
@@ -17,9 +18,31 @@ const ClientPortalShowcase: React.FC = () => {
         return () => window.removeEventListener('nexofilm:play-video', handleGlobalPlay);
     }, []);
 
+    // Auto-scroll / Auto-play con deep-link
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const hasHash = window.location.hash === '#portal-clientes' || window.location.hash === '#portal-ia';
+            const params = new URLSearchParams(window.location.search);
+            const hasParam = params.get('video') === 'portal-ia' || params.get('video') === 'portal';
+            if (hasHash || hasParam) {
+                setTimeout(() => {
+                    startPlaying();
+                }, 600);
+            }
+        }
+    }, []);
+
     const startPlaying = () => {
         setIsPlaying(true);
         window.dispatchEvent(new CustomEvent('nexofilm:play-video', { detail: 'portal' }));
+    };
+
+    const copyShareLink = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const url = "https://nexofilm.com/#portal-clientes";
+        navigator.clipboard.writeText(url);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
     };
 
     const features = [
@@ -74,7 +97,7 @@ const ClientPortalShowcase: React.FC = () => {
     ];
 
     return (
-        <section id="portal-cliente" className="py-24 md:py-36 bg-black border-b border-white/5 relative overflow-hidden">
+        <section id="portal-clientes" className="py-24 md:py-36 bg-black border-b border-white/5 relative overflow-hidden">
             {/* Luces de fondo decorativas */}
             <div className="absolute top-1/4 -left-32 w-96 h-96 bg-nexo-lime/10 blur-[130px] rounded-full pointer-events-none" />
             <div className="absolute bottom-10 right-0 w-80 h-80 bg-zinc-800/20 blur-[120px] rounded-full pointer-events-none" />
@@ -152,7 +175,7 @@ const ClientPortalShowcase: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    {/* Pie del Video (Limpio, sin textos redundantes) */}
+                                    {/* Pie del Video */}
                                     <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
                                         <span className="text-[11px] uppercase tracking-wider text-white font-bold">
                                             {t('portal_showcase.video_caption')}
@@ -160,6 +183,45 @@ const ClientPortalShowcase: React.FC = () => {
                                     </div>
                                 </div>
                             )}
+                        </div>
+
+                        {/* Barra para compartir video del portal */}
+                        <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-4">
+                            <span className="text-[9px] uppercase tracking-[0.2em] text-zinc-500 font-bold">
+                                Compartir Video
+                            </span>
+                            <div className="flex items-center gap-2.5">
+                                <a 
+                                    href={`https://wa.me/?text=${encodeURIComponent("Conocé el Portal de Clientes con IA de NexoFilm: https://nexofilm.com/#portal-clientes")}`} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-nexo-lime hover:text-black text-zinc-400 transition-all cursor-pointer"
+                                    title="Compartir por WhatsApp"
+                                >
+                                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.246 2.248 3.484 5.232 3.484 8.412-.003 6.557-5.338 11.892-11.893 11.892-1.997-.001-3.951-.5-5.688-1.448l-6.309 1.656zm6.29-4.461l.303.18c1.597.946 3.419 1.446 5.289 1.447h.005c5.444 0 9.873-4.43 9.875-9.875 0-2.639-1.027-5.12-2.892-6.988-1.865-1.867-4.348-2.895-6.99-2.896-5.445 0-9.873 4.43-9.875 9.876-.001 2.11.539 4.161 1.564 5.948l.199.345-.996 3.641 3.729-.978zm11.233-7.236c-.3-.15-1.773-.875-2.048-.975-.275-.1-.475-.15-.675.15s-.775.975-.95 1.175-.35.225-.65.075c-.3-.15-1.267-.467-2.413-1.489-.892-.796-1.493-1.778-1.668-2.078-.175-.3-.018-.462.13-.61.135-.133.3-.35.45-.525.15-.175.2-.3.3-.5s.05-.375-.025-.525-.675-1.625-.925-2.225c-.244-.589-.491-.51-.675-.519-.175-.009-.375-.01-.575-.01s-.525.075-.8.375c-.275.3-1.05 1.025-1.05 2.5s1.075 2.9 1.225 3.1c.15.2 2.116 3.231 5.126 4.532.715.311 1.273.497 1.708.635.719.227 1.373.195 1.89.117.577-.088 1.773-.725 2.023-1.425.25-.7.25-1.3.175-1.425-.075-.125-.275-.2-.575-.35z" /></svg>
+                                </a>
+                                <a 
+                                    href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent("https://nexofilm.com/#portal-clientes")}`} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white hover:text-black text-zinc-400 transition-all cursor-pointer"
+                                    title="Compartir en LinkedIn"
+                                >
+                                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg>
+                                </a>
+                                <button 
+                                    onClick={copyShareLink} 
+                                    className="relative w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-nexo-lime hover:text-black text-zinc-400 transition-all cursor-pointer"
+                                    title="Copiar enlace directo"
+                                >
+                                    {isCopied && (
+                                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-nexo-lime text-black text-[8px] font-bold px-2 py-1 rounded-sm uppercase whitespace-nowrap shadow-lg">
+                                            ¡Copiado!
+                                        </span>
+                                    )}
+                                    <svg className="w-3.5 h-3.5 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
