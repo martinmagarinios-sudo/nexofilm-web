@@ -154,32 +154,41 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                     </div>
-                ) : (project.videoUrl || isBunny || isYT) ? (
-                    /* --- MODO VIDEO / PREVIEW DE VIDEO --- */
+                ) : (isBunny || isYT || project.videoUrl) ? (
+                    /* --- MODO VIDEO (BUNNY STREAM / YOUTUBE / NATIVO) --- */
                     <>
-                        {project.videoUrl ? (
+                        {isBunny && project.embedUrl ? (
+                            <img
+                                src={`https://vz-738019-b.b-cdn.net/${project.embedUrl.split('/').pop()}/thumbnail.jpg`}
+                                alt={project.title}
+                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                                loading="eager"
+                                decoding="async"
+                            />
+                        ) : project.videoUrl ? (
                             <video
                                 ref={videoRef}
                                 muted
                                 playsInline
                                 preload="metadata"
                                 aria-label={`Video: ${project.title} - NexoFilm`}
-                                {...(project.imageUrl ? { poster: project.imageUrl } : (isBunny && project.embedUrl ? { poster: `https://vz-738019-b.b-cdn.net/${project.embedUrl.split('/').pop()}/thumbnail.jpg` } : {}))}
+                                {...(project.imageUrl ? { poster: project.imageUrl } : {})}
                                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                             >
                                 <source src={`${project.videoUrl}#t=0.5`} type="video/mp4" />
                             </video>
                         ) : (
                             <img
-                                src={displayImage || (isBunny && project.embedUrl ? `https://vz-738019-b.b-cdn.net/${project.embedUrl.split('/').pop()}/thumbnail.jpg` : '/img/portfolio/FotoPortalClienteIA.jpg')}
+                                src={displayImage || '/img/portfolio/FotoPortalClienteIA.jpg'}
                                 alt={project.title}
                                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-                                loading="lazy"
+                                loading="eager"
+                                decoding="async"
                             />
                         )}
 
                         {/* Overlay con botón Play */}
-                        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 flex items-center justify-center transition-all duration-500">
+                        <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 flex items-center justify-center transition-all duration-500">
                             <div className="w-16 h-16 md:w-20 md:h-20 border-2 border-nexo-lime rounded-full flex items-center justify-center text-nexo-lime scale-90 group-hover:scale-100 transition-all duration-500 group-hover:bg-nexo-lime group-hover:text-black shadow-2xl">
                                 <svg className="w-7 h-7 md:w-8 md:h-8 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                             </div>
