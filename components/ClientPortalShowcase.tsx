@@ -67,12 +67,11 @@ const ClientPortalShowcase: React.FC = () => {
             <div className="container mx-auto px-6 relative z-10">
                 {/* Cabecera de la sección */}
                 <div className="max-w-4xl mx-auto text-center mb-16 md:mb-20 space-y-4">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-nexo-lime/10 border border-nexo-lime/30 text-nexo-lime text-[10px] font-black uppercase tracking-[0.35em] rounded-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-nexo-lime animate-pulse" />
+                    <p className="text-nexo-lime text-[10px] md:text-[11px] font-black uppercase tracking-[0.4em]">
                         {t('portal_showcase.badge')}
-                    </div>
+                    </p>
 
-                    <h2 className="text-3xl md:text-6xl font-bold uppercase tracking-tighter leading-[1.05] text-white">
+                    <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-[1.05] text-white">
                         {t('portal_showcase.title_main')}{' '}
                         <span className="text-nexo-lime italic font-light block md:inline">
                             {t('portal_showcase.title_highlight')}
