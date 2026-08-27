@@ -4,9 +4,23 @@ import { useTranslation } from 'react-i18next';
 const ClientPortalShowcase: React.FC = () => {
     const { t } = useTranslation();
     const [isPlaying, setIsPlaying] = useState(false);
-    const [isIframeLoading, setIsIframeLoading] = useState(true);
     const bunnyVideoId = "da216142-982e-447f-9dd5-db8ec683e5f4";
     const bunnyLibraryId = "738019";
+
+    React.useEffect(() => {
+        const handleGlobalPlay = (e: any) => {
+            if (e.detail !== 'portal') {
+                setIsPlaying(false);
+            }
+        };
+        window.addEventListener('nexofilm:play-video', handleGlobalPlay);
+        return () => window.removeEventListener('nexofilm:play-video', handleGlobalPlay);
+    }, []);
+
+    const startPlaying = () => {
+        setIsPlaying(true);
+        window.dispatchEvent(new CustomEvent('nexofilm:play-video', { detail: 'portal' }));
+    };
 
     const features = [
         {
@@ -101,14 +115,14 @@ const ClientPortalShowcase: React.FC = () => {
                                 />
                             ) : (
                                 <div
-                                    onClick={() => setIsPlaying(true)}
+                                    onClick={startPlaying}
                                     className="group relative w-full h-full cursor-pointer"
                                     role="button"
                                     tabIndex={0}
                                     onKeyDown={(e) => { 
                                         if (e.key === 'Enter' || e.key === ' ') { 
                                             e.preventDefault(); 
-                                            setIsPlaying(true); 
+                                            startPlaying(); 
                                         } 
                                     }}
                                     aria-label="Reproducir video de presentación del Portal de Clientes con IA"

@@ -36,6 +36,27 @@ const Portfolio: React.FC = () => {
     return url.includes('mediadelivery.net');
   };
 
+  const [activePlayingId, setActivePlayingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleGlobalPlay = (e: any) => {
+      if (e.detail !== 'portfolio') {
+        setActivePlayingId(null);
+      }
+    };
+    window.addEventListener('nexofilm:play-video', handleGlobalPlay);
+    return () => window.removeEventListener('nexofilm:play-video', handleGlobalPlay);
+  }, []);
+
+  const handlePlayInline = (id: string) => {
+    setActivePlayingId(id);
+    window.dispatchEvent(new CustomEvent('nexofilm:play-video', { detail: 'portfolio' }));
+  };
+
+  const handleStopInline = () => {
+    setActivePlayingId(null);
+  };
+
   return (
     <section id="portfolio" className="py-20 md:py-32 bg-black border-b border-white/5 relative">
       <div className="container mx-auto px-6">
@@ -59,6 +80,9 @@ const Portfolio: React.FC = () => {
               onVideoClick={(url) => setActiveVideo(url)}
               onCopyLink={handleCopyLink}
               copiedId={copiedId}
+              isPlayingInline={activePlayingId === project.id}
+              onPlayInline={() => handlePlayInline(project.id)}
+              onStopInline={handleStopInline}
             />
           ))}
         </div>

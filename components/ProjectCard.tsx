@@ -8,14 +8,23 @@ interface ProjectCardProps {
     onVideoClick: (url: string) => void;
     onCopyLink: (url: string, id: string) => void;
     copiedId: string | null;
+    isPlayingInline: boolean;
+    onPlayInline: () => void;
+    onStopInline: () => void;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopyLink, copiedId }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ 
+    project, 
+    onVideoClick, 
+    onCopyLink, 
+    copiedId,
+    isPlayingInline,
+    onPlayInline,
+    onStopInline
+}) => {
     const { t } = useTranslation();
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isHovering, setIsHovering] = useState(false);
-    const [isPlayingInline, setIsPlayingInline] = useState(false);
-    const [isIframeLoading, setIsIframeLoading] = useState(true);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -83,8 +92,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
 
     const handleClick = () => {
         if (project.embedUrl || project.videoUrl) {
-            setIsIframeLoading(true);
-            setIsPlayingInline(true);
+            onPlayInline();
         } else if (project.category !== 'Foto Producto') {
             window.open(project.behanceUrl, '_blank');
         }
@@ -148,7 +156,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
 
                         {/* Botón para volver a la portada */}
                         <button
-                            onClick={(e) => { e.stopPropagation(); setIsPlayingInline(false); }}
+                            onClick={(e) => { e.stopPropagation(); onStopInline(); }}
                             className="absolute top-3 right-3 z-30 p-2 bg-black/80 hover:bg-nexo-lime hover:text-black text-white rounded-full transition-colors cursor-pointer shadow-lg border border-white/10"
                             aria-label="Cerrar video"
                             title="Volver a la portada"
