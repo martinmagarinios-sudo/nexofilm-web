@@ -154,20 +154,29 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                     </div>
-                ) : project.videoUrl ? (
-                    /* --- MODO PREVIEW VIDEO (HOVER) --- */
+                ) : (project.videoUrl || isBunny || isYT) ? (
+                    /* --- MODO VIDEO / PREVIEW DE VIDEO --- */
                     <>
-                        <video
-                            ref={videoRef}
-                            muted
-                            playsInline
-                            preload="metadata"
-                            aria-label={`Video: ${project.title} - NexoFilm`}
-                            {...(project.imageUrl ? { poster: project.imageUrl } : {})}
-                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-                        >
-                            <source src={`${project.videoUrl}#t=0.5`} type="video/mp4" />
-                        </video>
+                        {project.videoUrl ? (
+                            <video
+                                ref={videoRef}
+                                muted
+                                playsInline
+                                preload="metadata"
+                                aria-label={`Video: ${project.title} - NexoFilm`}
+                                {...(project.imageUrl ? { poster: project.imageUrl } : (isBunny && project.embedUrl ? { poster: `https://vz-738019-b.b-cdn.net/${project.embedUrl.split('/').pop()}/thumbnail.jpg` } : {}))}
+                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                            >
+                                <source src={`${project.videoUrl}#t=0.5`} type="video/mp4" />
+                            </video>
+                        ) : (
+                            <img
+                                src={displayImage || (isBunny && project.embedUrl ? `https://vz-738019-b.b-cdn.net/${project.embedUrl.split('/').pop()}/thumbnail.jpg` : '/img/portfolio/FotoPortalClienteIA.jpg')}
+                                alt={project.title}
+                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                                loading="lazy"
+                            />
+                        )}
 
                         {/* Overlay con botón Play */}
                         <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 flex items-center justify-center transition-all duration-500">
@@ -191,7 +200,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
                         ))}
                     </div>
                 ) : (
-                    /* --- MODO IMAGEN SIMPLE / LANDSCAPE --- */
+                    /* --- MODO FOTOGRAFÍA / BEHANCE --- */
                     <div className="w-full h-full absolute inset-0 transition-transform duration-1000 group-hover:scale-105">
                         <WebGLHoverImage
                             imageSrc={displayImage}
@@ -201,31 +210,16 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
                         {/* Overlay para fotos / behance */}
                         <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-500 ${isHovering ? 'opacity-100 bg-black/60' : 'opacity-0'}`}>
                             <div className="w-16 h-16 md:w-20 md:h-20 border-2 border-nexo-lime rounded-full flex items-center justify-center text-nexo-lime scale-90 group-hover:scale-100 transition-all duration-500 group-hover:bg-nexo-lime group-hover:text-black">
-                                {(project.embedUrl || project.videoUrl) ? (
-                                    <svg className="w-7 h-7 md:w-8 md:h-8 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                                ) : (
-                                    <svg className="w-7 h-7 md:w-8 md:h-8 fill-current" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" /></svg>
-                                )}
+                                <svg className="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" /></svg>
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* Overlay */}
-                <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-500 ${project.videoUrl || isHovering ? 'opacity-100 group-hover:bg-black/60' : 'opacity-0 group-hover:opacity-100 bg-black/60'}`}>
-                    <div className="w-20 h-20 border-2 border-nexo-lime rounded-full flex items-center justify-center text-nexo-lime scale-90 group-hover:scale-100 transition-all duration-500 hover:bg-nexo-lime hover:text-black">
-                        {(project.embedUrl || project.videoUrl) ? (
-                            <svg className="w-8 h-8 fill-current translate-x-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                        ) : (
-                            <svg className="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" /></svg>
-                        )}
-                    </div>
-                </div>
-
                 {/* Indicador de Galería */}
                 {project.gallery && project.gallery.length > 1 && isHovering && (
                     <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-10">
-                        {project.gallery.slice(0, 5).map((_, idx) => ( // Limitamos a 5 dots
+                        {project.gallery.slice(0, 5).map((_, idx) => (
                             <div
                                 key={idx}
                                 className={`w-1.5 h-1.5 rounded-full transition-colors ${idx === (currentImageIndex % 5) ? 'bg-nexo-lime' : 'bg-white/50'}`}
