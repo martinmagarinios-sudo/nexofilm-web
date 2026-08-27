@@ -44,15 +44,16 @@ const BunnyStreamModal: React.FC<BunnyStreamModalProps> = ({
 
     return (
         <div
-            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-3 sm:p-6 md:p-12 animate-fade-in"
+            className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-3 sm:p-6 md:p-12 animate-fade-in"
             role="dialog"
             aria-modal="true"
             aria-label={title || "Reproductor de Video NexoFilm"}
             onClick={onClose}
         >
-            {/* Contenedor del video */}
+            {/* Contenedor del video con aceleración por hardware */}
             <div
                 className="relative w-full max-w-6xl aspect-video bg-black rounded-sm overflow-hidden shadow-[0_0_60px_rgba(0,0,0,0.9)] ring-1 ring-white/10"
+                style={{ transform: 'translateZ(0)' }}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Barra superior con título y botón de cerrar */}
@@ -78,7 +79,7 @@ const BunnyStreamModal: React.FC<BunnyStreamModalProps> = ({
                     src={`https://iframe.mediadelivery.net/embed/${cleanLib}/${cleanVid}?autoplay=true&loop=false&muted=false&preload=true&responsive=true`}
                     title={title || "NexoFilm Video Player"}
                     className="w-full h-full border-0"
-                    loading="lazy"
+                    loading="eager"
                     allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
                     allowFullScreen
                 />
