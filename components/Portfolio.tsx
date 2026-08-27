@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { CONFIG } from '../data/config';
 import ProjectCard from './ProjectCard';
 
+import YouTubeModal from './YouTubeModal';
+
 const Portfolio: React.FC = () => {
   const { t } = useTranslation();
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -23,6 +25,10 @@ const Portfolio: React.FC = () => {
     navigator.clipboard.writeText(url);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const isYouTubeUrl = (url: string) => {
+    return url.includes('youtube.com') || url.includes('youtu.be');
   };
 
   return (
@@ -53,32 +59,38 @@ const Portfolio: React.FC = () => {
           ))}
         </div>
 
-        {/* Modal de Video */}
+        {/* Modal de Video: Híbrido YouTube / MP4 */}
         {activeVideo && (
-          <div
-            className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 md:p-12"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Visor de medios"
-          >
-            {/* Backdrop interactivo para cerrar */}
-            <div 
-              className="absolute inset-0 cursor-pointer"
-              onClick={() => setActiveVideo(null)}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') setActiveVideo(null); }}
-              role="button"
-              aria-label="Cerrar video"
-              tabIndex={0}
+          isYouTubeUrl(activeVideo) ? (
+            <YouTubeModal
+              videoId={activeVideo}
+              onClose={() => setActiveVideo(null)}
             />
-            {/* Contenedor principal de video */}
-            <div className="relative z-10 w-full max-w-6xl aspect-video bg-black border border-white/10 shadow-2xl rounded-lg overflow-hidden">
-              <button
+          ) : (
+            <div
+              className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 md:p-12 animate-fade-in"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Visor de medios"
+            >
+              {/* Backdrop interactivo para cerrar */}
+              <div 
+                className="absolute inset-0 cursor-pointer"
                 onClick={() => setActiveVideo(null)}
-                className="absolute top-4 right-4 z-50 p-2 bg-black/50 hover:bg-nexo-lime hover:text-black rounded-full transition-colors text-white"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-              {activeVideo.match(/\.(mp4|webm|ogg)$/i) ? (
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') setActiveVideo(null); }}
+                role="button"
+                aria-label="Cerrar video"
+                tabIndex={0}
+              />
+              {/* Contenedor principal de video */}
+              <div className="relative z-10 w-full max-w-6xl aspect-video bg-black border border-white/10 shadow-2xl rounded-sm overflow-hidden">
+                <button
+                  onClick={() => setActiveVideo(null)}
+                  className="absolute top-4 right-4 z-50 p-2 bg-black/70 hover:bg-nexo-lime hover:text-black rounded-full transition-colors text-white cursor-pointer"
+                  aria-label="Cerrar video"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
                 <video
                   autoPlay
                   controls
@@ -86,16 +98,9 @@ const Portfolio: React.FC = () => {
                 >
                   <source src={activeVideo} type="video/mp4" />
                 </video>
-              ) : (
-                <iframe
-                  src={activeVideo}
-                  className="w-full h-full"
-                  allow="autoplay; encrypted-media"
-                  allowFullScreen
-                ></iframe>
-              )}
+              </div>
             </div>
-          </div>
+          )
         )}
       </div>
     </section>

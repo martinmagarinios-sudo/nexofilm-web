@@ -46,6 +46,50 @@
     "stream_badge": "LIVE HD",
     "stream_sub": "Streaming"
   },
+  "portal_showcase": {
+    "badge": "NexoFilm Tech · Experiencia de Cliente",
+    "title_main": "El control de tu producción,",
+    "title_highlight": "a un solo clic.",
+    "subtitle": "Gestión transparente, ágil y centralizada para cada etapa de tu proyecto: desde la cotización hasta la entrega final de tus materiales.",
+    "video_tag": "Video Creado con IA",
+    "video_caption": "Portal de Clientes NexoFilm",
+    "video_play_btn": "Ver Presentación",
+    "video_modal_title": "NexoFilm | Portal de Clientes y Producción con IA",
+    "features": {
+      "budgets": {
+        "title": "Presupuestos y Ajustes",
+        "desc": "Cotizaciones inmediatas, solicitud de modificaciones y aprobación formal a un solo clic."
+      },
+      "notifications": {
+        "title": "Alertas WhatsApp y Email",
+        "desc": "Notificaciones automáticas en tiempo real ante cada novedad, cambio o actualización de estado."
+      },
+      "billing": {
+        "title": "Facturación y Pagos",
+        "desc": "Descarga de facturas emitidas y datos bancarios directos para transferir con total comodidad."
+      },
+      "live_tracking": {
+        "title": "Seguimiento en Vivo",
+        "desc": "Monitoreo del estado de la producción en tiempo real durante el día del rodaje o evento."
+      },
+      "downloads": {
+        "title": "Descarga de Entregables",
+        "desc": "Acceso centralizado para previsualizar y descargar todos los masters finales en alta calidad."
+      },
+      "history": {
+        "title": "Historial y Archivo",
+        "desc": "Base de datos exclusiva con el registro histórico de todos los trabajos realizados con nosotros."
+      }
+    },
+    "ai_service": {
+      "badge": "NUEVO SERVICIO CREATIVO",
+      "title": "¿Buscás innovar con Inteligencia Artificial?",
+      "desc": "Además de video tradicional, fotografía, drones y streaming, producimos piezas audiovisuales y contenidos visuales de vanguardia utilizando Inteligencia Artificial Generativa.",
+      "cta": "Consultar por IA"
+    },
+    "cta_quote": "Armá tu Presupuesto",
+    "cta_login": "Ingresar a mi Portal"
+  },
   "projects": {
     "title": "Proyectos",
     "subtitle": "Seleccionados",

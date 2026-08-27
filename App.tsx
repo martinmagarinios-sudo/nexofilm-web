@@ -11,6 +11,7 @@ import Contact from './components/Contact';
 import Logo from './components/Logo';
 import FloatingWhatsApp from './components/FloatingWhatsApp';
 import ValueProp from './components/ValueProp';
+import ClientPortalShowcase from './components/ClientPortalShowcase';
 import { CONFIG } from './data/config';
 
 const App: React.FC = () => {
@@ -129,12 +130,21 @@ const App: React.FC = () => {
               "name": "Streaming en Vivo",
               "description": "Transmisiones en vivo con calidad broadcast para eventos corporativos, conferencias y presentaciones."
             }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Producción Audiovisual con Inteligencia Artificial",
+              "description": "Desarrollo de piezas visuales y contenidos publicitarios generados con Inteligencia Artificial."
+            }
           }
         ]
       },
       "knowsAbout": [
         "Video Corporativo", "Fotografía Publicitaria", "Streaming en Vivo",
         "Producción Audiovisual", "Cine Publicitario", "Video Institucional",
+        "Producción con Inteligencia Artificial", "Video con IA",
         "Eventos Corporativos B2B", "Eventos Buenos Aires"
       ],
       // FIX 7: VideoObject para proyectos con videoUrl, CreativeWork para el resto
@@ -337,6 +347,8 @@ const App: React.FC = () => {
             </div>
           </div>
         </section>
+
+        <ClientPortalShowcase />
 
         <Process />
         <Clients />

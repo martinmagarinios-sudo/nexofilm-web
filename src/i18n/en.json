@@ -46,6 +46,50 @@
     "stream_badge": "LIVE HD",
     "stream_sub": "Streaming"
   },
+  "portal_showcase": {
+    "badge": "NexoFilm Tech · Client Experience",
+    "title_main": "Your production control,",
+    "title_highlight": "just a click away.",
+    "subtitle": "Transparent, agile, and centralized management for every stage of your project: from quotation to final delivery of your materials.",
+    "video_tag": "AI Generated Video",
+    "video_caption": "NexoFilm Client Portal",
+    "video_play_btn": "Watch Presentation",
+    "video_modal_title": "NexoFilm | Client Portal & AI Production",
+    "features": {
+      "budgets": {
+        "title": "Budgets & Adjustments",
+        "desc": "Instant quotes, change requests, and formal approvals with a single click."
+      },
+      "notifications": {
+        "title": "WhatsApp & Email Alerts",
+        "desc": "Real-time automatic notifications for every update, status change, or milestone."
+      },
+      "billing": {
+        "title": "Invoicing & Payments",
+        "desc": "Issued invoice downloads and direct banking details for seamless transfers."
+      },
+      "live_tracking": {
+        "title": "Live Tracking",
+        "desc": "Real-time production monitoring during the day of the shoot or event."
+      },
+      "downloads": {
+        "title": "Deliverables Download",
+        "desc": "Centralized access to preview and download all final masters in high quality."
+      },
+      "history": {
+        "title": "History & Archive",
+        "desc": "Exclusive database with the historical archive of all projects produced with us."
+      }
+    },
+    "ai_service": {
+      "badge": "NEW CREATIVE SERVICE",
+      "title": "Looking to innovate with Artificial Intelligence?",
+      "desc": "In addition to traditional video, photography, drones, and live streaming, we produce cutting-edge visual pieces using Generative AI for forward-thinking brands.",
+      "cta": "Inquire about AI"
+    },
+    "cta_quote": "Build Your Quote",
+    "cta_login": "Access Client Portal"
+  },
   "projects": {
     "title": "Projects",
     "subtitle": "Selected",

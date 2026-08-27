@@ -46,6 +46,50 @@
     "stream_badge": "LIVE HD",
     "stream_sub": "Streaming"
   },
+  "portal_showcase": {
+    "badge": "NexoFilm Tech · Experiência do Cliente",
+    "title_main": "O controle da sua produção,",
+    "title_highlight": "a apenas um clique.",
+    "subtitle": "Gestão transparente, ágil e centralizada para cada etapa do seu projeto: desde a cotação até a entrega final dos seus materiais.",
+    "video_tag": "Vídeo Criado com IA",
+    "video_caption": "Portal de Clientes NexoFilm",
+    "video_play_btn": "Ver Apresentação",
+    "video_modal_title": "NexoFilm | Portal de Clientes e Produção com IA",
+    "features": {
+      "budgets": {
+        "title": "Orçamentos e Ajustes",
+        "desc": "Cotações imediatas, solicitação de alterações e aprovação formal em um só clique."
+      },
+      "notifications": {
+        "title": "Alertas WhatsApp e E-mail",
+        "desc": "Notificações automáticas em tempo real para cada novidade, alteração ou atualização de status."
+      },
+      "billing": {
+        "title": "Faturamento e Pagamentos",
+        "desc": "Download de faturas emitidas e dados bancários diretos para transferir com total comodidade."
+      },
+      "live_tracking": {
+        "title": "Acompanhamento ao Vivo",
+        "desc": "Monitoramento do status da produção em tempo real durante o dia de gravação ou evento."
+      },
+      "downloads": {
+        "title": "Download de Entregas",
+        "desc": "Acesso centralizado para pré-visualizar e baixar todos os masters finais em alta qualidade."
+      },
+      "history": {
+        "title": "Histórico e Arquivo",
+        "desc": "Banco de dados exclusivo com o registro histórico de todos os trabalhos realizados conosco."
+      }
+    },
+    "ai_service": {
+      "badge": "NOVO SERVIÇO CRIATIVO",
+      "title": "Deseja inovar com Inteligência Artificial?",
+      "desc": "Além de vídeo tradicional, fotografia, drones e streaming, produzimos peças audiovisuais de ponta utilizando Inteligência Artificial Generativa.",
+      "cta": "Consultar sobre IA"
+    },
+    "cta_quote": "Faça seu Orçamento",
+    "cta_login": "Acessar meu Portal"
+  },
   "projects": {
     "title": "Projetos",
     "subtitle": "Selecionados",
