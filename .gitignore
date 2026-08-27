@@ -35,6 +35,5 @@ check_*.js
 create_og.*
 *.txt
 !robots.txt
-*.ps1
-
 .env*
+public/video/Videos para subir a youtube/
