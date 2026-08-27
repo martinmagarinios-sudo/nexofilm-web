@@ -157,35 +157,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onVideoClick, onCopy
                 ) : (isBunny || isYT || project.videoUrl) ? (
                     /* --- MODO VIDEO (BUNNY STREAM / YOUTUBE / NATIVO) --- */
                     <>
-                        {isBunny && project.embedUrl ? (
-                            <img
-                                src={`https://vz-738019-b.b-cdn.net/${project.embedUrl.split('/').pop()}/thumbnail.jpg`}
-                                alt={project.title}
-                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-                                loading="eager"
-                                decoding="async"
-                            />
-                        ) : project.videoUrl ? (
-                            <video
-                                ref={videoRef}
-                                muted
-                                playsInline
-                                preload="metadata"
-                                aria-label={`Video: ${project.title} - NexoFilm`}
-                                {...(project.imageUrl ? { poster: project.imageUrl } : {})}
-                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-                            >
-                                <source src={`${project.videoUrl}#t=0.5`} type="video/mp4" />
-                            </video>
-                        ) : (
-                            <img
-                                src={displayImage || '/img/portfolio/FotoPortalClienteIA.jpg'}
-                                alt={project.title}
-                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-                                loading="eager"
-                                decoding="async"
-                            />
-                        )}
+                        <img
+                            src={project.imageUrl || displayImage || (isBunny && project.embedUrl ? `https://vz-738019-b.b-cdn.net/${project.embedUrl.split('/').pop()}/thumbnail.jpg` : '/img/portfolio/FotoPortalClienteIA.jpg')}
+                            alt={project.title}
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            loading="eager"
+                            decoding="async"
+                        />
 
                         {/* Overlay con botón Play */}
                         <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 flex items-center justify-center transition-all duration-500">
