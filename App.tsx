@@ -147,27 +147,39 @@ const App: React.FC = () => {
         "Producción con Inteligencia Artificial", "Video con IA",
         "Eventos Corporativos B2B", "Eventos Buenos Aires"
       ],
-      // FIX 7: VideoObject para proyectos con videoUrl, CreativeWork para el resto
-      "hasPart": CONFIG.projects.map(proj => ({
-        "@type": proj.videoUrl ? "VideoObject" : "CreativeWork",
-        "name": proj.title,
-        "description": proj.description,
-        "genre": proj.category,
-        "author": { "@type": "Organization", "name": "NexoFilm" },
-        "contentUrl": proj.videoUrl || proj.imageUrl,
-        "thumbnailUrl": proj.imageUrl || "https://nexofilm.com/og-image.jpg",
-        ...(proj.videoUrl ? {
-          "uploadDate": "2024-01-01",
-          "publisher": {
-            "@type": "Organization",
-            "name": "NexoFilm",
-            "logo": {
-              "@type": "ImageObject",
-              "url": "https://nexofilm.com/favicon.png"
+      // FIX 7: VideoObject para proyectos con videoUrl, CreativeWork / ImageObject para el resto
+      "hasPart": CONFIG.projects.map(proj => {
+        const getAbsoluteUrl = (path?: string) => {
+          if (!path) return "https://nexofilm.com/og-image.jpg";
+          if (path.startsWith("http://") || path.startsWith("https://")) return path;
+          const cleanPath = path.startsWith("/") ? path : `/${path}`;
+          return `https://nexofilm.com${encodeURI(cleanPath)}`;
+        };
+
+        const isVideo = Boolean(proj.videoUrl);
+
+        return {
+          "@type": isVideo ? "VideoObject" : "ImageObject",
+          "name": proj.title,
+          "description": proj.description || `Producción audiovisual de ${proj.title} realizada por NexoFilm.`,
+          "genre": proj.category,
+          "author": { "@type": "Organization", "name": "NexoFilm" },
+          "contentUrl": getAbsoluteUrl(proj.videoUrl || proj.imageUrl),
+          "thumbnailUrl": getAbsoluteUrl(proj.imageUrl),
+          ...(isVideo ? {
+            "uploadDate": "2024-01-01T00:00:00-03:00",
+            ...(proj.embedUrl ? { "embedUrl": proj.embedUrl } : {}),
+            "publisher": {
+              "@type": "Organization",
+              "name": "NexoFilm",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "https://nexofilm.com/favicon.png"
+              }
             }
-          }
-        } : {})
-      })),
+          } : {})
+        };
+      }),
       // FIX 6: Schema Review + AggregateRating con datos reales de testimonios
       "review": CONFIG.testimonials.map(testi => ({
         "@type": "Review",
