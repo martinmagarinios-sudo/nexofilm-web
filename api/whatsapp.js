@@ -1,4 +1,4 @@
-import Groq from 'groq-sdk';
+import Groq, { toFile } from 'groq-sdk';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 
@@ -196,6 +196,9 @@ Te recordamos que además de coberturas, hacemos:
     const message = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
     if (!message) return res.status(200).send('OK');
 
+    // 🛑 Filtrar eventos de reacción (emojis como 👍 o ❤️) para evitar falsas alertas o respuestas fuera de lugar
+    if (message.type === 'reaction') return res.status(200).send('OK');
+
     const phoneNumberId = body.entry[0].changes[0].value.metadata.phone_number_id;
     const fromRaw = message.from;
     let from = fromRaw;
@@ -204,9 +207,45 @@ Te recordamos que además de coberturas, hacemos:
     if (from === ADMIN_NUMBER || fromRaw === ADMIN_NUMBER) return res.status(200).send('OK');
 
     try {
-        const text = message.text?.body?.toLowerCase() || "";
         const isInteractive = message.type === 'interactive';
         const isTextMessage = message.type === 'text';
+        let rawText = message.text?.body || "";
+        let userDisplayContent = "";
+
+        if (isTextMessage) {
+            userDisplayContent = rawText;
+        } else if (message.type === 'audio' && message.audio?.id) {
+            const audioTranscription = await transcribeAudio(message.audio.id);
+            if (audioTranscription) {
+                rawText = audioTranscription;
+                userDisplayContent = `🎤 [Audio]: "${audioTranscription}"`;
+            } else {
+                userDisplayContent = "🎤 [Nota de voz / audio]";
+            }
+        } else if (message.type === 'image') {
+            userDisplayContent = message.image?.caption ? `🖼️ [Imagen]: ${message.image.caption}` : "🖼️ [Envió una foto / imagen]";
+            if (message.image?.caption) rawText = message.image.caption;
+        } else if (message.type === 'video') {
+            userDisplayContent = message.video?.caption ? `🎥 [Video]: ${message.video.caption}` : "🎥 [Envió un video]";
+            if (message.video?.caption) rawText = message.video.caption;
+        } else if (message.type === 'document') {
+            const docName = message.document?.filename || 'documento';
+            userDisplayContent = message.document?.caption ? `📄 [Doc ${docName}]: ${message.document.caption}` : `📄 [Envió documento: ${docName}]`;
+            if (message.document?.caption) rawText = message.document.caption;
+        } else if (message.type === 'sticker') {
+            userDisplayContent = "🏷️ [Envió un sticker]";
+        } else if (message.type === 'location') {
+            const locDesc = message.location?.name || message.location?.address || `${message.location?.latitude}, ${message.location?.longitude}`;
+            userDisplayContent = `📍 [Ubicación]: ${locDesc}`;
+        } else if (message.type === 'contacts') {
+            userDisplayContent = "👤 [Compartió un contacto]";
+        } else if (isInteractive) {
+            userDisplayContent = message.interactive?.button_reply?.title || "[Interacción con botón]";
+        } else {
+            userDisplayContent = "[Mensaje multimedia / sin texto]";
+        }
+
+        const text = rawText.toLowerCase();
 
         // 2. Cargar historial + Info del Lead (CRM) en PARALELO (Búsqueda Robusta)
         const normalizePhone = (p) => {
@@ -271,7 +310,7 @@ Te recordamos que además de coberturas, hacemos:
                 }
             }
 
-            const firstMessageText = message.text?.body || "[Mensaje sin texto / multimedia]";
+            const firstMessageText = userDisplayContent || "[Mensaje sin texto]";
             await sendDualEmail(
                 `👀 Chat en vivo: ${contactNameForEmail}`,
                 `
@@ -307,7 +346,7 @@ Te recordamos que además de coberturas, hacemos:
             // aunque el bot crashee después (timeout de Vercel, error de Groq, etc.)
             await persistHistory(from, [{
                 role: 'user',
-                content: message.text?.body || "[Inició conversación]",
+                content: userDisplayContent || "[Inició conversación]",
                 timestamp: new Date().toISOString()
             }]).catch(() => {}); // Silencioso para no romper el flujo
         }
@@ -364,7 +403,7 @@ Te recordamos que además de coberturas, hacemos:
             
             const newHistory = [...history, { 
                 role: 'user', 
-                content: message.text?.body || "[Envió un archivo o medio]",
+                content: userDisplayContent || "[Envió un archivo o medio]",
                 timestamp: new Date().toISOString()
             }];
             await persistHistory(from, newHistory);
@@ -372,7 +411,7 @@ Te recordamos que además de coberturas, hacemos:
             // Alerta al admin si pasaron > 5 min de silencio total (cliente esperando a un humano libre)
             const lastInteraction = historyData.updated_at ? new Date(historyData.updated_at).getTime() : 0;
             if (now - lastInteraction > 5 * 60 * 1000) {
-                await notifyAdminOfNewMessage(from, leadData?.name || "Cliente", message.text?.body);
+                await notifyAdminOfNewMessage(from, leadData?.name || "Cliente", userDisplayContent);
             }
             return res.status(200).send('OK');
         }
@@ -489,15 +528,28 @@ Te recordamos que además de coberturas, hacemos:
         .replace('{{INSTRUCCION_DE_SALUDO}}', instruccionSaludo)
         .replace('{{CONFIRMACION_EMAIL}}', confirmacionEmail);
 
-        // 🛡️ GUARDIA ANTI-CRASH: si no es texto (sticker, imagen, audio...), responder y salir.
-        // Antes de este punto ya pasó la alerta temprana y la sesión quedó guardada.
-        if (!isTextMessage && !isInteractive) {
-            await sendText(phoneNumberId, from, "¡Hola! Por el momento solo puedo leer mensajes de texto. Si querés consultarme algo, escribime 😊");
+        // 🛡️ GUARDIA ANTI-CRASH: si no hay texto procesable (ej: imagen sin texto, sticker, o audio inaudible)
+        if (!rawText && !isInteractive) {
+            const fallbackReply = "¡Hola! Por el momento solo puedo leer mensajes de texto o escuchar notas de voz. Si querés consultarme algo, escribime 😊";
+            await sendText(phoneNumberId, from, fallbackReply);
+
+            // Guardar en el historial para que en el CRM aparezca el diálogo completo
+            const currentHist = history.length > 0 ? history : [{
+                role: 'user',
+                content: userDisplayContent || "[Mensaje sin texto]",
+                timestamp: new Date().toISOString()
+            }];
+            currentHist.push({
+                role: 'assistant',
+                content: fallbackReply,
+                timestamp: new Date().toISOString()
+            });
+            await persistHistory(from, currentHist);
             return res.status(200).send('OK');
         }
 
         // 3. El mensaje actual del usuario DEBE entrar al historial ANTES de llamar a Groq
-        history.push({ role: 'user', content: message.text?.body || "[Mensaje sin texto]" });
+        history.push({ role: 'user', content: userDisplayContent });
 
         // Llamada a Groq (Modelo 120B - reemplazo de llama-3.3-70b-versatile)
         const comp = await groq.chat.completions.create({
@@ -869,6 +921,51 @@ async function loadHistory(phone) {
 async function persistHistory(phone, history) {
     if (!supabase) return;
     await supabase.from('whatsapp_sessions').upsert({ phone, history, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
+}
+
+async function transcribeAudio(audioId) {
+    const token = process.env.WHATSAPP_TOKEN?.trim();
+    if (!token || !audioId) return null;
+    try {
+        console.log(`[WHISPER] Descargando audio ID ${audioId} de Meta...`);
+        const metaRes = await fetch(`https://graph.facebook.com/v21.0/${audioId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        const metaData = await metaRes.json();
+        if (!metaData.url) {
+            console.error("[WHISPER] No se obtuvo URL de audio de Meta:", metaData);
+            return null;
+        }
+
+        const audioRes = await fetch(metaData.url, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!audioRes.ok) {
+            console.error("[WHISPER] Error al descargar binario del audio:", audioRes.status);
+            return null;
+        }
+
+        const arrayBuf = await audioRes.arrayBuffer();
+        const buffer = Buffer.from(arrayBuf);
+        const file = await toFile(buffer, 'audio.ogg', { type: metaData.mime_type || 'audio/ogg' });
+
+        const transcription = await groq.audio.transcriptions.create({
+            file: file,
+            model: 'whisper-large-v3-turbo',
+            response_format: 'json',
+            temperature: 0.2
+        });
+
+        const text = transcription.text?.trim();
+        if (text) {
+            console.log(`[WHISPER OK] Audio transcrito: "${text}"`);
+            return text;
+        }
+        return null;
+    } catch (err) {
+        console.error("[WHISPER ERROR]", err);
+        return null;
+    }
 }
 
 async function sendText(pid, to, msg) {
