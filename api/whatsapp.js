@@ -59,6 +59,11 @@ export default async function handler(req, res) {
 
     const body = req.body;
 
+    // --- ACCIÓN WEBHOOK DE TELEGRAM (RESPUESTAS DESDE TEMAS DE TELEGRAM A WHATSAPP) ---
+    if (body?.message?.chat?.id && String(body.message.chat.id) === TELEGRAM_CHAT_ID) {
+        return handleTelegramWebhook(req, res, body);
+    }
+
     // --- ACCIONES CONSOLIDADAS DEL ADMIN / PROMOS ---
     if (body && body.action) {
         const { action, phone, message: adminMsg, password } = body;
@@ -1194,3 +1199,90 @@ async function sendTelegramLog(phone, name, text, role = 'user', history = []) {
         console.error("[TELEGRAM SEND ERROR]", e.message);
     }
 }
+
+async function handleTelegramWebhook(req, res, body) {
+    const message = body?.message;
+    if (!message || !message.text || message.from?.is_bot) {
+        return res.status(200).send('OK');
+    }
+
+    const threadId = message.message_thread_id;
+    if (!threadId) return res.status(200).send('OK');
+
+    const textToSend = message.text.trim();
+    if (!textToSend || !supabase) return res.status(200).send('OK');
+
+    try {
+        const { data: sessions } = await supabase.from('whatsapp_sessions').select('phone, history');
+        const matchedSession = sessions?.find(s => 
+            Array.isArray(s.history) && s.history.some(m => m.role === 'system' && m.type === 'telegram_topic' && Number(m.thread_id) === Number(threadId))
+        );
+
+        if (!matchedSession || !matchedSession.phone) {
+            console.log(`[TELEGRAM] No se encontró cliente de WhatsApp asociado al tema ${threadId}`);
+            return res.status(200).send('OK');
+        }
+
+        const phone = matchedSession.phone;
+        const token = process.env.WHATSAPP_TOKEN?.trim();
+        const phoneNumberId = process.env.WHATSAPP_PHONE_ID?.trim();
+
+        if (!token || !phoneNumberId) {
+            console.error('[TELEGRAM] Faltan credenciales de WhatsApp');
+            return res.status(200).send('OK');
+        }
+
+        const url = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                messaging_product: 'whatsapp',
+                recipient_type: 'individual',
+                to: phone,
+                type: 'text',
+                text: { body: textToSend }
+            })
+        });
+
+        const result = await response.json();
+        if (result.error) {
+            console.error('[TELEGRAM] Error Meta API:', result.error);
+            await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: TELEGRAM_CHAT_ID,
+                    message_thread_id: threadId,
+                    text: `⚠️ *No se pudo enviar a WhatsApp:*\nMeta respondió: "${result.error.message || 'Error desconocido'}".\nRecordá que deben haber pasado menos de 24hs desde el último mensaje del cliente.`
+                })
+            });
+            return res.status(200).send('OK');
+        }
+
+        let currentHistory = matchedSession.history || [];
+        currentHistory.push({
+            role: 'admin',
+            content: textToSend,
+            timestamp: new Date().toISOString()
+        });
+
+        await supabase
+            .from('whatsapp_sessions')
+            .upsert({ 
+                phone: phone,
+                history: currentHistory,
+                updated_at: new Date().toISOString() 
+            });
+
+        console.log(`[TELEGRAM] Mensaje enviado exitosamente a WhatsApp +${phone}`);
+    } catch (err) {
+        console.error('[TELEGRAM] Error en handleTelegramWebhook:', err.message);
+    }
+
+    return res.status(200).send('OK');
+}
+
