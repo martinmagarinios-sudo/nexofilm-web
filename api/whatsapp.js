@@ -11,6 +11,9 @@ const resend = new Resend((process.env.RESEND_API_KEY || '').trim());
 const ADMIN_NUMBER = '541151191964';
 const ADMIN_EMAIL = 'martin@nexofilm.com';
 
+const TELEGRAM_BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || '8912638236:AAFuMcVeWaZvocS2PZVrgtCm8SSgbeqikC4').trim();
+const TELEGRAM_CHAT_ID = (process.env.TELEGRAM_CHAT_ID || '-1004401105264').trim();
+
 const SYSTEM_PROMPT = `Eres el asistente virtual de NexoFilm, una productora audiovisual de Argentina. Sos cálido, empático, concreto y profesional.
 
 ROL Y LÍMITES ESTRICTOS:
@@ -125,6 +128,8 @@ export default async function handler(req, res) {
                         history: currentHistory,
                         updated_at: new Date().toISOString() 
                     });
+
+                sendTelegramLog(phone, null, adminMsg, 'admin', currentHistory).catch(() => {});
 
                 return res.status(200).json({ success: true, messageId: result.messages?.[0]?.id });
 
@@ -276,6 +281,9 @@ Te recordamos que además de coberturas, hacemos:
         const lastInteraction = historyData.updated_at ? new Date(historyData.updated_at).getTime() : 0;
 
         const isWebStart = text.includes("estoy navegando en tu web") && text.includes("consulta");
+
+        // Registrar mensaje entrante en Telegram en tiempo real
+        sendTelegramLog(from, leadData?.name, userDisplayContent, 'user', history).catch(() => {});
 
         // --- ALERTA TEMPRANA POR NUEVO CHAT (HISTORY VACÍO) ---
         // Si el cliente envía su primer mensaje (ya sea extraño total o alguien importado en la "agenda"),
@@ -476,6 +484,8 @@ Te recordamos que además de coberturas, hacemos:
                 history.push({ role: 'assistant', content: qr });
                 await persistHistory(from, history);
                 await sendText(phoneNumberId, from, qr);
+                sendTelegramLog(from, leadData?.name, `🔘 Seleccionó: "${btnTitle}"`, 'user', history).catch(() => {});
+                sendTelegramLog(from, leadData?.name, qr, 'assistant', history).catch(() => {});
             }
             return res.status(200).send('OK');
         }
@@ -554,9 +564,10 @@ Te recordamos que además de coberturas, hacemos:
         history.push({ role: 'user', content: userDisplayContent });
 
         // Llamada a Groq (Modelo 120B - reemplazo de llama-3.3-70b-versatile)
+        const groqHistory = history.filter(m => m.role === 'user' || m.role === 'assistant');
         const comp = await groq.chat.completions.create({
             model: 'openai/gpt-oss-120b',
-            messages: [{ role: 'system', content: finalSystemPrompt }, ...history],
+            messages: [{ role: 'system', content: finalSystemPrompt }, ...groqHistory],
             temperature: 0.5,
             max_tokens: 500
         });
@@ -612,7 +623,10 @@ Te recordamos que además de coberturas, hacemos:
                         .update({ name: capturedName, updated_at: new Date().toISOString() })
                         .eq('id', freshLead.id);
                     if (nameErr) console.error('[NAME SAVE ERROR]', nameErr.message);
-                    else console.log(`[NAME SAVED] ${capturedName}`);
+                    else {
+                        console.log(`[NAME SAVED] ${capturedName}`);
+                        updateTelegramTopicName(from, capturedName, history).catch(() => {});
+                    }
                 }
             }
         }
@@ -710,9 +724,18 @@ Te recordamos que además de coberturas, hacemos:
             console.log("[FAIL-SAFE] Menú activado por palabras clave.");
         }
 
-        if (final && final.trim().length > 0) await sendText(phoneNumberId, from, final);
-        if (showMenu) await sendMenu(phoneNumberId, from, lang);
-        if (hf?.handoff) await handleHandoff(targetPhone, leadData?.id, hf, history);
+        if (final && final.trim().length > 0) {
+            await sendText(phoneNumberId, from, final);
+            sendTelegramLog(from, capturedName || leadData?.name, final, 'assistant', history).catch(() => {});
+        }
+        if (showMenu) {
+            await sendMenu(phoneNumberId, from, lang);
+            sendTelegramLog(from, capturedName || leadData?.name, '👇 Opciones de menú enviadas al cliente', 'system', history).catch(() => {});
+        }
+        if (hf?.handoff) {
+            sendTelegramLog(from, hf.name, `🎉 *PRESUPUESTO SOLICITADO / HANDOFF CRM*\n👤 ${hf.name}\n📧 ${hf.email || 'No proporcionado'}\n📝 Resumen: ${hf.summary}`, 'system', history).catch(() => {});
+            await handleHandoff(targetPhone, leadData?.id, hf, history);
+        }
 
     } catch (err) {
         console.error("BOT ERROR:", err.message);
@@ -1089,5 +1112,85 @@ async function sendDualEmail(subject, htmlContent) {
         } catch (e) {
             console.error(`Resend fail for ${email}:`, e.message);
         }
+    }
+}
+
+// --- TELEGRAM INTEGRATION HELPERS ---
+async function getOrCreateTelegramTopic(phone, name, history = []) {
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return null;
+    
+    // 1. Buscar si ya existe en el historial
+    const existing = history?.find(m => m.role === 'system' && m.type === 'telegram_topic' && m.thread_id);
+    if (existing) return existing.thread_id;
+
+    try {
+        const displayName = (name && name !== 'Sin nombre') ? name : `Cliente (+${phone})`;
+        const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/createForumTopic`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: TELEGRAM_CHAT_ID,
+                name: `👤 ${displayName}`
+            })
+        });
+        const data = await res.json();
+        if (data.ok && data.result?.message_thread_id) {
+            const threadId = data.result.message_thread_id;
+            history.unshift({
+                role: 'system',
+                type: 'telegram_topic',
+                thread_id: threadId,
+                timestamp: new Date().toISOString()
+            });
+            await persistHistory(phone, history);
+            return threadId;
+        }
+    } catch (e) {
+        console.error('[TELEGRAM TOPIC ERROR]', e.message);
+    }
+    return null;
+}
+
+async function updateTelegramTopicName(phone, newName, history = []) {
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !newName) return;
+    try {
+        const threadId = history?.find(m => m.role === 'system' && m.type === 'telegram_topic' && m.thread_id)?.thread_id;
+        if (!threadId) return;
+
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/editForumTopic`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: TELEGRAM_CHAT_ID,
+                message_thread_id: threadId,
+                name: `👤 ${newName} (+${phone})`
+            })
+        });
+    } catch (e) {}
+}
+
+async function sendTelegramLog(phone, name, text, role = 'user', history = []) {
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !text) return;
+    try {
+        const threadId = await getOrCreateTelegramTopic(phone, name, history);
+        if (!threadId) return;
+
+        let prefix = '';
+        if (role === 'user') prefix = `👤 *${name && name !== 'Sin nombre' ? name : 'Cliente'}*: `;
+        else if (role === 'assistant') prefix = `🤖 *NexoBot*: `;
+        else if (role === 'admin') prefix = `👨‍💼 *Martín (Humano)*: `;
+        else if (role === 'system') prefix = `🔔 `;
+
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: TELEGRAM_CHAT_ID,
+                message_thread_id: threadId,
+                text: `${prefix}${text}`
+            })
+        });
+    } catch (e) {
+        console.error("[TELEGRAM SEND ERROR]", e.message);
     }
 }
