@@ -395,8 +395,10 @@ Te recordamos que además de coberturas, hacemos:
         
         // 2. O si el lead se marcó como completado (handoff) hace MUY poco (ej: 5 min) 
         // para evitar que el bot siga preguntando cosas justo después de que el cliente terminó.
-        const lastHandoffDate = leadData?.updated_at ? new Date(leadData.updated_at).getTime() : 0;
-        const isVeryRecentHandoff = lastHandoffDate > (now - 5 * 60 * 1000);
+        // Solo aplica si el lead ya fue efectivamente derivado/cerrado (no en plena conversación en curso).
+        const isActualHandoff = leadData?.summary && !leadData.summary.includes("Conversación en curso");
+        const lastHandoffDate = (isActualHandoff && leadData?.updated_at) ? new Date(leadData.updated_at).getTime() : 0;
+        const isVeryRecentHandoff = lastHandoffDate > 0 && lastHandoffDate > (now - 5 * 60 * 1000);
 
         if ((isHumanActive || isVeryRecentHandoff) && !isMenuCommand && !isInteractive) {
             console.log(`[SILENCIO] Registrando mensaje de +${from} para el CRM (Humano activo o Handoff reciente).`);
