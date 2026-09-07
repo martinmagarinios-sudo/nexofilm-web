@@ -19,6 +19,15 @@
         },
         "api/privacy.js": {
             "includeFiles": "dist/index.html"
+        },
+        "api/network-serve.js": {
+            "includeFiles": "dist/index.html"
+        },
+        "api/network/apply.js": {
+            "maxDuration": 60
+        },
+        "api/network/admin.js": {
+            "maxDuration": 30
         }
     },
     "redirects": [
@@ -33,6 +42,7 @@
         { "source": "/portal/login", "destination": "/index.html" },
         { "source": "/portal", "destination": "/api/comercial/client?action=render" },
         { "source": "/presupuesto", "destination": "/api/presupuesto" },
+        { "source": "/network", "destination": "/api/network-serve" },
         { "source": "/portfolio/:id", "destination": "/api/portfolio" },
         { "source": "/politica-de-privacidad", "destination": "/api/privacy" },
         { "source": "/api/(.*)", "destination": "/api/$1" },

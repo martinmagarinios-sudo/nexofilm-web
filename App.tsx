@@ -12,6 +12,7 @@ import Logo from './components/Logo';
 import FloatingWhatsApp from './components/FloatingWhatsApp';
 import ValueProp from './components/ValueProp';
 import ClientPortalShowcase from './components/ClientPortalShowcase';
+import NetworkTeaser from './components/NetworkTeaser';
 import { CONFIG } from './data/config';
 
 const App: React.FC = () => {
@@ -367,6 +368,7 @@ const App: React.FC = () => {
         <Clients />
         <Portfolio />
         <Testimonials />
+        <NetworkTeaser />
         <Contact />
       </main>
 
@@ -389,6 +391,7 @@ const App: React.FC = () => {
                   <li><a href="#historia" className="hover:text-nexo-lime hover:pl-2 transition-all duration-300 inline-block">{t('navbar.about')}</a></li>
                   <li><a href="#portfolio" className="hover:text-nexo-lime hover:pl-2 transition-all duration-300 inline-block">{t('navbar.portfolio')}</a></li>
                   <li><a href="#clientes" className="hover:text-nexo-lime hover:pl-2 transition-all duration-300 inline-block">{t('navbar.clients')}</a></li>
+                  <li><a href="/network" className="hover:text-nexo-lime hover:pl-2 transition-all duration-300 inline-block">NexoFilm Network</a></li>
                 </ul>
               </div>
               <div className="space-y-4">

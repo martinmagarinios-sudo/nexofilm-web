@@ -62,6 +62,7 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
             { name: t('navbar.clients'), href: '#clientes' },
             { name: t('navbar.reviews'), href: '#reviews' },
             { name: t('navbar.contact'), href: '#contacto' },
+            { name: 'Network', href: '/network' },
           ].map((item) => (
             <a
               key={item.name}
@@ -118,6 +119,7 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
             { name: t('navbar.portfolio'), href: '#portfolio' },
             { name: t('navbar.clients'), href: '#clientes' },
             { name: t('navbar.contact'), href: '#contacto' },
+            { name: 'NexoFilm Network', href: '/network' },
             { name: t('navbar.quote', 'ARMÁ TU PRESUPUESTO'), href: '/presupuesto' },
             { name: t('navbar.login'), href: '/portal/login' },
           ].map((item, idx) => (

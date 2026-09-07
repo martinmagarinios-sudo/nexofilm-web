@@ -10,6 +10,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import CalendarView from './CalendarView';
 import CrewDirectory, { CrewMember, CREW_ROLES, ROLE_ICONS } from './CrewDirectory';
+import NetworkDirectory from './NetworkDirectory';
 import FinanceDashboard from './FinanceDashboard';
 import WhatsAppSelectorModal, { getWAPreferredApp, buildWAUrl, WATargetApp, isMobileDevice } from './WhatsAppSelectorModal';
 
@@ -285,7 +286,7 @@ const CRMProjects: React.FC = () => {
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [loading, setLoading] = useState(false);
     const [expandedProjectIds, setExpandedProjectIds] = useState<string[]>([]);
-    const [crmView, setCrmView] = useState<'pipeline' | 'reviews' | 'calendar' | 'crew' | 'finance'>('pipeline');
+    const [crmView, setCrmView] = useState<'pipeline' | 'reviews' | 'calendar' | 'crew' | 'network' | 'finance'>('pipeline');
     const [crewMembers, setCrewMembers] = useState<CrewMember[]>([]);
     const [reviews, setReviews] = useState<any[]>([]);
     const [loadingReviews, setLoadingReviews] = useState(false);
@@ -1784,6 +1785,18 @@ const CRMProjects: React.FC = () => {
                                 <span className="hidden sm:inline">Crew</span>
                             </button>
                             <button
+                                onClick={() => setCrmView('network')}
+                                className={`text-xs px-2 sm:px-3 py-1.5 rounded font-bold transition-all shrink-0 flex items-center gap-1 ${
+                                    crmView === 'network'
+                                        ? 'bg-nexo-lime text-black'
+                                        : 'text-zinc-400 hover:text-white'
+                                }`}
+                                title="Red NexoFilm Network"
+                            >
+                                <span>🌐</span>
+                                <span className="hidden sm:inline">Network</span>
+                            </button>
+                            <button
                                 onClick={() => { setCrmView('reviews'); if (reviews.length === 0) fetchReviews(); }}
                                 className={`text-xs px-2 sm:px-3 py-1.5 rounded font-bold transition-all shrink-0 flex items-center gap-1 ${
                                     crmView === 'reviews'
@@ -1861,6 +1874,16 @@ const CRMProjects: React.FC = () => {
                     <CrewDirectory
                         password={password}
                         crewMembers={crewMembers}
+                        onCrewUpdated={fetchCrewMembers}
+                    />
+                )}
+
+                {/* ============================================================ */}
+                {/* VISTA: RED NEXOFILM NETWORK                                  */}
+                {/* ============================================================ */}
+                {crmView === 'network' && (
+                    <NetworkDirectory
+                        password={password}
                         onCrewUpdated={fetchCrewMembers}
                     />
                 )}
