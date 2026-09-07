@@ -47,7 +47,7 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
 
       <div className="container mx-auto px-6 flex justify-between items-center relative z-20">
         <button 
-          className="cursor-pointer hover:opacity-80 transition-all duration-500 transform active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-nexo-lime rounded-sm" 
+          className="cursor-pointer hover:opacity-80 transition-all duration-500 transform active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-nexo-lime rounded-sm shrink-0 mr-8 xl:mr-14" 
           onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); setIsMenuOpen(false); }}
           aria-label="Volver al Inicio"
         >
@@ -55,35 +55,45 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
         </button>
 
         {/* Menú de Escritorio */}
-        <div className="hidden md:flex items-center space-x-10 lg:space-x-12">
-          {[
-            { name: t('navbar.about'), href: '#historia' },
-            { name: t('navbar.portfolio'), href: '#portfolio' },
-            { name: t('navbar.clients'), href: '#clientes' },
-            { name: t('navbar.reviews'), href: '#reviews' },
-            { name: t('navbar.contact'), href: '#contacto' },
-            { name: 'Network', href: '/network' },
-          ].map((item) => (
+        <div className="hidden lg:flex items-center justify-end flex-1">
+          <div className="flex items-center gap-5 xl:gap-8 mr-6 xl:mr-10">
+            {[
+              { name: t('navbar.about'), href: '#historia' },
+              { name: t('navbar.portfolio'), href: '#portfolio' },
+              { name: t('navbar.clients'), href: '#clientes' },
+              { name: t('navbar.reviews'), href: '#reviews' },
+              { name: t('navbar.contact'), href: '#contacto' },
+            ].map((item) => (
+              <a
+                key={item.name}
+                href={item.href}
+                className="text-[10px] font-bold tracking-[0.25em] uppercase text-zinc-400 hover:text-white transition-all duration-300 relative group whitespace-nowrap"
+              >
+                {item.name}
+                <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-nexo-lime transition-all duration-300 group-hover:w-full opacity-50"></span>
+              </a>
+            ))}
+
             <a
-              key={item.name}
-              href={item.href}
-              className="text-[10px] font-black tracking-[0.4em] uppercase text-zinc-400 hover:text-white transition-all duration-300 relative group whitespace-nowrap"
+              href="/network"
+              className="text-[10px] font-bold tracking-[0.25em] uppercase text-zinc-400 hover:text-nexo-lime transition-all duration-300 relative group whitespace-nowrap flex items-center gap-1.5"
             >
-              {item.name}
+              <span>Network</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-nexo-lime/80 group-hover:bg-nexo-lime transition-colors"></span>
               <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-nexo-lime transition-all duration-300 group-hover:w-full opacity-50"></span>
             </a>
-          ))}
+          </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5 shrink-0">
             <a
               href="/portal/login"
-              className="px-5 py-2.5 text-[10px] font-black tracking-[0.4em] uppercase transition-all duration-500 rounded-sm border border-nexo-lime/30 text-nexo-lime hover:bg-nexo-lime hover:text-black hover:border-nexo-lime"
+              className="px-4 py-2 text-[10px] font-bold tracking-[0.2em] uppercase transition-all duration-500 rounded-sm border border-nexo-lime/30 text-nexo-lime hover:bg-nexo-lime hover:text-black hover:border-nexo-lime whitespace-nowrap"
             >
               {t('navbar.login')}
             </a>
             <a
               href="/presupuesto"
-              className={`px-8 py-2.5 text-[10px] font-black tracking-[0.4em] uppercase transition-all duration-500 rounded-sm border ${isScrolled
+              className={`px-5 py-2 text-[10px] font-bold tracking-[0.2em] uppercase transition-all duration-500 rounded-sm border whitespace-nowrap ${isScrolled
                 ? 'bg-nexo-lime text-black border-nexo-lime hover:bg-white hover:border-white shadow-[0_0_20px_rgba(191,224,35,0.2)]'
                 : 'border-white/20 text-white hover:border-nexo-lime hover:text-nexo-lime'
                 }`}
@@ -96,7 +106,7 @@ const Navbar: React.FC<NavbarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
 
         {/* Botón de menú móvil estilizado */}
         <button
-          className="md:hidden flex flex-col space-y-1.5 cursor-pointer p-2 group z-50 focus:outline-none"
+          className="lg:hidden flex flex-col space-y-1.5 cursor-pointer p-2 group z-50 focus:outline-none"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           aria-label={isMenuOpen ? "Cerrar Menú" : "Abrir Menú"}
         >
