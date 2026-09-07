@@ -1,4 +1,5 @@
 {
+    "trailingSlash": false,
     "functions": {
         "api/whatsapp.js": { "maxDuration": 30 },
         "api/telegram.js": { "maxDuration": 30 },
@@ -15,6 +16,9 @@
         "api/comercial/admin.js": { "maxDuration": 30 },
         "api/lang-serve.js": {
             "includeFiles": "dist/index.html"
+        },
+        "api/privacy.js": {
+            "includeFiles": "dist/index.html"
         }
     },
     "redirects": [
@@ -30,6 +34,7 @@
         { "source": "/portal", "destination": "/api/comercial/client?action=render" },
         { "source": "/presupuesto", "destination": "/api/presupuesto" },
         { "source": "/portfolio/:id", "destination": "/api/portfolio" },
+        { "source": "/politica-de-privacidad", "destination": "/api/privacy" },
         { "source": "/api/(.*)", "destination": "/api/$1" },
         {
             "source": "/",

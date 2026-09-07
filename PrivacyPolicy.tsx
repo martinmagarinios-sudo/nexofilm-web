@@ -1,8 +1,29 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Logo from './components/Logo';
 import { CONFIG } from './data/config';
 
 const PrivacyPolicy: React.FC = () => {
+  // FIX: Establecer canonical propia y limpiar las heredadas de index.html
+  useEffect(() => {
+    // Actualizar title
+    document.title = 'Política de Privacidad | NexoFilm';
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute('content', 'Política de privacidad de NexoFilm. Cómo recopilamos, usamos y protegemos tu información personal.');
+
+    // Remover canonical y hreflangs heredados de index.html (data-static)
+    document.querySelectorAll('link[rel="canonical"], link[rel="alternate"]').forEach(el => el.remove());
+
+    // Inyectar canonical correcta para esta página
+    const canonical = document.createElement('link');
+    canonical.rel = 'canonical';
+    canonical.href = 'https://nexofilm.com/politica-de-privacidad';
+    document.head.appendChild(canonical);
+
+    // meta robots: indexar esta página normalmente
+    const robotsMeta = document.querySelector('meta[name="robots"]');
+    if (robotsMeta) robotsMeta.setAttribute('content', 'index, follow');
+  }, []);
+
   return (
     <div className="min-h-screen bg-black text-zinc-300 font-sans selection:bg-nexo-lime selection:text-black">
       <div className="container mx-auto px-6 py-12 max-w-4xl">

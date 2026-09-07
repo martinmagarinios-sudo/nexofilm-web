@@ -25,7 +25,9 @@ export default async function(req, res) {
             .replace(/<meta property="og:url" content="[^"]*"/g, `<meta property="og:url" content="${url}"`)
             .replace(/<meta name="twitter:title" content="[^"]*"/g, `<meta name="twitter:title" content="${title}"`)
             .replace(/<meta name="twitter:description"\s+content="[^"]*"/g, `<meta name="twitter:description" content="${description}"`)
-            .replace(/<meta name="twitter:image" content="[^"]*"/g, `<meta name="twitter:image" content="${imageUrl}"`);
+            .replace(/<meta name="twitter:image" content="[^"]*"/g, `<meta name="twitter:image" content="${imageUrl}"`)
+            // FIX: Canonical propia para /presupuesto (evita heredar la de la home)
+            .replace(/<link rel="canonical" href="[^"]*"[^>]*\/?>/, `<link rel="canonical" href="${url}" />`);
 
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate'); // Cache on Vercel Edge

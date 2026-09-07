@@ -213,10 +213,11 @@ const App: React.FC = () => {
     const baseUrl = "https://nexofilm.com";
     const head = document.head;
 
-    // Limpiar etiquetas previas para evitar duplicación
+    // Limpiar TODAS las etiquetas previas (incluidas data-static de index.html)
+    // para evitar duplicación de canonicals que Google penaliza.
     const cleanup = () => {
       document.querySelectorAll('link[rel="alternate"], link[rel="canonical"], meta[property="og:locale"]').forEach(el => {
-        if (!el.getAttribute('data-static')) el.remove();
+        el.remove();
       });
     };
     cleanup();
