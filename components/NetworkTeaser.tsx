@@ -21,10 +21,10 @@ const NetworkTeaser: React.FC = () => {
           {/* Título con la tipografía e interlineado exacto de NexoFilm */}
           <h2 className="uppercase tracking-tighter leading-[1.05] mb-12">
             <span className="font-bold text-white text-4xl md:text-7xl block mb-3">
-              {t('network_teaser.title_line1', 'CONECTAMOS TALENTO AUDIOVISUAL CON')}
+              {t('network_teaser.title_line1', 'CONECTAMOS TALENTO')}
             </span>
             <span className="font-light text-nexo-lime italic text-3xl md:text-6xl block">
-              {t('network_teaser.title_line2', 'GRANDES PRODUCCIONES.')}
+              {t('network_teaser.title_line2', 'CON PRODUCCIONES.')}
             </span>
           </h2>
 
