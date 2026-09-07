@@ -282,19 +282,17 @@ const NetworkPage: React.FC = () => {
           </p>
 
           <h1 className="uppercase tracking-tighter leading-[1.05] mb-6">
-            <span className="font-bold text-white text-4xl md:text-7xl block mb-2">
-              NEXOFILM
-            </span>
-            <span className="font-light text-nexo-lime italic text-3xl md:text-6xl block">
-              NETWORK.
-            </span>
+            <div className="flex items-center justify-center gap-3 md:gap-4 flex-wrap mb-2">
+              <img src="/img/logo.png" alt="NexoFilm" className="h-10 md:h-16 w-auto brightness-0 invert inline-block" />
+              <span className="font-light text-nexo-lime italic text-3xl md:text-6xl">NETWORK.</span>
+            </div>
           </h1>
 
           <p className="text-zinc-400 text-lg md:text-xl font-light max-w-2xl mx-auto leading-relaxed mb-4">
             Conectamos profesionales y especialistas técnicos con producciones comerciales, cinematográficas y eventos en Argentina y el mundo.
           </p>
 
-          <p className="text-[10px] md:text-[11px] text-zinc-500 uppercase tracking-[0.4em] font-bold max-w-xl mx-auto">
+          <p className="text-[10px] md:text-[11px] text-zinc-500 uppercase tracking-widest font-semibold max-w-xl mx-auto">
             Filmmakers · Fotógrafos · Editores · Pilotos de Drone · Directores de Fotografía · Creadores con IA
           </p>
         </div>
@@ -349,11 +347,10 @@ const NetworkPage: React.FC = () => {
             </div>
 
             {/* ============================================================ */}
-            {/* BLOQUE 1: DATOS PROFESIONALES Y CONTACTO                      */}
+            {/* DATOS PROFESIONALES Y CONTACTO                               */}
             {/* ============================================================ */}
             <div className="glass p-8 md:p-10 rounded-2xl border border-white/5 space-y-6">
               <div className="border-b border-white/5 pb-4">
-                <p className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.4em] mb-1">Bloque 01</p>
                 <h2 className="text-xl md:text-2xl font-bold uppercase tracking-tighter text-white">
                   Datos de Contacto & Ubicación
                 </h2>
@@ -362,7 +359,7 @@ const NetworkPage: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
+                  <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
                     Nombre y Apellido <span className="text-nexo-lime">*</span>
                   </label>
                   <input
@@ -376,8 +373,8 @@ const NetworkPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
-                    Nombre Artístico / Comercial <span className="text-zinc-600 text-[9px] lowercase font-normal">(opcional)</span>
+                  <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
+                    Nombre Artístico / Comercial <span className="text-zinc-600 text-[10px] lowercase font-normal">(opcional)</span>
                   </label>
                   <input
                     type="text"
@@ -389,7 +386,7 @@ const NetworkPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
+                  <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
                     Email Profesional <span className="text-nexo-lime">*</span>
                   </label>
                   <input
@@ -403,7 +400,7 @@ const NetworkPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
+                  <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
                     WhatsApp / Teléfono <span className="text-nexo-lime">*</span>
                   </label>
                   <input
@@ -417,7 +414,7 @@ const NetworkPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
+                  <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
                     Ciudad de Residencia <span className="text-nexo-lime">*</span>
                   </label>
                   <input
@@ -431,7 +428,7 @@ const NetworkPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
+                  <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
                     Provincia / Estado
                   </label>
                   <input
@@ -444,7 +441,7 @@ const NetworkPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
+                  <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
                     País <span className="text-nexo-lime">*</span>
                   </label>
                   <input
@@ -458,8 +455,8 @@ const NetworkPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
-                    Año de Nacimiento <span className="text-zinc-600 text-[9px] lowercase font-normal">(demográfico)</span>
+                  <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
+                    Año de Nacimiento <span className="text-zinc-600 text-[10px] lowercase font-normal">(demográfico)</span>
                   </label>
                   <input
                     type="number"
@@ -475,11 +472,10 @@ const NetworkPage: React.FC = () => {
             </div>
 
             {/* ============================================================ */}
-            {/* BLOQUE 2: ESPECIALIDADES & ROL PRINCIPAL                      */}
+            {/* ESPECIALIDADES & ROL PRINCIPAL                               */}
             {/* ============================================================ */}
             <div className="glass p-8 md:p-10 rounded-2xl border border-white/5 space-y-6">
               <div className="border-b border-white/5 pb-4">
-                <p className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.4em] mb-1">Bloque 02</p>
                 <h2 className="text-xl md:text-2xl font-bold uppercase tracking-tighter text-white">
                   Especialidades & Disciplinas
                 </h2>
@@ -487,8 +483,8 @@ const NetworkPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-3">
-                  ¿En qué áreas trabajás? <span className="text-zinc-600 text-[9px] font-normal lowercase tracking-normal">(selección múltiple)</span>
+                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-3">
+                  ¿En qué áreas trabajás? <span className="text-zinc-600 text-[10px] font-normal lowercase tracking-normal">(selección múltiple)</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {AVAILABLE_ROLES.map(r => {
@@ -512,7 +508,7 @@ const NetworkPage: React.FC = () => {
               </div>
 
               <div className="pt-4 border-t border-white/5">
-                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
+                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
                   ¿Cuál considerás que es tu principal especialidad? <span className="text-nexo-lime">*</span>
                 </label>
                 <select
@@ -530,11 +526,10 @@ const NetworkPage: React.FC = () => {
             </div>
 
             {/* ============================================================ */}
-            {/* BLOQUE 3: TRAYECTORIA Y PROYECTOS                            */}
+            {/* TRAYECTORIA Y PROYECTOS                                      */}
             {/* ============================================================ */}
             <div className="glass p-8 md:p-10 rounded-2xl border border-white/5 space-y-6">
               <div className="border-b border-white/5 pb-4">
-                <p className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.4em] mb-1">Bloque 03</p>
                 <h2 className="text-xl md:text-2xl font-bold uppercase tracking-tighter text-white">
                   Experiencia & Tipos de Proyectos
                 </h2>
@@ -542,7 +537,7 @@ const NetworkPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
+                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
                   Años trabajando profesionalmente en audiovisual
                 </label>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
@@ -564,8 +559,8 @@ const NetworkPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-3">
-                  ¿En qué tipo de producciones tenés experiencia? <span className="text-zinc-600 text-[9px] font-normal lowercase tracking-normal">(múltiple)</span>
+                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-3">
+                  ¿En qué tipo de producciones tenés experiencia? <span className="text-zinc-600 text-[10px] font-normal lowercase tracking-normal">(múltiple)</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {PROJECT_CATEGORIES.map(cat => {
@@ -589,7 +584,7 @@ const NetworkPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
+                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
                   Marcas, Clientes o Proyectos destacados en los que participaste
                 </label>
                 <textarea
@@ -603,11 +598,10 @@ const NetworkPage: React.FC = () => {
             </div>
 
             {/* ============================================================ */}
-            {/* BLOQUE 4: EQUIPAMIENTO, SOFTWARE & IA                         */}
+            {/* EQUIPAMIENTO, SOFTWARE & IA                                  */}
             {/* ============================================================ */}
             <div className="glass p-8 md:p-10 rounded-2xl border border-white/5 space-y-6">
               <div className="border-b border-white/5 pb-4">
-                <p className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.4em] mb-1">Bloque 04</p>
                 <h2 className="text-xl md:text-2xl font-bold uppercase tracking-tighter text-white">
                   Equipamiento, Software & IA
                 </h2>
@@ -615,8 +609,8 @@ const NetworkPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
-                  Cámaras, Lentes y Equipos Propios <span className="text-zinc-600 text-[9px] font-normal lowercase tracking-normal">(si aplica)</span>
+                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
+                  Cámaras, Lentes y Equipos Propios <span className="text-zinc-600 text-[10px] font-normal lowercase tracking-normal">(si aplica)</span>
                 </label>
                 <input
                   type="text"
@@ -628,7 +622,7 @@ const NetworkPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
+                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
                   ¿Tenés Drone?
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -650,7 +644,7 @@ const NetworkPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
+                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
                   Software que utilizás habitualmente
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -675,8 +669,8 @@ const NetworkPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
-                  Herramientas de Inteligencia Artificial que utilizás <span className="text-zinc-600 text-[9px] font-normal lowercase tracking-normal">(opcional)</span>
+                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
+                  Herramientas de Inteligencia Artificial que utilizás <span className="text-zinc-600 text-[10px] font-normal lowercase tracking-normal">(opcional)</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {AI_TOOLS_LIST.map(tool => {
@@ -701,11 +695,10 @@ const NetworkPage: React.FC = () => {
             </div>
 
             {/* ============================================================ */}
-            {/* BLOQUE 5: MUESTRAS DE TRABAJO Y PORTFOLIO (MULTI-LINK)        */}
+            {/* MUESTRAS DE TRABAJO Y PORTFOLIO                              */}
             {/* ============================================================ */}
             <div className="glass p-8 md:p-10 rounded-2xl border border-white/5 space-y-6">
               <div className="border-b border-white/5 pb-4">
-                <p className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.4em] mb-1">Bloque 05</p>
                 <h2 className="text-xl md:text-2xl font-bold uppercase tracking-tighter text-white">
                   Muestras de Trabajo & Portfolios
                 </h2>
@@ -714,7 +707,7 @@ const NetworkPage: React.FC = () => {
 
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
-                  <span className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">Portfolio Web:</span>
+                  <span className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Portfolio Web:</span>
                   <input
                     type="url"
                     placeholder="https://tuweb.com"
@@ -725,7 +718,7 @@ const NetworkPage: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
-                  <span className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">Instagram Profesional:</span>
+                  <span className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Instagram Profesional:</span>
                   <input
                     type="url"
                     placeholder="https://instagram.com/tuperfil"
@@ -736,7 +729,7 @@ const NetworkPage: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
-                  <span className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">Vimeo / YouTube:</span>
+                  <span className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Vimeo / YouTube:</span>
                   <input
                     type="url"
                     placeholder="https://vimeo.com/... o youtube.com/..."
@@ -747,7 +740,7 @@ const NetworkPage: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
-                  <span className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">Behance / ArtStation:</span>
+                  <span className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Behance / ArtStation:</span>
                   <input
                     type="url"
                     placeholder="https://behance.net/tuperfil"
@@ -758,7 +751,7 @@ const NetworkPage: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
-                  <span className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">Showreel Directo:</span>
+                  <span className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Showreel Directo:</span>
                   <input
                     type="url"
                     placeholder="https://link-a-tu-reel.com"
@@ -771,7 +764,7 @@ const NetworkPage: React.FC = () => {
 
               <div className="pt-4 border-t border-white/5 space-y-4">
                 <div>
-                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
+                  <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
                     ¿Qué trabajo de los que compartiste representa mejor lo que sabés hacer? <span className="text-nexo-lime">*</span>
                   </label>
                   <input
@@ -788,11 +781,10 @@ const NetworkPage: React.FC = () => {
             </div>
 
             {/* ============================================================ */}
-            {/* BLOQUE 6: CV EN PDF (OPCIONAL), MODALIDAD & FACTURACIÓN       */}
+            {/* CV EN PDF (OPCIONAL), MODALIDAD & FACTURACIÓN                 */}
             {/* ============================================================ */}
             <div className="glass p-8 md:p-10 rounded-2xl border border-white/5 space-y-6">
               <div className="border-b border-white/5 pb-4">
-                <p className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.4em] mb-1">Bloque 06</p>
                 <h2 className="text-xl md:text-2xl font-bold uppercase tracking-tighter text-white">
                   CV en PDF, Modalidad & Facturación
                 </h2>
@@ -802,8 +794,8 @@ const NetworkPage: React.FC = () => {
               {/* Input de archivo PDF para CV */}
               <div className="p-6 rounded-xl border border-dashed border-white/15 bg-white/[0.02] text-center relative hover:border-nexo-lime/40 transition-colors">
                 <div className="text-2xl mb-2">📎</div>
-                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-300 font-bold mb-1">
-                  Adjuntar CV en PDF <span className="text-nexo-lime text-[9px] font-normal lowercase tracking-normal">(opcional)</span>
+                <label className="block text-xs uppercase tracking-wider text-zinc-300 font-semibold mb-1">
+                  Adjuntar CV en PDF <span className="text-nexo-lime text-[10px] font-normal lowercase tracking-normal">(opcional)</span>
                 </label>
                 <p className="text-zinc-400 text-xs font-light mb-4">
                   Nuestro sistema con Groq IA extraerá automáticamente clientes, cargos y trayectoria para complementar tu scoring.
@@ -825,7 +817,7 @@ const NetworkPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
+                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
                   Modalidad de colaboración habitual
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -851,7 +843,7 @@ const NetworkPage: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
+                  <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
                     Condición de Facturación
                   </label>
                   <select
@@ -866,7 +858,7 @@ const NetworkPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
+                  <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
                     Disponibilidad para viajar
                   </label>
                   <select
@@ -883,8 +875,8 @@ const NetworkPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
-                  Breve presentación o comentarios adicionales <span className="text-zinc-600 text-[9px] font-normal lowercase tracking-normal">(opcional)</span>
+                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
+                  Breve presentación o comentarios adicionales <span className="text-zinc-600 text-[10px] font-normal lowercase tracking-normal">(opcional)</span>
                 </label>
                 <textarea
                   rows={3}
