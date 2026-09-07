@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Logo from './Logo';
+import LanguageSwitcher from './LanguageSwitcher';
 import { supabase } from '../src/lib/supabase';
 
 const AVAILABLE_ROLES = [
@@ -61,6 +63,8 @@ const AI_TOOLS_LIST = [
 ];
 
 const NetworkPage: React.FC = () => {
+  const { t } = useTranslation();
+
   // Estado del Formulario
   const [fullName, setFullName] = useState('');
   const [artisticName, setArtisticName] = useState('');
@@ -262,12 +266,15 @@ const NetworkPage: React.FC = () => {
               / Network
             </span>
           </a>
-          <a
-            href="/"
-            className="text-[10px] font-bold uppercase tracking-[0.4em] text-zinc-400 hover:text-nexo-lime transition-colors inline-flex items-center gap-2"
-          >
-            <span>← Volver al inicio</span>
-          </a>
+          <div className="flex items-center gap-6">
+            <LanguageSwitcher />
+            <a
+              href="/"
+              className="text-[10px] font-bold uppercase tracking-[0.4em] text-zinc-400 hover:text-nexo-lime transition-colors inline-flex items-center gap-2"
+            >
+              <span>{t('network_page.back_home', '← Volver al inicio')}</span>
+            </a>
+          </div>
         </div>
       </header>
 
@@ -278,7 +285,7 @@ const NetworkPage: React.FC = () => {
 
         <div className="container mx-auto px-6 max-w-4xl text-center relative z-10">
           <p className="text-nexo-lime text-[10px] md:text-[11px] font-black uppercase tracking-[0.4em] mb-4">
-            RED DE PROFESIONALES AUDIOVISUALES
+            {t('network_page.badge', 'RED DE PROFESIONALES AUDIOVISUALES')}
           </p>
 
           <h1 className="uppercase tracking-tighter leading-[1.05] mb-6">
@@ -289,11 +296,11 @@ const NetworkPage: React.FC = () => {
           </h1>
 
           <p className="text-zinc-400 text-lg md:text-xl font-light max-w-2xl mx-auto leading-relaxed mb-4">
-            Conectamos profesionales y especialistas técnicos con producciones comerciales, cinematográficas y eventos en Argentina y el mundo.
+            {t('network_page.subtitle', 'Conectamos profesionales y especialistas técnicos con producciones comerciales, cinematográficas y eventos en Argentina y el mundo.')}
           </p>
 
           <p className="text-[10px] md:text-[11px] text-zinc-500 uppercase tracking-widest font-semibold max-w-xl mx-auto">
-            Filmmakers · Fotógrafos · Editores · Pilotos de Drone · Directores de Fotografía · Creadores con IA
+            {t('network_page.roles_summary', 'Filmmakers · Fotógrafos · Editores · Pilotos de Drone · Directores de Fotografía · Creadores con IA')}
           </p>
         </div>
       </section>
@@ -306,21 +313,21 @@ const NetworkPage: React.FC = () => {
               ✓
             </div>
             <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-tighter text-white mb-4">
-              ¡Tu perfil ya está en NexoFilm Network!
+              {t('network_page.success_title', '¡Tu perfil ya está en NexoFilm Network!')}
             </h2>
             <p className="text-zinc-300 text-sm md:text-base font-light leading-relaxed max-w-xl mx-auto mb-8">
-              Muchas gracias, <strong className="text-white font-medium">{fullName}</strong>. Nuestro equipo de producción y sistema de análisis ya han indexado tus especialidades, equipamiento y muestras de trabajo.
+              {t('network_page.success_p1', 'Muchas gracias, {{name}}. Nuestro equipo de producción y sistema de análisis ya han indexado tus especialidades, equipamiento y muestras de trabajo.', { name: fullName })}
             </p>
             <div className="p-6 rounded-xl bg-white/[0.02] border border-white/5 text-left text-xs text-zinc-400 space-y-2 max-w-lg mx-auto mb-8 font-light">
-              <p className="text-nexo-lime font-bold uppercase tracking-[0.2em] text-[10px]">¿Cómo seguimos?</p>
-              <p>• Conservamos tu ficha en nuestro directorio interno de colaboradores.</p>
-              <p>• Cuando se active una producción o rodaje que requiera tu perfil o equipamiento, nos pondremos en contacto directo por WhatsApp o Email.</p>
+              <p className="text-nexo-lime font-bold uppercase tracking-[0.2em] text-[10px]">{t('network_page.success_how', '¿Cómo seguimos?')}</p>
+              <p>{t('network_page.success_step1', '• Conservamos tu ficha en nuestro directorio interno de colaboradores.')}</p>
+              <p>{t('network_page.success_step2', '• Cuando se active una producción o rodaje que requiera tu perfil o equipamiento, nos pondremos en contacto directo por WhatsApp o Email.')}</p>
             </div>
             <a
               href="/"
               className="inline-flex items-center justify-center px-8 py-4 rounded-sm bg-nexo-lime text-black font-black text-[11px] uppercase tracking-widest hover:bg-white hover:text-black transition-all cursor-pointer"
             >
-              Volver al inicio
+              {t('network_page.back_home_btn', 'Volver al inicio')}
             </a>
           </div>
         ) : (
@@ -352,15 +359,15 @@ const NetworkPage: React.FC = () => {
             <div className="glass p-8 md:p-10 rounded-2xl border border-white/5 space-y-6">
               <div className="border-b border-white/5 pb-4">
                 <h2 className="text-xl md:text-2xl font-bold uppercase tracking-tighter text-white">
-                  Datos de Contacto & Ubicación
+                  {t('network_page.section1_title', 'Datos de Contacto & Ubicación')}
                 </h2>
-                <p className="text-zinc-500 text-xs font-light mt-1">Indicanos dónde estás radicado para vincularte a rodajes en tu zona o con movilidad.</p>
+                <p className="text-zinc-500 text-xs font-light mt-1">{t('network_page.section1_desc', 'Indicanos dónde estás radicado para vincularte a rodajes en tu zona o con movilidad.')}</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-                    Nombre y Apellido <span className="text-nexo-lime">*</span>
+                    {t('network_page.name_label', 'Nombre y Apellido')} <span className="text-nexo-lime">*</span>
                   </label>
                   <input
                     type="text"
@@ -374,7 +381,7 @@ const NetworkPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-                    Nombre Artístico / Comercial <span className="text-zinc-600 text-[10px] lowercase font-normal">(opcional)</span>
+                    {t('network_page.artistic_name_label', 'Nombre Artístico / Comercial')} <span className="text-zinc-600 text-[10px] lowercase font-normal">(opcional)</span>
                   </label>
                   <input
                     type="text"
@@ -387,7 +394,7 @@ const NetworkPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-                    Email Profesional <span className="text-nexo-lime">*</span>
+                    {t('network_page.email_label', 'Email Profesional')} <span className="text-nexo-lime">*</span>
                   </label>
                   <input
                     type="email"
@@ -401,7 +408,7 @@ const NetworkPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-                    WhatsApp / Teléfono <span className="text-nexo-lime">*</span>
+                    {t('network_page.phone_label', 'WhatsApp / Teléfono')} <span className="text-nexo-lime">*</span>
                   </label>
                   <input
                     type="tel"
@@ -415,7 +422,7 @@ const NetworkPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-                    Ciudad de Residencia <span className="text-nexo-lime">*</span>
+                    {t('network_page.city_label', 'Ciudad de Residencia')} <span className="text-nexo-lime">*</span>
                   </label>
                   <input
                     type="text"
@@ -429,7 +436,7 @@ const NetworkPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-                    Provincia / Estado
+                    {t('network_page.state_label', 'Provincia / Estado')}
                   </label>
                   <input
                     type="text"
@@ -442,7 +449,7 @@ const NetworkPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-                    País <span className="text-nexo-lime">*</span>
+                    {t('network_page.country_label', 'País')} <span className="text-nexo-lime">*</span>
                   </label>
                   <input
                     type="text"
@@ -456,7 +463,7 @@ const NetworkPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-                    Año de Nacimiento <span className="text-zinc-600 text-[10px] lowercase font-normal">(demográfico)</span>
+                    {t('network_page.birth_year_label', 'Año de Nacimiento')} <span className="text-zinc-600 text-[10px] lowercase font-normal">(demográfico)</span>
                   </label>
                   <input
                     type="number"
@@ -477,14 +484,14 @@ const NetworkPage: React.FC = () => {
             <div className="glass p-8 md:p-10 rounded-2xl border border-white/5 space-y-6">
               <div className="border-b border-white/5 pb-4">
                 <h2 className="text-xl md:text-2xl font-bold uppercase tracking-tighter text-white">
-                  Especialidades & Disciplinas
+                  {t('network_page.section2_title', 'Especialidades & Disciplinas')}
                 </h2>
-                <p className="text-zinc-500 text-xs font-light mt-1">Seleccioná todas las áreas en las que te desempeñás profesionalmente.</p>
+                <p className="text-zinc-500 text-xs font-light mt-1">{t('network_page.section2_desc', 'Seleccioná todas las áreas en las que te desempeñás profesionalmente.')}</p>
               </div>
 
               <div>
                 <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-3">
-                  ¿En qué áreas trabajás? <span className="text-zinc-600 text-[10px] font-normal lowercase tracking-normal">(selección múltiple)</span>
+                  {t('network_page.roles_label', '¿En qué áreas trabajás?')} <span className="text-zinc-600 text-[10px] font-normal lowercase tracking-normal">{t('network_page.roles_multiple', '(selección múltiple)')}</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {AVAILABLE_ROLES.map(r => {
@@ -509,7 +516,7 @@ const NetworkPage: React.FC = () => {
 
               <div className="pt-4 border-t border-white/5">
                 <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-                  ¿Cuál considerás que es tu principal especialidad? <span className="text-nexo-lime">*</span>
+                  {t('network_page.primary_role_label', '¿Cuál considerás que es tu principal especialidad?')} <span className="text-nexo-lime">*</span>
                 </label>
                 <select
                   value={primaryRole}
@@ -531,14 +538,14 @@ const NetworkPage: React.FC = () => {
             <div className="glass p-8 md:p-10 rounded-2xl border border-white/5 space-y-6">
               <div className="border-b border-white/5 pb-4">
                 <h2 className="text-xl md:text-2xl font-bold uppercase tracking-tighter text-white">
-                  Experiencia & Tipos de Proyectos
+                  {t('network_page.section3_title', 'Experiencia & Tipos de Proyectos')}
                 </h2>
-                <p className="text-zinc-500 text-xs font-light mt-1">Contanos sobre tu recorrido en la industria audiovisual.</p>
+                <p className="text-zinc-500 text-xs font-light mt-1">{t('network_page.section3_desc', 'Contanos sobre tu recorrido en la industria audiovisual.')}</p>
               </div>
 
               <div>
                 <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-                  Años trabajando profesionalmente en audiovisual
+                  {t('network_page.experience_years_label', 'Años trabajando profesionalmente en audiovisual')}
                 </label>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {['0-1 años', '2-3 años', '4-6 años', '7-10 años', '10+ años'].map(exp => (
@@ -560,7 +567,7 @@ const NetworkPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-3">
-                  ¿En qué tipo de producciones tenés experiencia? <span className="text-zinc-600 text-[10px] font-normal lowercase tracking-normal">(múltiple)</span>
+                  {t('network_page.project_types_label', '¿En qué tipo de producciones tenés experiencia?')} <span className="text-zinc-600 text-[10px] font-normal lowercase tracking-normal">(múltiple)</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {PROJECT_CATEGORIES.map(cat => {
@@ -585,7 +592,7 @@ const NetworkPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-                  Marcas, Clientes o Proyectos destacados en los que participaste
+                  {t('network_page.notable_clients_label', 'Marcas, Clientes o Proyectos destacados en los que participaste')}
                 </label>
                 <textarea
                   rows={2}
@@ -603,14 +610,14 @@ const NetworkPage: React.FC = () => {
             <div className="glass p-8 md:p-10 rounded-2xl border border-white/5 space-y-6">
               <div className="border-b border-white/5 pb-4">
                 <h2 className="text-xl md:text-2xl font-bold uppercase tracking-tighter text-white">
-                  Equipamiento, Software & IA
+                  {t('network_page.section4_title', 'Equipamiento, Software & IA')}
                 </h2>
-                <p className="text-zinc-500 text-xs font-light mt-1">Para saber con qué herramientas contás ante cada necesidad técnica.</p>
+                <p className="text-zinc-500 text-xs font-light mt-1">{t('network_page.section4_desc', 'Para saber con qué herramientas contás ante cada necesidad técnica.')}</p>
               </div>
 
               <div>
                 <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-                  Cámaras, Lentes y Equipos Propios <span className="text-zinc-600 text-[10px] font-normal lowercase tracking-normal">(si aplica)</span>
+                  {t('network_page.gear_label', 'Cámaras, Lentes y Equipos Propios')} <span className="text-zinc-600 text-[10px] font-normal lowercase tracking-normal">(si aplica)</span>
                 </label>
                 <input
                   type="text"
@@ -623,7 +630,7 @@ const NetworkPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-                  ¿Tenés Drone?
+                  {t('network_page.drone_label', '¿Tenés Drone?')}
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {['No tengo', 'DJI Mini / Air', 'DJI Mavic 3 / Pro', 'FPV / Inspire / Otro'].map(dr => (
@@ -645,7 +652,7 @@ const NetworkPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-                  Software que utilizás habitualmente
+                  {t('network_page.software_label', 'Software que utilizás habitualmente')}
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {SOFTWARE_LIST.map(soft => {
@@ -670,7 +677,7 @@ const NetworkPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-                  Herramientas de Inteligencia Artificial que utilizás <span className="text-zinc-600 text-[10px] font-normal lowercase tracking-normal">(opcional)</span>
+                  {t('network_page.ai_tools_label', 'Herramientas de Inteligencia Artificial que utilizás')} <span className="text-zinc-600 text-[10px] font-normal lowercase tracking-normal">(opcional)</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {AI_TOOLS_LIST.map(tool => {
@@ -700,9 +707,9 @@ const NetworkPage: React.FC = () => {
             <div className="glass p-8 md:p-10 rounded-2xl border border-white/5 space-y-6">
               <div className="border-b border-white/5 pb-4">
                 <h2 className="text-xl md:text-2xl font-bold uppercase tracking-tighter text-white">
-                  Muestras de Trabajo & Portfolios
+                  {t('network_page.section5_title', 'Muestras de Trabajo & Portfolios')}
                 </h2>
-                <p className="text-zinc-500 text-xs font-light mt-1">Compartí enlaces donde podamos ver la calidad visual y estética de tu trabajo.</p>
+                <p className="text-zinc-500 text-xs font-light mt-1">{t('network_page.section5_desc', 'Compartí enlaces donde podamos ver la calidad visual y estética de tu trabajo.')}</p>
               </div>
 
               <div className="space-y-4">
@@ -765,7 +772,7 @@ const NetworkPage: React.FC = () => {
               <div className="pt-4 border-t border-white/5 space-y-4">
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-                    ¿Qué trabajo de los que compartiste representa mejor lo que sabés hacer? <span className="text-nexo-lime">*</span>
+                    {t('network_page.best_project_label', '¿Qué trabajo de los que compartiste representa mejor lo que sabés hacer?')} <span className="text-nexo-lime">*</span>
                   </label>
                   <input
                     type="url"
@@ -775,7 +782,7 @@ const NetworkPage: React.FC = () => {
                     onChange={e => setBestProjectUrl(e.target.value)}
                     className="w-full bg-white/5 border border-white/10 rounded-lg p-3.5 focus:outline-none focus:border-nexo-lime transition-all font-light text-sm text-white placeholder:text-zinc-600"
                   />
-                  <p className="text-zinc-600 text-[10px] mt-1.5 font-light">Nuestro sistema y equipo analizarán prioritariamente este enlace para el scoring de portfolio.</p>
+                  <p className="text-zinc-600 text-[10px] mt-1.5 font-light">{t('network_page.best_project_help', 'Nuestro sistema y equipo analizarán prioritariamente este enlace para el scoring de portfolio.')}</p>
                 </div>
               </div>
             </div>
@@ -786,19 +793,19 @@ const NetworkPage: React.FC = () => {
             <div className="glass p-8 md:p-10 rounded-2xl border border-white/5 space-y-6">
               <div className="border-b border-white/5 pb-4">
                 <h2 className="text-xl md:text-2xl font-bold uppercase tracking-tighter text-white">
-                  CV en PDF, Modalidad & Facturación
+                  {t('network_page.section6_title', 'CV en PDF, Modalidad & Facturación')}
                 </h2>
-                <p className="text-zinc-500 text-xs font-light mt-1">Completá los aspectos operativos para la coordinación de proyectos.</p>
+                <p className="text-zinc-500 text-xs font-light mt-1">{t('network_page.section6_desc', 'Completá los aspectos operativos para la coordinación de proyectos.')}</p>
               </div>
 
               {/* Input de archivo PDF para CV */}
               <div className="p-6 rounded-xl border border-dashed border-white/15 bg-white/[0.02] text-center relative hover:border-nexo-lime/40 transition-colors">
                 <div className="text-2xl mb-2">📎</div>
                 <label className="block text-xs uppercase tracking-wider text-zinc-300 font-semibold mb-1">
-                  Adjuntar CV en PDF <span className="text-nexo-lime text-[10px] font-normal lowercase tracking-normal">(opcional)</span>
+                  {t('network_page.attach_cv_label', 'Adjuntar CV en PDF')} <span className="text-nexo-lime text-[10px] font-normal lowercase tracking-normal">(opcional)</span>
                 </label>
                 <p className="text-zinc-400 text-xs font-light mb-4">
-                  Nuestro sistema con Groq IA extraerá automáticamente clientes, cargos y trayectoria para complementar tu scoring.
+                  {t('network_page.attach_cv_desc', 'Nuestro sistema con Groq IA extraerá automáticamente clientes, cargos y trayectoria para complementar tu scoring.')}
                 </p>
                 <input
                   type="file"
@@ -818,7 +825,7 @@ const NetworkPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-                  Modalidad de colaboración habitual
+                  {t('network_page.modality_label', 'Modalidad de colaboración habitual')}
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {['Freelance / Por proyecto', 'Por jornada técnica', 'Remoto (Edición / Color / IA)', 'Presencial en set'].map(mod => {
@@ -844,7 +851,7 @@ const NetworkPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-                    Condición de Facturación
+                    {t('network_page.invoicing_label', 'Condición de Facturación')}
                   </label>
                   <select
                     value={invoicingStatus}
@@ -859,7 +866,7 @@ const NetworkPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-                    Disponibilidad para viajar
+                    {t('network_page.travel_label', 'Disponibilidad para viajar')}
                   </label>
                   <select
                     value={willingToTravel}
@@ -876,7 +883,7 @@ const NetworkPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-2">
-                  Breve presentación o comentarios adicionales <span className="text-zinc-600 text-[10px] font-normal lowercase tracking-normal">(opcional)</span>
+                  {t('network_page.bio_label', 'Breve presentación o comentarios adicionales')} <span className="text-zinc-600 text-[10px] font-normal lowercase tracking-normal">(opcional)</span>
                 </label>
                 <textarea
                   rows={3}
@@ -897,7 +904,7 @@ const NetworkPage: React.FC = () => {
                   className="mt-1 accent-[#bfe023] w-4 h-4 rounded cursor-pointer"
                 />
                 <label htmlFor="consent" className="text-xs text-zinc-400 font-light leading-relaxed cursor-pointer select-none">
-                  Autorizo a NexoFilm a conservar mis datos profesionales y muestras de trabajo en su base interna para ser contactado ante oportunidades de colaboración en futuros proyectos.
+                  {t('network_page.consent_text', 'Autorizo a NexoFilm a conservar mis datos profesionales y muestras de trabajo en su base interna para ser contactado ante oportunidades de colaboración en futuros proyectos.')}
                 </label>
               </div>
             </div>
@@ -915,11 +922,11 @@ const NetworkPage: React.FC = () => {
                 disabled={isSubmitting}
                 className="w-full py-5 font-bold uppercase tracking-[0.4em] text-[11px] rounded-lg transition-all shadow-xl bg-nexo-lime text-zinc-950 hover:bg-white hover:shadow-nexo-lime/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? 'Procesando postulación...' : 'Quiero sumarme a NexoFilm Network'}
+                {isSubmitting ? t('network_page.submitting_button', 'Procesando postulación...') : t('network_page.submit_button', 'Quiero sumarme a NexoFilm Network')}
               </button>
 
               <p className="text-zinc-600 text-[10px] uppercase tracking-[0.25em] text-center font-bold">
-                Protección de datos garantizada · Revisión técnica por directores de producción
+                {t('network_page.data_guarantee', 'Protección de datos garantizada · Revisión técnica por directores de producción')}
               </p>
             </div>
 
