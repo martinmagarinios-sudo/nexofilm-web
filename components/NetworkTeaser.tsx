@@ -54,7 +54,7 @@ const NetworkTeaser: React.FC = () => {
                 {t('network_teaser.card_title', 'MODALIDAD DE TRABAJO')}
               </div>
               <p className="text-zinc-400 text-sm font-light leading-relaxed">
-                {t('network_teaser.card_desc', 'Sin intermediarios ni cargos fijos. Convocamos y coordinamos equipos a medida según las necesidades técnicas, equipamiento y locación de cada proyecto.')}
+                {t('network_teaser.card_desc', 'Armamos equipos técnicos y creativos a medida según los requerimientos de cada rodaje y locación.')}
               </p>
               <div className="pt-4 border-t border-white/5 flex items-center justify-between text-[10px] uppercase tracking-[0.3em] text-zinc-500 font-bold">
                 <span>{t('network_teaser.card_location', 'Buenos Aires · Latam · Global')}</span>
