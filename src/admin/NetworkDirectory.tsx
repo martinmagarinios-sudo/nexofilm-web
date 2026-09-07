@@ -80,7 +80,7 @@ const NetworkDirectory: React.FC<NetworkDirectoryProps> = ({ password, onCrewUpd
     const fetchCandidates = async () => {
         setLoading(true);
         try {
-            const res = await fetch('/api/network/admin', {
+            const res = await fetch('/api/network', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'listCandidates', password })
@@ -108,7 +108,7 @@ const NetworkDirectory: React.FC<NetworkDirectoryProps> = ({ password, onCrewUpd
         setUpdatingStatus(true);
         setActionMessage('');
         try {
-            const res = await fetch('/api/network/admin', {
+            const res = await fetch('/api/network', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -138,7 +138,7 @@ const NetworkDirectory: React.FC<NetworkDirectoryProps> = ({ password, onCrewUpd
     const handleUpdateStatus = async (candId: string, newStatus: string, notes?: string) => {
         setUpdatingStatus(true);
         try {
-            const res = await fetch('/api/network/admin', {
+            const res = await fetch('/api/network', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -171,7 +171,7 @@ const NetworkDirectory: React.FC<NetworkDirectoryProps> = ({ password, onCrewUpd
 
         setMatchingInProgress(true);
         try {
-            const res = await fetch('/api/network/admin', {
+            const res = await fetch('/api/network', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

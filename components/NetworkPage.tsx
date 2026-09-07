@@ -227,7 +227,7 @@ const NetworkPage: React.FC = () => {
         website_url_hp: honeypot
       };
 
-      const res = await fetch('/api/network/apply', {
+      const res = await fetch('/api/network?action=apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -253,20 +253,20 @@ const NetworkPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-black text-white selection:bg-nexo-lime selection:text-black font-sans">
       
-      {/* Header sobrio */}
-      <header className="border-b border-white/10 bg-black/80 backdrop-blur-md sticky top-0 z-50">
+      {/* Header sobrio y consistente */}
+      <header className="border-b border-white/5 bg-black/70 backdrop-blur-xl sticky top-0 z-50">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
           <a href="/" className="inline-flex items-center gap-3 group">
             <Logo size="md" />
-            <span className="hidden sm:inline-block text-[11px] font-bold uppercase tracking-[0.35em] text-zinc-500 group-hover:text-nexo-lime transition-colors">
+            <span className="hidden sm:inline-block text-[10px] font-bold uppercase tracking-[0.4em] text-zinc-500 group-hover:text-nexo-lime transition-colors">
               / Network
             </span>
           </a>
           <a
             href="/"
-            className="text-xs uppercase tracking-widest text-zinc-400 hover:text-nexo-lime transition-colors inline-flex items-center gap-2"
+            className="text-[10px] font-bold uppercase tracking-[0.4em] text-zinc-400 hover:text-nexo-lime transition-colors inline-flex items-center gap-2"
           >
-            <span>← Volver a NexoFilm</span>
+            <span>← Volver al inicio</span>
           </a>
         </div>
       </header>
@@ -274,26 +274,28 @@ const NetworkPage: React.FC = () => {
       {/* Hero Principal */}
       <section className="pt-16 pb-12 md:pt-24 md:pb-16 border-b border-white/5 relative overflow-hidden">
         {/* Glow de acento */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-nexo-lime/5 blur-[140px] rounded-full pointer-events-none"></div>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-nexo-lime/10 blur-[140px] rounded-full pointer-events-none" />
 
         <div className="container mx-auto px-6 max-w-4xl text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-nexo-lime/10 border border-nexo-lime/20 mb-6">
-            <span className="w-2 h-2 rounded-full bg-nexo-lime animate-pulse"></span>
-            <span className="text-nexo-lime text-[10px] md:text-[11px] font-black uppercase tracking-[0.35em]">
-              Red de Profesionales Audiovisuales
-            </span>
-          </div>
-
-          <h1 className="text-3xl md:text-6xl font-bold uppercase tracking-tight text-white leading-tight mb-6">
-            NexoFilm Network
-          </h1>
-
-          <p className="text-lg md:text-xl text-zinc-300 font-light max-w-2xl mx-auto leading-relaxed mb-4">
-            Conectamos profesionales audiovisuales con proyectos en Argentina y el mundo.
+          <p className="text-nexo-lime text-[10px] md:text-[11px] font-black uppercase tracking-[0.4em] mb-4">
+            RED DE PROFESIONALES AUDIOVISUALES
           </p>
 
-          <p className="text-xs md:text-sm text-zinc-500 uppercase tracking-widest font-medium max-w-xl mx-auto">
-            Filmmakers · Fotógrafos · Editores · Pilotos de Drone · Directores de Fotografía · Creadores con IA · Streaming
+          <h1 className="uppercase tracking-tighter leading-[1.05] mb-6">
+            <span className="font-bold text-white text-4xl md:text-7xl block mb-2">
+              NEXOFILM
+            </span>
+            <span className="font-light text-nexo-lime italic text-3xl md:text-6xl block">
+              NETWORK.
+            </span>
+          </h1>
+
+          <p className="text-zinc-400 text-lg md:text-xl font-light max-w-2xl mx-auto leading-relaxed mb-4">
+            Conectamos profesionales y especialistas técnicos con producciones comerciales, cinematográficas y eventos en Argentina y el mundo.
+          </p>
+
+          <p className="text-[10px] md:text-[11px] text-zinc-500 uppercase tracking-[0.4em] font-bold max-w-xl mx-auto">
+            Filmmakers · Fotógrafos · Editores · Pilotos de Drone · Directores de Fotografía · Creadores con IA
           </p>
         </div>
       </section>
@@ -301,26 +303,26 @@ const NetworkPage: React.FC = () => {
       {/* Contenedor del Formulario o Éxito */}
       <main className="container mx-auto px-6 py-12 md:py-20 max-w-3xl">
         {submittedSuccess ? (
-          <div className="rounded-xl bg-zinc-950 border border-nexo-lime/30 p-8 md:p-14 text-center shadow-2xl relative overflow-hidden animate-fadeIn">
+          <div className="glass p-8 md:p-14 rounded-2xl border border-nexo-lime/30 text-center shadow-2xl relative overflow-hidden animate-fadeIn">
             <div className="w-16 h-16 rounded-full bg-nexo-lime/10 border border-nexo-lime/40 text-nexo-lime flex items-center justify-center text-3xl mx-auto mb-6">
               ✓
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-tight text-white mb-4">
+            <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-tighter text-white mb-4">
               ¡Tu perfil ya está en NexoFilm Network!
             </h2>
             <p className="text-zinc-300 text-sm md:text-base font-light leading-relaxed max-w-xl mx-auto mb-8">
               Muchas gracias, <strong className="text-white font-medium">{fullName}</strong>. Nuestro equipo de producción y sistema de análisis ya han indexado tus especialidades, equipamiento y muestras de trabajo.
             </p>
-            <div className="p-6 rounded-lg bg-black/60 border border-white/5 text-left text-xs text-zinc-400 space-y-2 max-w-lg mx-auto mb-8">
-              <p className="text-nexo-lime font-bold uppercase tracking-wider">¿Cómo seguimos?</p>
+            <div className="p-6 rounded-xl bg-white/[0.02] border border-white/5 text-left text-xs text-zinc-400 space-y-2 max-w-lg mx-auto mb-8 font-light">
+              <p className="text-nexo-lime font-bold uppercase tracking-[0.2em] text-[10px]">¿Cómo seguimos?</p>
               <p>• Conservamos tu ficha en nuestro directorio interno de colaboradores.</p>
               <p>• Cuando se active una producción o rodaje que requiera tu perfil o equipamiento, nos pondremos en contacto directo por WhatsApp o Email.</p>
             </div>
             <a
               href="/"
-              className="inline-flex items-center justify-center px-8 py-3.5 rounded-sm bg-nexo-lime text-black font-bold text-xs uppercase tracking-widest hover:bg-white hover:text-black transition-all cursor-pointer"
+              className="inline-flex items-center justify-center px-8 py-4 rounded-sm bg-nexo-lime text-black font-black text-[11px] uppercase tracking-widest hover:bg-white hover:text-black transition-all cursor-pointer"
             >
-              Volver a la Home
+              Volver al inicio
             </a>
           </div>
         ) : (
@@ -349,18 +351,18 @@ const NetworkPage: React.FC = () => {
             {/* ============================================================ */}
             {/* BLOQUE 1: DATOS PROFESIONALES Y CONTACTO                      */}
             {/* ============================================================ */}
-            <div className="p-6 md:p-8 rounded-xl bg-zinc-950/60 border border-white/10 space-y-6">
-              <div className="border-b border-white/10 pb-4">
-                <span className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.3em]">Bloque 01</span>
-                <h2 className="text-xl font-bold uppercase tracking-tight text-white mt-1">
+            <div className="glass p-8 md:p-10 rounded-2xl border border-white/5 space-y-6">
+              <div className="border-b border-white/5 pb-4">
+                <p className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.4em] mb-1">Bloque 01</p>
+                <h2 className="text-xl md:text-2xl font-bold uppercase tracking-tighter text-white">
                   Datos de Contacto & Ubicación
                 </h2>
-                <p className="text-zinc-500 text-xs mt-1">Indicanos dónde estás radicado para vincularte a rodajes en tu zona o con movilidad.</p>
+                <p className="text-zinc-500 text-xs font-light mt-1">Indicanos dónde estás radicado para vincularte a rodajes en tu zona o con movilidad.</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
+                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
                     Nombre y Apellido <span className="text-nexo-lime">*</span>
                   </label>
                   <input
@@ -369,25 +371,25 @@ const NetworkPage: React.FC = () => {
                     placeholder="Ej: Martín García"
                     value={fullName}
                     onChange={e => setFullName(e.target.value)}
-                    className="w-full bg-black/60 border border-white/10 rounded-sm px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime transition-colors"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3.5 focus:outline-none focus:border-nexo-lime transition-all font-light text-sm text-white placeholder:text-zinc-600"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
-                    Nombre Artístico / Comercial <span className="text-zinc-500 text-[9px] lowercase">(opcional)</span>
+                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
+                    Nombre Artístico / Comercial <span className="text-zinc-600 text-[9px] lowercase font-normal">(opcional)</span>
                   </label>
                   <input
                     type="text"
                     placeholder="Ej: MG Visuals"
                     value={artisticName}
                     onChange={e => setArtisticName(e.target.value)}
-                    className="w-full bg-black/60 border border-white/10 rounded-sm px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime transition-colors"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3.5 focus:outline-none focus:border-nexo-lime transition-all font-light text-sm text-white placeholder:text-zinc-600"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
+                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
                     Email Profesional <span className="text-nexo-lime">*</span>
                   </label>
                   <input
@@ -396,12 +398,12 @@ const NetworkPage: React.FC = () => {
                     placeholder="tuemail@ejemplo.com"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
-                    className="w-full bg-black/60 border border-white/10 rounded-sm px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime transition-colors"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3.5 focus:outline-none focus:border-nexo-lime transition-all font-light text-sm text-white placeholder:text-zinc-600"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
+                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
                     WhatsApp / Teléfono <span className="text-nexo-lime">*</span>
                   </label>
                   <input
@@ -410,12 +412,12 @@ const NetworkPage: React.FC = () => {
                     placeholder="+54 9 11 1234 5678"
                     value={phone}
                     onChange={e => setPhone(e.target.value)}
-                    className="w-full bg-black/60 border border-white/10 rounded-sm px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime transition-colors"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3.5 focus:outline-none focus:border-nexo-lime transition-all font-light text-sm text-white placeholder:text-zinc-600"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
+                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
                     Ciudad de Residencia <span className="text-nexo-lime">*</span>
                   </label>
                   <input
@@ -424,12 +426,12 @@ const NetworkPage: React.FC = () => {
                     placeholder="Ej: Buenos Aires / Córdoba / Mendoza"
                     value={city}
                     onChange={e => setCity(e.target.value)}
-                    className="w-full bg-black/60 border border-white/10 rounded-sm px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime transition-colors"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3.5 focus:outline-none focus:border-nexo-lime transition-all font-light text-sm text-white placeholder:text-zinc-600"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
+                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
                     Provincia / Estado
                   </label>
                   <input
@@ -437,12 +439,12 @@ const NetworkPage: React.FC = () => {
                     placeholder="Ej: CABA / Buenos Aires / Córdoba"
                     value={stateProvince}
                     onChange={e => setStateProvince(e.target.value)}
-                    className="w-full bg-black/60 border border-white/10 rounded-sm px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime transition-colors"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3.5 focus:outline-none focus:border-nexo-lime transition-all font-light text-sm text-white placeholder:text-zinc-600"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
+                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
                     País <span className="text-nexo-lime">*</span>
                   </label>
                   <input
@@ -451,13 +453,13 @@ const NetworkPage: React.FC = () => {
                     placeholder="Argentina / Uruguay / Chile / etc."
                     value={country}
                     onChange={e => setCountry(e.target.value)}
-                    className="w-full bg-black/60 border border-white/10 rounded-sm px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime transition-colors"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3.5 focus:outline-none focus:border-nexo-lime transition-all font-light text-sm text-white placeholder:text-zinc-600"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
-                    Año de Nacimiento <span className="text-zinc-500 text-[9px] lowercase">(demográfico)</span>
+                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
+                    Año de Nacimiento <span className="text-zinc-600 text-[9px] lowercase font-normal">(demográfico)</span>
                   </label>
                   <input
                     type="number"
@@ -466,7 +468,7 @@ const NetworkPage: React.FC = () => {
                     placeholder="Ej: 1995"
                     value={birthYear}
                     onChange={e => setBirthYear(e.target.value)}
-                    className="w-full bg-black/60 border border-white/10 rounded-sm px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime transition-colors"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3.5 focus:outline-none focus:border-nexo-lime transition-all font-light text-sm text-white placeholder:text-zinc-600"
                   />
                 </div>
               </div>
@@ -475,18 +477,18 @@ const NetworkPage: React.FC = () => {
             {/* ============================================================ */}
             {/* BLOQUE 2: ESPECIALIDADES & ROL PRINCIPAL                      */}
             {/* ============================================================ */}
-            <div className="p-6 md:p-8 rounded-xl bg-zinc-950/60 border border-white/10 space-y-6">
-              <div className="border-b border-white/10 pb-4">
-                <span className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.3em]">Bloque 02</span>
-                <h2 className="text-xl font-bold uppercase tracking-tight text-white mt-1">
+            <div className="glass p-8 md:p-10 rounded-2xl border border-white/5 space-y-6">
+              <div className="border-b border-white/5 pb-4">
+                <p className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.4em] mb-1">Bloque 02</p>
+                <h2 className="text-xl md:text-2xl font-bold uppercase tracking-tighter text-white">
                   Especialidades & Disciplinas
                 </h2>
-                <p className="text-zinc-500 text-xs mt-1">Seleccioná todas las áreas en las que te desempeñás profesionalmente.</p>
+                <p className="text-zinc-500 text-xs font-light mt-1">Seleccioná todas las áreas en las que te desempeñás profesionalmente.</p>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-3">
-                  ¿En qué áreas trabajás? <span className="text-zinc-500 text-[10px] font-normal">(Selección múltiple)</span>
+                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-3">
+                  ¿En qué áreas trabajás? <span className="text-zinc-600 text-[9px] font-normal lowercase tracking-normal">(selección múltiple)</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {AVAILABLE_ROLES.map(r => {
@@ -496,10 +498,10 @@ const NetworkPage: React.FC = () => {
                         type="button"
                         key={r}
                         onClick={() => toggleRole(r)}
-                        className={`px-3.5 py-2 rounded-sm text-xs font-medium border transition-all cursor-pointer ${
+                        className={`px-3.5 py-2 rounded-md text-xs font-medium border transition-all cursor-pointer ${
                           isSelected
                             ? 'bg-nexo-lime text-black border-nexo-lime font-bold shadow-sm shadow-nexo-lime/20'
-                            : 'bg-black/40 text-zinc-400 border-white/10 hover:border-white/30 hover:text-white'
+                            : 'bg-white/5 text-zinc-400 border-white/10 hover:border-white/30 hover:text-white'
                         }`}
                       >
                         {isSelected ? '✓ ' : '+ '}{r}
@@ -510,13 +512,13 @@ const NetworkPage: React.FC = () => {
               </div>
 
               <div className="pt-4 border-t border-white/5">
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-2">
+                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
                   ¿Cuál considerás que es tu principal especialidad? <span className="text-nexo-lime">*</span>
                 </label>
                 <select
                   value={primaryRole}
                   onChange={e => setPrimaryRole(e.target.value)}
-                  className="w-full bg-black/60 border border-white/10 rounded-sm px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime transition-colors"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg p-3.5 focus:outline-none focus:border-nexo-lime transition-all font-light text-sm text-white"
                 >
                   {selectedRoles.map(r => (
                     <option key={r} value={r} className="bg-zinc-900 text-white">
@@ -530,17 +532,17 @@ const NetworkPage: React.FC = () => {
             {/* ============================================================ */}
             {/* BLOQUE 3: TRAYECTORIA Y PROYECTOS                            */}
             {/* ============================================================ */}
-            <div className="p-6 md:p-8 rounded-xl bg-zinc-950/60 border border-white/10 space-y-6">
-              <div className="border-b border-white/10 pb-4">
-                <span className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.3em]">Bloque 03</span>
-                <h2 className="text-xl font-bold uppercase tracking-tight text-white mt-1">
+            <div className="glass p-8 md:p-10 rounded-2xl border border-white/5 space-y-6">
+              <div className="border-b border-white/5 pb-4">
+                <p className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.4em] mb-1">Bloque 03</p>
+                <h2 className="text-xl md:text-2xl font-bold uppercase tracking-tighter text-white">
                   Experiencia & Tipos de Proyectos
                 </h2>
-                <p className="text-zinc-500 text-xs mt-1">Contanos sobre tu recorrido en la industria audiovisual.</p>
+                <p className="text-zinc-500 text-xs font-light mt-1">Contanos sobre tu recorrido en la industria audiovisual.</p>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-2">
+                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
                   Años trabajando profesionalmente en audiovisual
                 </label>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
@@ -549,10 +551,10 @@ const NetworkPage: React.FC = () => {
                       type="button"
                       key={exp}
                       onClick={() => setYearsExperience(exp)}
-                      className={`py-2 px-2 text-center text-xs rounded-sm border transition-all cursor-pointer ${
+                      className={`py-2 px-2 text-center text-xs rounded-md border transition-all cursor-pointer ${
                         yearsExperience === exp
                           ? 'bg-nexo-lime text-black border-nexo-lime font-bold'
-                          : 'bg-black/40 text-zinc-400 border-white/10 hover:border-white/20 hover:text-white'
+                          : 'bg-white/5 text-zinc-400 border-white/10 hover:border-white/20 hover:text-white'
                       }`}
                     >
                       {exp}
@@ -562,8 +564,8 @@ const NetworkPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-3">
-                  ¿En qué tipo de producciones tenés experiencia? <span className="text-zinc-500 text-[10px] font-normal">(Múltiple)</span>
+                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-3">
+                  ¿En qué tipo de producciones tenés experiencia? <span className="text-zinc-600 text-[9px] font-normal lowercase tracking-normal">(múltiple)</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {PROJECT_CATEGORIES.map(cat => {
@@ -573,10 +575,10 @@ const NetworkPage: React.FC = () => {
                         type="button"
                         key={cat}
                         onClick={() => toggleProject(cat)}
-                        className={`px-3 py-1.5 rounded-sm text-xs border transition-all cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-md text-xs border transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-white/10 text-nexo-lime border-nexo-lime/40 font-medium'
-                            : 'bg-black/40 text-zinc-500 border-white/5 hover:border-white/20 hover:text-zinc-300'
+                            ? 'bg-nexo-lime/15 text-nexo-lime border-nexo-lime/40 font-medium'
+                            : 'bg-white/5 text-zinc-400 border-white/10 hover:border-white/20 hover:text-white'
                         }`}
                       >
                         {isSelected ? '✓ ' : ''}{cat}
@@ -587,7 +589,7 @@ const NetworkPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
+                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
                   Marcas, Clientes o Proyectos destacados en los que participaste
                 </label>
                 <textarea
@@ -595,7 +597,7 @@ const NetworkPage: React.FC = () => {
                   placeholder="Ej: Campaña para Quilmes, evento corporativo Google, documental para canal Encuentro, etc."
                   value={notableClients}
                   onChange={e => setNotableClients(e.target.value)}
-                  className="w-full bg-black/60 border border-white/10 rounded-sm px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime transition-colors"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg p-3.5 focus:outline-none focus:border-nexo-lime transition-all font-light text-sm text-white placeholder:text-zinc-600 resize-none"
                 />
               </div>
             </div>
@@ -603,30 +605,30 @@ const NetworkPage: React.FC = () => {
             {/* ============================================================ */}
             {/* BLOQUE 4: EQUIPAMIENTO, SOFTWARE & IA                         */}
             {/* ============================================================ */}
-            <div className="p-6 md:p-8 rounded-xl bg-zinc-950/60 border border-white/10 space-y-6">
-              <div className="border-b border-white/10 pb-4">
-                <span className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.3em]">Bloque 04</span>
-                <h2 className="text-xl font-bold uppercase tracking-tight text-white mt-1">
+            <div className="glass p-8 md:p-10 rounded-2xl border border-white/5 space-y-6">
+              <div className="border-b border-white/5 pb-4">
+                <p className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.4em] mb-1">Bloque 04</p>
+                <h2 className="text-xl md:text-2xl font-bold uppercase tracking-tighter text-white">
                   Equipamiento, Software & IA
                 </h2>
-                <p className="text-zinc-500 text-xs mt-1">Para saber con qué herramientas contás ante cada necesidad técnica.</p>
+                <p className="text-zinc-500 text-xs font-light mt-1">Para saber con qué herramientas contás ante cada necesidad técnica.</p>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
-                  Cámaras, Lentes y Equipos Propios <span className="text-zinc-500 text-[9px] lowercase">(si aplica)</span>
+                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
+                  Cámaras, Lentes y Equipos Propios <span className="text-zinc-600 text-[9px] font-normal lowercase tracking-normal">(si aplica)</span>
                 </label>
                 <input
                   type="text"
                   placeholder="Ej: Sony FX3, 24-70 GM II, 70-200 GM, Ronin RS3 Pro, luces Amaran..."
                   value={cameraGear}
                   onChange={e => setCameraGear(e.target.value)}
-                  className="w-full bg-black/60 border border-white/10 rounded-sm px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime transition-colors"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg p-3.5 focus:outline-none focus:border-nexo-lime transition-all font-light text-sm text-white placeholder:text-zinc-600"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-2">
+                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
                   ¿Tenés Drone?
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -635,10 +637,10 @@ const NetworkPage: React.FC = () => {
                       type="button"
                       key={dr}
                       onClick={() => setDroneGear(dr)}
-                      className={`py-2 px-2 text-center text-xs rounded-sm border transition-all cursor-pointer ${
+                      className={`py-2 px-2 text-center text-xs rounded-md border transition-all cursor-pointer ${
                         droneGear === dr
                           ? 'bg-nexo-lime text-black border-nexo-lime font-bold'
-                          : 'bg-black/40 text-zinc-400 border-white/10 hover:border-white/20 hover:text-white'
+                          : 'bg-white/5 text-zinc-400 border-white/10 hover:border-white/20 hover:text-white'
                       }`}
                     >
                       {dr}
@@ -648,7 +650,7 @@ const NetworkPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-2">
+                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
                   Software que utilizás habitualmente
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -659,10 +661,10 @@ const NetworkPage: React.FC = () => {
                         type="button"
                         key={soft}
                         onClick={() => toggleSoftware(soft)}
-                        className={`px-3 py-1.5 rounded-sm text-xs border transition-all cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-md text-xs border transition-all cursor-pointer ${
                           isSelected
                             ? 'bg-nexo-lime/15 text-nexo-lime border-nexo-lime font-medium'
-                            : 'bg-black/40 text-zinc-400 border-white/10 hover:border-white/20 hover:text-white'
+                            : 'bg-white/5 text-zinc-400 border-white/10 hover:border-white/20 hover:text-white'
                         }`}
                       >
                         {isSelected ? '✓ ' : '+ '}{soft}
@@ -673,8 +675,8 @@ const NetworkPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-2">
-                  Herramientas de Inteligencia Artificial que utilizás <span className="text-zinc-500 text-[10px] font-normal">(Opcional)</span>
+                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
+                  Herramientas de Inteligencia Artificial que utilizás <span className="text-zinc-600 text-[9px] font-normal lowercase tracking-normal">(opcional)</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {AI_TOOLS_LIST.map(tool => {
@@ -684,10 +686,10 @@ const NetworkPage: React.FC = () => {
                         type="button"
                         key={tool}
                         onClick={() => toggleAiTool(tool)}
-                        className={`px-3 py-1.5 rounded-sm text-xs border transition-all cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-md text-xs border transition-all cursor-pointer ${
                           isSelected
                             ? 'bg-nexo-lime text-black border-nexo-lime font-bold'
-                            : 'bg-black/40 text-zinc-400 border-white/10 hover:border-white/20 hover:text-white'
+                            : 'bg-white/5 text-zinc-400 border-white/10 hover:border-white/20 hover:text-white'
                         }`}
                       >
                         {isSelected ? '✓ ' : '+ '}{tool}
@@ -701,75 +703,75 @@ const NetworkPage: React.FC = () => {
             {/* ============================================================ */}
             {/* BLOQUE 5: MUESTRAS DE TRABAJO Y PORTFOLIO (MULTI-LINK)        */}
             {/* ============================================================ */}
-            <div className="p-6 md:p-8 rounded-xl bg-zinc-950/60 border border-white/10 space-y-6">
-              <div className="border-b border-white/10 pb-4">
-                <span className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.3em]">Bloque 05</span>
-                <h2 className="text-xl font-bold uppercase tracking-tight text-white mt-1">
+            <div className="glass p-8 md:p-10 rounded-2xl border border-white/5 space-y-6">
+              <div className="border-b border-white/5 pb-4">
+                <p className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.4em] mb-1">Bloque 05</p>
+                <h2 className="text-xl md:text-2xl font-bold uppercase tracking-tighter text-white">
                   Muestras de Trabajo & Portfolios
                 </h2>
-                <p className="text-zinc-500 text-xs mt-1">Compartí enlaces donde podamos ver la calidad visual y estética de tu trabajo.</p>
+                <p className="text-zinc-500 text-xs font-light mt-1">Compartí enlaces donde podamos ver la calidad visual y estética de tu trabajo.</p>
               </div>
 
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
-                  <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">Portfolio Web:</span>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+                  <span className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">Portfolio Web:</span>
                   <input
                     type="url"
                     placeholder="https://tuweb.com"
                     value={portfolioUrl}
                     onChange={e => setPortfolioUrl(e.target.value)}
-                    className="sm:col-span-2 bg-black/60 border border-white/10 rounded-sm px-4 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime"
+                    className="sm:col-span-2 bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime font-light"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
-                  <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">Instagram Profesional:</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+                  <span className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">Instagram Profesional:</span>
                   <input
                     type="url"
                     placeholder="https://instagram.com/tuperfil"
                     value={instagramUrl}
                     onChange={e => setInstagramUrl(e.target.value)}
-                    className="sm:col-span-2 bg-black/60 border border-white/10 rounded-sm px-4 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime"
+                    className="sm:col-span-2 bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime font-light"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
-                  <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">Vimeo / YouTube:</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+                  <span className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">Vimeo / YouTube:</span>
                   <input
                     type="url"
                     placeholder="https://vimeo.com/... o youtube.com/..."
                     value={vimeoYoutubeUrl}
                     onChange={e => setVimeoYoutubeUrl(e.target.value)}
-                    className="sm:col-span-2 bg-black/60 border border-white/10 rounded-sm px-4 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime"
+                    className="sm:col-span-2 bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime font-light"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
-                  <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">Behance / ArtStation:</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+                  <span className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">Behance / ArtStation:</span>
                   <input
                     type="url"
                     placeholder="https://behance.net/tuperfil"
                     value={behanceUrl}
                     onChange={e => setBehanceUrl(e.target.value)}
-                    className="sm:col-span-2 bg-black/60 border border-white/10 rounded-sm px-4 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime"
+                    className="sm:col-span-2 bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime font-light"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
-                  <span className="text-xs font-bold uppercase tracking-wider text-zinc-300">Showreel Directo:</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+                  <span className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold">Showreel Directo:</span>
                   <input
                     type="url"
                     placeholder="https://link-a-tu-reel.com"
                     value={reelUrl}
                     onChange={e => setReelUrl(e.target.value)}
-                    className="sm:col-span-2 bg-black/60 border border-white/10 rounded-sm px-4 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime"
+                    className="sm:col-span-2 bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime font-light"
                   />
                 </div>
               </div>
 
               <div className="pt-4 border-t border-white/5 space-y-4">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
+                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
                     ¿Qué trabajo de los que compartiste representa mejor lo que sabés hacer? <span className="text-nexo-lime">*</span>
                   </label>
                   <input
@@ -778,9 +780,9 @@ const NetworkPage: React.FC = () => {
                     placeholder="Pegá el link puntual al video, álbum o post que mejor define tu nivel"
                     value={bestProjectUrl}
                     onChange={e => setBestProjectUrl(e.target.value)}
-                    className="w-full bg-black/60 border border-white/10 rounded-sm px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime transition-colors"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3.5 focus:outline-none focus:border-nexo-lime transition-all font-light text-sm text-white placeholder:text-zinc-600"
                   />
-                  <p className="text-zinc-600 text-[10px] mt-1">Nuestro sistema y equipo analizarán prioritariamente este enlace para el scoring de portfolio.</p>
+                  <p className="text-zinc-600 text-[10px] mt-1.5 font-light">Nuestro sistema y equipo analizarán prioritariamente este enlace para el scoring de portfolio.</p>
                 </div>
               </div>
             </div>
@@ -788,22 +790,22 @@ const NetworkPage: React.FC = () => {
             {/* ============================================================ */}
             {/* BLOQUE 6: CV EN PDF (OPCIONAL), MODALIDAD & FACTURACIÓN       */}
             {/* ============================================================ */}
-            <div className="p-6 md:p-8 rounded-xl bg-zinc-950/60 border border-white/10 space-y-6">
-              <div className="border-b border-white/10 pb-4">
-                <span className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.3em]">Bloque 06</span>
-                <h2 className="text-xl font-bold uppercase tracking-tight text-white mt-1">
+            <div className="glass p-8 md:p-10 rounded-2xl border border-white/5 space-y-6">
+              <div className="border-b border-white/5 pb-4">
+                <p className="text-nexo-lime text-[10px] font-black uppercase tracking-[0.4em] mb-1">Bloque 06</p>
+                <h2 className="text-xl md:text-2xl font-bold uppercase tracking-tighter text-white">
                   CV en PDF, Modalidad & Facturación
                 </h2>
-                <p className="text-zinc-500 text-xs mt-1">Completá los aspectos operativos para la coordinación de proyectos.</p>
+                <p className="text-zinc-500 text-xs font-light mt-1">Completá los aspectos operativos para la coordinación de proyectos.</p>
               </div>
 
               {/* Input de archivo PDF para CV */}
-              <div className="p-5 rounded-lg border border-dashed border-white/20 bg-black/40 text-center relative hover:border-nexo-lime/50 transition-colors">
+              <div className="p-6 rounded-xl border border-dashed border-white/15 bg-white/[0.02] text-center relative hover:border-nexo-lime/40 transition-colors">
                 <div className="text-2xl mb-2">📎</div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-white mb-1">
-                  Adjuntar CV en PDF <span className="text-nexo-lime text-[10px] font-normal">(Opcional)</span>
+                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-300 font-bold mb-1">
+                  Adjuntar CV en PDF <span className="text-nexo-lime text-[9px] font-normal lowercase tracking-normal">(opcional)</span>
                 </label>
-                <p className="text-zinc-400 text-xs mb-4">
+                <p className="text-zinc-400 text-xs font-light mb-4">
                   Nuestro sistema con Groq IA extraerá automáticamente clientes, cargos y trayectoria para complementar tu scoring.
                 </p>
                 <input
@@ -813,7 +815,7 @@ const NetworkPage: React.FC = () => {
                     const file = e.target.files?.[0];
                     if (file) setCvFile(file);
                   }}
-                  className="text-xs text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-xs file:font-bold file:uppercase file:tracking-wider file:bg-zinc-800 file:text-white hover:file:bg-nexo-lime hover:file:text-black cursor-pointer"
+                  className="text-xs text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-[10px] file:font-bold file:uppercase file:tracking-[0.2em] file:bg-white/10 file:text-white hover:file:bg-nexo-lime hover:file:text-black cursor-pointer"
                 />
                 {cvFile && (
                   <p className="text-nexo-lime text-xs mt-3 font-medium">
@@ -823,7 +825,7 @@ const NetworkPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-2">
+                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
                   Modalidad de colaboración habitual
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -834,10 +836,10 @@ const NetworkPage: React.FC = () => {
                         type="button"
                         key={mod}
                         onClick={() => toggleModality(mod)}
-                        className={`px-3 py-1.5 rounded-sm text-xs border transition-all cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-md text-xs border transition-all cursor-pointer ${
                           isSelected
                             ? 'bg-nexo-lime text-black border-nexo-lime font-bold'
-                            : 'bg-black/40 text-zinc-400 border-white/10 hover:border-white/20 hover:text-white'
+                            : 'bg-white/5 text-zinc-400 border-white/10 hover:border-white/20 hover:text-white'
                         }`}
                       >
                         {isSelected ? '✓ ' : ''}{mod}
@@ -847,54 +849,54 @@ const NetworkPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
+                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
                     Condición de Facturación
                   </label>
                   <select
                     value={invoicingStatus}
                     onChange={e => setInvoicingStatus(e.target.value)}
-                    className="w-full bg-black/60 border border-white/10 rounded-sm px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3.5 focus:outline-none focus:border-nexo-lime transition-all font-light text-sm text-white"
                   >
-                    <option value="Emite factura propia (Monotributo / RI / Exterior)">Emite factura propia (Monotributo / RI / Exterior)</option>
-                    <option value="Factura a través de tercero">Factura a través de tercero</option>
-                    <option value="A convenir según proyecto">A convenir según proyecto</option>
+                    <option value="Emite factura propia (Monotributo / RI / Exterior)" className="bg-zinc-900">Emite factura propia (Monotributo / RI / Exterior)</option>
+                    <option value="Factura a través de tercero" className="bg-zinc-900">Factura a través de tercero</option>
+                    <option value="A convenir según proyecto" className="bg-zinc-900">A convenir según proyecto</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
+                  <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
                     Disponibilidad para viajar
                   </label>
                   <select
                     value={willingToTravel}
                     onChange={e => setWillingToTravel(e.target.value)}
-                    className="w-full bg-black/60 border border-white/10 rounded-sm px-4 py-2.5 text-sm text-white focus:outline-none focus:border-nexo-lime"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3.5 focus:outline-none focus:border-nexo-lime transition-all font-light text-sm text-white"
                   >
-                    <option value="Sí, a cualquier destino">Sí, a cualquier destino</option>
-                    <option value="Sí, dentro del país">Sí, dentro del país</option>
-                    <option value="Solo en mi provincia/ciudad">Solo en mi provincia/ciudad</option>
-                    <option value="Solo trabajo remoto">Solo trabajo remoto</option>
+                    <option value="Sí, a cualquier destino" className="bg-zinc-900">Sí, a cualquier destino</option>
+                    <option value="Sí, dentro del país" className="bg-zinc-900">Sí, dentro del país</option>
+                    <option value="Solo en mi provincia/ciudad" className="bg-zinc-900">Solo en mi provincia/ciudad</option>
+                    <option value="Solo trabajo remoto" className="bg-zinc-900">Solo trabajo remoto</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
-                  Breve presentación o comentarios adicionales <span className="text-zinc-500 text-[9px] lowercase">(opcional)</span>
+                <label className="block text-[10px] uppercase tracking-[0.4em] text-zinc-500 font-bold mb-2">
+                  Breve presentación o comentarios adicionales <span className="text-zinc-600 text-[9px] font-normal lowercase tracking-normal">(opcional)</span>
                 </label>
                 <textarea
                   rows={3}
                   placeholder="Contanos qué tipo de producciones te motivan o cualquier detalle sobre tu perfil..."
                   value={bioNotes}
                   onChange={e => setBioNotes(e.target.value)}
-                  className="w-full bg-black/60 border border-white/10 rounded-sm px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-nexo-lime"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg p-3.5 focus:outline-none focus:border-nexo-lime transition-all font-light text-sm text-white placeholder:text-zinc-600 resize-none"
                 />
               </div>
 
               {/* Consentimiento */}
-              <div className="pt-4 border-t border-white/10 flex items-start gap-3">
+              <div className="pt-4 border-t border-white/5 flex items-start gap-3">
                 <input
                   type="checkbox"
                   id="consent"
@@ -902,16 +904,16 @@ const NetworkPage: React.FC = () => {
                   onChange={e => setConsent(e.target.checked)}
                   className="mt-1 accent-[#bfe023] w-4 h-4 rounded cursor-pointer"
                 />
-                <label htmlFor="consent" className="text-xs text-zinc-400 leading-relaxed cursor-pointer select-none">
+                <label htmlFor="consent" className="text-xs text-zinc-400 font-light leading-relaxed cursor-pointer select-none">
                   Autorizo a NexoFilm a conservar mis datos profesionales y muestras de trabajo en su base interna para ser contactado ante oportunidades de colaboración en futuros proyectos.
                 </label>
               </div>
             </div>
 
-            {/* Estado de envío y botón final */}
-            <div className="text-center pt-4">
+            {/* Estado de envío y botón final idéntico a Contact */}
+            <div className="pt-4 space-y-4">
               {uploadProgress && (
-                <p className="text-nexo-lime text-xs font-medium uppercase tracking-wider mb-4 animate-pulse">
+                <p className="text-nexo-lime text-xs font-bold uppercase tracking-[0.2em] text-center animate-pulse">
                   {uploadProgress}
                 </p>
               )}
@@ -919,14 +921,12 @@ const NetworkPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`w-full sm:w-auto min-w-[280px] px-10 py-4 rounded-sm bg-nexo-lime text-black font-bold text-xs uppercase tracking-widest hover:bg-white hover:text-black transition-all duration-300 shadow-xl shadow-nexo-lime/10 cursor-pointer ${
-                  isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+                className="w-full py-5 font-bold uppercase tracking-[0.4em] text-[11px] rounded-lg transition-all shadow-xl bg-nexo-lime text-zinc-950 hover:bg-white hover:shadow-nexo-lime/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Procesando postulación...' : 'Quiero sumarme a NexoFilm Network'}
               </button>
 
-              <p className="text-zinc-600 text-[10px] uppercase tracking-widest mt-4">
+              <p className="text-zinc-600 text-[10px] uppercase tracking-[0.25em] text-center font-bold">
                 Protección de datos garantizada · Revisión técnica por directores de producción
               </p>
             </div>
