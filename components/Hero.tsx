@@ -65,16 +65,24 @@ const Hero: React.FC = () => {
               >
                 {/* Poster de carga mientras conecta el stream */}
                 <div
-                  className="absolute inset-0 bg-cover bg-center grayscale brightness-[0.32]"
-                  style={{ backgroundImage: `url(${slide.image})` }}
+                  className="absolute inset-0 bg-cover bg-center"
+                  style={{
+                    backgroundImage: `url(${slide.image})`,
+                    filter: 'grayscale(0.60) brightness(0.58) contrast(1.15)',
+                  }}
                 />
                 <iframe
                   src={`https://iframe.mediadelivery.net/embed/738019/${slide.bunnyVideoId}?autoplay=true&loop=true&muted=true&controls=false&preload=true`}
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[177.78vh] min-w-full h-[56.25vw] min-h-full border-0 grayscale brightness-[0.32] contrast-125 pointer-events-none"
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[177.78vh] min-w-full h-[56.25vw] min-h-full border-0 pointer-events-none"
                   allow="autoplay; fullscreen"
                   loading={idx === 0 ? "eager" : "lazy"}
                   title={`Video de fondo: ${t(`hero.slides.${idx}.title`)}`}
+                  style={{
+                    filter: 'grayscale(0.60) brightness(0.58) contrast(1.15)',
+                  }}
                 />
+                {/* Viñeta cinematográfica suave para asegurar legibilidad impecable de textos en blanco */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/45 to-black/15 pointer-events-none" />
               </div>
             ) : slide.video ? (
               <video
@@ -85,25 +93,27 @@ const Hero: React.FC = () => {
                 poster={slide.image}
                 aria-label={`Video de fondo: ${t(`hero.slides.${idx}.title`)}`}
                 {...({ fetchPriority: idx === 0 ? "high" : "auto" } as any)}
-                className="absolute inset-0 w-full h-full object-cover grayscale brightness-[0.32] contrast-125"
+                className="absolute inset-0 w-full h-full object-cover"
                 style={{
                   transform: `scale(${idx === current ? 1.1 : 1.2})`,
                   transition: 'transform 12s linear',
                   height: '110%',
-                  top: '-5%'
+                  top: '-5%',
+                  filter: 'grayscale(0.60) brightness(0.58) contrast(1.15)',
                 }}
               >
                 <source src={slide.video} type="video/mp4" />
               </video>
             ) : (
               <div
-                className="absolute inset-0 bg-cover bg-center grayscale brightness-[0.32]"
+                className="absolute inset-0 bg-cover bg-center"
                 style={{
-                  backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,1)), url(${slide.image})`,
+                  backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.85)), url(${slide.image})`,
                   transform: `scale(${idx === current ? 1.1 : 1.2})`,
                   transition: 'transform 12s linear',
                   height: '110%',
-                  top: '-5%'
+                  top: '-5%',
+                  filter: 'grayscale(0.60) brightness(0.58) contrast(1.15)',
                 }}
               />
             )}
@@ -182,6 +192,8 @@ const Hero: React.FC = () => {
           0{current + 1} / 0{CONFIG.heroSlides.length}
         </div>
       </div>
+      {/* Gradiente inferior cinematográfico para fundir suavemente con el resto de la web */}
+      <div className="absolute -bottom-1 left-0 right-0 h-48 md:h-72 bg-gradient-to-t from-black via-black/85 to-transparent pointer-events-none z-30" />
     </section>
   );
 };

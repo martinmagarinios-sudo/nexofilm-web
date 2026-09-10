@@ -8,9 +8,12 @@ const ValueProp: React.FC = () => {
 
   return (
     <section className="py-24 bg-black relative overflow-hidden">
+      {/* Suavizado superior para integración perfecta con el Hero */}
+      <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-black to-transparent pointer-events-none z-10" />
+
       {/* Elementos decorativos de fondo */}
-      <div className="absolute top-0 right-0 w-[50vw] h-[50vh] bg-nexo-lime/10 blur-[120px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/4" />
-      <div className="absolute bottom-0 left-0 w-[50vw] h-[50vh] bg-zinc-900/40 blur-[120px] rounded-full pointer-events-none translate-y-1/2 -translate-x-1/4" />
+      <div className="absolute top-12 right-0 w-[50vw] h-[50vh] bg-nexo-lime/10 blur-[140px] rounded-full pointer-events-none translate-x-1/4" />
+      <div className="absolute bottom-0 left-0 w-[50vw] h-[50vh] bg-zinc-900/40 blur-[140px] rounded-full pointer-events-none translate-y-1/2 -translate-x-1/4" />
 
       <div className="container mx-auto px-6 relative z-10">
         <div className="max-w-5xl mx-auto text-center md:text-left">
