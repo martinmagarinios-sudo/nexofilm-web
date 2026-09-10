@@ -36,6 +36,7 @@ export interface HeroSlide {
   title: string;
   subtitle: string;
   image: string;
-  video?: string; // Video de fondo opcional (si existe, se usa en vez de la imagen)
+  video?: string; // Video de fondo opcional (fallback local)
+  bunnyVideoId?: string; // ID de BunnyCDN Stream para background streaming sin consumo de Vercel
   gallery: string[];
 }

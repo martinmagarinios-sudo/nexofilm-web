@@ -53,7 +53,30 @@ const Hero: React.FC = () => {
               transform: `translateY(${offsetY * 0.3}px)`,
             }}
           >
-            {slide.video ? (
+            {slide.bunnyVideoId ? (
+              <div
+                className="absolute inset-0 overflow-hidden pointer-events-none bg-black"
+                style={{
+                  transform: `scale(${idx === current ? 1.05 : 1.15})`,
+                  transition: 'transform 12s linear',
+                  height: '110%',
+                  top: '-5%'
+                }}
+              >
+                {/* Poster de carga mientras conecta el stream */}
+                <div
+                  className="absolute inset-0 bg-cover bg-center grayscale brightness-[0.32]"
+                  style={{ backgroundImage: `url(${slide.image})` }}
+                />
+                <iframe
+                  src={`https://iframe.mediadelivery.net/embed/738019/${slide.bunnyVideoId}?autoplay=true&loop=true&muted=true&controls=false&preload=true`}
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[177.78vh] min-w-full h-[56.25vw] min-h-full border-0 grayscale brightness-[0.32] contrast-125 pointer-events-none"
+                  allow="autoplay; fullscreen"
+                  loading={idx === 0 ? "eager" : "lazy"}
+                  title={`Video de fondo: ${t(`hero.slides.${idx}.title`)}`}
+                />
+              </div>
+            ) : slide.video ? (
               <video
                 autoPlay
                 muted
@@ -62,7 +85,7 @@ const Hero: React.FC = () => {
                 poster={slide.image}
                 aria-label={`Video de fondo: ${t(`hero.slides.${idx}.title`)}`}
                 {...({ fetchPriority: idx === 0 ? "high" : "auto" } as any)}
-                className="absolute inset-0 w-full h-full object-cover grayscale brightness-[0.25]"
+                className="absolute inset-0 w-full h-full object-cover grayscale brightness-[0.32] contrast-125"
                 style={{
                   transform: `scale(${idx === current ? 1.1 : 1.2})`,
                   transition: 'transform 12s linear',
@@ -74,7 +97,7 @@ const Hero: React.FC = () => {
               </video>
             ) : (
               <div
-                className="absolute inset-0 bg-cover bg-center grayscale brightness-[0.25]"
+                className="absolute inset-0 bg-cover bg-center grayscale brightness-[0.32]"
                 style={{
                   backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,1)), url(${slide.image})`,
                   transform: `scale(${idx === current ? 1.1 : 1.2})`,
