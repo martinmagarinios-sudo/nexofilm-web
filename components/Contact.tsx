@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { WHATSAPP_NUMBER, WHATSAPP_MESSAGE } from '../constants';
 import { CONFIG } from '../data/config';
+import { trackConversion } from '../src/lib/tracking';
 
 const Contact: React.FC = () => {
   const { t } = useTranslation();
@@ -23,6 +24,7 @@ const Contact: React.FC = () => {
       if (response.ok) {
         setFormStatus('sent');
         (e.target as HTMLFormElement).reset();
+        trackConversion('conversion_event_contact', { method: 'contact_form' });
       } else {
         setFormStatus('error');
       }
@@ -49,6 +51,7 @@ const Contact: React.FC = () => {
                   href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackConversion('conversion_event_contact', { method: 'whatsapp_contact_section' })}
                   className="w-12 h-12 border border-white/10 rounded-full flex items-center justify-center hover:bg-nexo-lime hover:text-zinc-950 hover:-translate-y-1.5 transition-all duration-300 group shadow-lg hover:shadow-nexo-lime/20"
                   title="WhatsApp"
                 >

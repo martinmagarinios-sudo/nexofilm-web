@@ -1,6 +1,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { CONFIG } from '../data/config';
+import { trackConversion } from '../src/lib/tracking';
 
 interface FloatingWhatsAppProps {
   isHidden?: boolean;
@@ -17,6 +18,7 @@ const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ isHidden }) => {
       href={whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={() => trackConversion('conversion_event_contact', { method: 'floating_whatsapp' })}
       className="fixed bottom-8 right-8 z-[100] group flex items-center"
       aria-label="Contactar por WhatsApp"
     >

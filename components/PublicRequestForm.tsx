@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import Logo from './Logo';
+import { trackConversion } from '../src/lib/tracking';
 
 const calculateHours = (start: string, end: string) => {
     if (!start || !end) return 4;
@@ -338,6 +339,7 @@ const PublicRequestForm: React.FC = () => {
             }
 
             setFormStatus('success');
+            trackConversion('conversion_event_contact', { method: 'public_request_form' });
         } catch (err: any) {
             console.error(err);
             setErrorMsg(err.message || 'Error de conexión. Inténtalo más tarde.');

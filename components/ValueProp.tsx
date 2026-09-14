@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-
 import { CONFIG } from '../data/config';
+import { trackConversion } from '../src/lib/tracking';
 
 const ValueProp: React.FC = () => {
   const { t } = useTranslation();
@@ -51,6 +51,7 @@ const ValueProp: React.FC = () => {
                   href={`https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(CONFIG.whatsappMessage)}`}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackConversion('conversion_event_contact', { method: 'valueprop_whatsapp' })}
                   className="group inline-flex items-center gap-3 bg-nexo-lime text-black font-black uppercase tracking-widest text-[11px] px-6 py-4 rounded-sm hover:bg-white transition-all duration-300 hover:shadow-[0_0_30px_rgba(225,249,55,0.25)]"
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
