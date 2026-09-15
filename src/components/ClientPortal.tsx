@@ -2890,16 +2890,30 @@ const ClientPortal: React.FC = () => {
                                                             const isVid = file.mimeType?.includes('video') || file.name?.toLowerCase().endsWith('.mp4') || file.name?.toLowerCase().endsWith('.mov');
                                                             return (
                                                                 <div key={file.id} className="bg-black/40 border border-white/10 rounded-xl overflow-hidden hover:border-nexo-lime/40 transition-all flex flex-col group">
-                                                                    <div className="relative aspect-video bg-black flex items-center justify-center overflow-hidden border-b border-white/5">
+                                                                    <div className="relative aspect-video bg-gradient-to-br from-zinc-900 via-black to-zinc-950 flex items-center justify-center overflow-hidden border-b border-white/5">
                                                                         {file.thumbnailLink ? (
                                                                             <img
-                                                                                src={file.thumbnailLink.replace(/=s\d+/, '=s400')}
-                                                                                alt={file.name}
+                                                                                src={file.thumbnailLink.includes('=w') || file.thumbnailLink.includes('=s') ? file.thumbnailLink : `https://lh3.googleusercontent.com/d/${file.id}=w640`}
+                                                                                alt=""
+                                                                                referrerPolicy="no-referrer"
+                                                                                loading="lazy"
+                                                                                onError={(e) => {
+                                                                                    const target = e.currentTarget;
+                                                                                    if (!target.dataset.triedFallback) {
+                                                                                        target.dataset.triedFallback = 'true';
+                                                                                        target.src = `https://drive.google.com/thumbnail?id=${file.id}&sz=w640`;
+                                                                                    } else {
+                                                                                        target.style.display = 'none';
+                                                                                    }
+                                                                                }}
                                                                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform opacity-80 group-hover:opacity-100"
                                                                             />
-                                                                        ) : (
+                                                                        ) : null}
+
+                                                                        {/* Fallback elegante si la imagen no carga o no existe */}
+                                                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-600 gap-1.5 pointer-events-none -z-0">
                                                                             <span className="text-3xl">{isVid ? '🎬' : '📦'}</span>
-                                                                        )}
+                                                                        </div>
                                                                         {isVid && (
                                                                             <button
                                                                                 onClick={() => setPreviewDriveVideo(file)}

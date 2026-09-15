@@ -347,21 +347,33 @@ const StorageDelivery: React.FC = () => {
                                                     className="bg-zinc-900/40 border border-white/10 hover:border-nexo-lime/40 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_20px_rgba(204,255,0,0.08)] flex flex-col group"
                                                 >
                                                     {/* Contenedor Visual / Miniatura */}
-                                                    <div className="relative aspect-video bg-black/80 flex items-center justify-center overflow-hidden border-b border-white/5">
+                                                    <div className="relative aspect-video bg-gradient-to-br from-zinc-900 via-black to-zinc-950 flex items-center justify-center overflow-hidden border-b border-white/5">
                                                         {file.thumbnailLink ? (
                                                             <img
-                                                                src={file.thumbnailLink.replace(/=s\d+/, '=s640')}
-                                                                alt={file.name}
+                                                                src={file.thumbnailLink.includes('=w') || file.thumbnailLink.includes('=s') ? file.thumbnailLink : `https://lh3.googleusercontent.com/d/${file.id}=w640`}
+                                                                alt=""
+                                                                referrerPolicy="no-referrer"
+                                                                loading="lazy"
+                                                                onError={(e) => {
+                                                                    const target = e.currentTarget;
+                                                                    if (!target.dataset.triedFallback) {
+                                                                        target.dataset.triedFallback = 'true';
+                                                                        target.src = `https://drive.google.com/thumbnail?id=${file.id}&sz=w640`;
+                                                                    } else {
+                                                                        target.style.display = 'none';
+                                                                    }
+                                                                }}
                                                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100"
                                                             />
-                                                        ) : (
-                                                            <div className="flex flex-col items-center justify-center text-zinc-600 gap-2">
-                                                                <span className="text-4xl">{getFileIcon(file)}</span>
-                                                                <span className="text-[10px] uppercase tracking-widest font-mono text-zinc-500">
-                                                                    {zip ? 'Archivo Comprimido' : 'Documento'}
-                                                                </span>
-                                                            </div>
-                                                        )}
+                                                        ) : null}
+
+                                                        {/* Fallback elegante si la imagen no carga o no existe */}
+                                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-600 gap-2 pointer-events-none -z-0">
+                                                            <span className="text-4xl">{getFileIcon(file)}</span>
+                                                            <span className="text-[10px] uppercase tracking-widest font-mono text-zinc-500">
+                                                                {zip ? 'Archivo Comprimido' : video ? 'Video Master' : 'Documento'}
+                                                            </span>
+                                                        </div>
 
                                                         {/* Badge de tipo */}
                                                         <span className="absolute top-2.5 left-2.5 bg-black/80 backdrop-blur-md text-zinc-300 text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded border border-white/10">
