@@ -233,6 +233,8 @@ const ClientPortal: React.FC = () => {
     const [driveError, setDriveError] = useState('');
     const [previewDriveVideo, setPreviewDriveVideo] = useState<DriveFile | null>(null);
     const [storageCopied, setStorageCopied] = useState(false);
+    const [storageViewMode, setStorageViewMode] = useState<'grid' | 'list'>('grid');
+    const [storageSortBy, setStorageSortBy] = useState<'name' | 'default'>('default');
 
     // Encuesta de Satisfacción (Sprint 2)
     const [hasReviewed, setHasReviewed] = useState(false);
@@ -2722,7 +2724,7 @@ const ClientPortal: React.FC = () => {
                         <div className="bg-zinc-900/40 border border-white/5 p-6 md:p-8 rounded-xl shadow-2xl space-y-6">
                             <div className="space-y-2 border-b border-white/5 pb-4 flex justify-between items-center">
                                 <div>
-                                    <h2 className="text-xl font-bold text-white uppercase tracking-tight">Material Final Finalizado</h2>
+                                    <h2 className="text-xl font-bold text-white uppercase tracking-tight">Material Final Entregado</h2>
                                     <p className="text-zinc-400 text-xs">
                                         Previsualizá y descargá el material multimedia de tu producción directamente desde tu portal oficial.
                                     </p>
@@ -2751,7 +2753,8 @@ const ClientPortal: React.FC = () => {
                                                 <button
                                                     onClick={() => {
                                                         const storageUrl = `${window.location.origin}/storage?token=${token}`;
-                                                        navigator.clipboard.writeText(storageUrl);
+                                                        const textToCopy = `🎬 *NexoFilm Storage — Entrega Oficial*\n📁 *Proyecto:* ${project.title || project.name || 'Producción Audiovisual'}\n👤 *Cliente:* ${project.contact_name || ''}\n\nPrevisualizá y descargá el material terminado en alta definición desde tu centro de entrega exclusivo:\n👉 ${storageUrl}`;
+                                                        navigator.clipboard.writeText(textToCopy);
                                                         setStorageCopied(true);
                                                         setTimeout(() => setStorageCopied(false), 2500);
                                                     }}
@@ -2768,16 +2771,6 @@ const ClientPortal: React.FC = () => {
                                                     className="bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold uppercase tracking-wider text-[10px] md:text-xs px-5 py-3 rounded-lg transition-all flex items-center gap-1.5"
                                                 >
                                                     <span>Abrir Storage ↗</span>
-                                                </a>
-
-                                                <a
-                                                    href={`https://drive.google.com/drive/folders/${project.drive_folder_id}?usp=drive_link`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="bg-white/5 border border-white/10 text-zinc-400 hover:text-white font-medium text-[10px] md:text-xs px-4 py-3 rounded-lg hover:bg-white/10 transition-all"
-                                                    title="Abrir directamente en Google Drive"
-                                                >
-                                                    Abrir en Drive
                                                 </a>
                                             </div>
                                         </div>
@@ -2796,7 +2789,7 @@ const ClientPortal: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    {/* Grilla de Archivos en el Portal */}
+                                    {/* Grilla y Controles de Archivos en el Portal */}
                                     {loadingDrive ? (
                                         <div className="py-12 text-center space-y-3 bg-black/20 rounded-xl border border-white/5">
                                             <div className="w-8 h-8 border-2 border-nexo-lime border-t-transparent rounded-full animate-spin mx-auto"></div>
@@ -2804,62 +2797,149 @@ const ClientPortal: React.FC = () => {
                                         </div>
                                     ) : driveFiles.length > 0 ? (
                                         <div className="space-y-4 pt-2">
-                                            <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                                                Archivos Listos para Descarga ({driveFiles.length})
-                                            </h4>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                                                {driveFiles.map((file) => {
-                                                    const isVid = file.mimeType?.includes('video') || file.name?.toLowerCase().endsWith('.mp4') || file.name?.toLowerCase().endsWith('.mov');
+                                            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-3">
+                                                <h4 className="text-xs font-bold text-zinc-300 uppercase tracking-wider flex items-center gap-2">
+                                                    <span>📦</span>
+                                                    <span>Archivos Listos para Descarga ({driveFiles.length})</span>
+                                                </h4>
+
+                                                {/* Controles de Vista y Orden */}
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex items-center bg-black/50 border border-white/10 rounded-lg p-0.5">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setStorageViewMode('grid')}
+                                                            className={`px-2.5 py-1 rounded text-[11px] font-bold transition-all ${storageViewMode === 'grid' ? 'bg-white/15 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                                                            title="Vista en cuadrícula con miniaturas"
+                                                        >
+                                                            ▦ Cuadrícula
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setStorageViewMode('list')}
+                                                            className={`px-2.5 py-1 rounded text-[11px] font-bold transition-all ${storageViewMode === 'list' ? 'bg-white/15 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                                                            title="Vista en lista detallada"
+                                                        >
+                                                            ☰ Lista
+                                                        </button>
+                                                    </div>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setStorageSortBy(prev => prev === 'name' ? 'default' : 'name')}
+                                                        className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all ${storageSortBy === 'name' ? 'bg-nexo-lime/10 border-nexo-lime/40 text-nexo-lime' : 'bg-black/50 border-white/10 text-zinc-400 hover:text-white'}`}
+                                                        title="Ordenar por nombre alfabético"
+                                                    >
+                                                        A-Z {storageSortBy === 'name' ? '✓' : ''}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Renderizado según vista seleccionada */}
+                                            {(() => {
+                                                const sorted = [...driveFiles].sort((a, b) => {
+                                                    if (storageSortBy === 'name') return a.name.localeCompare(b.name);
+                                                    return 0;
+                                                });
+
+                                                if (storageViewMode === 'list') {
                                                     return (
-                                                        <div key={file.id} className="bg-black/40 border border-white/10 rounded-xl overflow-hidden hover:border-nexo-lime/40 transition-all flex flex-col group">
-                                                            <div className="relative aspect-video bg-black flex items-center justify-center overflow-hidden border-b border-white/5">
-                                                                {file.thumbnailLink ? (
-                                                                    <img
-                                                                        src={file.thumbnailLink.replace(/=s\d+/, '=s400')}
-                                                                        alt={file.name}
-                                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform opacity-80 group-hover:opacity-100"
-                                                                    />
-                                                                ) : (
-                                                                    <span className="text-3xl">{isVid ? '🎬' : '📦'}</span>
-                                                                )}
-                                                                {isVid && (
-                                                                    <button
-                                                                        onClick={() => setPreviewDriveVideo(file)}
-                                                                        className="absolute inset-0 m-auto w-10 h-10 rounded-full bg-nexo-lime text-black flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer"
-                                                                        title="Previsualizar"
-                                                                    >
-                                                                        <span className="ml-0.5 text-xs font-bold">▶</span>
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                            <div className="p-3.5 flex-1 flex flex-col justify-between space-y-3">
-                                                                <h5 className="font-bold text-xs text-white truncate" title={file.name}>
-                                                                    {file.name}
-                                                                </h5>
-                                                                <div className="flex items-center gap-2">
-                                                                    {isVid && (
-                                                                        <button
-                                                                            onClick={() => setPreviewDriveVideo(file)}
-                                                                            className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-[10px] uppercase tracking-wider py-1.5 rounded transition-all text-center cursor-pointer"
-                                                                        >
-                                                                            Ver
-                                                                        </button>
-                                                                    )}
-                                                                    <a
-                                                                        href={file.webContentLink || file.webViewLink || '#'}
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        download={file.name}
-                                                                        className="flex-1 bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase tracking-wider py-1.5 rounded transition-all text-center"
-                                                                    >
-                                                                        Descargar
-                                                                    </a>
-                                                                </div>
-                                                            </div>
+                                                        <div className="bg-black/30 border border-white/10 rounded-xl divide-y divide-white/5 overflow-hidden">
+                                                            {sorted.map((file) => {
+                                                                const isVid = file.mimeType?.includes('video') || file.name?.toLowerCase().endsWith('.mp4') || file.name?.toLowerCase().endsWith('.mov');
+                                                                return (
+                                                                    <div key={file.id} className="p-3 sm:p-4 flex items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors">
+                                                                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                                            <span className="text-xl flex-shrink-0">{isVid ? '🎬' : '📦'}</span>
+                                                                            <div className="min-w-0 flex-1">
+                                                                                <h5 className="font-bold text-xs sm:text-sm text-white truncate" title={file.name}>
+                                                                                    {file.name}
+                                                                                </h5>
+                                                                                <span className="text-[10px] text-zinc-500 font-mono">Master Oficial de Producción</span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                                                            {isVid && (
+                                                                                <button
+                                                                                    onClick={() => setPreviewDriveVideo(file)}
+                                                                                    className="bg-white/5 hover:bg-white/15 border border-white/10 text-white font-bold text-[10px] uppercase px-3 py-1.5 rounded transition-all cursor-pointer"
+                                                                                >
+                                                                                    Ver
+                                                                                </button>
+                                                                            )}
+                                                                            <a
+                                                                                href={file.webContentLink || file.webViewLink || '#'}
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                download={file.name}
+                                                                                className="bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase px-3.5 py-1.5 rounded transition-all"
+                                                                            >
+                                                                                Descargar
+                                                                            </a>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
                                                         </div>
                                                     );
-                                                })}
-                                            </div>
+                                                }
+
+                                                return (
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                                        {sorted.map((file) => {
+                                                            const isVid = file.mimeType?.includes('video') || file.name?.toLowerCase().endsWith('.mp4') || file.name?.toLowerCase().endsWith('.mov');
+                                                            return (
+                                                                <div key={file.id} className="bg-black/40 border border-white/10 rounded-xl overflow-hidden hover:border-nexo-lime/40 transition-all flex flex-col group">
+                                                                    <div className="relative aspect-video bg-black flex items-center justify-center overflow-hidden border-b border-white/5">
+                                                                        {file.thumbnailLink ? (
+                                                                            <img
+                                                                                src={file.thumbnailLink.replace(/=s\d+/, '=s400')}
+                                                                                alt={file.name}
+                                                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform opacity-80 group-hover:opacity-100"
+                                                                            />
+                                                                        ) : (
+                                                                            <span className="text-3xl">{isVid ? '🎬' : '📦'}</span>
+                                                                        )}
+                                                                        {isVid && (
+                                                                            <button
+                                                                                onClick={() => setPreviewDriveVideo(file)}
+                                                                                className="absolute inset-0 m-auto w-11 h-11 rounded-full bg-nexo-lime text-black flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer"
+                                                                                title="Previsualizar video"
+                                                                            >
+                                                                                <span className="ml-0.5 text-xs font-bold">▶</span>
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="p-3.5 flex-1 flex flex-col justify-between space-y-3">
+                                                                        <h5 className="font-bold text-xs text-white truncate" title={file.name}>
+                                                                            {file.name}
+                                                                        </h5>
+                                                                        <div className="flex items-center gap-2">
+                                                                            {isVid && (
+                                                                                <button
+                                                                                    onClick={() => setPreviewDriveVideo(file)}
+                                                                                    className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-[10px] uppercase tracking-wider py-1.5 rounded transition-all text-center cursor-pointer"
+                                                                                >
+                                                                                    Ver
+                                                                                </button>
+                                                                            )}
+                                                                            <a
+                                                                                href={file.webContentLink || file.webViewLink || '#'}
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                download={file.name}
+                                                                                className="flex-1 bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase tracking-wider py-1.5 rounded transition-all text-center"
+                                                                            >
+                                                                                Descargar
+                                                                            </a>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     ) : null}
 
@@ -2885,21 +2965,12 @@ const ClientPortal: React.FC = () => {
                                                     </button>
                                                 </div>
                                                 <div className="relative aspect-video bg-black flex items-center justify-center">
-                                                    {previewDriveVideo.id?.startsWith('mock-') ? (
-                                                        <video
-                                                            src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-                                                            controls
-                                                            autoPlay
-                                                            className="w-full h-full object-contain"
-                                                        />
-                                                    ) : (
-                                                        <iframe
-                                                            src={`https://drive.google.com/file/d/${previewDriveVideo.id}/preview`}
-                                                            className="w-full h-full border-0"
-                                                            allow="autoplay"
-                                                            title={previewDriveVideo.name}
-                                                        ></iframe>
-                                                    )}
+                                                    <iframe
+                                                        src={`https://drive.google.com/file/d/${previewDriveVideo.id}/preview`}
+                                                        className="w-full h-full border-0"
+                                                        allow="autoplay; fullscreen"
+                                                        title={previewDriveVideo.name}
+                                                    ></iframe>
                                                 </div>
                                                 <div className="p-3 bg-zinc-900/40 border-t border-white/10 flex justify-end">
                                                     <a

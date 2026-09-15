@@ -19,4 +19,11 @@ export default async function middleware(request) {
     const apiUrl = new URL(`/api/lang-serve?lng=${lng}`, request.url);
     return fetch(apiUrl);
   }
+
+  // 3. Intercepción de Nexo Storage para Open Graph enriquecido en WhatsApp
+  if (url.pathname === '/storage') {
+    const token = url.searchParams.get('token') || '';
+    const apiUrl = new URL(`/api/storage-og?token=${encodeURIComponent(token)}`, request.url);
+    return fetch(apiUrl);
+  }
 }

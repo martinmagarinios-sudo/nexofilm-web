@@ -3400,54 +3400,57 @@ const CRMProjects: React.FC = () => {
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                                                             
                                                             {/* Control de Carpeta de Google Drive y Nexo Storage */}
-                                                            <div className="space-y-1.5">
-                                                                <div className="flex items-center justify-between">
-                                                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Carpeta Google Drive (Nexo Storage)</label>
-                                                                    {project.access_token && (
-                                                                        <div className="flex items-center gap-2">
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    const storageUrl = `${window.location.origin}/storage?token=${project.access_token}`;
-                                                                                    navigator.clipboard.writeText(storageUrl);
-                                                                                    const btn = e.currentTarget;
-                                                                                    const orig = btn.innerText;
-                                                                                    btn.innerText = '¡Copiado!';
-                                                                                    setTimeout(() => { btn.innerText = orig; }, 2000);
-                                                                                }}
-                                                                                className="text-nexo-lime hover:underline text-[10px] font-mono font-bold cursor-pointer"
-                                                                                title="Copiar enlace de Nexo Storage para enviar al cliente o su equipo"
-                                                                            >
-                                                                                📋 Copiar Nexo Storage
-                                                                            </button>
-                                                                            <a
-                                                                                href={`/storage?token=${project.access_token}`}
-                                                                                target="_blank"
-                                                                                rel="noopener noreferrer"
-                                                                                className="text-zinc-400 hover:text-white text-[10px] font-mono"
-                                                                                title="Abrir vista de entrega"
-                                                                            >
-                                                                                Ver ↗
-                                                                            </a>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
+                                                            <div className="space-y-2">
+                                                                <label className="text-zinc-400 text-[10px] font-bold uppercase tracking-wider">Carpeta Google Drive (Nexo Storage)</label>
                                                                 <div className="flex gap-2">
                                                                     <input
                                                                         type="text"
                                                                         value={tempDriveId[project.id] || ''}
                                                                         onChange={(e) => setTempDriveId({ ...tempDriveId, [project.id]: e.target.value })}
-                                                                        placeholder="ID o Link completo de Drive..."
-                                                                        className="flex-1 bg-black border border-white/10 rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-nexo-lime"
+                                                                        placeholder="Pegar ID o Link completo de Drive..."
+                                                                        className="flex-1 bg-black border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-nexo-lime"
                                                                     />
                                                                     <button
                                                                         onClick={() => handleSaveDriveFolder(project.id)}
-                                                                        className="bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded text-xs transition-colors"
+                                                                        className="bg-white/10 hover:bg-white/20 border border-white/15 px-4 py-2 rounded text-xs text-white font-bold transition-colors cursor-pointer"
                                                                     >
                                                                         Asociar
                                                                     </button>
                                                                 </div>
+
+                                                                {/* Botón Destacado de Nexo Storage para CRM */}
+                                                                {project.access_token && (
+                                                                    <div className="flex gap-2 pt-0.5">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                const storageUrl = `${window.location.origin}/storage?token=${project.access_token}`;
+                                                                                const textToCopy = `🎬 *NexoFilm Storage — Entrega Oficial*\n📁 *Proyecto:* ${project.name || 'Material Audiovisual'}\n👤 *Cliente:* ${project.contact_name || project.client_name || ''}\n\nPrevisualizá y descargá el material final en alta definición desde tu centro de entrega exclusivo:\n👉 ${storageUrl}`;
+                                                                                navigator.clipboard.writeText(textToCopy);
+                                                                                const btn = e.currentTarget;
+                                                                                const orig = btn.innerHTML;
+                                                                                btn.innerHTML = '<span>✓</span><span>¡Mensaje Copiado para WhatsApp!</span>';
+                                                                                setTimeout(() => { btn.innerHTML = orig; }, 2500);
+                                                                            }}
+                                                                            className="flex-1 bg-nexo-lime/10 hover:bg-nexo-lime/20 border border-nexo-lime/40 hover:border-nexo-lime text-nexo-lime text-xs font-bold uppercase tracking-wider py-2 px-3 rounded flex items-center justify-center gap-2 transition-all cursor-pointer shadow-[0_0_12px_rgba(204,255,0,0.1)]"
+                                                                            title="Copia el enlace junto con el texto formateado para WhatsApp"
+                                                                        >
+                                                                            <span>📋</span>
+                                                                            <span>Copiar Enlace Nexo Storage (Para WhatsApp)</span>
+                                                                        </button>
+                                                                        <a
+                                                                            href={`/storage?token=${project.access_token}`}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold px-3.5 py-2 rounded flex items-center gap-1 transition-colors"
+                                                                            title="Ver cómo ve el cliente esta entrega"
+                                                                        >
+                                                                            <span>Ver</span>
+                                                                            <span>↗</span>
+                                                                        </a>
+                                                                    </div>
+                                                                )}
                                                             </div>
 
                                                             {/* Forzado Manual de Estados */}

@@ -489,6 +489,57 @@ export default async function handler(req, res) {
                 return trimmed;
             }
 
+            async function fetchPublicDriveFolderFiles(driveFolderId) {
+                if (!driveFolderId) return [];
+                try {
+                    const folderUrl = `https://drive.google.com/drive/folders/${driveFolderId}?usp=sharing`;
+                    const res = await fetch(folderUrl, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                            'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8'
+                        }
+                    });
+                    if (!res.ok) return [];
+                    const html = await res.text();
+
+                    const itemRegex = /aria-label="([^"]+?)\s+(Video|Image|PDF|Archive|Zip|Audio|Document|Shared)[^"]*"\s+[^>]*?ssk='[^']*?:([a-zA-Z0-9_-]{25,})/g;
+                    let match;
+                    const files = [];
+                    const seen = new Set();
+
+                    while ((match = itemRegex.exec(html)) !== null) {
+                        const rawName = match[1].trim();
+                        const typeStr = match[2];
+                        let rawId = match[3];
+                        const cleanId = rawId.split('-')[0];
+
+                        if (seen.has(cleanId)) continue;
+                        seen.add(cleanId);
+
+                        let mimeType = 'application/octet-stream';
+                        if (typeStr === 'Video' || rawName.endsWith('.mp4') || rawName.endsWith('.mov')) mimeType = 'video/mp4';
+                        else if (typeStr === 'Image' || rawName.endsWith('.jpg') || rawName.endsWith('.png')) mimeType = 'image/jpeg';
+                        else if (typeStr === 'Archive' || typeStr === 'Zip' || rawName.endsWith('.zip')) mimeType = 'application/zip';
+                        else if (typeStr === 'PDF' || rawName.endsWith('.pdf')) mimeType = 'application/pdf';
+
+                        files.push({
+                            id: cleanId,
+                            name: rawName,
+                            mimeType: mimeType,
+                            webViewLink: `https://drive.google.com/file/d/${cleanId}/view?usp=sharing`,
+                            thumbnailLink: `https://lh3.googleusercontent.com/d/${cleanId}=w640`,
+                            webContentLink: `https://drive.google.com/uc?export=download&id=${cleanId}`,
+                            size: 0
+                        });
+                    }
+
+                    return files;
+                } catch (err) {
+                    console.error('Error extrayendo archivos públicos de Drive:', err);
+                    return [];
+                }
+            }
+
             // GET Acción: Listar archivos para Nexo Storage (Público y aislado de finanzas)
             if (action === 'storage') {
                 const driveFolderId = extractDriveFolderId(project.drive_folder_id);
@@ -502,7 +553,21 @@ export default async function handler(req, res) {
                     status: project.status
                 };
 
-                if (!driveFolderId || !clientEmail || !privateKey) {
+                // 1. Si no hay credenciales Service Account, intentar extracción de carpeta compartida
+                if (!clientEmail || !privateKey) {
+                    if (driveFolderId) {
+                        const publicFiles = await fetchPublicDriveFolderFiles(driveFolderId);
+                        if (publicFiles.length > 0) {
+                            return res.status(200).json({
+                                success: true,
+                                isMock: false,
+                                project: projectPublicInfo,
+                                files: publicFiles
+                            });
+                        }
+                    }
+
+                    // Fallback solo si la carpeta no es accesible
                     const mockFiles = [
                         {
                             id: 'mock-1',
@@ -577,6 +642,16 @@ export default async function handler(req, res) {
                 const privateKey = process.env.GOOGLE_PRIVATE_KEY;
 
                 if (!driveFolderId || !clientEmail || !privateKey) {
+                    if (driveFolderId) {
+                        const publicFiles = await fetchPublicDriveFolderFiles(driveFolderId);
+                        if (publicFiles.length > 0) {
+                            return res.status(200).json({
+                                success: true,
+                                isMock: false,
+                                files: publicFiles
+                            });
+                        }
+                    }
                     // MOCK Fallback
                     const mockFiles = [
                         {

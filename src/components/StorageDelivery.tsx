@@ -27,6 +27,8 @@ const StorageDelivery: React.FC = () => {
     const [error, setError] = useState('');
     const [previewVideo, setPreviewVideo] = useState<DriveFile | null>(null);
     const [copied, setCopied] = useState(false);
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+    const [sortBy, setSortBy] = useState<'name' | 'default'>('default');
 
     // Obtener token de la URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -64,9 +66,9 @@ const StorageDelivery: React.FC = () => {
     }, [token]);
 
     const formatFileSize = (bytes?: string | number) => {
-        if (!bytes) return 'Peso desconocido';
+        if (!bytes) return 'Master Oficial';
         const num = typeof bytes === 'string' ? parseInt(bytes, 10) : bytes;
-        if (isNaN(num) || num <= 0) return 'Archivo multimedia';
+        if (isNaN(num) || num <= 0) return 'Master Oficial';
         if (num < 1024 * 1024) return `${(num / 1024).toFixed(1)} KB`;
         if (num < 1024 * 1024 * 1024) return `${(num / (1024 * 1024)).toFixed(1)} MB`;
         return `${(num / (1024 * 1024 * 1024)).toFixed(2)} GB`;
@@ -101,7 +103,8 @@ const StorageDelivery: React.FC = () => {
 
     const handleCopyShareLink = () => {
         const fullUrl = window.location.href;
-        navigator.clipboard.writeText(fullUrl);
+        const textToCopy = `🎬 *NexoFilm Storage — Entrega Oficial*\n📁 *Proyecto:* ${project?.name || 'Material Audiovisual'}\n👤 *Cliente:* ${project?.company || project?.client_name || ''}\n\nPrevisualizá y descargá el material final en alta definición desde tu centro de entrega exclusivo:\n👉 ${fullUrl}`;
+        navigator.clipboard.writeText(textToCopy);
         setCopied(true);
         setTimeout(() => setCopied(false), 2500);
     };
@@ -232,14 +235,41 @@ const StorageDelivery: React.FC = () => {
 
                         {/* Listado de Archivos */}
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-3">
                                 <h3 className="text-sm sm:text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
                                     <span>📦</span>
                                     <span>Archivos Disponibles ({files.length})</span>
                                 </h3>
-                                <span className="text-[11px] text-zinc-500 font-mono">
-                                    Formatos sin compresión / Web & Masters
-                                </span>
+
+                                <div className="flex items-center gap-2">
+                                    <div className="flex items-center bg-black/50 border border-white/10 rounded-lg p-0.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => setViewMode('grid')}
+                                            className={`px-3 py-1 rounded text-xs font-bold transition-all ${viewMode === 'grid' ? 'bg-white/15 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                                            title="Vista en cuadrícula con miniaturas"
+                                        >
+                                            ▦ Cuadrícula
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setViewMode('list')}
+                                            className={`px-3 py-1 rounded text-xs font-bold transition-all ${viewMode === 'list' ? 'bg-white/15 text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                                            title="Vista en lista detallada"
+                                        >
+                                            ☰ Lista
+                                        </button>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setSortBy(prev => prev === 'name' ? 'default' : 'name')}
+                                        className={`px-3 py-1 rounded-lg border text-xs font-bold transition-all ${sortBy === 'name' ? 'bg-nexo-lime/10 border-nexo-lime/40 text-nexo-lime' : 'bg-black/50 border-white/10 text-zinc-400 hover:text-white'}`}
+                                        title="Ordenar por nombre alfabético"
+                                    >
+                                        A-Z {sortBy === 'name' ? '✓' : ''}
+                                    </button>
+                                </div>
                             </div>
 
                             {files.length === 0 ? (
@@ -249,98 +279,155 @@ const StorageDelivery: React.FC = () => {
                                         No se encontraron archivos en este directorio de entrega.
                                     </p>
                                 </div>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                                    {files.map((file) => {
-                                        const video = isVideo(file);
-                                        const zip = isZip(file);
+                            ) : (() => {
+                                const sorted = [...files].sort((a, b) => {
+                                    if (sortBy === 'name') return a.name.localeCompare(b.name);
+                                    return 0;
+                                });
 
-                                        return (
-                                            <div
-                                                key={file.id}
-                                                className="bg-zinc-900/40 border border-white/10 hover:border-nexo-lime/40 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_20px_rgba(204,255,0,0.08)] flex flex-col group"
-                                            >
-                                                {/* Contenedor Visual / Miniatura */}
-                                                <div className="relative aspect-video bg-black/80 flex items-center justify-center overflow-hidden border-b border-white/5">
-                                                    {file.thumbnailLink ? (
-                                                        <img
-                                                            src={file.thumbnailLink.replace(/=s\d+/, '=s640')}
-                                                            alt={file.name}
-                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100"
-                                                        />
-                                                    ) : (
-                                                        <div className="flex flex-col items-center justify-center text-zinc-600 gap-2">
-                                                            <span className="text-4xl">{getFileIcon(file)}</span>
-                                                            <span className="text-[10px] uppercase tracking-widest font-mono text-zinc-500">
-                                                                {zip ? 'Archivo Comprimido' : 'Documento'}
-                                                            </span>
+                                if (viewMode === 'list') {
+                                    return (
+                                        <div className="bg-black/40 border border-white/10 rounded-xl divide-y divide-white/5 overflow-hidden">
+                                            {sorted.map((file) => {
+                                                const video = isVideo(file);
+                                                const zip = isZip(file);
+
+                                                return (
+                                                    <div key={file.id} className="p-3 sm:p-4 flex items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors">
+                                                        <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                                                            <span className="text-2xl flex-shrink-0">{getFileIcon(file)}</span>
+                                                            <div className="min-w-0 flex-1">
+                                                                <h4 className="font-bold text-xs sm:text-sm text-white truncate" title={file.name}>
+                                                                    {file.name}
+                                                                </h4>
+                                                                <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
+                                                                    <span>{formatFileSize(file.size)}</span>
+                                                                    <span>•</span>
+                                                                    <span>{zip ? 'Archivo Comprimido' : 'Master Oficial'}</span>
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                    )}
 
-                                                    {/* Badge de tipo */}
-                                                    <span className="absolute top-2.5 left-2.5 bg-black/80 backdrop-blur-md text-zinc-300 text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded border border-white/10">
-                                                        {file.name.split('.').pop() || 'FILE'}
-                                                    </span>
-
-                                                    {/* Botón de Play Flotante si es Video */}
-                                                    {video && (
-                                                        <button
-                                                            onClick={() => setPreviewVideo(file)}
-                                                            className="absolute inset-0 m-auto w-12 h-12 rounded-full bg-nexo-lime/90 text-black flex items-center justify-center shadow-lg hover:scale-110 hover:bg-nexo-lime transition-all duration-300 cursor-pointer"
-                                                            title="Reproducir video"
-                                                        >
-                                                            <span className="ml-1 text-base font-bold">▶</span>
-                                                        </button>
-                                                    )}
-                                                </div>
-
-                                                {/* Datos del Archivo */}
-                                                <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-4">
-                                                    <div className="space-y-1.5">
-                                                        <h4
-                                                            className="font-bold text-xs sm:text-sm text-white group-hover:text-nexo-lime transition-colors line-clamp-2 leading-snug"
-                                                            title={file.name}
-                                                        >
-                                                            {file.name}
-                                                        </h4>
-                                                        <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
-                                                            <span>{formatFileSize(file.size)}</span>
-                                                            <span>•</span>
-                                                            <span>Master Oficial</span>
+                                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                                            {video && (
+                                                                <button
+                                                                    onClick={() => setPreviewVideo(file)}
+                                                                    className="bg-white/5 hover:bg-white/15 border border-white/10 text-white font-bold text-[10px] uppercase px-3.5 py-2 rounded-lg transition-all cursor-pointer"
+                                                                >
+                                                                    Previsualizar
+                                                                </button>
+                                                            )}
+                                                            <a
+                                                                href={file.webContentLink || file.webViewLink || '#'}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                download={file.name}
+                                                                className="bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(204,255,0,0.15)]"
+                                                            >
+                                                                <span>⬇</span>
+                                                                <span>Descargar</span>
+                                                            </a>
                                                         </div>
                                                     </div>
+                                                );
+                                            })}
+                                        </div>
+                                    );
+                                }
 
-                                                    {/* Acciones */}
-                                                    <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+                                return (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                                        {sorted.map((file) => {
+                                            const video = isVideo(file);
+                                            const zip = isZip(file);
+
+                                            return (
+                                                <div
+                                                    key={file.id}
+                                                    className="bg-zinc-900/40 border border-white/10 hover:border-nexo-lime/40 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_20px_rgba(204,255,0,0.08)] flex flex-col group"
+                                                >
+                                                    {/* Contenedor Visual / Miniatura */}
+                                                    <div className="relative aspect-video bg-black/80 flex items-center justify-center overflow-hidden border-b border-white/5">
+                                                        {file.thumbnailLink ? (
+                                                            <img
+                                                                src={file.thumbnailLink.replace(/=s\d+/, '=s640')}
+                                                                alt={file.name}
+                                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100"
+                                                            />
+                                                        ) : (
+                                                            <div className="flex flex-col items-center justify-center text-zinc-600 gap-2">
+                                                                <span className="text-4xl">{getFileIcon(file)}</span>
+                                                                <span className="text-[10px] uppercase tracking-widest font-mono text-zinc-500">
+                                                                    {zip ? 'Archivo Comprimido' : 'Documento'}
+                                                                </span>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Badge de tipo */}
+                                                        <span className="absolute top-2.5 left-2.5 bg-black/80 backdrop-blur-md text-zinc-300 text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded border border-white/10">
+                                                            {file.name.split('.').pop() || 'FILE'}
+                                                        </span>
+
+                                                        {/* Botón de Play Flotante si es Video */}
                                                         {video && (
                                                             <button
                                                                 onClick={() => setPreviewVideo(file)}
-                                                                className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-[10px] uppercase tracking-wider py-2.5 rounded-lg transition-all text-center cursor-pointer"
+                                                                className="absolute inset-0 m-auto w-12 h-12 rounded-full bg-nexo-lime/90 text-black flex items-center justify-center shadow-lg hover:scale-110 hover:bg-nexo-lime transition-all duration-300 cursor-pointer"
+                                                                title="Reproducir video"
                                                             >
-                                                                Previsualizar
+                                                                <span className="ml-1 text-base font-bold">▶</span>
                                                             </button>
                                                         )}
-                                                        <a
-                                                            href={file.webContentLink || file.webViewLink || '#'}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            download={file.name}
-                                                            className={`flex-1 ${
-                                                                video
-                                                                    ? 'bg-nexo-lime hover:bg-[#b3ff00] text-black'
-                                                                    : 'bg-nexo-lime hover:bg-[#b3ff00] text-black w-full'
-                                                            } font-extrabold text-[10px] uppercase tracking-wider py-2.5 rounded-lg transition-all text-center flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(204,255,0,0.15)]`}
-                                                        >
-                                                            <span>⬇</span>
-                                                            <span>Descargar</span>
-                                                        </a>
+                                                    </div>
+
+                                                    {/* Datos del Archivo */}
+                                                    <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-4">
+                                                        <div className="space-y-1.5">
+                                                            <h4
+                                                                className="font-bold text-xs sm:text-sm text-white group-hover:text-nexo-lime transition-colors line-clamp-2 leading-snug"
+                                                                title={file.name}
+                                                            >
+                                                                {file.name}
+                                                            </h4>
+                                                            <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
+                                                                <span>{formatFileSize(file.size)}</span>
+                                                                <span>•</span>
+                                                                <span>Master Oficial</span>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Acciones */}
+                                                        <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+                                                            {video && (
+                                                                <button
+                                                                    onClick={() => setPreviewVideo(file)}
+                                                                    className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-[10px] uppercase tracking-wider py-2.5 rounded-lg transition-all text-center cursor-pointer"
+                                                                >
+                                                                    Previsualizar
+                                                                </button>
+                                                            )}
+                                                            <a
+                                                                href={file.webContentLink || file.webViewLink || '#'}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                download={file.name}
+                                                                className={`flex-1 ${
+                                                                    video
+                                                                        ? 'bg-nexo-lime hover:bg-[#b3ff00] text-black'
+                                                                        : 'bg-nexo-lime hover:bg-[#b3ff00] text-black w-full'
+                                                                } font-extrabold text-[10px] uppercase tracking-wider py-2.5 rounded-lg transition-all text-center flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(204,255,0,0.15)]`}
+                                                            >
+                                                                <span>⬇</span>
+                                                                <span>Descargar</span>
+                                                            </a>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
+                                            );
+                                        })}
+                                    </div>
+                                );
+                            })()}
                         </div>
                     </>
                 )}
@@ -377,21 +464,12 @@ const StorageDelivery: React.FC = () => {
 
                         {/* Contenedor del Reproductor */}
                         <div className="relative aspect-video bg-black flex items-center justify-center">
-                            {previewVideo.id?.startsWith('mock-') ? (
-                                <video
-                                    src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-                                    controls
-                                    autoPlay
-                                    className="w-full h-full object-contain"
-                                />
-                            ) : (
-                                <iframe
-                                    src={`https://drive.google.com/file/d/${previewVideo.id}/preview`}
-                                    className="w-full h-full border-0"
-                                    allow="autoplay"
-                                    title={previewVideo.name}
-                                ></iframe>
-                            )}
+                            <iframe
+                                src={`https://drive.google.com/file/d/${previewVideo.id}/preview`}
+                                className="w-full h-full border-0"
+                                allow="autoplay; fullscreen"
+                                title={previewVideo.name}
+                            ></iframe>
                         </div>
 
                         {/* Barra Inferior con Acciones de Descarga */}
