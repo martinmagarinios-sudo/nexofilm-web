@@ -502,6 +502,40 @@ export default async function handler(req, res) {
                     if (!res.ok) return [];
                     const html = await res.text();
 
+                    // 1. Extraer mapa de pesos (bytes) desde _DRIVE_ivd si está disponible
+                    const sizeMap = {};
+                    const ivdMatch = html.match(/window\['_DRIVE_ivd'\]\s*=\s*'([^']+)'/);
+                    if (ivdMatch) {
+                        try {
+                            const decoded = ivdMatch[1].replace(/\\x([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+                            const json = JSON.parse(decoded);
+                            if (Array.isArray(json) && Array.isArray(json[0])) {
+                                for (const item of json[0]) {
+                                    if (Array.isArray(item)) {
+                                        const id = item[0];
+                                        const bytes = item[13];
+                                        if (id && bytes) {
+                                            sizeMap[id] = bytes;
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (e) {
+                            console.error('Error parseando _DRIVE_ivd:', e);
+                        }
+                    }
+
+                    // 2. Fallback de tamaño desde atributos aria-label del DOM
+                    const sizeRegex = /aria-label="(?:Size|Tamaño):\s*([0-9.,]+\s*[KMGT]?B)[^"]*"\s+[^>]*?ssk='[^']*?:([a-zA-Z0-9_-]{25,})/gi;
+                    let sm;
+                    while ((sm = sizeRegex.exec(html)) !== null) {
+                        const sizeStr = sm[1].replace(/\u00a0/g, ' ').trim();
+                        const cleanId = sm[2].replace(/-\d+-\d+$/, '');
+                        if (!sizeMap[cleanId]) {
+                            sizeMap[cleanId] = sizeStr;
+                        }
+                    }
+
                     const itemRegex = /aria-label="([^"]+?)\s+(Video|Image|PDF|Archive|Zip|Audio|Document|Shared|Carpeta|Folder|Google Drive Folder|Carpeta de Google Drive)[^"]*"\s+[^>]*?ssk='[^']*?:([a-zA-Z0-9_-]{25,})/gi;
                     let match;
                     const files = [];
@@ -541,7 +575,7 @@ export default async function handler(req, res) {
                             webViewLink: isFolder ? `https://drive.google.com/drive/folders/${cleanId}` : `https://drive.google.com/file/d/${cleanId}/view?usp=sharing`,
                             thumbnailLink: isFolder ? null : `https://lh3.googleusercontent.com/d/${cleanId}=w640`,
                             webContentLink: isFolder ? null : `https://drive.google.com/uc?export=download&id=${cleanId}`,
-                            size: 0
+                            size: isFolder ? null : (sizeMap[cleanId] || null)
                         });
                     }
 

@@ -633,6 +633,26 @@ const ClientPortal: React.FC = () => {
         );
     };
 
+    const formatFileSize = (bytes?: string | number | null) => {
+        if (!bytes) return null;
+        if (typeof bytes === 'string') {
+            const trimmed = bytes.trim();
+            if (/[KMGT]B$/i.test(trimmed)) return trimmed;
+            const num = parseFloat(trimmed);
+            if (isNaN(num) || num <= 0) return null;
+            if (num < 1024 * 1024) return `${(num / 1024).toFixed(1)} KB`;
+            if (num < 1024 * 1024 * 1024) return `${(num / (1024 * 1024)).toFixed(1)} MB`;
+            return `${(num / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+        }
+        if (typeof bytes === 'number') {
+            if (bytes <= 0) return null;
+            if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+            if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+            return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+        }
+        return null;
+    };
+
     // Enviar especificaciones refinadas
     const handleUpdateSpecifications = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -2937,11 +2957,16 @@ const ClientPortal: React.FC = () => {
                                                                                     <h5 className="font-bold text-xs sm:text-sm text-white truncate" title={file.name}>
                                                                                         {file.name}
                                                                                     </h5>
-                                                                                    {folder && (
+                                                                                    {folder ? (
                                                                                         <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30 flex-shrink-0">
                                                                                             Carpeta
                                                                                         </span>
-                                                                                    )}
+                                                                                    ) : formatFileSize(file.size) ? (
+                                                                                        <span className="inline-flex items-center gap-1 text-[10px] font-mono text-zinc-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded flex-shrink-0">
+                                                                                            <span>💾</span>
+                                                                                            <span>{formatFileSize(file.size)}</span>
+                                                                                        </span>
+                                                                                    ) : null}
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -3062,9 +3087,17 @@ const ClientPortal: React.FC = () => {
                                                                         )}
                                                                     </div>
                                                                     <div className="p-3.5 flex-1 flex flex-col justify-between space-y-3">
-                                                                        <h5 className="font-bold text-xs text-white truncate" title={file.name}>
-                                                                            {file.name}
-                                                                        </h5>
+                                                                        <div className="space-y-1">
+                                                                            <h5 className="font-bold text-xs text-white truncate" title={file.name}>
+                                                                                {file.name}
+                                                                            </h5>
+                                                                            {formatFileSize(file.size) && (
+                                                                                <div className="inline-flex items-center gap-1 text-[10px] font-mono text-zinc-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded">
+                                                                                    <span>💾</span>
+                                                                                    <span>{formatFileSize(file.size)}</span>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
                                                                         <div className="flex items-center gap-2">
                                                                             {isVid && (
                                                                                 <button

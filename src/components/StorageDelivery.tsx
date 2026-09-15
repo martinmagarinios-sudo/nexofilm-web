@@ -83,11 +83,22 @@ const StorageDelivery: React.FC = () => {
 
     const formatFileSize = (bytes?: string | number | null) => {
         if (!bytes) return null;
-        const num = typeof bytes === 'string' ? parseInt(bytes, 10) : bytes;
-        if (isNaN(num) || num <= 0) return null;
-        if (num < 1024 * 1024) return `${(num / 1024).toFixed(1)} KB`;
-        if (num < 1024 * 1024 * 1024) return `${(num / (1024 * 1024)).toFixed(1)} MB`;
-        return `${(num / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+        if (typeof bytes === 'string') {
+            const trimmed = bytes.trim();
+            if (/[KMGT]B$/i.test(trimmed)) return trimmed;
+            const num = parseFloat(trimmed);
+            if (isNaN(num) || num <= 0) return null;
+            if (num < 1024 * 1024) return `${(num / 1024).toFixed(1)} KB`;
+            if (num < 1024 * 1024 * 1024) return `${(num / (1024 * 1024)).toFixed(1)} MB`;
+            return `${(num / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+        }
+        if (typeof bytes === 'number') {
+            if (bytes <= 0) return null;
+            if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+            if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+            return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+        }
+        return null;
     };
 
     const isFolder = (file: DriveFile) => {
@@ -383,9 +394,12 @@ const StorageDelivery: React.FC = () => {
                                                                         Carpeta de archivos • Doble clic para abrir
                                                                     </span>
                                                                 ) : formatFileSize(file.size) ? (
-                                                                    <span className="text-[10px] text-zinc-500 font-mono">
-                                                                        {formatFileSize(file.size)}
-                                                                    </span>
+                                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                                        <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-400 font-mono bg-white/5 border border-white/10 px-2 py-0.5 rounded">
+                                                                            <span>💾</span>
+                                                                            <span>{formatFileSize(file.size)}</span>
+                                                                        </span>
+                                                                    </div>
                                                                 ) : null}
                                                             </div>
                                                         </div>
@@ -515,7 +529,8 @@ const StorageDelivery: React.FC = () => {
                                                                     Doble clic para explorar contenido
                                                                 </div>
                                                             ) : formatFileSize(file.size) ? (
-                                                                <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
+                                                                <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 font-mono bg-white/5 border border-white/10 px-2 py-0.5 rounded w-fit">
+                                                                    <span>💾</span>
                                                                     <span>{formatFileSize(file.size)}</span>
                                                                 </div>
                                                             ) : null}
