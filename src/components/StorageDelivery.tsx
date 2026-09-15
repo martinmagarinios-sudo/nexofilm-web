@@ -65,10 +65,10 @@ const StorageDelivery: React.FC = () => {
         fetchStorageData();
     }, [token]);
 
-    const formatFileSize = (bytes?: string | number) => {
-        if (!bytes) return 'Master Oficial';
+    const formatFileSize = (bytes?: string | number | null) => {
+        if (!bytes) return null;
         const num = typeof bytes === 'string' ? parseInt(bytes, 10) : bytes;
-        if (isNaN(num) || num <= 0) return 'Master Oficial';
+        if (isNaN(num) || num <= 0) return null;
         if (num < 1024 * 1024) return `${(num / 1024).toFixed(1)} KB`;
         if (num < 1024 * 1024 * 1024) return `${(num / (1024 * 1024)).toFixed(1)} MB`;
         return `${(num / (1024 * 1024 * 1024)).toFixed(2)} GB`;
@@ -108,12 +108,6 @@ const StorageDelivery: React.FC = () => {
         setTimeout(() => setCopied(false), 2500);
     };
 
-    const handleShareWhatsApp = () => {
-        const fullUrl = window.location.href;
-        const textToShare = `🎬 *NexoFilm Storage — Entrega Oficial*\n📁 *Proyecto:* ${project?.name || 'Producción Audiovisual'}\n👤 *Cliente:* ${project?.company || project?.client_name || ''}\n\nPrevisualizá y descargá el material final en alta definición desde tu centro de entrega exclusivo:\n👉 ${fullUrl}`;
-        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textToShare)}`, '_blank');
-    };
-
     // Cerrar modal con ESC
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -139,28 +133,10 @@ const StorageDelivery: React.FC = () => {
                         </span>
                     </div>
 
-                    <div className="flex items-center gap-2 sm:gap-3">
-                        <button
-                            onClick={handleCopyDirectLink}
-                            className="bg-white/5 hover:bg-white/10 text-zinc-200 border border-white/10 text-[11px] font-bold uppercase tracking-wider px-3.5 py-2 rounded-lg transition-all flex items-center gap-2 cursor-pointer"
-                            title="Copiar URL directa al portapapeles"
-                        >
-                            <span>{copied ? '✓' : '🔗'}</span>
-                            <span>{copied ? '¡Enlace Copiado!' : 'Copiar Enlace'}</span>
-                        </button>
-
-                        <button
-                            onClick={handleShareWhatsApp}
-                            className="bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/30 text-[#25D366] text-[11px] font-bold uppercase tracking-wider px-3 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
-                            title="Compartir por WhatsApp"
-                        >
-                            <span>💬</span>
-                            <span className="hidden sm:inline">WhatsApp</span>
-                        </button>
-
+                    <div className="flex items-center gap-3">
                         <a
                             href="/"
-                            className="text-xs text-zinc-400 hover:text-white transition-colors hidden md:block ml-2"
+                            className="text-xs text-zinc-400 hover:text-white transition-colors"
                         >
                             nexofilm.com ↗
                         </a>
@@ -231,18 +207,28 @@ const StorageDelivery: React.FC = () => {
                                     Centro de previsualización y descarga oficial de <strong>NexoFilm</strong>. Podés reproducir cada pieza en alta definición en tiempo real o descargar los masters directamente a tu equipo.
                                 </p>
 
-                                {/* Banner de Privacidad y Seguridad */}
+                                {/* Banner de Privacidad, Seguridad y Botón Destacado de Compartir */}
                                 <div className="pt-2">
-                                    <div className="bg-black/50 border border-white/5 rounded-xl p-3.5 sm:p-4 flex items-start gap-3 text-left">
-                                        <span className="text-lg flex-shrink-0">🔒</span>
-                                        <div className="text-[11px] sm:text-xs text-zinc-400 leading-relaxed space-y-0.5">
-                                            <strong className="text-zinc-300 font-semibold block">
-                                                Almacenamiento Seguro para tu Equipo:
-                                            </strong>
-                                            <span>
-                                                Este enlace es apto para compartir libremente con tu equipo creativo, agencias y clientes. Solo permite previsualizar y descargar los entregables finales (sin acceso a presupuestos, contratos ni datos de facturación).
-                                            </span>
+                                    <div className="bg-black/50 border border-white/10 rounded-xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-left">
+                                        <div className="flex items-start gap-3 flex-1">
+                                            <span className="text-xl flex-shrink-0">🔒</span>
+                                            <div className="text-xs text-zinc-300 space-y-1 leading-relaxed">
+                                                <strong className="text-white block font-semibold text-xs sm:text-sm">
+                                                    Almacenamiento Seguro para Compartir
+                                                </strong>
+                                                <p className="text-zinc-400 text-[11px] sm:text-xs">
+                                                    Utilizá el botón <strong>"Copiar Enlace de Nexo Storage"</strong>. Este enlace exclusivo solo permite visualizar y descargar los archivos terminados. No comparte el acceso a tu portal privado.
+                                                </p>
+                                            </div>
                                         </div>
+                                        <button
+                                            onClick={handleCopyDirectLink}
+                                            className="w-full md:w-auto bg-nexo-lime text-black font-extrabold uppercase tracking-widest text-[10px] sm:text-xs px-6 py-3 rounded-lg hover:bg-[#b3ff00] hover:scale-105 transition-all shadow-[0_0_15px_rgba(204,255,0,0.25)] flex items-center justify-center gap-2 cursor-pointer flex-shrink-0"
+                                            title="Copia el enlace directo para enviar por WhatsApp, email o pegar en el navegador"
+                                        >
+                                            <span>{copied ? '✓' : '🔗'}</span>
+                                            <span>{copied ? '¡Enlace Copiado!' : 'Copiar Enlace de Nexo Storage'}</span>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -315,11 +301,11 @@ const StorageDelivery: React.FC = () => {
                                                                 <h4 className="font-bold text-xs sm:text-sm text-white truncate" title={file.name}>
                                                                     {file.name}
                                                                 </h4>
-                                                                <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
-                                                                    <span>{formatFileSize(file.size)}</span>
-                                                                    <span>•</span>
-                                                                    <span>{zip ? 'Archivo Comprimido' : 'Master Oficial'}</span>
-                                                                </div>
+                                                                {formatFileSize(file.size) && (
+                                                                    <span className="text-[10px] text-zinc-500 font-mono">
+                                                                        {formatFileSize(file.size)}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                         </div>
 
@@ -378,16 +364,13 @@ const StorageDelivery: React.FC = () => {
                                                                         target.style.display = 'none';
                                                                     }
                                                                 }}
-                                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100"
+                                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                                             />
                                                         ) : null}
 
                                                         {/* Fallback elegante si la imagen no carga o no existe */}
-                                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-600 gap-2 pointer-events-none -z-0">
-                                                            <span className="text-4xl">{getFileIcon(file)}</span>
-                                                            <span className="text-[10px] uppercase tracking-widest font-mono text-zinc-500">
-                                                                {zip ? 'Archivo Comprimido' : video ? 'Video Master' : 'Documento'}
-                                                            </span>
+                                                        <div className="absolute inset-0 flex items-center justify-center text-zinc-700 pointer-events-none -z-0">
+                                                            <span className="text-3xl">{getFileIcon(file)}</span>
                                                         </div>
 
                                                         {/* Badge de tipo */}
@@ -399,7 +382,7 @@ const StorageDelivery: React.FC = () => {
                                                         {video && (
                                                             <button
                                                                 onClick={() => setPreviewVideo(file)}
-                                                                className="absolute inset-0 m-auto w-12 h-12 rounded-full bg-nexo-lime/90 text-black flex items-center justify-center shadow-lg hover:scale-110 hover:bg-nexo-lime transition-all duration-300 cursor-pointer"
+                                                                className="absolute inset-0 m-auto w-12 h-12 rounded-full bg-nexo-lime text-black flex items-center justify-center shadow-lg hover:scale-110 hover:bg-[#b3ff00] transition-all duration-300 cursor-pointer"
                                                                 title="Reproducir video"
                                                             >
                                                                 <span className="ml-1 text-base font-bold">▶</span>
@@ -416,11 +399,11 @@ const StorageDelivery: React.FC = () => {
                                                             >
                                                                 {file.name}
                                                             </h4>
-                                                            <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
-                                                                <span>{formatFileSize(file.size)}</span>
-                                                                <span>•</span>
-                                                                <span>Master Oficial</span>
-                                                            </div>
+                                                            {formatFileSize(file.size) && (
+                                                                <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
+                                                                    <span>{formatFileSize(file.size)}</span>
+                                                                </div>
+                                                            )}
                                                         </div>
 
                                                         {/* Acciones */}

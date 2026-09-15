@@ -23,6 +23,10 @@
         "api/network.js": {
             "includeFiles": "dist/index.html",
             "maxDuration": 60
+        },
+        "api/storage-og.js": {
+            "includeFiles": "dist/index.html",
+            "maxDuration": 30
         }
     },
     "redirects": [
@@ -36,6 +40,7 @@
     "rewrites": [
         { "source": "/portal/login", "destination": "/index.html" },
         { "source": "/portal", "destination": "/api/comercial/client?action=render" },
+        { "source": "/storage", "destination": "/api/storage-og" },
         { "source": "/presupuesto", "destination": "/api/presupuesto" },
         { "source": "/network", "destination": "/api/network" },
         { "source": "/portfolio/:id", "destination": "/api/portfolio" },

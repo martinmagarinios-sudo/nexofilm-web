@@ -2758,25 +2758,10 @@ const ClientPortal: React.FC = () => {
                                                         setTimeout(() => setStorageCopied(false), 2500);
                                                     }}
                                                     className="bg-nexo-lime text-black font-extrabold uppercase tracking-widest text-[10px] md:text-xs px-6 py-3 rounded-lg hover:bg-[#b3ff00] hover:scale-105 transition-all shadow-[0_0_15px_rgba(204,255,0,0.25)] flex items-center gap-2 cursor-pointer"
-                                                    title="Copia el enlace directo para pegar en el navegador"
+                                                    title="Copia el enlace directo para pegar en el navegador, WhatsApp o email"
                                                 >
                                                     <span>{storageCopied ? '✓' : '🔗'}</span>
-                                                    <span>{storageCopied ? '¡Enlace Directo Copiado!' : 'Copiar Enlace de Nexo Storage'}</span>
-                                                </button>
-
-                                                <button
-                                                    onClick={() => {
-                                                        const storageUrl = `${window.location.origin}/storage?token=${token}`;
-                                                        const projTitle = project.title || 'Producción Audiovisual';
-                                                        const clientName = project.contact_name || project.company_name || '';
-                                                        const textToShare = `🎬 *NexoFilm Storage — Entrega Oficial*\n📁 *Proyecto:* ${projTitle}\n👤 *Cliente:* ${clientName}\n\nPrevisualizá y descargá el material finalizado en alta definición desde tu centro de entrega exclusivo:\n👉 ${storageUrl}`;
-                                                        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textToShare)}`, '_blank');
-                                                    }}
-                                                    className="bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/40 text-[#25D366] font-bold uppercase tracking-wider text-[10px] md:text-xs px-5 py-3 rounded-lg transition-all flex items-center gap-2 cursor-pointer"
-                                                    title="Compartir por WhatsApp con mensaje prearmado"
-                                                >
-                                                    <span>💬</span>
-                                                    <span>Compartir por WhatsApp</span>
+                                                    <span>{storageCopied ? '¡Enlace Copiado!' : 'Copiar Enlace'}</span>
                                                 </button>
 
                                                 <a
@@ -2870,7 +2855,6 @@ const ClientPortal: React.FC = () => {
                                                                                 <h5 className="font-bold text-xs sm:text-sm text-white truncate" title={file.name}>
                                                                                     {file.name}
                                                                                 </h5>
-                                                                                <span className="text-[10px] text-zinc-500 font-mono">Master Oficial de Producción</span>
                                                                             </div>
                                                                         </div>
                                                                         <div className="flex items-center gap-2 flex-shrink-0">
