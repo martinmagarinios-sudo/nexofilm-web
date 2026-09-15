@@ -237,6 +237,13 @@ const ClientPortal: React.FC = () => {
     const [storageViewMode, setStorageViewMode] = useState<'grid' | 'list'>('grid');
     const [storageSortBy, setStorageSortBy] = useState<'name' | 'default'>('default');
     const [driveFolderHistory, setDriveFolderHistory] = useState<{ id: string | null; name: string }[]>([]);
+    const [selectedDriveIds, setSelectedDriveIds] = useState<string[]>([]);
+    const [isDownloadingDriveBatch, setIsDownloadingDriveBatch] = useState(false);
+    const [driveBatchProgress, setDriveBatchProgress] = useState<{ current: number; total: number } | null>(null);
+
+    useEffect(() => {
+        setSelectedDriveIds([]);
+    }, [driveFolderHistory]);
 
     // Encuesta de Satisfacción (Sprint 2)
     const [hasReviewed, setHasReviewed] = useState(false);
@@ -651,6 +658,70 @@ const ClientPortal: React.FC = () => {
             return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
         }
         return null;
+    };
+
+    const getDirectDriveDownloadUrl = (file: DriveFile) => {
+        return `https://drive.usercontent.google.com/download?id=${file.id}&export=download&confirm=t`;
+    };
+
+    const handleDownloadDriveSingle = (file: DriveFile, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        const url = getDirectDriveDownloadUrl(file);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.name;
+        link.setAttribute('target', '_blank');
+        link.setAttribute('rel', 'noopener noreferrer');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const toggleSelectDriveFile = (fileId: string, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        setSelectedDriveIds(prev =>
+            prev.includes(fileId) ? prev.filter(id => id !== fileId) : [...prev, fileId]
+        );
+    };
+
+    const selectableDriveFiles = driveFiles.filter(f => !isDriveFolder(f));
+    const isAllDriveSelected = selectableDriveFiles.length > 0 && selectedDriveIds.length === selectableDriveFiles.length;
+
+    const handleSelectAllDrive = () => {
+        if (isAllDriveSelected) {
+            setSelectedDriveIds([]);
+        } else {
+            setSelectedDriveIds(selectableDriveFiles.map(f => f.id));
+        }
+    };
+
+    const handleClearDriveSelection = () => {
+        setSelectedDriveIds([]);
+    };
+
+    const handleDownloadDriveBatch = async () => {
+        const toDownload = driveFiles.filter(f => selectedDriveIds.includes(f.id) && !isDriveFolder(f));
+        if (toDownload.length === 0) return;
+
+        setIsDownloadingDriveBatch(true);
+        for (let i = 0; i < toDownload.length; i++) {
+            setDriveBatchProgress({ current: i + 1, total: toDownload.length });
+            const file = toDownload[i];
+            const url = getDirectDriveDownloadUrl(file);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = file.name;
+            link.setAttribute('target', '_blank');
+            link.setAttribute('rel', 'noopener noreferrer');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            if (i < toDownload.length - 1) {
+                await new Promise(r => setTimeout(r, 750));
+            }
+        }
+        setIsDownloadingDriveBatch(false);
+        setDriveBatchProgress(null);
     };
 
     // Enviar especificaciones refinadas
@@ -2852,6 +2923,26 @@ const ClientPortal: React.FC = () => {
 
                                                 {/* Controles de Vista y Orden */}
                                                 <div className="flex items-center gap-2">
+                                                    {selectableDriveFiles.length > 0 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleSelectAllDrive}
+                                                            className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                                isAllDriveSelected
+                                                                    ? 'bg-nexo-lime/20 border-nexo-lime text-nexo-lime'
+                                                                    : 'bg-black/50 border-white/10 text-zinc-400 hover:text-white'
+                                                            }`}
+                                                            title={isAllDriveSelected ? "Deseleccionar todos" : "Seleccionar todos los archivos"}
+                                                        >
+                                                            <span className={`w-3 h-3 rounded border flex items-center justify-center text-[9px] ${
+                                                                isAllDriveSelected ? 'bg-nexo-lime border-nexo-lime text-black' : 'border-zinc-500'
+                                                            }`}>
+                                                                {isAllDriveSelected && '✓'}
+                                                            </span>
+                                                            <span>{isAllDriveSelected ? 'Todos' : 'Seleccionar todos'}</span>
+                                                        </button>
+                                                    )}
+
                                                     <div className="flex items-center bg-black/50 border border-white/10 rounded-lg p-0.5">
                                                         <button
                                                             type="button"
@@ -2881,6 +2972,44 @@ const ClientPortal: React.FC = () => {
                                                     </button>
                                                 </div>
                                             </div>
+
+                                            {/* Barra de Descarga Masiva (Portal) */}
+                                            {selectedDriveIds.length > 0 && (
+                                                <div className="bg-[#0f0f14]/95 backdrop-blur-xl border border-nexo-lime/60 rounded-xl p-3 shadow-[0_10px_25px_rgba(0,0,0,0.8),0_0_15px_rgba(204,255,0,0.15)] flex flex-wrap items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
+                                                    <div className="flex items-center gap-2.5">
+                                                        <span className="w-2.5 h-2.5 rounded-full bg-nexo-lime animate-pulse"></span>
+                                                        <span className="text-xs font-extrabold text-white">
+                                                            {selectedDriveIds.length} {selectedDriveIds.length === 1 ? 'archivo seleccionado' : 'archivos seleccionados'}
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleClearDriveSelection}
+                                                            className="text-[11px] text-zinc-400 hover:text-white underline cursor-pointer ml-1"
+                                                        >
+                                                            Deseleccionar
+                                                        </button>
+                                                    </div>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleDownloadDriveBatch}
+                                                        disabled={isDownloadingDriveBatch}
+                                                        className="bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[11px] uppercase px-4 py-2 rounded-lg transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(204,255,0,0.25)] cursor-pointer disabled:opacity-50"
+                                                    >
+                                                        {isDownloadingDriveBatch ? (
+                                                            <>
+                                                                <div className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                                                                <span>Iniciando ({driveBatchProgress?.current}/{driveBatchProgress?.total})...</span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <span>⬇</span>
+                                                                <span>Descargar seleccionados ({selectedDriveIds.length})</span>
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            )}
 
                                             {/* Breadcrumbs de Navegación de Carpetas */}
                                             {driveFolderHistory.length > 0 && (
@@ -2941,32 +3070,56 @@ const ClientPortal: React.FC = () => {
                                                             {sorted.map((file) => {
                                                                 const folder = isDriveFolder(file);
                                                                 const isVid = !folder && (file.mimeType?.includes('video') || file.name?.toLowerCase().endsWith('.mp4') || file.name?.toLowerCase().endsWith('.mov'));
+                                                                const isSelected = selectedDriveIds.includes(file.id);
+
                                                                 return (
                                                                     <div
                                                                         key={file.id}
                                                                         onDoubleClick={folder ? () => handleOpenDriveFolder(file) : undefined}
-                                                                        className={`p-3 sm:p-4 flex items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors ${folder ? 'cursor-pointer' : ''}`}
+                                                                        className={`p-3 sm:p-4 flex items-center justify-between gap-4 transition-colors ${
+                                                                            isSelected
+                                                                                ? 'bg-nexo-lime/[0.08] border-l-2 border-nexo-lime'
+                                                                                : 'hover:bg-white/[0.02]'
+                                                                        }`}
                                                                     >
-                                                                        <div
-                                                                            onClick={folder ? () => handleOpenDriveFolder(file) : undefined}
-                                                                            className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer"
-                                                                        >
-                                                                            <span className="text-xl flex-shrink-0">{folder ? '📁' : isVid ? '🎬' : '📦'}</span>
-                                                                            <div className="min-w-0 flex-1">
-                                                                                <div className="flex items-center gap-2">
-                                                                                    <h5 className="font-bold text-xs sm:text-sm text-white truncate" title={file.name}>
-                                                                                        {file.name}
-                                                                                    </h5>
-                                                                                    {folder ? (
-                                                                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30 flex-shrink-0">
-                                                                                            Carpeta
-                                                                                        </span>
-                                                                                    ) : formatFileSize(file.size) ? (
-                                                                                        <span className="inline-flex items-center gap-1 text-[10px] font-mono text-zinc-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded flex-shrink-0">
-                                                                                            <span>💾</span>
-                                                                                            <span>{formatFileSize(file.size)}</span>
-                                                                                        </span>
-                                                                                    ) : null}
+                                                                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                                            {/* Checkbox de selección */}
+                                                                            {!folder && (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={(e) => toggleSelectDriveFile(file.id, e)}
+                                                                                    className={`w-4 h-4 rounded border flex items-center justify-center transition-all flex-shrink-0 cursor-pointer ${
+                                                                                        isSelected
+                                                                                            ? 'bg-nexo-lime border-nexo-lime text-black font-extrabold text-[10px] shadow-[0_0_6px_rgba(204,255,0,0.3)]'
+                                                                                            : 'border-white/20 bg-black/40 hover:border-white/50 text-transparent'
+                                                                                    }`}
+                                                                                    title={isSelected ? "Deseleccionar" : "Seleccionar para descargar"}
+                                                                                >
+                                                                                    ✓
+                                                                                </button>
+                                                                            )}
+
+                                                                            <div
+                                                                                onClick={folder ? () => handleOpenDriveFolder(file) : undefined}
+                                                                                className={`flex items-center gap-3 min-w-0 flex-1 ${folder ? 'cursor-pointer' : ''}`}
+                                                                            >
+                                                                                <span className="text-xl flex-shrink-0">{folder ? '📁' : isVid ? '🎬' : '📦'}</span>
+                                                                                <div className="min-w-0 flex-1">
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <h5 className="font-bold text-xs sm:text-sm text-white truncate" title={file.name}>
+                                                                                            {file.name}
+                                                                                        </h5>
+                                                                                        {folder ? (
+                                                                                            <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30 flex-shrink-0">
+                                                                                                Carpeta
+                                                                                            </span>
+                                                                                        ) : formatFileSize(file.size) ? (
+                                                                                            <span className="inline-flex items-center gap-1 text-[10px] font-mono text-zinc-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded flex-shrink-0">
+                                                                                                <span>💾</span>
+                                                                                                <span>{formatFileSize(file.size)}</span>
+                                                                                            </span>
+                                                                                        ) : null}
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -2990,15 +3143,14 @@ const ClientPortal: React.FC = () => {
                                                                                             Ver
                                                                                         </button>
                                                                                     )}
-                                                                                    <a
-                                                                                        href={file.webContentLink || file.webViewLink || '#'}
-                                                                                        target="_blank"
-                                                                                        rel="noopener noreferrer"
-                                                                                        download={file.name}
-                                                                                        className="bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase px-3.5 py-1.5 rounded transition-all"
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={(e) => handleDownloadDriveSingle(file, e)}
+                                                                                        className="bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase px-3.5 py-1.5 rounded transition-all cursor-pointer"
+                                                                                        title="Descargar archivo directamente"
                                                                                     >
                                                                                         Descargar
-                                                                                    </a>
+                                                                                    </button>
                                                                                 </>
                                                                             )}
                                                                         </div>
@@ -3014,6 +3166,7 @@ const ClientPortal: React.FC = () => {
                                                         {sorted.map((file) => {
                                                             const folder = isDriveFolder(file);
                                                             const isVid = !folder && (file.mimeType?.includes('video') || file.name?.toLowerCase().endsWith('.mp4') || file.name?.toLowerCase().endsWith('.mov'));
+                                                            const isSelected = selectedDriveIds.includes(file.id);
 
                                                             if (folder) {
                                                                 return (
@@ -3051,7 +3204,14 @@ const ClientPortal: React.FC = () => {
                                                             }
 
                                                             return (
-                                                                <div key={file.id} className="bg-black/40 border border-white/10 rounded-xl overflow-hidden hover:border-nexo-lime/40 transition-all flex flex-col group">
+                                                                <div
+                                                                    key={file.id}
+                                                                    className={`bg-black/40 rounded-xl overflow-hidden transition-all flex flex-col group relative ${
+                                                                        isSelected
+                                                                            ? 'border-2 border-nexo-lime shadow-[0_0_20px_rgba(204,255,0,0.2)] ring-1 ring-nexo-lime/50'
+                                                                            : 'border border-white/10 hover:border-nexo-lime/40'
+                                                                    }`}
+                                                                >
                                                                     <div className="relative aspect-video bg-gradient-to-br from-zinc-900 via-black to-zinc-950 flex items-center justify-center overflow-hidden border-b border-white/5">
                                                                         {file.thumbnailLink ? (
                                                                             <img
@@ -3076,6 +3236,21 @@ const ClientPortal: React.FC = () => {
                                                                         <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-600 gap-1.5 pointer-events-none -z-0">
                                                                             <span className="text-3xl">{isVid ? '🎬' : '📦'}</span>
                                                                         </div>
+
+                                                                        {/* Checkbox de selección en tarjeta */}
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={(e) => toggleSelectDriveFile(file.id, e)}
+                                                                            className={`absolute top-2.5 right-2.5 z-20 w-6 h-6 rounded-md border flex items-center justify-center transition-all cursor-pointer ${
+                                                                                isSelected
+                                                                                    ? 'bg-nexo-lime border-nexo-lime text-black font-extrabold text-xs shadow-[0_0_8px_rgba(204,255,0,0.4)]'
+                                                                                    : 'bg-black/60 backdrop-blur-md border-white/20 hover:border-white text-transparent opacity-80 group-hover:opacity-100'
+                                                                            }`}
+                                                                            title={isSelected ? "Deseleccionar" : "Seleccionar"}
+                                                                        >
+                                                                            ✓
+                                                                        </button>
+
                                                                         {isVid && (
                                                                             <button
                                                                                 onClick={() => setPreviewDriveVideo(file)}
@@ -3107,15 +3282,14 @@ const ClientPortal: React.FC = () => {
                                                                                     Ver
                                                                                 </button>
                                                                             )}
-                                                                            <a
-                                                                                href={file.webContentLink || file.webViewLink || '#'}
-                                                                                target="_blank"
-                                                                                rel="noopener noreferrer"
-                                                                                download={file.name}
-                                                                                className="flex-1 bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase tracking-wider py-1.5 rounded transition-all text-center"
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={(e) => handleDownloadDriveSingle(file, e)}
+                                                                                className="flex-1 bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase tracking-wider py-1.5 rounded transition-all text-center cursor-pointer"
+                                                                                title="Descargar archivo directamente"
                                                                             >
                                                                                 Descargar
-                                                                            </a>
+                                                                            </button>
                                                                         </div>
                                                                     </div>
                                                                 </div>

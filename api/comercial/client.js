@@ -574,7 +574,7 @@ export default async function handler(req, res) {
                             isFolder: isFolder,
                             webViewLink: isFolder ? `https://drive.google.com/drive/folders/${cleanId}` : `https://drive.google.com/file/d/${cleanId}/view?usp=sharing`,
                             thumbnailLink: isFolder ? null : `https://lh3.googleusercontent.com/d/${cleanId}=w640`,
-                            webContentLink: isFolder ? null : `https://drive.google.com/uc?export=download&id=${cleanId}`,
+                            webContentLink: isFolder ? null : `https://drive.usercontent.google.com/download?id=${cleanId}&export=download&confirm=t`,
                             size: isFolder ? null : (sizeMap[cleanId] || null)
                         });
                     }

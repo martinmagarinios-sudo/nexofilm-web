@@ -31,6 +31,14 @@ const StorageDelivery: React.FC = () => {
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [sortBy, setSortBy] = useState<'name' | 'default'>('default');
     const [folderHistory, setFolderHistory] = useState<{ id: string | null; name: string }[]>([]);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [isDownloadingBatch, setIsDownloadingBatch] = useState(false);
+    const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
+
+    // Limpiar selección al cambiar de carpeta
+    useEffect(() => {
+        setSelectedIds([]);
+    }, [folderHistory]);
 
     // Obtener token de la URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -146,6 +154,70 @@ const StorageDelivery: React.FC = () => {
         navigator.clipboard.writeText(fullUrl);
         setCopied(true);
         setTimeout(() => setCopied(false), 2500);
+    };
+
+    const getDirectDownloadUrl = (file: DriveFile) => {
+        return `https://drive.usercontent.google.com/download?id=${file.id}&export=download&confirm=t`;
+    };
+
+    const handleDownloadSingle = (file: DriveFile, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        const url = getDirectDownloadUrl(file);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.name;
+        link.setAttribute('target', '_blank');
+        link.setAttribute('rel', 'noopener noreferrer');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const toggleSelectFile = (fileId: string, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        setSelectedIds(prev =>
+            prev.includes(fileId) ? prev.filter(id => id !== fileId) : [...prev, fileId]
+        );
+    };
+
+    const selectableFiles = files.filter(f => !isFolder(f));
+    const isAllSelected = selectableFiles.length > 0 && selectedIds.length === selectableFiles.length;
+
+    const handleSelectAll = () => {
+        if (isAllSelected) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(selectableFiles.map(f => f.id));
+        }
+    };
+
+    const handleClearSelection = () => {
+        setSelectedIds([]);
+    };
+
+    const handleDownloadBatch = async () => {
+        const toDownload = files.filter(f => selectedIds.includes(f.id) && !isFolder(f));
+        if (toDownload.length === 0) return;
+
+        setIsDownloadingBatch(true);
+        for (let i = 0; i < toDownload.length; i++) {
+            setBatchProgress({ current: i + 1, total: toDownload.length });
+            const file = toDownload[i];
+            const url = getDirectDownloadUrl(file);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = file.name;
+            link.setAttribute('target', '_blank');
+            link.setAttribute('rel', 'noopener noreferrer');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            if (i < toDownload.length - 1) {
+                await new Promise(r => setTimeout(r, 750));
+            }
+        }
+        setIsDownloadingBatch(false);
+        setBatchProgress(null);
     };
 
     // Cerrar modal con ESC
@@ -283,6 +355,26 @@ const StorageDelivery: React.FC = () => {
                                 </h3>
 
                                 <div className="flex items-center gap-2">
+                                    {selectableFiles.length > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={handleSelectAll}
+                                            className={`px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                isAllSelected
+                                                    ? 'bg-nexo-lime/20 border-nexo-lime text-nexo-lime'
+                                                    : 'bg-black/50 border-white/10 text-zinc-400 hover:text-white'
+                                            }`}
+                                            title={isAllSelected ? "Deseleccionar todos" : "Seleccionar todos los archivos"}
+                                        >
+                                            <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center text-[10px] ${
+                                                isAllSelected ? 'bg-nexo-lime border-nexo-lime text-black' : 'border-zinc-500'
+                                            }`}>
+                                                {isAllSelected && '✓'}
+                                            </span>
+                                            <span>{isAllSelected ? 'Todos seleccionados' : 'Seleccionar todos'}</span>
+                                        </button>
+                                    )}
+
                                     <div className="flex items-center bg-black/50 border border-white/10 rounded-lg p-0.5">
                                         <button
                                             type="button"
@@ -312,6 +404,46 @@ const StorageDelivery: React.FC = () => {
                                     </button>
                                 </div>
                             </div>
+
+                            {/* Barra de Descarga Masiva (Cuando hay archivos seleccionados) */}
+                            {selectedIds.length > 0 && (
+                                <div className="sticky top-20 z-30 bg-[#0f0f14]/95 backdrop-blur-xl border-2 border-nexo-lime/60 rounded-xl p-3 sm:p-4 shadow-[0_10px_30px_rgba(0,0,0,0.8),0_0_20px_rgba(204,255,0,0.2)] flex flex-wrap items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
+                                    <div className="flex items-center gap-3">
+                                        <span className="w-3 h-3 rounded-full bg-nexo-lime animate-pulse"></span>
+                                        <span className="text-xs sm:text-sm font-extrabold text-white">
+                                            {selectedIds.length} {selectedIds.length === 1 ? 'archivo seleccionado' : 'archivos seleccionados'}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={handleClearSelection}
+                                            className="text-[11px] text-zinc-400 hover:text-white underline cursor-pointer"
+                                        >
+                                            Deseleccionar
+                                        </button>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleDownloadBatch}
+                                            disabled={isDownloadingBatch}
+                                            className="bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-xs uppercase px-5 py-2.5 rounded-lg transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(204,255,0,0.3)] cursor-pointer disabled:opacity-50"
+                                        >
+                                            {isDownloadingBatch ? (
+                                                <>
+                                                    <div className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                                                    <span>Iniciando descarga ({batchProgress?.current}/{batchProgress?.total})...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="text-sm">⬇</span>
+                                                    <span>Descargar seleccionados ({selectedIds.length})</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Navegación de Carpetas (Breadcrumbs) */}
                             {folderHistory.length > 0 && (
@@ -373,34 +505,57 @@ const StorageDelivery: React.FC = () => {
                                                 const folder = isFolder(file);
                                                 const video = isVideo(file);
                                                 const zip = isZip(file);
+                                                const isSelected = selectedIds.includes(file.id);
 
                                                 return (
                                                     <div
                                                         key={file.id}
                                                         onDoubleClick={() => folder && handleOpenFolder(file)}
-                                                        className="p-3 sm:p-4 flex items-center justify-between gap-4 hover:bg-white/[0.04] transition-colors"
+                                                        className={`p-3 sm:p-4 flex items-center justify-between gap-4 transition-colors ${
+                                                            isSelected
+                                                                ? 'bg-nexo-lime/[0.08] border-l-4 border-nexo-lime'
+                                                                : 'hover:bg-white/[0.04]'
+                                                        }`}
                                                     >
-                                                        <div
-                                                            className={`flex items-center gap-3.5 min-w-0 flex-1 ${folder ? 'cursor-pointer' : ''}`}
-                                                            onClick={() => folder && handleOpenFolder(file)}
-                                                        >
-                                                            <span className="text-2xl flex-shrink-0">{getFileIcon(file)}</span>
-                                                            <div className="min-w-0 flex-1">
-                                                                <h4 className={`font-bold text-xs sm:text-sm text-white truncate ${folder ? 'group-hover:text-nexo-lime hover:underline' : ''}`} title={file.name}>
-                                                                    {file.name}
-                                                                </h4>
-                                                                {folder ? (
-                                                                    <span className="text-[10px] text-nexo-lime/80 font-mono">
-                                                                        Carpeta de archivos • Doble clic para abrir
-                                                                    </span>
-                                                                ) : formatFileSize(file.size) ? (
-                                                                    <div className="flex items-center gap-2 mt-0.5">
-                                                                        <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-400 font-mono bg-white/5 border border-white/10 px-2 py-0.5 rounded">
-                                                                            <span>💾</span>
-                                                                            <span>{formatFileSize(file.size)}</span>
+                                                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                            {/* Checkbox de selección */}
+                                                            {!folder && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => toggleSelectFile(file.id, e)}
+                                                                    className={`w-5 h-5 rounded border flex items-center justify-center transition-all flex-shrink-0 cursor-pointer ${
+                                                                        isSelected
+                                                                            ? 'bg-nexo-lime border-nexo-lime text-black font-extrabold text-xs shadow-[0_0_8px_rgba(204,255,0,0.3)]'
+                                                                            : 'border-white/20 bg-black/40 hover:border-white/50 text-transparent'
+                                                                    }`}
+                                                                    title={isSelected ? "Deseleccionar" : "Seleccionar para descargar"}
+                                                                >
+                                                                    ✓
+                                                                </button>
+                                                            )}
+
+                                                            <div
+                                                                className={`flex items-center gap-3 min-w-0 flex-1 ${folder ? 'cursor-pointer' : ''}`}
+                                                                onClick={() => folder && handleOpenFolder(file)}
+                                                            >
+                                                                <span className="text-2xl flex-shrink-0">{getFileIcon(file)}</span>
+                                                                <div className="min-w-0 flex-1">
+                                                                    <h4 className={`font-bold text-xs sm:text-sm text-white truncate ${folder ? 'group-hover:text-nexo-lime hover:underline' : ''}`} title={file.name}>
+                                                                        {file.name}
+                                                                    </h4>
+                                                                    {folder ? (
+                                                                        <span className="text-[10px] text-nexo-lime/80 font-mono">
+                                                                            Carpeta de archivos • Doble clic para abrir
                                                                         </span>
-                                                                    </div>
-                                                                ) : null}
+                                                                    ) : formatFileSize(file.size) ? (
+                                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                                            <span className="inline-flex items-center gap-1.5 text-[11px] text-zinc-400 font-mono bg-white/5 border border-white/10 px-2 py-0.5 rounded">
+                                                                                <span>💾</span>
+                                                                                <span>{formatFileSize(file.size)}</span>
+                                                                            </span>
+                                                                        </div>
+                                                                    ) : null}
+                                                                </div>
                                                             </div>
                                                         </div>
 
@@ -425,16 +580,15 @@ const StorageDelivery: React.FC = () => {
                                                                             Previsualizar
                                                                         </button>
                                                                     )}
-                                                                    <a
-                                                                        href={file.webContentLink || file.webViewLink || '#'}
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        download={file.name}
-                                                                        className="bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(204,255,0,0.15)]"
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={(e) => handleDownloadSingle(file, e)}
+                                                                        className="bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(204,255,0,0.15)] cursor-pointer"
+                                                                        title="Descargar archivo directamente"
                                                                     >
                                                                         <span>⬇</span>
                                                                         <span>Descargar</span>
-                                                                    </a>
+                                                                    </button>
                                                                 </>
                                                             )}
                                                         </div>
@@ -451,12 +605,17 @@ const StorageDelivery: React.FC = () => {
                                             const folder = isFolder(file);
                                             const video = isVideo(file);
                                             const zip = isZip(file);
+                                            const isSelected = selectedIds.includes(file.id);
 
                                             return (
                                                 <div
                                                     key={file.id}
                                                     onDoubleClick={() => folder && handleOpenFolder(file)}
-                                                    className="bg-zinc-900/40 border border-white/10 hover:border-nexo-lime/40 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_20px_rgba(204,255,0,0.08)] flex flex-col group"
+                                                    className={`bg-zinc-900/40 rounded-xl overflow-hidden transition-all duration-300 flex flex-col group relative ${
+                                                        isSelected
+                                                            ? 'border-2 border-nexo-lime shadow-[0_0_25px_rgba(204,255,0,0.2)] ring-1 ring-nexo-lime/50'
+                                                            : 'border border-white/10 hover:border-nexo-lime/40 hover:shadow-[0_0_20px_rgba(204,255,0,0.08)]'
+                                                    }`}
                                                 >
                                                     {/* Contenedor Visual / Miniatura */}
                                                     <div
@@ -491,6 +650,22 @@ const StorageDelivery: React.FC = () => {
                                                                 </span>
                                                             )}
                                                         </div>
+
+                                                        {/* Checkbox de selección en tarjeta */}
+                                                        {!folder && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => toggleSelectFile(file.id, e)}
+                                                                className={`absolute top-2.5 right-2.5 z-20 w-6 h-6 rounded-md border flex items-center justify-center transition-all cursor-pointer ${
+                                                                    isSelected
+                                                                        ? 'bg-nexo-lime border-nexo-lime text-black font-extrabold text-xs shadow-[0_0_10px_rgba(204,255,0,0.4)]'
+                                                                        : 'bg-black/60 backdrop-blur-md border-white/20 hover:border-white text-transparent opacity-80 group-hover:opacity-100'
+                                                                }`}
+                                                                title={isSelected ? "Deseleccionar" : "Seleccionar"}
+                                                            >
+                                                                ✓
+                                                            </button>
+                                                        )}
 
                                                         {/* Badge de tipo */}
                                                         <span className={`absolute top-2.5 left-2.5 backdrop-blur-md text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded border ${
@@ -558,20 +733,19 @@ const StorageDelivery: React.FC = () => {
                                                                             Previsualizar
                                                                         </button>
                                                                     )}
-                                                                    <a
-                                                                        href={file.webContentLink || file.webViewLink || '#'}
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        download={file.name}
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={(e) => handleDownloadSingle(file, e)}
                                                                         className={`flex-1 ${
                                                                             video
                                                                                 ? 'bg-nexo-lime hover:bg-[#b3ff00] text-black'
                                                                                 : 'bg-nexo-lime hover:bg-[#b3ff00] text-black w-full'
-                                                                        } font-extrabold text-[10px] uppercase tracking-wider py-2.5 rounded-lg transition-all text-center flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(204,255,0,0.15)]`}
+                                                                        } font-extrabold text-[10px] uppercase tracking-wider py-2.5 rounded-lg transition-all text-center flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(204,255,0,0.15)] cursor-pointer`}
+                                                                        title="Descargar archivo directamente"
                                                                     >
                                                                         <span>⬇</span>
                                                                         <span>Descargar</span>
-                                                                    </a>
+                                                                    </button>
                                                                 </>
                                                             )}
                                                         </div>
