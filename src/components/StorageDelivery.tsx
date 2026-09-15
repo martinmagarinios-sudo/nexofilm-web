@@ -10,6 +10,7 @@ interface DriveFile {
     webContentLink?: string;
     size?: string | number;
     createdTime?: string;
+    isFolder?: boolean;
 }
 
 interface ProjectPublicInfo {
@@ -29,10 +30,34 @@ const StorageDelivery: React.FC = () => {
     const [copied, setCopied] = useState(false);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [sortBy, setSortBy] = useState<'name' | 'default'>('default');
+    const [folderHistory, setFolderHistory] = useState<{ id: string | null; name: string }[]>([]);
 
     // Obtener token de la URL
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
+    const currentFolderId = folderHistory.length > 0 ? folderHistory[folderHistory.length - 1].id : null;
+
+    const fetchStorageData = async (folderId?: string | null) => {
+        setLoading(true);
+        setError('');
+        try {
+            const folderQuery = folderId ? `&folderId=${encodeURIComponent(folderId)}` : '';
+            const res = await fetch(`/api/comercial/client?action=storage&token=${encodeURIComponent(token || '')}${folderQuery}`);
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || 'No se pudieron recuperar los archivos de la entrega.');
+            }
+
+            if (!project && data.project) setProject(data.project);
+            setFiles(data.files || []);
+        } catch (err: any) {
+            console.error(err);
+            setError(err.message || 'Error de conexión con NexoFilm Storage.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (!token) {
@@ -41,29 +66,20 @@ const StorageDelivery: React.FC = () => {
             return;
         }
 
-        const fetchStorageData = async () => {
-            setLoading(true);
-            setError('');
-            try {
-                const res = await fetch(`/api/comercial/client?action=storage&token=${encodeURIComponent(token)}`);
-                const data = await res.json();
+        fetchStorageData(currentFolderId);
+    }, [token, currentFolderId]);
 
-                if (!res.ok) {
-                    throw new Error(data.error || 'No se pudieron recuperar los archivos de la entrega.');
-                }
+    const handleOpenFolder = (folder: DriveFile) => {
+        setFolderHistory(prev => [...prev, { id: folder.id, name: folder.name }]);
+    };
 
-                setProject(data.project || null);
-                setFiles(data.files || []);
-            } catch (err: any) {
-                console.error(err);
-                setError(err.message || 'Error de conexión con NexoFilm Storage.');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchStorageData();
-    }, [token]);
+    const handleNavigateHistory = (index: number) => {
+        if (index < 0) {
+            setFolderHistory([]);
+        } else {
+            setFolderHistory(prev => prev.slice(0, index + 1));
+        }
+    };
 
     const formatFileSize = (bytes?: string | number | null) => {
         if (!bytes) return null;
@@ -74,26 +90,39 @@ const StorageDelivery: React.FC = () => {
         return `${(num / (1024 * 1024 * 1024)).toFixed(2)} GB`;
     };
 
+    const isFolder = (file: DriveFile) => {
+        return (
+            file.isFolder === true ||
+            file.mimeType === 'application/vnd.google-apps.folder' ||
+            file.mimeType?.includes('folder')
+        );
+    };
+
     const isVideo = (file: DriveFile) => {
         return (
-            file.mimeType?.includes('video') ||
-            file.name?.toLowerCase().endsWith('.mp4') ||
-            file.name?.toLowerCase().endsWith('.mov') ||
-            file.name?.toLowerCase().endsWith('.mkv') ||
-            file.name?.toLowerCase().endsWith('.webm')
+            !isFolder(file) && (
+                file.mimeType?.includes('video') ||
+                file.name?.toLowerCase().endsWith('.mp4') ||
+                file.name?.toLowerCase().endsWith('.mov') ||
+                file.name?.toLowerCase().endsWith('.mkv') ||
+                file.name?.toLowerCase().endsWith('.webm')
+            )
         );
     };
 
     const isZip = (file: DriveFile) => {
         return (
-            file.mimeType?.includes('zip') ||
-            file.mimeType?.includes('compressed') ||
-            file.name?.toLowerCase().endsWith('.zip') ||
-            file.name?.toLowerCase().endsWith('.rar')
+            !isFolder(file) && (
+                file.mimeType?.includes('zip') ||
+                file.mimeType?.includes('compressed') ||
+                file.name?.toLowerCase().endsWith('.zip') ||
+                file.name?.toLowerCase().endsWith('.rar')
+            )
         );
     };
 
     const getFileIcon = (file: DriveFile) => {
+        if (isFolder(file)) return '📁';
         if (isVideo(file)) return '🎬';
         if (isZip(file)) return '📦';
         if (file.mimeType?.includes('image')) return '🖼️';
@@ -273,6 +302,46 @@ const StorageDelivery: React.FC = () => {
                                 </div>
                             </div>
 
+                            {/* Navegación de Carpetas (Breadcrumbs) */}
+                            {folderHistory.length > 0 && (
+                                <nav className="flex items-center gap-2 text-xs text-zinc-400 bg-black/50 p-2.5 px-4 rounded-xl border border-white/10 mb-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleNavigateHistory(-1)}
+                                        className="hover:text-nexo-lime font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                                    >
+                                        <span>📁</span>
+                                        <span>Principal</span>
+                                    </button>
+                                    {folderHistory.map((f, i) => {
+                                        const isLast = i === folderHistory.length - 1;
+                                        return (
+                                            <React.Fragment key={f.id || i}>
+                                                <span className="text-zinc-600 font-mono">/</span>
+                                                {isLast ? (
+                                                    <span className="text-white font-bold">{f.name}</span>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleNavigateHistory(i)}
+                                                        className="hover:text-nexo-lime transition-colors cursor-pointer"
+                                                    >
+                                                        {f.name}
+                                                    </button>
+                                                )}
+                                            </React.Fragment>
+                                        );
+                                    })}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleNavigateHistory(folderHistory.length - 2)}
+                                        className="ml-auto text-[11px] bg-white/10 hover:bg-white/20 text-white font-bold px-3 py-1 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                                    >
+                                        ← Volver
+                                    </button>
+                                </nav>
+                            )}
+
                             {files.length === 0 ? (
                                 <div className="text-center py-16 bg-zinc-900/20 border border-white/5 rounded-2xl space-y-3">
                                     <span className="text-3xl">📂</span>
@@ -290,44 +359,70 @@ const StorageDelivery: React.FC = () => {
                                     return (
                                         <div className="bg-black/40 border border-white/10 rounded-xl divide-y divide-white/5 overflow-hidden">
                                             {sorted.map((file) => {
+                                                const folder = isFolder(file);
                                                 const video = isVideo(file);
                                                 const zip = isZip(file);
 
                                                 return (
-                                                    <div key={file.id} className="p-3 sm:p-4 flex items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors">
-                                                        <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                                                    <div
+                                                        key={file.id}
+                                                        onDoubleClick={() => folder && handleOpenFolder(file)}
+                                                        className="p-3 sm:p-4 flex items-center justify-between gap-4 hover:bg-white/[0.04] transition-colors"
+                                                    >
+                                                        <div
+                                                            className={`flex items-center gap-3.5 min-w-0 flex-1 ${folder ? 'cursor-pointer' : ''}`}
+                                                            onClick={() => folder && handleOpenFolder(file)}
+                                                        >
                                                             <span className="text-2xl flex-shrink-0">{getFileIcon(file)}</span>
                                                             <div className="min-w-0 flex-1">
-                                                                <h4 className="font-bold text-xs sm:text-sm text-white truncate" title={file.name}>
+                                                                <h4 className={`font-bold text-xs sm:text-sm text-white truncate ${folder ? 'group-hover:text-nexo-lime hover:underline' : ''}`} title={file.name}>
                                                                     {file.name}
                                                                 </h4>
-                                                                {formatFileSize(file.size) && (
+                                                                {folder ? (
+                                                                    <span className="text-[10px] text-nexo-lime/80 font-mono">
+                                                                        Carpeta de archivos • Doble clic para abrir
+                                                                    </span>
+                                                                ) : formatFileSize(file.size) ? (
                                                                     <span className="text-[10px] text-zinc-500 font-mono">
                                                                         {formatFileSize(file.size)}
                                                                     </span>
-                                                                )}
+                                                                ) : null}
                                                             </div>
                                                         </div>
 
                                                         <div className="flex items-center gap-2 flex-shrink-0">
-                                                            {video && (
+                                                            {folder ? (
                                                                 <button
-                                                                    onClick={() => setPreviewVideo(file)}
-                                                                    className="bg-white/5 hover:bg-white/15 border border-white/10 text-white font-bold text-[10px] uppercase px-3.5 py-2 rounded-lg transition-all cursor-pointer"
+                                                                    type="button"
+                                                                    onClick={() => handleOpenFolder(file)}
+                                                                    className="bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(204,255,0,0.15)] cursor-pointer"
                                                                 >
-                                                                    Previsualizar
+                                                                    <span>📁</span>
+                                                                    <span>Abrir Carpeta</span>
                                                                 </button>
+                                                            ) : (
+                                                                <>
+                                                                    {video && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => setPreviewVideo(file)}
+                                                                            className="bg-white/5 hover:bg-white/15 border border-white/10 text-white font-bold text-[10px] uppercase px-3.5 py-2 rounded-lg transition-all cursor-pointer"
+                                                                        >
+                                                                            Previsualizar
+                                                                        </button>
+                                                                    )}
+                                                                    <a
+                                                                        href={file.webContentLink || file.webViewLink || '#'}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        download={file.name}
+                                                                        className="bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(204,255,0,0.15)]"
+                                                                    >
+                                                                        <span>⬇</span>
+                                                                        <span>Descargar</span>
+                                                                    </a>
+                                                                </>
                                                             )}
-                                                            <a
-                                                                href={file.webContentLink || file.webViewLink || '#'}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                download={file.name}
-                                                                className="bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(204,255,0,0.15)]"
-                                                            >
-                                                                <span>⬇</span>
-                                                                <span>Descargar</span>
-                                                            </a>
                                                         </div>
                                                     </div>
                                                 );
@@ -339,16 +434,21 @@ const StorageDelivery: React.FC = () => {
                                 return (
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                                         {sorted.map((file) => {
+                                            const folder = isFolder(file);
                                             const video = isVideo(file);
                                             const zip = isZip(file);
 
                                             return (
                                                 <div
                                                     key={file.id}
+                                                    onDoubleClick={() => folder && handleOpenFolder(file)}
                                                     className="bg-zinc-900/40 border border-white/10 hover:border-nexo-lime/40 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-[0_0_20px_rgba(204,255,0,0.08)] flex flex-col group"
                                                 >
                                                     {/* Contenedor Visual / Miniatura */}
-                                                    <div className="relative aspect-video bg-gradient-to-br from-zinc-900 via-black to-zinc-950 flex items-center justify-center overflow-hidden border-b border-white/5">
+                                                    <div
+                                                        className={`relative aspect-video bg-gradient-to-br from-zinc-900 via-black to-zinc-950 flex items-center justify-center overflow-hidden border-b border-white/5 ${folder ? 'cursor-pointer' : ''}`}
+                                                        onClick={() => folder && handleOpenFolder(file)}
+                                                    >
                                                         {file.thumbnailLink ? (
                                                             <img
                                                                 src={file.thumbnailLink.includes('=w') || file.thumbnailLink.includes('=s') ? file.thumbnailLink : `https://lh3.googleusercontent.com/d/${file.id}=w640`}
@@ -368,19 +468,29 @@ const StorageDelivery: React.FC = () => {
                                                             />
                                                         ) : null}
 
-                                                        {/* Fallback elegante si la imagen no carga o no existe */}
-                                                        <div className="absolute inset-0 flex items-center justify-center text-zinc-700 pointer-events-none -z-0">
-                                                            <span className="text-3xl">{getFileIcon(file)}</span>
+                                                        {/* Fallback elegante si la imagen no carga o es carpeta */}
+                                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-zinc-500 gap-1.5 pointer-events-none -z-0">
+                                                            <span className={folder ? "text-5xl" : "text-3xl"}>{getFileIcon(file)}</span>
+                                                            {folder && (
+                                                                <span className="text-[10px] uppercase tracking-widest font-mono text-zinc-400">
+                                                                    Carpeta de Archivos
+                                                                </span>
+                                                            )}
                                                         </div>
 
                                                         {/* Badge de tipo */}
-                                                        <span className="absolute top-2.5 left-2.5 bg-black/80 backdrop-blur-md text-zinc-300 text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded border border-white/10">
-                                                            {file.name.split('.').pop() || 'FILE'}
+                                                        <span className={`absolute top-2.5 left-2.5 backdrop-blur-md text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded border ${
+                                                            folder
+                                                                ? 'bg-nexo-lime/20 text-nexo-lime border-nexo-lime/40'
+                                                                : 'bg-black/80 text-zinc-300 border-white/10'
+                                                        }`}>
+                                                            {folder ? 'CARPETA' : (file.name.split('.').pop() || 'FILE')}
                                                         </span>
 
                                                         {/* Botón de Play Flotante si es Video */}
                                                         {video && (
                                                             <button
+                                                                type="button"
                                                                 onClick={() => setPreviewVideo(file)}
                                                                 className="absolute inset-0 m-auto w-12 h-12 rounded-full bg-nexo-lime text-black flex items-center justify-center shadow-lg hover:scale-110 hover:bg-[#b3ff00] transition-all duration-300 cursor-pointer"
                                                                 title="Reproducir video"
@@ -394,42 +504,61 @@ const StorageDelivery: React.FC = () => {
                                                     <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-4">
                                                         <div className="space-y-1.5">
                                                             <h4
-                                                                className="font-bold text-xs sm:text-sm text-white group-hover:text-nexo-lime transition-colors line-clamp-2 leading-snug"
+                                                                className={`font-bold text-xs sm:text-sm text-white group-hover:text-nexo-lime transition-colors line-clamp-2 leading-snug ${folder ? 'cursor-pointer' : ''}`}
                                                                 title={file.name}
+                                                                onClick={() => folder && handleOpenFolder(file)}
                                                             >
                                                                 {file.name}
                                                             </h4>
-                                                            {formatFileSize(file.size) && (
+                                                            {folder ? (
+                                                                <div className="text-[10px] text-zinc-400 font-mono">
+                                                                    Doble clic para explorar contenido
+                                                                </div>
+                                                            ) : formatFileSize(file.size) ? (
                                                                 <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
                                                                     <span>{formatFileSize(file.size)}</span>
                                                                 </div>
-                                                            )}
+                                                            ) : null}
                                                         </div>
 
                                                         {/* Acciones */}
                                                         <div className="flex items-center gap-2 pt-2 border-t border-white/5">
-                                                            {video && (
+                                                            {folder ? (
                                                                 <button
-                                                                    onClick={() => setPreviewVideo(file)}
-                                                                    className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-[10px] uppercase tracking-wider py-2.5 rounded-lg transition-all text-center cursor-pointer"
+                                                                    type="button"
+                                                                    onClick={() => handleOpenFolder(file)}
+                                                                    className="w-full bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase tracking-wider py-2.5 rounded-lg transition-all text-center flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(204,255,0,0.15)] cursor-pointer"
                                                                 >
-                                                                    Previsualizar
+                                                                    <span>📁</span>
+                                                                    <span>Abrir Carpeta</span>
                                                                 </button>
+                                                            ) : (
+                                                                <>
+                                                                    {video && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => setPreviewVideo(file)}
+                                                                            className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-[10px] uppercase tracking-wider py-2.5 rounded-lg transition-all text-center cursor-pointer"
+                                                                        >
+                                                                            Previsualizar
+                                                                        </button>
+                                                                    )}
+                                                                    <a
+                                                                        href={file.webContentLink || file.webViewLink || '#'}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        download={file.name}
+                                                                        className={`flex-1 ${
+                                                                            video
+                                                                                ? 'bg-nexo-lime hover:bg-[#b3ff00] text-black'
+                                                                                : 'bg-nexo-lime hover:bg-[#b3ff00] text-black w-full'
+                                                                        } font-extrabold text-[10px] uppercase tracking-wider py-2.5 rounded-lg transition-all text-center flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(204,255,0,0.15)]`}
+                                                                    >
+                                                                        <span>⬇</span>
+                                                                        <span>Descargar</span>
+                                                                    </a>
+                                                                </>
                                                             )}
-                                                            <a
-                                                                href={file.webContentLink || file.webViewLink || '#'}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                download={file.name}
-                                                                className={`flex-1 ${
-                                                                    video
-                                                                        ? 'bg-nexo-lime hover:bg-[#b3ff00] text-black'
-                                                                        : 'bg-nexo-lime hover:bg-[#b3ff00] text-black w-full'
-                                                                } font-extrabold text-[10px] uppercase tracking-wider py-2.5 rounded-lg transition-all text-center flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(204,255,0,0.15)]`}
-                                                            >
-                                                                <span>⬇</span>
-                                                                <span>Descargar</span>
-                                                            </a>
                                                         </div>
                                                     </div>
                                                 </div>

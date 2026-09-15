@@ -55,6 +55,7 @@ interface DriveFile {
     thumbnailLink: string | null;
     webContentLink: string | null;
     size: string | null;
+    isFolder?: boolean;
 }
 
 const parsePhone = (phoneStr: string) => {
@@ -235,6 +236,7 @@ const ClientPortal: React.FC = () => {
     const [storageCopied, setStorageCopied] = useState(false);
     const [storageViewMode, setStorageViewMode] = useState<'grid' | 'list'>('grid');
     const [storageSortBy, setStorageSortBy] = useState<'name' | 'default'>('default');
+    const [driveFolderHistory, setDriveFolderHistory] = useState<{ id: string | null; name: string }[]>([]);
 
     // Encuesta de Satisfacción (Sprint 2)
     const [hasReviewed, setHasReviewed] = useState(false);
@@ -584,11 +586,12 @@ const ClientPortal: React.FC = () => {
         }
     };
 
-    const fetchDriveFiles = async () => {
+    const fetchDriveFiles = async (folderId?: string | null) => {
         setLoadingDrive(true);
         setDriveError('');
         try {
-            const res = await fetch(`/api/comercial/client?action=drive&token=${token}`, {
+            const folderParam = folderId ? `&folderId=${encodeURIComponent(folderId)}` : '';
+            const res = await fetch(`/api/comercial/client?action=drive&token=${token}${folderParam}`, {
                 headers: { 'x-client-token': token || '' }
             });
             const data = await res.json();
@@ -604,6 +607,30 @@ const ClientPortal: React.FC = () => {
         } finally {
             setLoadingDrive(false);
         }
+    };
+
+    const handleOpenDriveFolder = (folder: DriveFile) => {
+        setDriveFolderHistory(prev => [...prev, { id: folder.id, name: folder.name }]);
+        fetchDriveFiles(folder.id);
+    };
+
+    const handleNavigateDriveHistory = (index: number) => {
+        if (index < 0) {
+            setDriveFolderHistory([]);
+            fetchDriveFiles(null);
+        } else {
+            const nextHistory = driveFolderHistory.slice(0, index + 1);
+            setDriveFolderHistory(nextHistory);
+            fetchDriveFiles(nextHistory[nextHistory.length - 1].id);
+        }
+    };
+
+    const isDriveFolder = (file: DriveFile) => {
+        return (
+            file.isFolder === true ||
+            file.mimeType === 'application/vnd.google-apps.folder' ||
+            file.mimeType?.includes('folder')
+        );
     };
 
     // Enviar especificaciones refinadas
@@ -2835,9 +2862,55 @@ const ClientPortal: React.FC = () => {
                                                 </div>
                                             </div>
 
+                                            {/* Breadcrumbs de Navegación de Carpetas */}
+                                            {driveFolderHistory.length > 0 && (
+                                                <div className="flex items-center gap-2 text-xs py-2 px-3 bg-white/5 border border-white/10 rounded-lg text-zinc-300 overflow-x-auto">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleNavigateDriveHistory(-1)}
+                                                        className="hover:text-nexo-lime text-zinc-400 flex items-center gap-1 font-semibold cursor-pointer"
+                                                    >
+                                                        <span>📁</span>
+                                                        <span>Inicio</span>
+                                                    </button>
+                                                    {driveFolderHistory.map((step, idx) => {
+                                                        const isLast = idx === driveFolderHistory.length - 1;
+                                                        return (
+                                                            <React.Fragment key={step.id || idx}>
+                                                                <span className="text-zinc-600">/</span>
+                                                                {isLast ? (
+                                                                    <span className="font-bold text-nexo-lime truncate max-w-[200px]">{step.name}</span>
+                                                                ) : (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleNavigateDriveHistory(idx)}
+                                                                        className="hover:text-white truncate max-w-[150px] cursor-pointer"
+                                                                    >
+                                                                        {step.name}
+                                                                    </button>
+                                                                )}
+                                                            </React.Fragment>
+                                                        );
+                                                    })}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleNavigateDriveHistory(driveFolderHistory.length - 2)}
+                                                        className="ml-auto text-[11px] font-bold text-zinc-400 hover:text-white bg-white/10 hover:bg-white/15 px-2.5 py-1 rounded transition-all whitespace-nowrap cursor-pointer"
+                                                    >
+                                                        ← Volver
+                                                    </button>
+                                                </div>
+                                            )}
+
                                             {/* Renderizado según vista seleccionada */}
                                             {(() => {
                                                 const sorted = [...driveFiles].sort((a, b) => {
+                                                    // Las carpetas van primero
+                                                    const aFolder = isDriveFolder(a);
+                                                    const bFolder = isDriveFolder(b);
+                                                    if (aFolder && !bFolder) return -1;
+                                                    if (!aFolder && bFolder) return 1;
+
                                                     if (storageSortBy === 'name') return a.name.localeCompare(b.name);
                                                     return 0;
                                                 });
@@ -2846,35 +2919,63 @@ const ClientPortal: React.FC = () => {
                                                     return (
                                                         <div className="bg-black/30 border border-white/10 rounded-xl divide-y divide-white/5 overflow-hidden">
                                                             {sorted.map((file) => {
-                                                                const isVid = file.mimeType?.includes('video') || file.name?.toLowerCase().endsWith('.mp4') || file.name?.toLowerCase().endsWith('.mov');
+                                                                const folder = isDriveFolder(file);
+                                                                const isVid = !folder && (file.mimeType?.includes('video') || file.name?.toLowerCase().endsWith('.mp4') || file.name?.toLowerCase().endsWith('.mov'));
                                                                 return (
-                                                                    <div key={file.id} className="p-3 sm:p-4 flex items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors">
-                                                                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                                                                            <span className="text-xl flex-shrink-0">{isVid ? '🎬' : '📦'}</span>
+                                                                    <div
+                                                                        key={file.id}
+                                                                        onDoubleClick={folder ? () => handleOpenDriveFolder(file) : undefined}
+                                                                        className={`p-3 sm:p-4 flex items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors ${folder ? 'cursor-pointer' : ''}`}
+                                                                    >
+                                                                        <div
+                                                                            onClick={folder ? () => handleOpenDriveFolder(file) : undefined}
+                                                                            className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer"
+                                                                        >
+                                                                            <span className="text-xl flex-shrink-0">{folder ? '📁' : isVid ? '🎬' : '📦'}</span>
                                                                             <div className="min-w-0 flex-1">
-                                                                                <h5 className="font-bold text-xs sm:text-sm text-white truncate" title={file.name}>
-                                                                                    {file.name}
-                                                                                </h5>
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <h5 className="font-bold text-xs sm:text-sm text-white truncate" title={file.name}>
+                                                                                        {file.name}
+                                                                                    </h5>
+                                                                                    {folder && (
+                                                                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30 flex-shrink-0">
+                                                                                            Carpeta
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                         <div className="flex items-center gap-2 flex-shrink-0">
-                                                                            {isVid && (
+                                                                            {folder ? (
                                                                                 <button
-                                                                                    onClick={() => setPreviewDriveVideo(file)}
-                                                                                    className="bg-white/5 hover:bg-white/15 border border-white/10 text-white font-bold text-[10px] uppercase px-3 py-1.5 rounded transition-all cursor-pointer"
+                                                                                    type="button"
+                                                                                    onClick={() => handleOpenDriveFolder(file)}
+                                                                                    className="bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-extrabold text-[10px] uppercase px-3.5 py-1.5 rounded transition-all cursor-pointer flex items-center gap-1"
                                                                                 >
-                                                                                    Ver
+                                                                                    <span>Abrir Carpeta</span>
+                                                                                    <span>📁</span>
                                                                                 </button>
+                                                                            ) : (
+                                                                                <>
+                                                                                    {isVid && (
+                                                                                        <button
+                                                                                            onClick={() => setPreviewDriveVideo(file)}
+                                                                                            className="bg-white/5 hover:bg-white/15 border border-white/10 text-white font-bold text-[10px] uppercase px-3 py-1.5 rounded transition-all cursor-pointer"
+                                                                                        >
+                                                                                            Ver
+                                                                                        </button>
+                                                                                    )}
+                                                                                    <a
+                                                                                        href={file.webContentLink || file.webViewLink || '#'}
+                                                                                        target="_blank"
+                                                                                        rel="noopener noreferrer"
+                                                                                        download={file.name}
+                                                                                        className="bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase px-3.5 py-1.5 rounded transition-all"
+                                                                                    >
+                                                                                        Descargar
+                                                                                    </a>
+                                                                                </>
                                                                             )}
-                                                                            <a
-                                                                                href={file.webContentLink || file.webViewLink || '#'}
-                                                                                target="_blank"
-                                                                                rel="noopener noreferrer"
-                                                                                download={file.name}
-                                                                                className="bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase px-3.5 py-1.5 rounded transition-all"
-                                                                            >
-                                                                                Descargar
-                                                                            </a>
                                                                         </div>
                                                                     </div>
                                                                 );
@@ -2886,7 +2987,44 @@ const ClientPortal: React.FC = () => {
                                                 return (
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                                                         {sorted.map((file) => {
-                                                            const isVid = file.mimeType?.includes('video') || file.name?.toLowerCase().endsWith('.mp4') || file.name?.toLowerCase().endsWith('.mov');
+                                                            const folder = isDriveFolder(file);
+                                                            const isVid = !folder && (file.mimeType?.includes('video') || file.name?.toLowerCase().endsWith('.mp4') || file.name?.toLowerCase().endsWith('.mov'));
+
+                                                            if (folder) {
+                                                                return (
+                                                                    <div
+                                                                        key={file.id}
+                                                                        onDoubleClick={() => handleOpenDriveFolder(file)}
+                                                                        className="bg-black/40 border border-amber-500/20 hover:border-amber-400/50 rounded-xl overflow-hidden transition-all flex flex-col group cursor-pointer"
+                                                                    >
+                                                                        <div
+                                                                            onClick={() => handleOpenDriveFolder(file)}
+                                                                            className="relative aspect-video bg-gradient-to-br from-zinc-900 via-amber-950/20 to-black flex items-center justify-center overflow-hidden border-b border-white/5"
+                                                                        >
+                                                                            <div className="flex flex-col items-center justify-center gap-1">
+                                                                                <span className="text-4xl group-hover:scale-110 transition-transform">📁</span>
+                                                                                <span className="text-[10px] uppercase tracking-wider font-extrabold text-amber-400/80 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                                                                                    Carpeta
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="p-3.5 flex-1 flex flex-col justify-between space-y-3">
+                                                                            <h5 className="font-bold text-xs text-white truncate" title={file.name}>
+                                                                                {file.name}
+                                                                            </h5>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => handleOpenDriveFolder(file)}
+                                                                                className="w-full bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-extrabold text-[10px] uppercase tracking-wider py-1.5 rounded transition-all text-center flex items-center justify-center gap-1 cursor-pointer"
+                                                                            >
+                                                                                <span>Abrir Carpeta</span>
+                                                                                <span>📁</span>
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            }
+
                                                             return (
                                                                 <div key={file.id} className="bg-black/40 border border-white/10 rounded-xl overflow-hidden hover:border-nexo-lime/40 transition-all flex flex-col group">
                                                                     <div className="relative aspect-video bg-gradient-to-br from-zinc-900 via-black to-zinc-950 flex items-center justify-center overflow-hidden border-b border-white/5">

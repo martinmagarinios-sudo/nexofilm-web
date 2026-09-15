@@ -502,7 +502,7 @@ export default async function handler(req, res) {
                     if (!res.ok) return [];
                     const html = await res.text();
 
-                    const itemRegex = /aria-label="([^"]+?)\s+(Video|Image|PDF|Archive|Zip|Audio|Document|Shared)[^"]*"\s+[^>]*?ssk='[^']*?:([a-zA-Z0-9_-]{25,})/g;
+                    const itemRegex = /aria-label="([^"]+?)\s+(Video|Image|PDF|Archive|Zip|Audio|Document|Shared|Carpeta|Folder|Google Drive Folder|Carpeta de Google Drive)[^"]*"\s+[^>]*?ssk='[^']*?:([a-zA-Z0-9_-]{25,})/gi;
                     let match;
                     const files = [];
                     const seen = new Set();
@@ -516,19 +516,31 @@ export default async function handler(req, res) {
                         if (seen.has(cleanId)) continue;
                         seen.add(cleanId);
 
+                        const lowerType = typeStr.toLowerCase();
+                        const hasFileExt = /\.[a-zA-Z0-9]{2,5}$/.test(rawName);
+                        const isFolder = lowerType.includes('folder') || lowerType.includes('carpeta') || (lowerType === 'shared' && !hasFileExt);
+
                         let mimeType = 'application/octet-stream';
-                        if (typeStr === 'Video' || rawName.endsWith('.mp4') || rawName.endsWith('.mov')) mimeType = 'video/mp4';
-                        else if (typeStr === 'Image' || rawName.endsWith('.jpg') || rawName.endsWith('.png')) mimeType = 'image/jpeg';
-                        else if (typeStr === 'Archive' || typeStr === 'Zip' || rawName.endsWith('.zip')) mimeType = 'application/zip';
-                        else if (typeStr === 'PDF' || rawName.endsWith('.pdf')) mimeType = 'application/pdf';
+                        if (isFolder) {
+                            mimeType = 'application/vnd.google-apps.folder';
+                        } else if (typeStr === 'Video' || rawName.endsWith('.mp4') || rawName.endsWith('.mov')) {
+                            mimeType = 'video/mp4';
+                        } else if (typeStr === 'Image' || rawName.endsWith('.jpg') || rawName.endsWith('.png')) {
+                            mimeType = 'image/jpeg';
+                        } else if (typeStr === 'Archive' || typeStr === 'Zip' || rawName.endsWith('.zip')) {
+                            mimeType = 'application/zip';
+                        } else if (typeStr === 'PDF' || rawName.endsWith('.pdf')) {
+                            mimeType = 'application/pdf';
+                        }
 
                         files.push({
                             id: cleanId,
                             name: rawName,
                             mimeType: mimeType,
-                            webViewLink: `https://drive.google.com/file/d/${cleanId}/view?usp=sharing`,
-                            thumbnailLink: `https://lh3.googleusercontent.com/d/${cleanId}=w640`,
-                            webContentLink: `https://drive.google.com/uc?export=download&id=${cleanId}`,
+                            isFolder: isFolder,
+                            webViewLink: isFolder ? `https://drive.google.com/drive/folders/${cleanId}` : `https://drive.google.com/file/d/${cleanId}/view?usp=sharing`,
+                            thumbnailLink: isFolder ? null : `https://lh3.googleusercontent.com/d/${cleanId}=w640`,
+                            webContentLink: isFolder ? null : `https://drive.google.com/uc?export=download&id=${cleanId}`,
                             size: 0
                         });
                     }
@@ -542,7 +554,8 @@ export default async function handler(req, res) {
 
             // GET Acción: Listar archivos para Nexo Storage (Público y aislado de finanzas)
             if (action === 'storage') {
-                const driveFolderId = extractDriveFolderId(project.drive_folder_id);
+                const requestedFolderId = req.query.folderId ? extractDriveFolderId(req.query.folderId) : null;
+                const driveFolderId = requestedFolderId || extractDriveFolderId(project.drive_folder_id);
                 const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
                 const privateKey = process.env.GOOGLE_PRIVATE_KEY;
 
@@ -637,7 +650,8 @@ export default async function handler(req, res) {
                     return res.status(403).json({ error: 'El material final aún no está disponible' });
                 }
 
-                const driveFolderId = extractDriveFolderId(project.drive_folder_id);
+                const requestedFolderId = req.query.folderId ? extractDriveFolderId(req.query.folderId) : null;
+                const driveFolderId = requestedFolderId || extractDriveFolderId(project.drive_folder_id);
                 const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
                 const privateKey = process.env.GOOGLE_PRIVATE_KEY;
 

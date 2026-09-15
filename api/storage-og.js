@@ -41,12 +41,18 @@ export default async function handler(req, res) {
           .maybeSingle();
 
         if (project) {
-          const clientName = project.company_name || project.contact_name || '';
+          const contact = project.contact_name || '';
+          const company = project.company_name || '';
           const projName = project.title || 'Producción Audiovisual';
+
           title = `NexoFilm Storage — ${projName}`;
-          description = clientName
-            ? `Material entregado para ${clientName}. Previsualizá y descargá el contenido final en alta definición.`
-            : `Material final entregado. Previsualizá y descargá el contenido en alta definición.`;
+
+          const details = [];
+          if (projName) details.push(`Proyecto: ${projName}`);
+          if (contact) details.push(`Cliente: ${contact}`);
+          if (company && company !== contact) details.push(`Empresa: ${company}`);
+
+          description = `Entrega de trabajos finales. ${details.join(' | ')}. Previsualizá y descargá el material en alta definición.`;
         }
       } catch (dbErr) {
         console.error('[storage-og] Error consultando proyecto:', dbErr.message);
