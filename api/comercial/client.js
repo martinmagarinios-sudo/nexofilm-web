@@ -481,13 +481,98 @@ export default async function handler(req, res) {
         if (method === 'GET') {
             const { action } = req.query;
 
+            function extractDriveFolderId(input) {
+                if (!input || typeof input !== 'string') return null;
+                const trimmed = input.trim();
+                const match = trimmed.match(/folders\/([a-zA-Z0-9_-]+)/);
+                if (match) return match[1];
+                return trimmed;
+            }
+
+            // GET Acción: Listar archivos para Nexo Storage (Público y aislado de finanzas)
+            if (action === 'storage') {
+                const driveFolderId = extractDriveFolderId(project.drive_folder_id);
+                const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+                const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+
+                const projectPublicInfo = {
+                    name: project.name || 'Entrega de Materiales',
+                    client_name: project.client_name,
+                    company: project.company,
+                    status: project.status
+                };
+
+                if (!driveFolderId || !clientEmail || !privateKey) {
+                    const mockFiles = [
+                        {
+                            id: 'mock-1',
+                            name: '01_Video_Principal_Final_4K.mp4',
+                            mimeType: 'video/mp4',
+                            webViewLink: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                            thumbnailLink: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=600&q=80',
+                            webContentLink: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                            size: '1456789000'
+                        },
+                        {
+                            id: 'mock-2',
+                            name: '02_Teaser_Redes_9x16_Vertical.mp4',
+                            mimeType: 'video/mp4',
+                            webViewLink: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                            thumbnailLink: 'https://images.unsplash.com/photo-1542204172-e7052809a8a7?auto=format&fit=crop&w=600&q=80',
+                            webContentLink: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                            size: '189123450'
+                        },
+                        {
+                            id: 'mock-3',
+                            name: '03_Fotografias_ColorGrade_HD.zip',
+                            mimeType: 'application/zip',
+                            webViewLink: '#',
+                            thumbnailLink: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?auto=format&fit=crop&w=600&q=80',
+                            webContentLink: '#',
+                            size: '856789000'
+                        }
+                    ];
+
+                    return res.status(200).json({
+                        success: true,
+                        isMock: true,
+                        project: projectPublicInfo,
+                        files: mockFiles
+                    });
+                }
+
+                try {
+                    const googleAccessToken = await getGoogleAccessToken(clientEmail, privateKey);
+                    const q = `'${driveFolderId}' in parents and trashed = false`;
+                    const fields = 'files(id,name,mimeType,webViewLink,thumbnailLink,webContentLink,size,createdTime)';
+                    const driveUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=${encodeURIComponent(fields)}`;
+
+                    const driveRes = await fetch(driveUrl, {
+                        headers: { 'Authorization': `Bearer ${googleAccessToken}` }
+                    });
+
+                    const driveData = await driveRes.json();
+                    if (!driveRes.ok) throw new Error(driveData.error?.message || 'Error con la API de Google Drive');
+
+                    return res.status(200).json({
+                        success: true,
+                        isMock: false,
+                        project: projectPublicInfo,
+                        files: driveData.files || []
+                    });
+                } catch (gErr) {
+                    console.error('Error conectando con Google Drive en Storage:', gErr);
+                    return res.status(500).json({ error: gErr.message });
+                }
+            }
+
             // GET Acción: Listar archivos de Drive (Mock fallback si faltan credenciales)
             if (action === 'drive') {
                 if (project.status !== 'delivered') {
                     return res.status(403).json({ error: 'El material final aún no está disponible' });
                 }
 
-                const driveFolderId = project.drive_folder_id;
+                const driveFolderId = extractDriveFolderId(project.drive_folder_id);
                 const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
                 const privateKey = process.env.GOOGLE_PRIVATE_KEY;
 

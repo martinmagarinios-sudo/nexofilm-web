@@ -1330,13 +1330,17 @@ const CRMProjects: React.FC = () => {
     // Guardar carpeta de drive
     const handleSaveDriveFolder = async (projectId: string) => {
         try {
+            const rawValue = (tempDriveId[projectId] || '').trim();
+            const match = rawValue.match(/folders\/([a-zA-Z0-9_-]+)/);
+            const cleanFolderId = match ? match[1] : rawValue;
+
             const res = await fetch('/api/comercial/admin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: 'updateDriveFolder',
                     project_id: projectId,
-                    drive_folder_id: tempDriveId[projectId],
+                    drive_folder_id: cleanFolderId,
                     password
                 })
             });
@@ -3395,15 +3399,46 @@ const CRMProjects: React.FC = () => {
                                                         {/* Control de Google Drive y Override de Estado */}
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                                                             
-                                                            {/* Control de Carpeta de Google Drive */}
+                                                            {/* Control de Carpeta de Google Drive y Nexo Storage */}
                                                             <div className="space-y-1.5">
-                                                                <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">ID de Carpeta Google Drive</label>
+                                                                <div className="flex items-center justify-between">
+                                                                    <label className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider">Carpeta Google Drive (Nexo Storage)</label>
+                                                                    {project.access_token && (
+                                                                        <div className="flex items-center gap-2">
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    const storageUrl = `${window.location.origin}/storage?token=${project.access_token}`;
+                                                                                    navigator.clipboard.writeText(storageUrl);
+                                                                                    const btn = e.currentTarget;
+                                                                                    const orig = btn.innerText;
+                                                                                    btn.innerText = '¡Copiado!';
+                                                                                    setTimeout(() => { btn.innerText = orig; }, 2000);
+                                                                                }}
+                                                                                className="text-nexo-lime hover:underline text-[10px] font-mono font-bold cursor-pointer"
+                                                                                title="Copiar enlace de Nexo Storage para enviar al cliente o su equipo"
+                                                                            >
+                                                                                📋 Copiar Nexo Storage
+                                                                            </button>
+                                                                            <a
+                                                                                href={`/storage?token=${project.access_token}`}
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
+                                                                                className="text-zinc-400 hover:text-white text-[10px] font-mono"
+                                                                                title="Abrir vista de entrega"
+                                                                            >
+                                                                                Ver ↗
+                                                                            </a>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                                 <div className="flex gap-2">
                                                                     <input
                                                                         type="text"
                                                                         value={tempDriveId[project.id] || ''}
                                                                         onChange={(e) => setTempDriveId({ ...tempDriveId, [project.id]: e.target.value })}
-                                                                        placeholder="ID de carpeta (ej: 1a2b3c4d...)"
+                                                                        placeholder="ID o Link completo de Drive..."
                                                                         className="flex-1 bg-black border border-white/10 rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-nexo-lime"
                                                                     />
                                                                     <button

@@ -227,10 +227,12 @@ const ClientPortal: React.FC = () => {
         }
     };
 
-    // Drive Bridge
+    // Drive & Nexo Storage Bridge
     const [driveFiles, setDriveFiles] = useState<DriveFile[]>([]);
     const [loadingDrive, setLoadingDrive] = useState(false);
     const [driveError, setDriveError] = useState('');
+    const [previewDriveVideo, setPreviewDriveVideo] = useState<DriveFile | null>(null);
+    const [storageCopied, setStorageCopied] = useState(false);
 
     // Encuesta de Satisfacción (Sprint 2)
     const [hasReviewed, setHasReviewed] = useState(false);
@@ -2728,41 +2730,191 @@ const ClientPortal: React.FC = () => {
                                 <span className="text-2xl">🎉</span>
                             </div>
                             {project.drive_folder_id ? (
-                                <div className="bg-nexo-lime/5 border border-nexo-lime/20 hover:border-nexo-lime/50 rounded-xl p-6 md:p-8 flex flex-col sm:flex-row gap-6 items-center group transition-all text-center sm:text-left">
-                                    <div className="w-20 h-20 rounded-full bg-nexo-lime/10 flex-shrink-0 flex items-center justify-center relative shadow-[0_0_15px_rgba(204,255,0,0.1)]">
-                                        <span className="text-4xl">📁</span>
-                                    </div>
-                                    <div className="flex-1 space-y-3">
-                                        <h4 className="font-extrabold text-xl text-white group-hover:text-nexo-lime transition-colors">
-                                            Carpeta Principal de Entregas
-                                        </h4>
-                                        <p className="text-xs md:text-sm text-zinc-400 max-w-2xl leading-relaxed">
-                                            Aquí vas a encontrar todo el material final (videos, fotos, recursos) organizado en subcarpetas. Podés ingresar para <strong>previsualizar</strong> los archivos, <strong>descargarlos</strong> directamente o <strong>compartir este enlace</strong> con tu equipo y clientes.
-                                        </p>
-                                        <div className="flex flex-wrap gap-3 mt-4 justify-center sm:justify-start">
-                                            <a
-                                                href={`https://drive.google.com/drive/folders/${project.drive_folder_id}?usp=drive_link`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="bg-nexo-lime text-black font-extrabold uppercase tracking-widest text-[10px] md:text-xs px-6 py-3 rounded-lg hover:bg-[#b3ff00] hover:scale-105 transition-all shadow-[0_0_15px_rgba(204,255,0,0.2)]"
-                                            >
-                                                🔗 Abrir Carpeta en Drive
-                                            </a>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    navigator.clipboard.writeText(`https://drive.google.com/drive/folders/${project.drive_folder_id}?usp=drive_link`);
-                                                    const btn = e.currentTarget;
-                                                    const originalText = btn.innerHTML;
-                                                    btn.innerHTML = '¡Enlace Copiado!';
-                                                    setTimeout(() => { btn.innerHTML = originalText; }, 2000);
-                                                }}
-                                                className="bg-white/5 border border-white/10 text-white font-bold uppercase tracking-wider text-[10px] md:text-xs px-6 py-3 rounded-lg hover:bg-white/10 hover:border-white/20 transition-all"
-                                            >
-                                                Copiar Enlace
-                                            </button>
+                                <div className="space-y-6">
+                                    <div className="bg-nexo-lime/5 border border-nexo-lime/20 hover:border-nexo-lime/50 rounded-xl p-6 md:p-8 flex flex-col sm:flex-row gap-6 items-center group transition-all text-center sm:text-left">
+                                        <div className="w-20 h-20 rounded-full bg-nexo-lime/10 flex-shrink-0 flex items-center justify-center relative shadow-[0_0_15px_rgba(204,255,0,0.1)]">
+                                            <span className="text-4xl">📁</span>
+                                        </div>
+                                        <div className="flex-1 space-y-3">
+                                            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                                                <h4 className="font-extrabold text-xl text-white group-hover:text-nexo-lime transition-colors">
+                                                    NexoFilm Storage — Centro de Entrega
+                                                </h4>
+                                                <span className="bg-nexo-lime/20 text-nexo-lime text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded">
+                                                    Listo para Descarga
+                                                </span>
+                                            </div>
+                                            <p className="text-xs md:text-sm text-zinc-400 max-w-2xl leading-relaxed">
+                                                Aquí tenés disponible todo el material finalizado de tu producción. Podés reproducir cada pieza en alta definición o descargar los masters directamente a tu equipo.
+                                            </p>
+                                            <div className="flex flex-wrap gap-3 mt-4 justify-center sm:justify-start">
+                                                <button
+                                                    onClick={() => {
+                                                        const storageUrl = `${window.location.origin}/storage?token=${token}`;
+                                                        navigator.clipboard.writeText(storageUrl);
+                                                        setStorageCopied(true);
+                                                        setTimeout(() => setStorageCopied(false), 2500);
+                                                    }}
+                                                    className="bg-nexo-lime text-black font-extrabold uppercase tracking-widest text-[10px] md:text-xs px-6 py-3 rounded-lg hover:bg-[#b3ff00] hover:scale-105 transition-all shadow-[0_0_15px_rgba(204,255,0,0.25)] flex items-center gap-2 cursor-pointer"
+                                                >
+                                                    <span>{storageCopied ? '✓' : '🔗'}</span>
+                                                    <span>{storageCopied ? '¡Enlace de Storage Copiado!' : 'Copiar Enlace de Nexo Storage'}</span>
+                                                </button>
+
+                                                <a
+                                                    href={`/storage?token=${token}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold uppercase tracking-wider text-[10px] md:text-xs px-5 py-3 rounded-lg transition-all flex items-center gap-1.5"
+                                                >
+                                                    <span>Abrir Storage ↗</span>
+                                                </a>
+
+                                                <a
+                                                    href={`https://drive.google.com/drive/folders/${project.drive_folder_id}?usp=drive_link`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="bg-white/5 border border-white/10 text-zinc-400 hover:text-white font-medium text-[10px] md:text-xs px-4 py-3 rounded-lg hover:bg-white/10 transition-all"
+                                                    title="Abrir directamente en Google Drive"
+                                                >
+                                                    Abrir en Drive
+                                                </a>
+                                            </div>
                                         </div>
                                     </div>
+
+                                    {/* Aclaración de Privacidad y Seguridad para el Cliente */}
+                                    <div className="bg-black/60 border border-white/10 rounded-xl p-4 sm:p-5 flex items-start gap-3">
+                                        <span className="text-xl flex-shrink-0">🔒</span>
+                                        <div className="text-xs text-zinc-300 space-y-1 leading-relaxed">
+                                            <strong className="text-white block font-semibold text-xs sm:text-sm">
+                                                ¿Necesitás compartir los materiales con tu equipo, community managers o clientes?
+                                            </strong>
+                                            <p className="text-zinc-400 text-[11px] sm:text-xs">
+                                                Utilizá el botón <strong>"Copiar Enlace de Nexo Storage"</strong>. Este enlace exclusivo solo permite visualizar y descargar los archivos terminados. <em>No comparte tus facturas, cotizaciones, anticipos ni el acceso a tu portal privado.</em>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Grilla de Archivos en el Portal */}
+                                    {loadingDrive ? (
+                                        <div className="py-12 text-center space-y-3 bg-black/20 rounded-xl border border-white/5">
+                                            <div className="w-8 h-8 border-2 border-nexo-lime border-t-transparent rounded-full animate-spin mx-auto"></div>
+                                            <p className="text-zinc-400 text-xs font-mono uppercase tracking-wider">Cargando archivos multimedia...</p>
+                                        </div>
+                                    ) : driveFiles.length > 0 ? (
+                                        <div className="space-y-4 pt-2">
+                                            <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                                                Archivos Listos para Descarga ({driveFiles.length})
+                                            </h4>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                                {driveFiles.map((file) => {
+                                                    const isVid = file.mimeType?.includes('video') || file.name?.toLowerCase().endsWith('.mp4') || file.name?.toLowerCase().endsWith('.mov');
+                                                    return (
+                                                        <div key={file.id} className="bg-black/40 border border-white/10 rounded-xl overflow-hidden hover:border-nexo-lime/40 transition-all flex flex-col group">
+                                                            <div className="relative aspect-video bg-black flex items-center justify-center overflow-hidden border-b border-white/5">
+                                                                {file.thumbnailLink ? (
+                                                                    <img
+                                                                        src={file.thumbnailLink.replace(/=s\d+/, '=s400')}
+                                                                        alt={file.name}
+                                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform opacity-80 group-hover:opacity-100"
+                                                                    />
+                                                                ) : (
+                                                                    <span className="text-3xl">{isVid ? '🎬' : '📦'}</span>
+                                                                )}
+                                                                {isVid && (
+                                                                    <button
+                                                                        onClick={() => setPreviewDriveVideo(file)}
+                                                                        className="absolute inset-0 m-auto w-10 h-10 rounded-full bg-nexo-lime text-black flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer"
+                                                                        title="Previsualizar"
+                                                                    >
+                                                                        <span className="ml-0.5 text-xs font-bold">▶</span>
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                            <div className="p-3.5 flex-1 flex flex-col justify-between space-y-3">
+                                                                <h5 className="font-bold text-xs text-white truncate" title={file.name}>
+                                                                    {file.name}
+                                                                </h5>
+                                                                <div className="flex items-center gap-2">
+                                                                    {isVid && (
+                                                                        <button
+                                                                            onClick={() => setPreviewDriveVideo(file)}
+                                                                            className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-[10px] uppercase tracking-wider py-1.5 rounded transition-all text-center cursor-pointer"
+                                                                        >
+                                                                            Ver
+                                                                        </button>
+                                                                    )}
+                                                                    <a
+                                                                        href={file.webContentLink || file.webViewLink || '#'}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        download={file.name}
+                                                                        className="flex-1 bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase tracking-wider py-1.5 rounded transition-all text-center"
+                                                                    >
+                                                                        Descargar
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ) : null}
+
+                                    {/* Modal de Previsualización en Portal */}
+                                    {previewDriveVideo && (
+                                        <div
+                                            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+                                            onClick={() => setPreviewDriveVideo(null)}
+                                        >
+                                            <div
+                                                className="bg-zinc-950 border border-white/15 rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl relative flex flex-col"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <div className="p-4 border-b border-white/10 flex items-center justify-between bg-zinc-900/60">
+                                                    <h3 className="text-xs sm:text-sm font-bold text-white truncate max-w-[80%]">
+                                                        {previewDriveVideo.name}
+                                                    </h3>
+                                                    <button
+                                                        onClick={() => setPreviewDriveVideo(null)}
+                                                        className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/15 text-white flex items-center justify-center text-xs transition-all cursor-pointer"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                                <div className="relative aspect-video bg-black flex items-center justify-center">
+                                                    {previewDriveVideo.id?.startsWith('mock-') ? (
+                                                        <video
+                                                            src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+                                                            controls
+                                                            autoPlay
+                                                            className="w-full h-full object-contain"
+                                                        />
+                                                    ) : (
+                                                        <iframe
+                                                            src={`https://drive.google.com/file/d/${previewDriveVideo.id}/preview`}
+                                                            className="w-full h-full border-0"
+                                                            allow="autoplay"
+                                                            title={previewDriveVideo.name}
+                                                        ></iframe>
+                                                    )}
+                                                </div>
+                                                <div className="p-3 bg-zinc-900/40 border-t border-white/10 flex justify-end">
+                                                    <a
+                                                        href={previewDriveVideo.webContentLink || previewDriveVideo.webViewLink || '#'}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        download={previewDriveVideo.name}
+                                                        className="bg-nexo-lime text-black font-extrabold uppercase tracking-wider text-[10px] px-4 py-2 rounded-lg hover:bg-[#b3ff00] transition-all"
+                                                    >
+                                                        ⬇ Descargar Master
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="text-center py-12 text-zinc-500 text-xs font-bold uppercase tracking-wider border border-white/5 bg-black/20 rounded-xl">

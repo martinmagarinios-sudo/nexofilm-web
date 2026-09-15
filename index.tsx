@@ -12,6 +12,7 @@ const ClientPortal = React.lazy(() => import('./src/components/ClientPortal'));
 const PortalLogin = React.lazy(() => import('./src/components/PortalLogin'));
 const PublicRequestForm = React.lazy(() => import('./components/PublicRequestForm'));
 const NetworkPage = React.lazy(() => import('./components/NetworkPage'));
+const StorageDelivery = React.lazy(() => import('./src/components/StorageDelivery'));
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -28,6 +29,7 @@ const isPortalLogin = path === '/portal/login';
 const isCrm = path === '/admin/crm';
 const isPresupuesto = path === '/presupuesto';
 const isNetwork = path === '/network';
+const isStorage = path === '/storage';
 
 let initialPhone = null;
 if (isChat) {
@@ -75,6 +77,7 @@ root.render(
             isPortalLogin ? <Suspense fallback={<LoadingScreen />}><PortalLogin /></Suspense> :
               isCrm ? <Suspense fallback={<LoadingScreen />}><CRMProjects /></Suspense> :
                 isPresupuesto ? <Suspense fallback={<LoadingScreen />}><PublicRequestForm /></Suspense> :
-                  isNetwork ? <Suspense fallback={<LoadingScreen />}><NetworkPage /></Suspense> : <App />}
+                  isNetwork ? <Suspense fallback={<LoadingScreen />}><NetworkPage /></Suspense> :
+                    isStorage ? <Suspense fallback={<LoadingScreen />}><StorageDelivery /></Suspense> : <App />}
   </React.StrictMode>
 );
