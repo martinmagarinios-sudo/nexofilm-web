@@ -22,15 +22,15 @@ export default async function handler(req, res) {
       try {
         const { data: project } = await supabase
           .from('projects')
-          .select('name, client_name, company')
+          .select('title, contact_name, company_name')
           .eq('access_token', token)
           .maybeSingle();
 
         if (project) {
-          const clientOrCompany = project.company || project.client_name || '';
-          const projName = project.name || 'Producción Audiovisual';
+          const clientOrCompany = project.company_name || project.contact_name || '';
+          const projName = project.title || 'Producción Audiovisual';
           title = `NexoFilm Storage — ${projName}${clientOrCompany ? ` (${clientOrCompany})` : ''}`;
-          description = `Entrega oficial de materiales terminados. Previsualizá y descargá masters en alta definición.`;
+          description = `Entrega oficial de materiales terminados de ${projName}. Previsualizá y descargá masters en alta definición.`;
         }
       } catch (dbErr) {
         console.error('[storage-og] Error consultando proyecto:', dbErr.message);

@@ -511,7 +511,7 @@ export default async function handler(req, res) {
                         const rawName = match[1].trim();
                         const typeStr = match[2];
                         let rawId = match[3];
-                        const cleanId = rawId.split('-')[0];
+                        const cleanId = rawId.replace(/-\d+-\d+$/, '');
 
                         if (seen.has(cleanId)) continue;
                         seen.add(cleanId);
@@ -547,9 +547,9 @@ export default async function handler(req, res) {
                 const privateKey = process.env.GOOGLE_PRIVATE_KEY;
 
                 const projectPublicInfo = {
-                    name: project.name || 'Entrega de Materiales',
-                    client_name: project.client_name,
-                    company: project.company,
+                    name: project.title || project.name || 'Entrega de Materiales',
+                    client_name: project.contact_name || project.client_name,
+                    company: project.company_name || project.company,
                     status: project.status
                 };
 

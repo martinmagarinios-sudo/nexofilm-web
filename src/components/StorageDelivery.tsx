@@ -101,12 +101,17 @@ const StorageDelivery: React.FC = () => {
         return '📄';
     };
 
-    const handleCopyShareLink = () => {
+    const handleCopyDirectLink = () => {
         const fullUrl = window.location.href;
-        const textToCopy = `🎬 *NexoFilm Storage — Entrega Oficial*\n📁 *Proyecto:* ${project?.name || 'Material Audiovisual'}\n👤 *Cliente:* ${project?.company || project?.client_name || ''}\n\nPrevisualizá y descargá el material final en alta definición desde tu centro de entrega exclusivo:\n👉 ${fullUrl}`;
-        navigator.clipboard.writeText(textToCopy);
+        navigator.clipboard.writeText(fullUrl);
         setCopied(true);
         setTimeout(() => setCopied(false), 2500);
+    };
+
+    const handleShareWhatsApp = () => {
+        const fullUrl = window.location.href;
+        const textToShare = `🎬 *NexoFilm Storage — Entrega Oficial*\n📁 *Proyecto:* ${project?.name || 'Producción Audiovisual'}\n👤 *Cliente:* ${project?.company || project?.client_name || ''}\n\nPrevisualizá y descargá el material final en alta definición desde tu centro de entrega exclusivo:\n👉 ${fullUrl}`;
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textToShare)}`, '_blank');
     };
 
     // Cerrar modal con ESC
@@ -134,18 +139,28 @@ const StorageDelivery: React.FC = () => {
                         </span>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                         <button
-                            onClick={handleCopyShareLink}
+                            onClick={handleCopyDirectLink}
                             className="bg-white/5 hover:bg-white/10 text-zinc-200 border border-white/10 text-[11px] font-bold uppercase tracking-wider px-3.5 py-2 rounded-lg transition-all flex items-center gap-2 cursor-pointer"
+                            title="Copiar URL directa al portapapeles"
                         >
                             <span>{copied ? '✓' : '🔗'}</span>
-                            <span>{copied ? '¡Enlace Copiado!' : 'Compartir Storage'}</span>
+                            <span>{copied ? '¡Enlace Copiado!' : 'Copiar Enlace'}</span>
+                        </button>
+
+                        <button
+                            onClick={handleShareWhatsApp}
+                            className="bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/30 text-[#25D366] text-[11px] font-bold uppercase tracking-wider px-3 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                            title="Compartir por WhatsApp"
+                        >
+                            <span>💬</span>
+                            <span className="hidden sm:inline">WhatsApp</span>
                         </button>
 
                         <a
                             href="/"
-                            className="text-xs text-zinc-400 hover:text-white transition-colors hidden md:block"
+                            className="text-xs text-zinc-400 hover:text-white transition-colors hidden md:block ml-2"
                         >
                             nexofilm.com ↗
                         </a>

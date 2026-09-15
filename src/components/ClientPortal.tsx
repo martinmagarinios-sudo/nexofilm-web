@@ -2753,15 +2753,30 @@ const ClientPortal: React.FC = () => {
                                                 <button
                                                     onClick={() => {
                                                         const storageUrl = `${window.location.origin}/storage?token=${token}`;
-                                                        const textToCopy = `🎬 *NexoFilm Storage — Entrega Oficial*\n📁 *Proyecto:* ${project.title || project.name || 'Producción Audiovisual'}\n👤 *Cliente:* ${project.contact_name || ''}\n\nPrevisualizá y descargá el material terminado en alta definición desde tu centro de entrega exclusivo:\n👉 ${storageUrl}`;
-                                                        navigator.clipboard.writeText(textToCopy);
+                                                        navigator.clipboard.writeText(storageUrl);
                                                         setStorageCopied(true);
                                                         setTimeout(() => setStorageCopied(false), 2500);
                                                     }}
                                                     className="bg-nexo-lime text-black font-extrabold uppercase tracking-widest text-[10px] md:text-xs px-6 py-3 rounded-lg hover:bg-[#b3ff00] hover:scale-105 transition-all shadow-[0_0_15px_rgba(204,255,0,0.25)] flex items-center gap-2 cursor-pointer"
+                                                    title="Copia el enlace directo para pegar en el navegador"
                                                 >
                                                     <span>{storageCopied ? '✓' : '🔗'}</span>
-                                                    <span>{storageCopied ? '¡Enlace de Storage Copiado!' : 'Copiar Enlace de Nexo Storage'}</span>
+                                                    <span>{storageCopied ? '¡Enlace Directo Copiado!' : 'Copiar Enlace de Nexo Storage'}</span>
+                                                </button>
+
+                                                <button
+                                                    onClick={() => {
+                                                        const storageUrl = `${window.location.origin}/storage?token=${token}`;
+                                                        const projTitle = project.title || 'Producción Audiovisual';
+                                                        const clientName = project.contact_name || project.company_name || '';
+                                                        const textToShare = `🎬 *NexoFilm Storage — Entrega Oficial*\n📁 *Proyecto:* ${projTitle}\n👤 *Cliente:* ${clientName}\n\nPrevisualizá y descargá el material finalizado en alta definición desde tu centro de entrega exclusivo:\n👉 ${storageUrl}`;
+                                                        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textToShare)}`, '_blank');
+                                                    }}
+                                                    className="bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/40 text-[#25D366] font-bold uppercase tracking-wider text-[10px] md:text-xs px-5 py-3 rounded-lg transition-all flex items-center gap-2 cursor-pointer"
+                                                    title="Compartir por WhatsApp con mensaje prearmado"
+                                                >
+                                                    <span>💬</span>
+                                                    <span>Compartir por WhatsApp</span>
                                                 </button>
 
                                                 <a
@@ -2784,7 +2799,7 @@ const ClientPortal: React.FC = () => {
                                                 ¿Necesitás compartir los materiales con tu equipo, community managers o clientes?
                                             </strong>
                                             <p className="text-zinc-400 text-[11px] sm:text-xs">
-                                                Utilizá el botón <strong>"Copiar Enlace de Nexo Storage"</strong>. Este enlace exclusivo solo permite visualizar y descargar los archivos terminados. <em>No comparte tus facturas, cotizaciones, anticipos ni el acceso a tu portal privado.</em>
+                                                Utilizá el botón "Copiar Enlace de Nexo Storage". Este enlace exclusivo solo permite visualizar y descargar los archivos terminados. No comparte el acceso a tu portal privado.
                                             </p>
                                         </div>
                                     </div>

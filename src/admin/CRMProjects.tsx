@@ -3420,34 +3420,52 @@ const CRMProjects: React.FC = () => {
 
                                                                 {/* Botón Destacado de Nexo Storage para CRM */}
                                                                 {project.access_token && (
-                                                                    <div className="flex gap-2 pt-0.5">
+                                                                    <div className="flex flex-wrap sm:flex-nowrap gap-2 pt-0.5">
                                                                         <button
                                                                             type="button"
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation();
                                                                                 const storageUrl = `${window.location.origin}/storage?token=${project.access_token}`;
-                                                                                const textToCopy = `🎬 *NexoFilm Storage — Entrega Oficial*\n📁 *Proyecto:* ${project.name || 'Material Audiovisual'}\n👤 *Cliente:* ${project.contact_name || project.client_name || ''}\n\nPrevisualizá y descargá el material final en alta definición desde tu centro de entrega exclusivo:\n👉 ${storageUrl}`;
+                                                                                navigator.clipboard.writeText(storageUrl);
+                                                                                const btn = e.currentTarget;
+                                                                                const orig = btn.innerHTML;
+                                                                                btn.innerHTML = '<span>✓</span><span>¡Link Copiado!</span>';
+                                                                                setTimeout(() => { btn.innerHTML = orig; }, 2500);
+                                                                            }}
+                                                                            className="flex-1 bg-nexo-lime/10 hover:bg-nexo-lime/20 border border-nexo-lime/40 hover:border-nexo-lime text-nexo-lime text-xs font-bold uppercase tracking-wider py-2 px-3 rounded flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-[0_0_12px_rgba(204,255,0,0.1)]"
+                                                                            title="Copia el enlace directo (URL limpia) para pegar en el navegador"
+                                                                        >
+                                                                            <span>🔗</span>
+                                                                            <span>Copiar Enlace Directo</span>
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                const storageUrl = `${window.location.origin}/storage?token=${project.access_token}`;
+                                                                                const projTitle = project.title || 'Producción Audiovisual';
+                                                                                const clientName = project.contact_name || project.company_name || '';
+                                                                                const textToCopy = `🎬 *NexoFilm Storage — Entrega Oficial*\n📁 *Proyecto:* ${projTitle}\n👤 *Cliente:* ${clientName}\n\nPrevisualizá y descargá el material final en alta definición desde tu centro de entrega exclusivo:\n👉 ${storageUrl}`;
                                                                                 navigator.clipboard.writeText(textToCopy);
                                                                                 const btn = e.currentTarget;
                                                                                 const orig = btn.innerHTML;
-                                                                                btn.innerHTML = '<span>✓</span><span>¡Mensaje Copiado para WhatsApp!</span>';
+                                                                                btn.innerHTML = '<span>✓</span><span>¡Texto WhatsApp Copiado!</span>';
                                                                                 setTimeout(() => { btn.innerHTML = orig; }, 2500);
                                                                             }}
-                                                                            className="flex-1 bg-nexo-lime/10 hover:bg-nexo-lime/20 border border-nexo-lime/40 hover:border-nexo-lime text-nexo-lime text-xs font-bold uppercase tracking-wider py-2 px-3 rounded flex items-center justify-center gap-2 transition-all cursor-pointer shadow-[0_0_12px_rgba(204,255,0,0.1)]"
-                                                                            title="Copia el enlace junto con el texto formateado para WhatsApp"
+                                                                            className="bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/40 text-[#25D366] text-xs font-bold uppercase tracking-wider py-2 px-3 rounded flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                                                                            title="Copia el texto prearmado con emojis listo para WhatsApp"
                                                                         >
-                                                                            <span>📋</span>
-                                                                            <span>Copiar Enlace Nexo Storage (Para WhatsApp)</span>
+                                                                            <span>💬</span>
+                                                                            <span>WhatsApp</span>
                                                                         </button>
                                                                         <a
                                                                             href={`/storage?token=${project.access_token}`}
                                                                             target="_blank"
                                                                             rel="noopener noreferrer"
-                                                                            className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold px-3.5 py-2 rounded flex items-center gap-1 transition-colors"
+                                                                            className="bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold px-3 py-2 rounded flex items-center gap-1 transition-colors"
                                                                             title="Ver cómo ve el cliente esta entrega"
                                                                         >
-                                                                            <span>Ver</span>
-                                                                            <span>↗</span>
+                                                                            <span>Ver ↗</span>
                                                                         </a>
                                                                     </div>
                                                                 )}
