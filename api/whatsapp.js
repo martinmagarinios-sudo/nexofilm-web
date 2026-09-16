@@ -493,7 +493,13 @@ Te recordamos que además de coberturas, hacemos:
                 history.push({ role: 'assistant', content: qr });
                 await persistHistory(from, history);
                 await sendText(phoneNumberId, from, qr);
-                sendTelegramLog(from, leadData?.name, `🔘 Seleccionó: "${btnTitle}"`, 'us        // --- 1. PRIMER MENSAJE DE UN CONTACTO NUEVO (history vacío y sin nombre) ---
+                sendTelegramLog(from, leadData?.name, `🔘 Seleccionó: "${btnTitle}"`, 'user', history).catch(() => {});
+                sendTelegramLog(from, leadData?.name, qr, 'assistant', history).catch(() => {});
+            }
+            return res.status(200).send('OK');
+        }
+
+        // --- 1. PRIMER MENSAJE DE UN CONTACTO NUEVO (history vacío y sin nombre) ---
         if (history.length === 0 && (!leadData?.name || leadData.name === 'Sin nombre')) {
             const welcomeText = {
                 es: `¡Hola! Muchas gracias por contactar a NexoFilm 🎬. Es un placer saludarte. ¿Me podrías decir tu nombre, por favor?`,
