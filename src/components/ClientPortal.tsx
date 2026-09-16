@@ -958,11 +958,27 @@ const ClientPortal: React.FC = () => {
 
     const handlePrintPDF = () => {
         const originalTitle = document.title;
+        const originalHref = window.location.href;
+
+        // Limpiar token de la barra de direcciones temporalmente para que nunca se filtre en encabezados/pies
+        try {
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete('token');
+            cleanUrl.searchParams.delete('st');
+            window.history.replaceState(null, '', cleanUrl.pathname || '/portal');
+        } catch (e) {}
+
         const eventName = project?.title || 'Evento';
         const clientName = project?.contact_name || 'Cliente';
         document.title = `Propuesta Comercial - ${clientName} - ${eventName} - NexoFilm`;
+
         window.print();
+
+        // Restaurar estado original
         document.title = originalTitle;
+        try {
+            window.history.replaceState(null, '', originalHref);
+        } catch (e) {}
     };
 
     // Aprobar Presupuesto - Muestra el panel interactivo de aprobación

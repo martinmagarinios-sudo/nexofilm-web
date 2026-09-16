@@ -63,7 +63,7 @@ select {
 @media print {
     @page {
         size: A4 portrait;
-        margin: 14mm 16mm 14mm 16mm;
+        margin: 0;
     }
 
     html, body {
@@ -92,6 +92,23 @@ select {
         margin: 0 !important;
         padding: 0 !important;
         box-sizing: border-box !important;
+    }
+
+    .print-page {
+        width: 210mm !important;
+        min-height: 297mm !important;
+        box-sizing: border-box !important;
+        padding: 14mm 16mm 14mm 16mm !important;
+        margin: 0 auto !important;
+        background-color: #ffffff !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+    }
+
+    .print-page-break {
+        page-break-before: always !important;
+        break-before: page !important;
     }
 
     /* Evitar títulos huérfanos antes de una tabla o bloque */
