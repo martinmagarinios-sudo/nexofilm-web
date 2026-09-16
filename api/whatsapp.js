@@ -384,7 +384,11 @@ Te recordamos que además de coberturas, hacemos:
             if (supabase) {
                 console.log(`[WAKE UP] Reactivando bot para ${targetPhone} por comando: ${text}`);
                 // Reseteamos el updated_at para que la lógica de silencio no lo bloquee
-                await supabase.from('whatsapp_leads').update({ updated_at: '1970-01-01T00:00:00Z' }).eq('phone', targetPhone).then(null, () => {});
+                await supabase.from('whatsapp_leads').update({ 
+                    name: 'Sin nombre',
+                    summary: 'Conversación en curso con NexoBot IA...',
+                    updated_at: '1970-01-01T00:00:00Z' 
+                }).eq('phone', targetPhone).then(null, () => {});
                 
                 if (text === 'reset') {
                     await supabase.from('whatsapp_sessions').update({ history: [] }).eq('phone', from).then(null, () => {});
@@ -489,13 +493,78 @@ Te recordamos que además de coberturas, hacemos:
                 history.push({ role: 'assistant', content: qr });
                 await persistHistory(from, history);
                 await sendText(phoneNumberId, from, qr);
-                sendTelegramLog(from, leadData?.name, `🔘 Seleccionó: "${btnTitle}"`, 'user', history).catch(() => {});
-                sendTelegramLog(from, leadData?.name, qr, 'assistant', history).catch(() => {});
-            }
+                sendTelegramLog(from, leadData?.name, `🔘 Seleccionó: "${btnTitle}"`, 'us        // --- 1. PRIMER MENSAJE DE UN CONTACTO NUEVO (history vacío y sin nombre) ---
+        if (history.length === 0 && (!leadData?.name || leadData.name === 'Sin nombre')) {
+            const welcomeText = {
+                es: `¡Hola! Muchas gracias por contactar a NexoFilm 🎬. Es un placer saludarte. ¿Me podrías decir tu nombre, por favor?`,
+                en: `Hello! Thank you for contacting NexoFilm 🎬. It's a pleasure to connect with you. May I have your name, please?`,
+                pt: `Olá! Muito obrigado por entrar em contato com a NexoFilm 🎬. É um prazer falar com você. Poderia me dizer seu nome, por favor?`
+            }[lang] || `¡Hola! Muchas gracias por contactar a NexoFilm 🎬. Es un placer saludarte. ¿Me podrías decir tu nombre, por favor?`;
+
+            await sendText(phoneNumberId, from, welcomeText);
+
+            const newHistory = [
+                { role: 'user', content: userDisplayContent || text, timestamp: new Date().toISOString() },
+                { role: 'assistant', content: welcomeText, timestamp: new Date().toISOString() }
+            ];
+            await persistHistory(from, newHistory);
+            sendTelegramLog(from, null, welcomeText, 'assistant', newHistory).catch(() => {});
             return res.status(200).send('OK');
         }
 
-        // (El comando MENU ya fue manejado al inicio del handler - no duplicar)
+        // --- 2. RESPUESTA AL PEDIDO DE NOMBRE (si el último mensaje del bot le pedía el nombre) ---
+        const lastAssistantMsg = [...history].reverse().find(m => m.role === 'assistant');
+        const askedNameRecently = lastAssistantMsg && (
+            lastAssistantMsg.content.includes('nombre') ||
+            lastAssistantMsg.content.includes('name') ||
+            lastAssistantMsg.content.includes('cham')
+        );
+
+        if (askedNameRecently && (!leadData?.name || leadData.name === 'Sin nombre')) {
+            let rawName = text.replace(/^(hola|buen dia|buenas|me llamo|soy|mi nombre es|mi nombre)\s+/i, '').trim();
+            rawName = rawName.replace(/[.,!?;:]/g, '').trim();
+            let cleanName = rawName.split(' ')
+                .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                .slice(0, 3)
+                .join(' ');
+            
+            if (!cleanName || cleanName.length < 2) cleanName = 'Cliente';
+
+            if (supabase) {
+                const searchStr = (targetPhone || '').replace(/\D/g, '').slice(-8);
+                const { data: freshLeads } = await supabase
+                    .from('whatsapp_leads').select('id')
+                    .like('phone', `%${searchStr}%`)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+                const freshLead = freshLeads?.[0];
+                if (freshLead) {
+                    await supabase.from('whatsapp_leads').update({
+                        name: cleanName,
+                        updated_at: new Date().toISOString()
+                    }).eq('id', freshLead.id);
+                }
+            }
+
+            const greetingWithName = {
+                es: `¡Un gusto, ${cleanName}! ¿En qué te podemos ayudar hoy?`,
+                en: `Nice to meet you, ${cleanName}! How can we help you today?`,
+                pt: `Prazer em conhecê-lo, ${cleanName}! Como podemos te ajudar hoje?`
+            }[lang] || `¡Un gusto, ${cleanName}! ¿En qué te podemos ayudar hoy?`;
+
+            await sendText(phoneNumberId, from, greetingWithName);
+            await sendMenu(phoneNumberId, from, lang);
+
+            const newHistory = [
+                ...history,
+                { role: 'user', content: userDisplayContent || text, timestamp: new Date().toISOString() },
+                { role: 'assistant', content: greetingWithName, timestamp: new Date().toISOString() }
+            ];
+            await persistHistory(from, newHistory);
+            sendTelegramLog(from, cleanName, greetingWithName, 'assistant', newHistory).catch(() => {});
+            sendTelegramLog(from, cleanName, '👇 Opciones de menú enviadas al cliente', 'system', newHistory).catch(() => {});
+            return res.status(200).send('OK');
+        }
 
     // --- LÓGICA VIP (Reconocimiento del CRM) DADA 100% DIGERIDA POR JS ---
     const isFirstMessage = history.length === 0;
@@ -514,22 +583,14 @@ Te recordamos que además de coberturas, hacemos:
             const daysSinceUpdate = leadData.updated_at ? Math.floor((Date.now() - new Date(leadData.updated_at).getTime()) / (1000 * 60 * 60 * 24)) : 0;
             
             if (hasRecentBudget && daysSinceUpdate < 60) {
-                 instruccionSaludo = `1. **CLIENTE RECONOCIDO CON HISTORIAL**: Ya sabes que es ${firstName}. Su última consulta fue sobre: "${leadData.summary}".\n2. **PRESENTACIÓN**: Saludalo cálidamente y mencioná su consulta anterior. Ej: "¡Bienvenido ${firstName} a NexoFilm! Vi que tu consulta anterior fue sobre [proyecto]. ¿Seguímos con eso o tenés algo nuevo en mente?" e incluí el tag $$SHOW_MENU$$. NO le preguntes su nombre. NO termines con '¿en qué te puedo ayudar?' porque el menú ya lo ofrece.`;
+                  instruccionSaludo = `1. **CLIENTE RECONOCIDO CON HISTORIAL**: Ya sabes que es ${firstName}. Su última consulta fue sobre: "${leadData.summary}".\n2. **PRESENTACIÓN**: Saludalo cálidamente y mencioná su consulta anterior. Ej: "¡Bienvenido ${firstName} a NexoFilm! Vi que tu consulta anterior fue sobre [proyecto]. ¿Seguímos con eso o tenés algo nuevo en mente?" e incluí el tag $$SHOW_MENU$$. NO le preguntes su nombre. NO termines con '¿en qué te puedo ayudar?' porque el menú ya lo ofrece.`;
             } else {
-                 instruccionSaludo = `1. **CLIENTE RECONOCIDO**: Ya sabes que es ${firstName}.\n2. **PRESENTACIÓN**: Saludalo EXACTAMENTE con esta frase: "${currentGreeting}" e incluye inmediatamente el tag $$SHOW_MENU$$. NO agregues '¿en qué te puedo ayudar?' porque el menú con botones ya se lo ofrece automáticamente.`;
+                  instruccionSaludo = `1. **CLIENTE RECONOCIDO**: Ya sabes que es ${firstName}.\n2. **PRESENTACIÓN**: Saludalo EXACTAMENTE con esta frase: "${currentGreeting}" e incluye inmediatamente el tag $$SHOW_MENU$$. NO agregues '¿en qué te puedo ayudar?' porque el menú con botones ya se lo ofrece automáticamente.`;
             }
-        } else {
-            const welcomeMessages = {
-                es: `¡Hola! Muchas gracias por contactarnos a NexoFilm 🎬. Es un placer saludarte. ¿Me podrías decir tu nombre, por favor?`,
-                en: `Hello! Thank you for contacting NexoFilm 🎬. Great to connect with you. May I know your name, please?`,
-                pt: `Olá! Muito obrigado por entrar em contato com a NexoFilm 🎬. É um prazer falar com você. Poderia me dizer seu nome, por favor?`
-            };
-            const welcomeText = welcomeMessages[lang] || welcomeMessages.es;
-            instruccionSaludo = `1. **NUEVO CONTACTO**: No sabés su nombre todavía.\n2. **PRESENTACIÓN CORDIAL Y AGRADECIDA**: Decí EXACTAMENTE esta frase amable y cálida: "${welcomeText}".\n3. PROHIBIDO: NO agregues el tag $$SHOW_MENU$$ ni envíes el menú de botones todavía. Primero esperá a que el cliente te responda su nombre.`;
         }
     } else {
         const knownName = (leadData?.name && leadData.name !== 'Sin nombre') ? leadData.name.trim().split(/[\s,.-]+/)[0] : "";
-        instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName || "el cliente"}. Si te acaba de decir su nombre por primera vez, saludalo cálidamente por su nombre (ej: "¡Un gusto ${knownName || 'saludarte'}! ¿En qué te podemos ayudar hoy?") e INCLUYE el tag $$SHOW_MENU$$. Si ya seleccionó una opción o están en medio del flujo de presupuesto, respondé con calidez validando su proyecto y avanzá con la siguiente pregunta. NO repitas su nombre en cada mensaje.`;
+        instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName || "el cliente"}. Si ya seleccionó una opción o están en medio del flujo de presupuesto, respondé con calidez validando su proyecto y avanzá con la siguiente pregunta. NO repitas su nombre en cada mensaje.`;
     }
 
     let confirmacionEmail = `      - Pedile el correo de forma cálida y natural. Ejemplo: "Para prepararte la propuesta, ¿me pasás tu mail?".\n      - Si el cliente no quiere dar el mail o dice que lo tiene lleno, NO insistás. En cambio, respondé algo como: "No hay problema, un asesor te va a contactar directamente por acá o por teléfono." y a continuación emite el HANDOFF_JSON igual, poniendo email como null.\n      - NUNCA presiones ni repitás la misma frase varias veces. Siempre hay una salida amable.`;
