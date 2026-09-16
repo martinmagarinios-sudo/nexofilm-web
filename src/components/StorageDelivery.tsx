@@ -36,6 +36,8 @@ const StorageDelivery: React.FC = () => {
     const [downloadingSingleId, setDownloadingSingleId] = useState<string | null>(null);
     const [isDownloadingBatch, setIsDownloadingBatch] = useState(false);
     const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
+    const [downloadingFolderId, setDownloadingFolderId] = useState<string | null>(null);
+
 
     // Limpiar selección al cambiar de carpeta
     useEffect(() => {
@@ -82,6 +84,67 @@ const StorageDelivery: React.FC = () => {
 
     const handleOpenFolder = (folder: DriveFile) => {
         setFolderHistory(prev => [...prev, { id: folder.id, name: folder.name }]);
+    };
+
+    // Descarga todos los archivos de una carpeta como ZIP.
+    // Primero lista el contenido de la carpeta via API, luego llama al endpoint de ZIP.
+    const handleDownloadFolder = async (folder: DriveFile, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setDownloadingFolderId(folder.id);
+        setIsDownloadingBatch(true);
+
+        try {
+            // 1. Obtener el listado de archivos de la carpeta
+            const listRes = await fetch(
+                `/api/comercial/client?action=storage&token=${encodeURIComponent(token || '')}&folderId=${encodeURIComponent(folder.id)}`
+            );
+            const listData = await listRes.json();
+            if (!listRes.ok) throw new Error(listData.error || 'No se pudo leer la carpeta');
+
+            const folderFiles: DriveFile[] = (listData.files || []).filter((f: DriveFile) => !isFolder(f));
+            if (folderFiles.length === 0) throw new Error('La carpeta está vacía o solo contiene subcarpetas');
+
+            setBatchProgress({ current: 0, total: folderFiles.length });
+
+            // 2. Generar el ZIP
+            const projectName = project?.name || 'NexoFilm_Storage';
+            const safeProject = projectName.replace(/[^\w\s\-áéíóúÁÉÍÓÚñÑ]/g, '_');
+            const safeFolderName = folder.name.replace(/[^\w\s\-áéíóúÁÉÍÓÚñÑ]/g, '_');
+            const zipName = `NexoFilm_${safeProject}_${safeFolderName}.zip`;
+
+            const zipRes = await fetch('/api/storage-zip', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    files: folderFiles.map(f => ({ id: f.id, name: f.name })),
+                    zipName
+                })
+            });
+
+            if (!zipRes.ok) {
+                const err = await zipRes.json().catch(() => ({ error: 'Error desconocido' }));
+                throw new Error(err.error || `HTTP ${zipRes.status}`);
+            }
+
+            const blob = await zipRes.blob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = zipName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Error desconocido';
+            console.error('[StorageDelivery] Error descargando carpeta:', msg);
+            alert(`No se pudo descargar la carpeta: ${msg}`);
+        } finally {
+            setIsDownloadingBatch(false);
+            setBatchProgress(null);
+            setDownloadingFolderId(null);
+        }
     };
 
     const handleNavigateHistory = (index: number) => {
@@ -316,7 +379,41 @@ const StorageDelivery: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-[#070709] text-white selection:bg-nexo-lime selection:text-black font-sans">
-            {/* Header de Marca */}
+
+            {/* ── OVERLAY DE COMPRESIÓN ZIP ── */}
+            {isDownloadingBatch && (
+                <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                    <div className="bg-[#0f0f11] border border-nexo-lime/30 rounded-2xl p-8 max-w-sm w-full mx-4 shadow-[0_0_60px_rgba(204,255,0,0.15)] flex flex-col items-center gap-5 text-center">
+                        {/* Spinner */}
+                        <div className="relative w-16 h-16">
+                            <div className="absolute inset-0 rounded-full border-4 border-nexo-lime/20"></div>
+                            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-nexo-lime animate-spin"></div>
+                            <span className="absolute inset-0 flex items-center justify-center text-2xl">🗜️</span>
+                        </div>
+                        {/* Textos */}
+                        <div className="flex flex-col gap-1">
+                            <h3 className="text-nexo-lime font-extrabold text-lg uppercase tracking-wider">
+                                Comprimiendo archivos
+                            </h3>
+                            <p className="text-zinc-300 text-sm font-medium">
+                                Preparando {batchProgress?.total ?? '...'} archivos en un ZIP
+                            </p>
+                            <p className="text-zinc-500 text-xs mt-1">
+                                Esto puede tardar unos segundos según el peso de los archivos.
+                                <br />La descarga comenzará automáticamente.
+                            </p>
+                        </div>
+                        {/* Barra de progreso indeterminada */}
+                        <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                            <div className="h-full bg-nexo-lime rounded-full animate-[progressPulse_1.5s_ease-in-out_infinite]"
+                                style={{ width: '60%', animation: 'pulse 1.5s ease-in-out infinite' }}
+                            ></div>
+                        </div>
+                        <p className="text-zinc-600 text-[11px]">NexoFilm Storage — procesando en servidor</p>
+                    </div>
+                </div>
+            )}
+
             <header className="border-b border-white/5 bg-black/60 backdrop-blur-xl sticky top-0 z-40">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -659,14 +756,36 @@ const StorageDelivery: React.FC = () => {
 
                                                         <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                                                             {folder ? (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleOpenFolder(file)}
-                                                                    className="bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(204,255,0,0.15)] cursor-pointer"
-                                                                >
-                                                                    <span>📁</span>
-                                                                    <span>Abrir Carpeta</span>
-                                                                </button>
+                                                                <div className="flex items-center gap-2">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleOpenFolder(file)}
+                                                                        className="bg-white/5 hover:bg-white/15 border border-white/10 text-white font-extrabold text-[10px] uppercase px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+                                                                    >
+                                                                        <span>📁</span>
+                                                                        <span>Abrir</span>
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={(e) => handleDownloadFolder(file, e)}
+                                                                        disabled={downloadingFolderId === file.id || isDownloadingBatch}
+                                                                        className="bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(204,255,0,0.15)] cursor-pointer disabled:opacity-50"
+                                                                        title="Descargar toda la carpeta como ZIP"
+                                                                    >
+                                                                        {downloadingFolderId === file.id ? (
+                                                                            <>
+                                                                                <div className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                                                                                <span>Preparando...</span>
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <span>🗜️</span>
+                                                                                <span>Descargar ZIP</span>
+                                                                            </>
+                                                                        )}
+                                                                    </button>
+                                                                </div>
+
                                                             ) : (
                                                                 <>
                                                                     {video && (
@@ -833,14 +952,36 @@ const StorageDelivery: React.FC = () => {
                                                         {/* Acciones */}
                                                         <div className="flex items-center gap-2 pt-2 border-t border-white/5" onClick={(e) => e.stopPropagation()}>
                                                             {folder ? (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleOpenFolder(file)}
-                                                                    className="w-full bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase tracking-wider py-2.5 rounded-lg transition-all text-center flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(204,255,0,0.15)] cursor-pointer"
-                                                                >
-                                                                    <span>📁</span>
-                                                                    <span>Abrir Carpeta</span>
-                                                                </button>
+                                                                <div className="flex flex-col gap-2 w-full">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleOpenFolder(file)}
+                                                                        className="w-full bg-white/5 hover:bg-white/15 border border-white/10 text-white font-extrabold text-[10px] uppercase tracking-wider py-2.5 rounded-lg transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
+                                                                    >
+                                                                        <span>📁</span>
+                                                                        <span>Abrir Carpeta</span>
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={(e) => handleDownloadFolder(file, e)}
+                                                                        disabled={downloadingFolderId === file.id || isDownloadingBatch}
+                                                                        className="w-full bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase tracking-wider py-2.5 rounded-lg transition-all text-center flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(204,255,0,0.15)] cursor-pointer disabled:opacity-50"
+                                                                        title="Descargar todos los archivos de esta carpeta como ZIP"
+                                                                    >
+                                                                        {downloadingFolderId === file.id ? (
+                                                                            <>
+                                                                                <div className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                                                                                <span>Preparando ZIP...</span>
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <span>🗜️</span>
+                                                                                <span>Descargar carpeta ZIP</span>
+                                                                            </>
+                                                                        )}
+                                                                    </button>
+                                                                </div>
+
                                                             ) : (
                                                                 <>
                                                                     {video && (
