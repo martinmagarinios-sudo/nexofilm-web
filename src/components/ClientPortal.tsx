@@ -131,12 +131,12 @@ const renderDescription = (text: string, forPrint = false) => {
             result.push(
                 <div key={i} style={{
                     fontWeight: '700',
-                    fontSize: forPrint ? '10px' : '13px',
+                    fontSize: forPrint ? '11px' : '13px',
                     color: '#ffffff',
-                    marginBottom: forPrint ? '3px' : '6px',
-                    fontFamily: 'Arial, Helvetica, sans-serif',
+                    marginBottom: forPrint ? '5px' : '6px',
+                    fontFamily: "'Noto Sans JP', -apple-system, BlinkMacSystemFont, Arial, sans-serif",
                     letterSpacing: forPrint ? '0px' : '0.01em',
-                    lineHeight: forPrint ? '1.3' : '1.4'
+                    lineHeight: forPrint ? '1.4' : '1.4'
                 }}>{content}</div>
             );
         } else if (isBullet) {
@@ -144,25 +144,25 @@ const renderDescription = (text: string, forPrint = false) => {
                 <div key={i} style={{
                     display: 'flex',
                     alignItems: 'flex-start',
-                    gap: forPrint ? '5px' : '7px',
-                    fontSize: forPrint ? '8.5px' : '11.5px',
+                    gap: forPrint ? '6px' : '7px',
+                    fontSize: forPrint ? '9.5px' : '11.5px',
                     color: forPrint ? '#d0d0d0' : '#c4c4c4',
-                    lineHeight: forPrint ? '1.35' : '1.6',
-                    marginBottom: forPrint ? '1.5px' : '3px',
-                    fontFamily: 'Arial, Helvetica, sans-serif',
+                    lineHeight: forPrint ? '1.45' : '1.6',
+                    marginBottom: forPrint ? '3px' : '3px',
+                    fontFamily: "'Noto Sans JP', -apple-system, BlinkMacSystemFont, Arial, sans-serif",
                 }}>
-                    <span style={{ color: '#e1f937', fontSize: forPrint ? '7.5px' : '10px', marginTop: forPrint ? '1px' : '3px', flexShrink: 0, fontWeight: '900' }}>○</span>
+                    <span style={{ color: '#bfe023', fontSize: forPrint ? '9px' : '10px', marginTop: forPrint ? '1px' : '3px', flexShrink: 0, fontWeight: '900' }}>○</span>
                     <span>{content}</span>
                 </div>
             );
         } else {
             result.push(
                 <div key={i} style={{
-                    fontSize: forPrint ? '8.5px' : '11.5px',
-                    color: forPrint ? '#cccccc' : '#b0b0b0',
-                    lineHeight: forPrint ? '1.35' : '1.6',
-                    marginBottom: forPrint ? '1.5px' : '3px',
-                    fontFamily: 'Arial, Helvetica, sans-serif',
+                    fontSize: forPrint ? '9.5px' : '11.5px',
+                    color: forPrint ? '#c0c0c0' : '#b0b0b0',
+                    lineHeight: forPrint ? '1.45' : '1.6',
+                    marginBottom: forPrint ? '3px' : '3px',
+                    fontFamily: "'Noto Sans JP', -apple-system, BlinkMacSystemFont, Arial, sans-serif",
                 }}>{content}</div>
             );
         }
@@ -3834,188 +3834,214 @@ const ClientPortal: React.FC = () => {
 
 
             {/* CONTENEDOR DE IMPRESIÓN (OCULTO EN PANTALLA POR CSS) */}
-            {budget && (
-                <div id="print-proposal" style={{ fontFamily: 'Arial, Helvetica, sans-serif', backgroundColor: '#000000', color: '#ffffff', padding: 0, boxSizing: 'border-box', width: '100%', margin: '0 auto' }}>
-                    
-                    {/* ── MEMBRETE ── */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #e1f937', paddingBottom: '10px', marginBottom: '12px' }}>
-                        <div>
-                            <img src="/img/logo.png" alt="NexoFilm" style={{ height: '26px', width: 'auto', filter: 'brightness(0) invert(1)' }} />
-                            <p style={{ fontSize: '8px', color: '#888888', fontWeight: '600', margin: '3px 0 0 0', textTransform: 'uppercase', letterSpacing: '2px', fontFamily: 'Arial, Helvetica, sans-serif' }}>Productora Audiovisual</p>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                            <h2 style={{ fontSize: '16px', fontWeight: '900', color: '#e1f937', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px', fontFamily: 'Arial, Helvetica, sans-serif' }}>Propuesta Comercial</h2>
-                            <p style={{ fontSize: '9px', color: '#a0a0a0', margin: 0, fontFamily: 'Arial, Helvetica, sans-serif' }}>Fecha de Emisión: {new Date().toLocaleDateString('es-AR')}</p>
-                        </div>
-                    </div>
+            {budget && (() => {
+                const baseItem = budget.items[0];
+                const extraItems = budget.items.slice(1);
+                const baseLines = (baseItem?.description || '').split('\n').filter(l => l.trim() !== '').length;
+                const extraLines = extraItems.reduce((acc, it) => acc + (it.description || '').split('\n').filter(l => l.trim() !== '').length, 0);
+                const totalLines = baseLines + extraLines;
+                const shouldBreakBeforeOptionals = extraItems.length > 0 && (baseLines > 6 || totalLines > 10 || extraItems.length >= 2);
 
-                    {/* ── CLIENTE + PROYECTO ── */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                        <div style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', padding: '9px 12px', borderRadius: '4px' }}>
-                            <h3 style={{ fontSize: '8.5px', fontWeight: '700', color: '#e1f937', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: '1px solid #222222', paddingBottom: '4px', marginTop: 0, marginBottom: '6px', fontFamily: 'Arial, Helvetica, sans-serif' }}>Datos del Cliente</h3>
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                <tbody>
-                                    <tr><td style={{ fontSize: '9px', color: '#888', paddingBottom: '3px', width: '65px', fontFamily: 'Arial, Helvetica, sans-serif', verticalAlign: 'top' }}>Contacto</td><td style={{ fontSize: '9px', color: '#fff', paddingBottom: '3px', fontWeight: '600', fontFamily: 'Arial, Helvetica, sans-serif' }}>{project.contact_name}</td></tr>
-                                    {project.company_name && <tr><td style={{ fontSize: '9px', color: '#888', paddingBottom: '3px', fontFamily: 'Arial, Helvetica, sans-serif', verticalAlign: 'top' }}>Empresa</td><td style={{ fontSize: '9px', color: '#fff', paddingBottom: '3px', fontWeight: '600', fontFamily: 'Arial, Helvetica, sans-serif' }}>{project.company_name}</td></tr>}
-                                    <tr><td style={{ fontSize: '9px', color: '#888', paddingBottom: '3px', fontFamily: 'Arial, Helvetica, sans-serif', verticalAlign: 'top' }}>Email</td><td style={{ fontSize: '9px', color: '#a0a0a0', paddingBottom: '3px', fontFamily: 'Arial, Helvetica, sans-serif' }}>{project.client_email}</td></tr>
-                                    {project.client_phone && <tr><td style={{ fontSize: '9px', color: '#888', paddingBottom: '3px', fontFamily: 'Arial, Helvetica, sans-serif', verticalAlign: 'top' }}>WhatsApp</td><td style={{ fontSize: '9px', color: '#a0a0a0', fontFamily: 'Arial, Helvetica, sans-serif' }}>+{project.client_phone.replace(/^\++/, '')}</td></tr>}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', padding: '9px 12px', borderRadius: '4px' }}>
-                            <h3 style={{ fontSize: '8.5px', fontWeight: '700', color: '#e1f937', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: '1px solid #222222', paddingBottom: '4px', marginTop: 0, marginBottom: '6px', fontFamily: 'Arial, Helvetica, sans-serif' }}>Detalles de Propuesta</h3>
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                <tbody>
-                                    <tr><td style={{ fontSize: '9px', color: '#888', paddingBottom: '3px', width: '75px', fontFamily: 'Arial, Helvetica, sans-serif', verticalAlign: 'top' }}>Proyecto</td><td style={{ fontSize: '9px', color: '#fff', paddingBottom: '3px', fontWeight: '600', fontFamily: 'Arial, Helvetica, sans-serif' }}>{project.title}</td></tr>
-                                    <tr><td style={{ fontSize: '9px', color: '#888', paddingBottom: '3px', fontFamily: 'Arial, Helvetica, sans-serif', verticalAlign: 'top' }}>Estado</td><td style={{ fontSize: '9px', color: '#fff', paddingBottom: '3px', fontFamily: 'Arial, Helvetica, sans-serif' }}>{project.status === 'approved' ? 'Aprobado' : project.status === 'production' ? 'En Producción' : project.status === 'delivered' ? 'Entregado' : 'Pendiente de Aprobación'}</td></tr>
-                                    <tr><td style={{ fontSize: '9px', color: '#888', paddingBottom: '3px', fontFamily: 'Arial, Helvetica, sans-serif', verticalAlign: 'top' }}>N° Proyecto</td><td style={{ fontSize: '9px', color: '#a0a0a0', fontFamily: 'Arial, Helvetica, sans-serif' }}>#{project.id.slice(0, 8).toUpperCase()}</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    {/* ── ESPECIFICACIONES DEL RODAJE ── */}
-                    {(project.event_date || project.location || project.coverage_types) && (
-                        <div style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', padding: '9px 12px', borderRadius: '4px', marginBottom: '12px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                            <h3 style={{ fontSize: '8.5px', fontWeight: '700', color: '#e1f937', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: '1px solid #222222', paddingBottom: '4px', marginTop: 0, marginBottom: '7px', fontFamily: 'Arial, Helvetica, sans-serif' }}>
-                                Especificaciones del Rodaje / Cobertura
-                            </h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px 12px' }}>
-                                {project.event_date && <div style={{ fontSize: '9px', fontFamily: 'Arial, Helvetica, sans-serif' }}><span style={{ color: '#888' }}>Fecha: </span><span style={{ color: '#fff', fontWeight: '600' }}>{formatDateAR(project.event_date)}</span></div>}
-                                {project.event_time && <div style={{ fontSize: '9px', fontFamily: 'Arial, Helvetica, sans-serif' }}><span style={{ color: '#888' }}>Horario: </span><span style={{ color: '#fff', fontWeight: '600' }}>{project.event_time}{project.event_end_time ? ` a ${project.event_end_time}` : ''}</span></div>}
-                                {project.coverage_hours != null && <div style={{ fontSize: '9px', fontFamily: 'Arial, Helvetica, sans-serif' }}><span style={{ color: '#888' }}>Jornada: </span><span style={{ color: '#fff', fontWeight: '600' }}>{project.coverage_hours} hs</span></div>}
-                                {project.guests_count != null && <div style={{ fontSize: '9px', fontFamily: 'Arial, Helvetica, sans-serif' }}><span style={{ color: '#888' }}>Invitados: </span><span style={{ color: '#fff', fontWeight: '600' }}>{project.guests_count} pers.</span></div>}
-                                {project.location && <div style={{ fontSize: '9px', fontFamily: 'Arial, Helvetica, sans-serif', gridColumn: 'span 4', marginTop: '2px' }}><span style={{ color: '#888' }}>Locación: </span><span style={{ color: '#fff', fontWeight: '600' }}>{project.location}</span></div>}
-                                {project.coverage_types && project.coverage_types.length > 0 && <div style={{ fontSize: '9px', fontFamily: 'Arial, Helvetica, sans-serif', gridColumn: 'span 4' }}><span style={{ color: '#888' }}>Servicios: </span><span style={{ color: '#fff', fontWeight: '600', textTransform: 'capitalize' }}>{project.coverage_types.join(', ')}</span></div>}
+                return (
+                    <div id="print-proposal" style={{ fontFamily: "'Noto Sans JP', -apple-system, BlinkMacSystemFont, Arial, sans-serif", backgroundColor: '#000000', color: '#ffffff', padding: 0, boxSizing: 'border-box', width: '100%', margin: '0 auto' }}>
+                        
+                        {/* ── MEMBRETE CON AIRE ELEGANTE ── */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '2px solid #bfe023', paddingTop: '4px', paddingBottom: '14px', marginBottom: '16px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', justifyItems: 'flex-end' }}>
+                                <img src="/img/logo.png" alt="NexoFilm" style={{ height: '36px', width: 'auto', filter: 'brightness(0) invert(1)', objectFit: 'contain', objectPosition: 'left bottom' }} />
+                                <p style={{ fontSize: '8.5px', color: '#888888', fontWeight: '700', margin: '6px 0 0 0', textTransform: 'uppercase', letterSpacing: '2.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Productora Audiovisual</p>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                                <div style={{ display: 'inline-block', background: 'rgba(191, 224, 35, 0.1)', border: '1px solid rgba(191, 224, 35, 0.3)', borderRadius: '4px', padding: '2px 8px', marginBottom: '5px' }}>
+                                    <span style={{ fontSize: '8px', color: '#bfe023', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Documento Oficial</span>
+                                </div>
+                                <h2 style={{ fontSize: '18px', fontWeight: '900', color: '#bfe023', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.8px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Propuesta Comercial</h2>
+                                <p style={{ fontSize: '9.5px', color: '#a0a0a0', margin: 0, fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>
+                                    Fecha: {new Date().toLocaleDateString('es-AR')} &nbsp;|&nbsp; Ref: #{project.id.slice(0, 8).toUpperCase()}
+                                </p>
                             </div>
                         </div>
-                    )}
 
-                    {/* ── TABLA DE PRESUPUESTO BASE ── */}
-                    <div style={{ marginBottom: '14px' }}>
-                        <h3 style={{ fontSize: '8.5px', fontWeight: '700', color: '#e1f937', textTransform: 'uppercase', letterSpacing: '1px', paddingBottom: '4px', marginTop: 0, marginBottom: '0', fontFamily: 'Arial, Helvetica, sans-serif', borderBottom: '1px solid #2a2a2a', pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
-                            Presupuesto de Servicios
-                        </h3>
-
-                        {/* BASE — solo items[0] */}
-                        {budget.items[0] && (() => {
-                            const bi = budget.items[0];
-                            const baseAmt = bi.quantity * bi.unit_price;
-                            return (
-                                <div style={{ background: 'rgba(225,249,55,0.03)', border: '1px solid rgba(225,249,55,0.12)', borderTop: 'none' }}>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
-                                        <colgroup>
-                                            <col style={{ width: 'auto' }} />
-                                            <col style={{ width: '44px' }} />
-                                            <col style={{ width: '110px' }} />
-                                            <col style={{ width: '110px' }} />
-                                        </colgroup>
-                                        <thead>
-                                            <tr style={{ borderBottom: '1px solid #2a2a2a' }}>
-                                                <th style={{ fontSize: '8px', color: '#666', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '6px 8px', textAlign: 'left', fontFamily: 'Arial, Helvetica, sans-serif' }}>Descripción del Concepto</th>
-                                                <th style={{ fontSize: '8px', color: '#666', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '6px 4px', textAlign: 'center', fontFamily: 'Arial, Helvetica, sans-serif' }}>Cant.</th>
-                                                <th style={{ fontSize: '8px', color: '#666', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '6px 8px', textAlign: 'right', fontFamily: 'Arial, Helvetica, sans-serif' }}>Precio Unit.</th>
-                                                <th style={{ fontSize: '8px', color: '#666', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '6px 8px', textAlign: 'right', fontFamily: 'Arial, Helvetica, sans-serif' }}>Subtotal</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td style={{ padding: '8px 8px', verticalAlign: 'top', fontFamily: 'Arial, Helvetica, sans-serif' }}>
-                                                    {renderDescription(bi.description, true)}
-                                                </td>
-                                                <td style={{ fontSize: '9.5px', color: '#fff', padding: '8px 4px', textAlign: 'center', verticalAlign: 'top', fontFamily: 'Arial, Helvetica, sans-serif' }}>{bi.quantity}</td>
-                                                <td style={{ fontSize: '9.5px', color: '#aaa', padding: '8px 8px', textAlign: 'right', verticalAlign: 'top', fontFamily: 'Arial, Helvetica, sans-serif', wordBreak: 'keep-all' }}>{project.currency || 'ARS'} {bi.unit_price.toLocaleString('es-AR')}</td>
-                                                <td style={{ fontSize: '11.5px', color: '#e1f937', padding: '8px 8px', textAlign: 'right', verticalAlign: 'top', fontWeight: '900', fontFamily: 'Arial, Helvetica, sans-serif', wordBreak: 'keep-all' }}>{project.currency || 'ARS'} {baseAmt.toLocaleString('es-AR')}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', borderTop: '2px solid #e1f937', padding: '7px 10px', gap: '14px', background: 'rgba(225,249,55,0.05)', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                                        <span style={{ fontSize: '9px', color: '#ccc', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.5px', fontFamily: 'Arial, Helvetica, sans-serif' }}>Presupuesto Base:</span>
-                                        <span style={{ fontSize: '13.5px', color: '#e1f937', fontWeight: '900', fontFamily: 'Arial, Helvetica, sans-serif', whiteSpace: 'nowrap' }}>{project.currency || 'ARS'} {baseAmt.toLocaleString('es-AR')}</span>
-                                    </div>
-                                </div>
-                            );
-                        })()}
-
-                        {/* ADICIONALES — items.slice(1) */}
-                        {budget.items.slice(1).length > 0 && (
-                            <div style={{ marginTop: '14px', pageBreakBefore: 'auto', breakBefore: 'auto' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
-                                    <div style={{ flex: 1, height: '1px', background: '#2a2a2a' }}></div>
-                                    <span style={{ fontSize: '8px', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700', fontFamily: 'Arial, Helvetica, sans-serif', whiteSpace: 'nowrap' }}>Adicionales Recomendados / Pedidos (Opcionales)</span>
-                                    <div style={{ flex: 1, height: '1px', background: '#2a2a2a' }}></div>
-                                </div>
-                                <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #2a2a2a', tableLayout: 'fixed' }}>
-                                    <colgroup>
-                                        <col style={{ width: 'auto' }} />
-                                        <col style={{ width: '44px' }} />
-                                        <col style={{ width: '110px' }} />
-                                        <col style={{ width: '110px' }} />
-                                    </colgroup>
-                                    <thead>
-                                        <tr style={{ borderBottom: '1px solid #2a2a2a', background: '#0d0d0d' }}>
-                                            <th style={{ fontSize: '8px', color: '#666', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '6px 8px', textAlign: 'left', fontFamily: 'Arial, Helvetica, sans-serif' }}>Servicio Opcional</th>
-                                            <th style={{ fontSize: '8px', color: '#666', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '6px 4px', textAlign: 'center', fontFamily: 'Arial, Helvetica, sans-serif' }}>Cant.</th>
-                                            <th style={{ fontSize: '8px', color: '#666', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '6px 8px', textAlign: 'right', fontFamily: 'Arial, Helvetica, sans-serif' }}>Precio Unit.</th>
-                                            <th style={{ fontSize: '8px', color: '#666', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '6px 8px', textAlign: 'right', fontFamily: 'Arial, Helvetica, sans-serif' }}>Subtotal</th>
-                                        </tr>
-                                    </thead>
+                        {/* ── CLIENTE + PROYECTO ── */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                            <div style={{ background: '#0d0d0d', border: '1px solid #222222', padding: '11px 14px', borderRadius: '6px' }}>
+                                <h3 style={{ fontSize: '8.5px', fontWeight: '800', color: '#bfe023', textTransform: 'uppercase', letterSpacing: '1.2px', borderBottom: '1px solid #1f1f1f', paddingBottom: '5px', margin: '0 0 8px 0', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Datos del Cliente</h3>
+                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                     <tbody>
-                                        {budget.items.slice(1).map((item, idx) => {
-                                            const qty = (project.status === 'sent' && optionalQuantities[idx] !== undefined)
-                                                ? optionalQuantities[idx]
-                                                : item.quantity;
-                                            const sub = qty * item.unit_price;
-                                            return (
-                                                <tr key={idx} style={{ borderBottom: idx < budget.items.slice(1).length - 1 ? '1px solid #1a1a1a' : 'none', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                                                    <td style={{ padding: '8px 8px', verticalAlign: 'top', fontFamily: 'Arial, Helvetica, sans-serif' }}>
-                                                        {renderDescription(item.description, true)}
-                                                    </td>
-                                                    <td style={{ fontSize: '9.5px', color: '#ccc', padding: '8px 4px', textAlign: 'center', verticalAlign: 'top', fontFamily: 'Arial, Helvetica, sans-serif' }}>{qty}</td>
-                                                    <td style={{ fontSize: '9.5px', color: '#aaa', padding: '8px 8px', textAlign: 'right', verticalAlign: 'top', fontFamily: 'Arial, Helvetica, sans-serif', wordBreak: 'keep-all' }}>{project.currency || 'ARS'} {item.unit_price.toLocaleString('es-AR')}</td>
-                                                    <td style={{ fontSize: '9.5px', color: '#00e5ff', padding: '8px 8px', textAlign: 'right', verticalAlign: 'top', fontWeight: '700', fontFamily: 'Arial, Helvetica, sans-serif', wordBreak: 'keep-all' }}>{project.currency || 'ARS'} {sub.toLocaleString('es-AR')}</td>
-                                                </tr>
-                                            );
-                                        })}
+                                        <tr><td style={{ fontSize: '9.5px', color: '#777777', paddingBottom: '4px', width: '70px', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Contacto</td><td style={{ fontSize: '9.5px', color: '#ffffff', paddingBottom: '4px', fontWeight: '700', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{project.contact_name}</td></tr>
+                                        {project.company_name && <tr><td style={{ fontSize: '9.5px', color: '#777777', paddingBottom: '4px', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Empresa</td><td style={{ fontSize: '9.5px', color: '#ffffff', paddingBottom: '4px', fontWeight: '700', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{project.company_name}</td></tr>}
+                                        <tr><td style={{ fontSize: '9.5px', color: '#777777', paddingBottom: '4px', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Email</td><td style={{ fontSize: '9.5px', color: '#aaaaaa', paddingBottom: '4px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{project.client_email}</td></tr>
+                                        {project.client_phone && <tr><td style={{ fontSize: '9.5px', color: '#777777', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>WhatsApp</td><td style={{ fontSize: '9.5px', color: '#aaaaaa', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>+{project.client_phone.replace(/^\++/, '')}</td></tr>}
                                     </tbody>
                                 </table>
                             </div>
-                        )}
-                    </div>
-
-                    {/* ── CONDICIONES DE PAGO ── */}
-                    {budget.payment_terms && (
-                        <div style={{ marginTop: '14px', marginBottom: '14px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                            <h3 style={{ fontSize: '8.5px', fontWeight: '700', color: '#e1f937', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: '1px solid #2a2a2a', paddingBottom: '4px', marginTop: 0, marginBottom: '6px', fontFamily: 'Arial, Helvetica, sans-serif', pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
-                                Términos y Condiciones de Pago
-                            </h3>
-                            <div style={{ borderLeft: '3px solid #e1f937', backgroundColor: '#0d0d0d', padding: '9px 12px', borderRadius: '0 4px 4px 0', fontSize: '8.5px', color: '#cccccc', lineHeight: '1.55', whiteSpace: 'pre-line', fontFamily: 'Arial, Helvetica, sans-serif', wordBreak: 'break-word' }}>
-                                {budget.payment_terms}
+                            <div style={{ background: '#0d0d0d', border: '1px solid #222222', padding: '11px 14px', borderRadius: '6px' }}>
+                                <h3 style={{ fontSize: '8.5px', fontWeight: '800', color: '#bfe023', textTransform: 'uppercase', letterSpacing: '1.2px', borderBottom: '1px solid #1f1f1f', paddingBottom: '5px', margin: '0 0 8px 0', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Detalles de Propuesta</h3>
+                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                    <tbody>
+                                        <tr><td style={{ fontSize: '9.5px', color: '#777777', paddingBottom: '4px', width: '75px', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Proyecto</td><td style={{ fontSize: '9.5px', color: '#ffffff', paddingBottom: '4px', fontWeight: '700', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{project.title}</td></tr>
+                                        <tr><td style={{ fontSize: '9.5px', color: '#777777', paddingBottom: '4px', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Estado</td><td style={{ fontSize: '9.5px', color: '#bfe023', paddingBottom: '4px', fontWeight: '700', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{project.status === 'approved' ? 'Aprobado' : project.status === 'production' ? 'En Producción' : project.status === 'delivered' ? 'Entregado' : 'Pendiente de Aprobación'}</td></tr>
+                                        <tr><td style={{ fontSize: '9.5px', color: '#777777', paddingBottom: '4px', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Moneda</td><td style={{ fontSize: '9.5px', color: '#aaaaaa', paddingBottom: '4px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{project.currency || 'ARS'}</td></tr>
+                                        <tr><td style={{ fontSize: '9.5px', color: '#777777', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Validez</td><td style={{ fontSize: '9.5px', color: '#aaaaaa', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>15 días corridos</td></tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-                    )}
 
-                    {/* ── PIE DE PÁGINA ── */}
-                    <div style={{ marginTop: '16px', borderTop: '1px solid #2a2a2a', paddingTop: '10px', textAlign: 'center', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px', marginBottom: '4px', fontSize: '8.5px', color: '#888888', flexWrap: 'wrap' }}>
-                            <span style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>🌐 www.nexofilm.com</span>
-                            <span style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}>✉ hola@nexofilm.com</span>
-                            <span style={{ fontFamily: 'Arial, Helvetica, sans-serif', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                <svg style={{ width: '10px', height: '10px', fill: '#888888' }} viewBox="0 0 24 24">
-                                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-                                </svg>
-                                @nexofilm.co
-                            </span>
+                        {/* ── ESPECIFICACIONES DEL RODAJE ── */}
+                        {(project.event_date || project.location || project.coverage_types) && (
+                            <div style={{ background: '#0d0d0d', border: '1px solid #222222', padding: '11px 14px', borderRadius: '6px', marginBottom: '16px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                                <h3 style={{ fontSize: '8.5px', fontWeight: '800', color: '#bfe023', textTransform: 'uppercase', letterSpacing: '1.2px', borderBottom: '1px solid #1f1f1f', paddingBottom: '5px', margin: '0 0 8px 0', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>
+                                    Especificaciones de Rodaje / Cobertura
+                                </h3>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px 14px' }}>
+                                    {project.event_date && <div style={{ fontSize: '9.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}><span style={{ color: '#777' }}>Fecha: </span><strong style={{ color: '#fff' }}>{formatDateAR(project.event_date)}</strong></div>}
+                                    {project.event_time && <div style={{ fontSize: '9.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}><span style={{ color: '#777' }}>Horario: </span><strong style={{ color: '#fff' }}>{project.event_time}{project.event_end_time ? ` a ${project.event_end_time}` : ''}</strong></div>}
+                                    {project.coverage_hours != null && <div style={{ fontSize: '9.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}><span style={{ color: '#777' }}>Jornada: </span><strong style={{ color: '#fff' }}>{project.coverage_hours} hs</strong></div>}
+                                    {project.guests_count != null && <div style={{ fontSize: '9.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}><span style={{ color: '#777' }}>Invitados: </span><strong style={{ color: '#fff' }}>{project.guests_count} pers.</strong></div>}
+                                    {project.location && <div style={{ fontSize: '9.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif", gridColumn: 'span 4', marginTop: '3px' }}><span style={{ color: '#777' }}>Locación: </span><strong style={{ color: '#fff' }}>{project.location}</strong></div>}
+                                    {project.coverage_types && project.coverage_types.length > 0 && <div style={{ fontSize: '9.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif", gridColumn: 'span 4' }}><span style={{ color: '#777' }}>Servicios: </span><strong style={{ color: '#fff', textTransform: 'capitalize' }}>{project.coverage_types.join(', ')}</strong></div>}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── TABLA DE PRESUPUESTO BASE ── */}
+                        <div style={{ marginBottom: '16px' }}>
+                            <h3 style={{ fontSize: '9px', fontWeight: '800', color: '#bfe023', textTransform: 'uppercase', letterSpacing: '1.2px', paddingBottom: '6px', margin: '0 0 8px 0', fontFamily: "'Noto Sans JP', Arial, sans-serif", borderBottom: '1px solid #222222', pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
+                                Presupuesto de Servicios (Base)
+                            </h3>
+
+                            {/* BASE — solo items[0] */}
+                            {budget.items[0] && (() => {
+                                const bi = budget.items[0];
+                                const baseAmt = bi.quantity * bi.unit_price;
+                                return (
+                                    <div style={{ background: 'rgba(191,224,35,0.02)', border: '1px solid rgba(191,224,35,0.15)', borderRadius: '6px', overflow: 'hidden' }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                                            <colgroup>
+                                                <col style={{ width: 'auto' }} />
+                                                <col style={{ width: '48px' }} />
+                                                <col style={{ width: '120px' }} />
+                                                <col style={{ width: '125px' }} />
+                                            </colgroup>
+                                            <thead>
+                                                <tr style={{ background: '#111111', borderBottom: '1px solid #222222' }}>
+                                                    <th style={{ fontSize: '8.5px', color: '#888888', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 10px', textAlign: 'left', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Descripción del Concepto Principal</th>
+                                                    <th style={{ fontSize: '8.5px', color: '#888888', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 4px', textAlign: 'center', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Cant.</th>
+                                                    <th style={{ fontSize: '8.5px', color: '#888888', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 10px', textAlign: 'right', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Precio Unit.</th>
+                                                    <th style={{ fontSize: '8.5px', color: '#888888', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 10px', textAlign: 'right', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Subtotal</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td style={{ padding: '10px 10px', verticalAlign: 'top', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>
+                                                        {renderDescription(bi.description, true)}
+                                                    </td>
+                                                    <td style={{ fontSize: '10px', color: '#ffffff', padding: '10px 4px', textAlign: 'center', verticalAlign: 'top', fontFamily: "'Noto Sans JP', Arial, sans-serif", fontWeight: '700' }}>{bi.quantity}</td>
+                                                    <td style={{ fontSize: '10px', color: '#aaaaaa', padding: '10px 10px', textAlign: 'right', verticalAlign: 'top', fontFamily: "'Noto Sans JP', Arial, sans-serif", whiteSpace: 'nowrap' }}>{project.currency || 'ARS'} {bi.unit_price.toLocaleString('es-AR')}</td>
+                                                    <td style={{ fontSize: '12px', color: '#bfe023', padding: '10px 10px', textAlign: 'right', verticalAlign: 'top', fontWeight: '900', fontFamily: "'Noto Sans JP', Arial, sans-serif", whiteSpace: 'nowrap' }}>{project.currency || 'ARS'} {baseAmt.toLocaleString('es-AR')}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', borderTop: '2px solid #bfe023', padding: '9px 12px', gap: '16px', background: 'rgba(191,224,35,0.05)', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                                            <span style={{ fontSize: '9.5px', color: '#cccccc', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.8px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Total Inversión Base:</span>
+                                            <span style={{ fontSize: '15px', color: '#bfe023', fontWeight: '900', fontFamily: "'Noto Sans JP', Arial, sans-serif", whiteSpace: 'nowrap' }}>{project.currency || 'ARS'} {baseAmt.toLocaleString('es-AR')}</span>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
                         </div>
-                        <p style={{ fontSize: '7px', color: '#555555', margin: '2px 0 0 0', textTransform: 'uppercase', letterSpacing: '0.8px', fontFamily: 'Arial, Helvetica, sans-serif' }}>
-                            Cotización comercial confidencial · Uso exclusivo del destinatario
-                        </p>
-                        <p style={{ fontSize: '7px', color: '#555555', margin: '2px 0 0 0', fontFamily: 'Arial, Helvetica, sans-serif' }}>
-                            NexoFilm Productora Audiovisual · Buenos Aires, Argentina
-                        </p>
+
+                        {/* ── ADICIONALES OPCIONALES ── */}
+                        {budget.items.slice(1).length > 0 && (
+                            <div style={{ marginTop: '18px', pageBreakBefore: shouldBreakBeforeOptionals ? 'always' : 'auto', breakBefore: shouldBreakBeforeOptionals ? 'page' : 'auto' }}>
+                                {shouldBreakBeforeOptionals && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #222222', paddingTop: '4px', paddingBottom: '10px', marginBottom: '16px', pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <img src="/img/logo.png" alt="NexoFilm" style={{ height: '24px', width: 'auto', filter: 'brightness(0) invert(1)' }} />
+                                            <span style={{ fontSize: '8.5px', color: '#777777', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: '700', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Productora Audiovisual</span>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <span style={{ fontSize: '8.5px', color: '#bfe023', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.8px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Propuesta Comercial · Servicios Opcionales</span>
+                                            <span style={{ fontSize: '8.5px', color: '#666666', marginLeft: '10px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Ref: #{project.id.slice(0, 8).toUpperCase()}</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
+                                    <div style={{ flex: 1, height: '1px', background: '#222222' }}></div>
+                                    <span style={{ fontSize: '9px', color: '#00e5ff', textTransform: 'uppercase', letterSpacing: '1.2px', fontWeight: '800', fontFamily: "'Noto Sans JP', Arial, sans-serif", whiteSpace: 'nowrap' }}>Adicionales Recomendados / Pedidos (Opcionales)</span>
+                                    <div style={{ flex: 1, height: '1px', background: '#222222' }}></div>
+                                </div>
+
+                                <div style={{ border: '1px solid #222222', borderRadius: '6px', overflow: 'hidden', marginBottom: '18px' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                                        <colgroup>
+                                            <col style={{ width: 'auto' }} />
+                                            <col style={{ width: '48px' }} />
+                                            <col style={{ width: '120px' }} />
+                                            <col style={{ width: '125px' }} />
+                                        </colgroup>
+                                        <thead>
+                                            <tr style={{ background: '#111111', borderBottom: '1px solid #222222' }}>
+                                                <th style={{ fontSize: '8.5px', color: '#888888', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 10px', textAlign: 'left', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Servicio Opcional / Add-on</th>
+                                                <th style={{ fontSize: '8.5px', color: '#888888', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 4px', textAlign: 'center', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Cant.</th>
+                                                <th style={{ fontSize: '8.5px', color: '#888888', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 10px', textAlign: 'right', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Precio Unit.</th>
+                                                <th style={{ fontSize: '8.5px', color: '#888888', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 10px', textAlign: 'right', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {budget.items.slice(1).map((item, idx) => {
+                                                const qty = (project.status === 'sent' && optionalQuantities[idx] !== undefined)
+                                                    ? optionalQuantities[idx]
+                                                    : item.quantity;
+                                                const sub = qty * item.unit_price;
+                                                return (
+                                                    <tr key={idx} style={{ borderBottom: idx < budget.items.slice(1).length - 1 ? '1px solid #1a1a1a' : 'none', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                                                        <td style={{ padding: '10px 10px', verticalAlign: 'top', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>
+                                                            {renderDescription(item.description, true)}
+                                                        </td>
+                                                        <td style={{ fontSize: '10px', color: '#cccccc', padding: '10px 4px', textAlign: 'center', verticalAlign: 'top', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{qty}</td>
+                                                        <td style={{ fontSize: '10px', color: '#aaaaaa', padding: '10px 10px', textAlign: 'right', verticalAlign: 'top', fontFamily: "'Noto Sans JP', Arial, sans-serif", whiteSpace: 'nowrap' }}>{project.currency || 'ARS'} {item.unit_price.toLocaleString('es-AR')}</td>
+                                                        <td style={{ fontSize: '11px', color: '#00e5ff', padding: '10px 10px', textAlign: 'right', verticalAlign: 'top', fontWeight: '800', fontFamily: "'Noto Sans JP', Arial, sans-serif", whiteSpace: 'nowrap' }}>{project.currency || 'ARS'} {sub.toLocaleString('es-AR')}</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── CONDICIONES DE PAGO ── */}
+                        {budget.payment_terms && (
+                            <div style={{ marginTop: '16px', marginBottom: '20px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                                <h3 style={{ fontSize: '9px', fontWeight: '800', color: '#bfe023', textTransform: 'uppercase', letterSpacing: '1.2px', borderBottom: '1px solid #222222', paddingBottom: '5px', margin: '0 0 8px 0', fontFamily: "'Noto Sans JP', Arial, sans-serif", pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
+                                    Términos y Condiciones Comerciales
+                                </h3>
+                                <div style={{ borderLeft: '3px solid #bfe023', backgroundColor: '#0d0d0d', borderTop: '1px solid #1a1a1a', borderRight: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a', padding: '11px 16px', borderRadius: '0 6px 6px 0', fontSize: '9.5px', color: '#d0d0d0', lineHeight: '1.6', whiteSpace: 'pre-line', fontFamily: "'Noto Sans JP', Arial, sans-serif", wordBreak: 'break-word' }}>
+                                    {budget.payment_terms}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── PIE DE PÁGINA ── */}
+                        <div style={{ marginTop: '28px', borderTop: '1px solid #222222', paddingTop: '16px', paddingBottom: '10px', textAlign: 'center', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '24px', marginBottom: '8px', fontSize: '9.5px', color: '#888888', flexWrap: 'wrap' }}>
+                                <span style={{ fontFamily: "'Noto Sans JP', Arial, sans-serif", fontWeight: '600' }}>🌐 www.nexofilm.com</span>
+                                <span style={{ fontFamily: "'Noto Sans JP', Arial, sans-serif", fontWeight: '600' }}>✉ hola@nexofilm.com</span>
+                                <span style={{ fontFamily: "'Noto Sans JP', Arial, sans-serif", fontWeight: '600' }}>📸 @nexofilm.co</span>
+                            </div>
+                            <p style={{ fontSize: '8px', color: '#555555', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '1px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>
+                                Cotización comercial confidencial · Emitida para uso exclusivo de {project.company_name || project.contact_name}
+                            </p>
+                            <p style={{ fontSize: '7.5px', color: '#444444', margin: 0, fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>
+                                NexoFilm Productora Audiovisual · Buenos Aires, Argentina · Todos los derechos reservados
+                            </p>
+                        </div>
                     </div>
-                </div>
-            )}
+                );
+            })()}
         </div>
     );
 };
