@@ -657,8 +657,10 @@ Te recordamos que además de coberturas, hacemos:
         // 3. El mensaje actual del usuario DEBE entrar al historial ANTES de llamar a Groq
         history.push({ role: 'user', content: userDisplayContent });
 
-        // Llamada a Groq (Modelo 120B - reemplazo de llama-3.3-70b-versatile)
-        const groqHistory = history.filter(m => m.role === 'user' || m.role === 'assistant');
+        // Llamada a Groq — Solo enviar role + content (Groq rechaza campos extra como 'timestamp')
+        const groqHistory = history
+            .filter(m => m.role === 'user' || m.role === 'assistant')
+            .map(m => ({ role: m.role, content: m.content }));
         const comp = await groq.chat.completions.create({
             model: 'openai/gpt-oss-120b',
             messages: [{ role: 'system', content: finalSystemPrompt }, ...groqHistory],
