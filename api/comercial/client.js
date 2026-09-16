@@ -656,26 +656,44 @@ export default async function handler(req, res) {
                 try {
                     const googleAccessToken = await getGoogleAccessToken(clientEmail, privateKey);
                     const q = `'${driveFolderId}' in parents and trashed = false`;
-                    const fields = 'files(id,name,mimeType,webViewLink,thumbnailLink,webContentLink,size,createdTime)';
-                    const driveUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=${encodeURIComponent(fields)}`;
+                    const fields = 'nextPageToken,files(id,name,mimeType,webViewLink,thumbnailLink,webContentLink,size,createdTime)';
 
-                    const driveRes = await fetch(driveUrl, {
-                        headers: { 'Authorization': `Bearer ${googleAccessToken}` }
-                    });
+                    // ── Paginación completa ──────────────────────────────────────────────────
+                    // Google Drive API devuelve máx 1000 por página. Iteramos hasta que
+                    // nextPageToken esté vacío para traer TODOS los archivos de la carpeta.
+                    const allFiles = [];
+                    let pageToken = null;
 
-                    const driveData = await driveRes.json();
-                    if (!driveRes.ok) throw new Error(driveData.error?.message || 'Error con la API de Google Drive');
+                    do {
+                        const pageParam = pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : '';
+                        const driveUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=${encodeURIComponent(fields)}&pageSize=1000${pageParam}`;
+
+                        const driveRes = await fetch(driveUrl, {
+                            headers: { 'Authorization': `Bearer ${googleAccessToken}` }
+                        });
+
+                        const driveData = await driveRes.json();
+                        if (!driveRes.ok) throw new Error(driveData.error?.message || 'Error con la API de Google Drive');
+
+                        if (Array.isArray(driveData.files)) {
+                            allFiles.push(...driveData.files);
+                        }
+
+                        pageToken = driveData.nextPageToken || null;
+                    } while (pageToken);
+                    // ────────────────────────────────────────────────────────────────────────
 
                     return res.status(200).json({
                         success: true,
                         isMock: false,
                         project: projectPublicInfo,
-                        files: driveData.files || []
+                        files: allFiles
                     });
                 } catch (gErr) {
                     console.error('Error conectando con Google Drive en Storage:', gErr);
                     return res.status(500).json({ error: gErr.message });
                 }
+
             }
 
             // GET Acción: Listar archivos de Drive (Mock fallback si faltan credenciales)
@@ -741,25 +759,41 @@ export default async function handler(req, res) {
                 try {
                     const googleAccessToken = await getGoogleAccessToken(clientEmail, privateKey);
                     const q = `'${driveFolderId}' in parents and trashed = false`;
-                    const fields = 'files(id,name,mimeType,webViewLink,thumbnailLink,webContentLink,size)';
-                    const driveUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=${encodeURIComponent(fields)}`;
+                    const fields = 'nextPageToken,files(id,name,mimeType,webViewLink,thumbnailLink,webContentLink,size)';
 
-                    const driveRes = await fetch(driveUrl, {
-                        headers: { 'Authorization': `Bearer ${googleAccessToken}` }
-                    });
+                    // ── Paginación completa ──────────────────────────────────────────────────
+                    const allFiles = [];
+                    let pageToken = null;
 
-                    const driveData = await driveRes.json();
-                    if (!driveRes.ok) throw new Error(driveData.error?.message || 'Error con la API de Google Drive');
+                    do {
+                        const pageParam = pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : '';
+                        const driveUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=${encodeURIComponent(fields)}&pageSize=1000${pageParam}`;
+
+                        const driveRes = await fetch(driveUrl, {
+                            headers: { 'Authorization': `Bearer ${googleAccessToken}` }
+                        });
+
+                        const driveData = await driveRes.json();
+                        if (!driveRes.ok) throw new Error(driveData.error?.message || 'Error con la API de Google Drive');
+
+                        if (Array.isArray(driveData.files)) {
+                            allFiles.push(...driveData.files);
+                        }
+
+                        pageToken = driveData.nextPageToken || null;
+                    } while (pageToken);
+                    // ────────────────────────────────────────────────────────────────────────
 
                     return res.status(200).json({
                         success: true,
                         isMock: false,
-                        files: driveData.files || []
+                        files: allFiles
                     });
                 } catch (gErr) {
                     console.error('Error conectando con Google Drive:', gErr);
                     return res.status(500).json({ error: gErr.message });
                 }
+
             }
 
             // GET por defecto: Obtener Proyecto y Presupuesto
