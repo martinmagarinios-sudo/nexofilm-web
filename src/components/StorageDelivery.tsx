@@ -32,12 +32,15 @@ const StorageDelivery: React.FC = () => {
     const [sortBy, setSortBy] = useState<'name' | 'default'>('default');
     const [folderHistory, setFolderHistory] = useState<{ id: string | null; name: string }[]>([]);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
+    const [downloadingSingleId, setDownloadingSingleId] = useState<string | null>(null);
     const [isDownloadingBatch, setIsDownloadingBatch] = useState(false);
     const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
 
     // Limpiar selección al cambiar de carpeta
     useEffect(() => {
         setSelectedIds([]);
+        setLastSelectedId(null);
     }, [folderHistory]);
 
     // Obtener token de la URL
@@ -156,21 +159,36 @@ const StorageDelivery: React.FC = () => {
         setTimeout(() => setCopied(false), 2500);
     };
 
-    const getDirectDownloadUrl = (file: DriveFile) => {
-        return `https://drive.usercontent.google.com/download?id=${file.id}&export=download&confirm=t`;
-    };
+    const triggerDirectDownload = async (file: DriveFile) => {
+        let downloadUrl = `https://drive.usercontent.google.com/download?id=${file.id}&export=download&confirm=t`;
+        try {
+            const res = await fetch(`/api/storage-download?fileId=${encodeURIComponent(file.id)}&json=true`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.downloadUrl) {
+                    downloadUrl = data.downloadUrl;
+                }
+            }
+        } catch (err) {
+            console.error('Error resolviendo bypass para descarga:', err);
+        }
 
-    const handleDownloadSingle = (file: DriveFile, e?: React.MouseEvent) => {
-        if (e) e.stopPropagation();
-        const url = getDirectDownloadUrl(file);
         const link = document.createElement('a');
-        link.href = url;
+        link.href = downloadUrl;
         link.download = file.name;
-        link.setAttribute('target', '_blank');
-        link.setAttribute('rel', 'noopener noreferrer');
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    };
+
+    const handleDownloadSingle = async (file: DriveFile, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        setDownloadingSingleId(file.id);
+        try {
+            await triggerDirectDownload(file);
+        } finally {
+            setTimeout(() => setDownloadingSingleId(null), 1000);
+        }
     };
 
     const toggleSelectFile = (fileId: string, e?: React.MouseEvent) => {
@@ -178,6 +196,43 @@ const StorageDelivery: React.FC = () => {
         setSelectedIds(prev =>
             prev.includes(fileId) ? prev.filter(id => id !== fileId) : [...prev, fileId]
         );
+        setLastSelectedId(fileId);
+    };
+
+    const handleItemClick = (file: DriveFile, e: React.MouseEvent, currentSortedList: DriveFile[]) => {
+        if (isFolder(file)) return;
+
+        const isCtrl = e.ctrlKey || e.metaKey;
+        const isShift = e.shiftKey;
+        const selectables = currentSortedList.filter(f => !isFolder(f));
+
+        if (isShift && lastSelectedId) {
+            e.preventDefault();
+            const lastIdx = selectables.findIndex(f => f.id === lastSelectedId);
+            const currIdx = selectables.findIndex(f => f.id === file.id);
+
+            if (lastIdx !== -1 && currIdx !== -1) {
+                const start = Math.min(lastIdx, currIdx);
+                const end = Math.max(lastIdx, currIdx);
+                const rangeIds = selectables.slice(start, end + 1).map(f => f.id);
+                setSelectedIds(prev => Array.from(new Set([...prev, ...rangeIds])));
+                return;
+            }
+        }
+
+        if (isCtrl) {
+            setSelectedIds(prev =>
+                prev.includes(file.id) ? prev.filter(id => id !== file.id) : [...prev, file.id]
+            );
+            setLastSelectedId(file.id);
+            return;
+        }
+
+        // Clic normal: seleccionar/deseleccionar el archivo individualmente
+        setSelectedIds(prev =>
+            prev.includes(file.id) ? prev.filter(id => id !== file.id) : [...prev, file.id]
+        );
+        setLastSelectedId(file.id);
     };
 
     const selectableFiles = files.filter(f => !isFolder(f));
@@ -186,13 +241,18 @@ const StorageDelivery: React.FC = () => {
     const handleSelectAll = () => {
         if (isAllSelected) {
             setSelectedIds([]);
+            setLastSelectedId(null);
         } else {
             setSelectedIds(selectableFiles.map(f => f.id));
+            if (selectableFiles.length > 0) {
+                setLastSelectedId(selectableFiles[selectableFiles.length - 1].id);
+            }
         }
     };
 
     const handleClearSelection = () => {
         setSelectedIds([]);
+        setLastSelectedId(null);
     };
 
     const handleDownloadBatch = async () => {
@@ -203,17 +263,9 @@ const StorageDelivery: React.FC = () => {
         for (let i = 0; i < toDownload.length; i++) {
             setBatchProgress({ current: i + 1, total: toDownload.length });
             const file = toDownload[i];
-            const url = getDirectDownloadUrl(file);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = file.name;
-            link.setAttribute('target', '_blank');
-            link.setAttribute('rel', 'noopener noreferrer');
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            await triggerDirectDownload(file);
             if (i < toDownload.length - 1) {
-                await new Promise(r => setTimeout(r, 750));
+                await new Promise(r => setTimeout(r, 800));
             }
         }
         setIsDownloadingBatch(false);
@@ -356,23 +408,28 @@ const StorageDelivery: React.FC = () => {
 
                                 <div className="flex items-center gap-2">
                                     {selectableFiles.length > 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={handleSelectAll}
-                                            className={`px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                                                isAllSelected
-                                                    ? 'bg-nexo-lime/20 border-nexo-lime text-nexo-lime'
-                                                    : 'bg-black/50 border-white/10 text-zinc-400 hover:text-white'
-                                            }`}
-                                            title={isAllSelected ? "Deseleccionar todos" : "Seleccionar todos los archivos"}
-                                        >
-                                            <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center text-[10px] ${
-                                                isAllSelected ? 'bg-nexo-lime border-nexo-lime text-black' : 'border-zinc-500'
-                                            }`}>
-                                                {isAllSelected && '✓'}
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={handleSelectAll}
+                                                className={`px-3 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                    isAllSelected
+                                                        ? 'bg-nexo-lime/20 border-nexo-lime text-nexo-lime'
+                                                        : 'bg-black/50 border-white/10 text-zinc-400 hover:text-white'
+                                                }`}
+                                                title={isAllSelected ? "Deseleccionar todos" : "Seleccionar todos los archivos"}
+                                            >
+                                                <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center text-[10px] ${
+                                                    isAllSelected ? 'bg-nexo-lime border-nexo-lime text-black' : 'border-zinc-500'
+                                                }`}>
+                                                    {isAllSelected && '✓'}
+                                                </span>
+                                                <span>{isAllSelected ? 'Todos' : 'Seleccionar todos'}</span>
+                                            </button>
+                                            <span className="hidden lg:inline text-[11px] text-zinc-400 font-mono bg-white/5 border border-white/10 px-2.5 py-1 rounded-lg">
+                                                Shift + Clic: Rango | Ctrl + Clic: Salteados
                                             </span>
-                                            <span>{isAllSelected ? 'Todos seleccionados' : 'Seleccionar todos'}</span>
-                                        </button>
+                                        </>
                                     )}
 
                                     <div className="flex items-center bg-black/50 border border-white/10 rounded-lg p-0.5">
@@ -511,7 +568,10 @@ const StorageDelivery: React.FC = () => {
                                                     <div
                                                         key={file.id}
                                                         onDoubleClick={() => folder && handleOpenFolder(file)}
-                                                        className={`p-3 sm:p-4 flex items-center justify-between gap-4 transition-colors ${
+                                                        onClick={(e) => !folder && handleItemClick(file, e, sorted)}
+                                                        className={`p-3 sm:p-4 flex items-center justify-between gap-4 transition-colors select-none ${
+                                                            folder ? '' : 'cursor-pointer'
+                                                        } ${
                                                             isSelected
                                                                 ? 'bg-nexo-lime/[0.08] border-l-4 border-nexo-lime'
                                                                 : 'hover:bg-white/[0.04]'
@@ -528,7 +588,7 @@ const StorageDelivery: React.FC = () => {
                                                                             ? 'bg-nexo-lime border-nexo-lime text-black font-extrabold text-xs shadow-[0_0_8px_rgba(204,255,0,0.3)]'
                                                                             : 'border-white/20 bg-black/40 hover:border-white/50 text-transparent'
                                                                     }`}
-                                                                    title={isSelected ? "Deseleccionar" : "Seleccionar para descargar"}
+                                                                    title={isSelected ? "Deseleccionar" : "Seleccionar (Ctrl+Clic o Shift+Clic)"}
                                                                 >
                                                                     ✓
                                                                 </button>
@@ -536,7 +596,12 @@ const StorageDelivery: React.FC = () => {
 
                                                             <div
                                                                 className={`flex items-center gap-3 min-w-0 flex-1 ${folder ? 'cursor-pointer' : ''}`}
-                                                                onClick={() => folder && handleOpenFolder(file)}
+                                                                onClick={(e) => {
+                                                                    if (folder) {
+                                                                        e.stopPropagation();
+                                                                        handleOpenFolder(file);
+                                                                    }
+                                                                }}
                                                             >
                                                                 <span className="text-2xl flex-shrink-0">{getFileIcon(file)}</span>
                                                                 <div className="min-w-0 flex-1">
@@ -559,7 +624,7 @@ const StorageDelivery: React.FC = () => {
                                                             </div>
                                                         </div>
 
-                                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                                        <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                                                             {folder ? (
                                                                 <button
                                                                     type="button"
@@ -583,11 +648,21 @@ const StorageDelivery: React.FC = () => {
                                                                     <button
                                                                         type="button"
                                                                         onClick={(e) => handleDownloadSingle(file, e)}
-                                                                        className="bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(204,255,0,0.15)] cursor-pointer"
+                                                                        disabled={downloadingSingleId === file.id}
+                                                                        className="bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(204,255,0,0.15)] cursor-pointer disabled:opacity-75"
                                                                         title="Descargar archivo directamente"
                                                                     >
-                                                                        <span>⬇</span>
-                                                                        <span>Descargar</span>
+                                                                        {downloadingSingleId === file.id ? (
+                                                                            <>
+                                                                                <div className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                                                                                <span>Iniciando...</span>
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <span>⬇</span>
+                                                                                <span>Descargar</span>
+                                                                            </>
+                                                                        )}
                                                                     </button>
                                                                 </>
                                                             )}
@@ -611,7 +686,10 @@ const StorageDelivery: React.FC = () => {
                                                 <div
                                                     key={file.id}
                                                     onDoubleClick={() => folder && handleOpenFolder(file)}
-                                                    className={`bg-zinc-900/40 rounded-xl overflow-hidden transition-all duration-300 flex flex-col group relative ${
+                                                    onClick={(e) => !folder && handleItemClick(file, e, sorted)}
+                                                    className={`bg-zinc-900/40 rounded-xl overflow-hidden transition-all duration-300 flex flex-col group relative select-none ${
+                                                        folder ? '' : 'cursor-pointer'
+                                                    } ${
                                                         isSelected
                                                             ? 'border-2 border-nexo-lime shadow-[0_0_25px_rgba(204,255,0,0.2)] ring-1 ring-nexo-lime/50'
                                                             : 'border border-white/10 hover:border-nexo-lime/40 hover:shadow-[0_0_20px_rgba(204,255,0,0.08)]'
@@ -661,7 +739,7 @@ const StorageDelivery: React.FC = () => {
                                                                         ? 'bg-nexo-lime border-nexo-lime text-black font-extrabold text-xs shadow-[0_0_10px_rgba(204,255,0,0.4)]'
                                                                         : 'bg-black/60 backdrop-blur-md border-white/20 hover:border-white text-transparent opacity-80 group-hover:opacity-100'
                                                                 }`}
-                                                                title={isSelected ? "Deseleccionar" : "Seleccionar"}
+                                                                title={isSelected ? "Deseleccionar" : "Seleccionar (Ctrl+Clic o Shift+Clic)"}
                                                             >
                                                                 ✓
                                                             </button>
@@ -680,7 +758,10 @@ const StorageDelivery: React.FC = () => {
                                                         {video && (
                                                             <button
                                                                 type="button"
-                                                                onClick={() => setPreviewVideo(file)}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setPreviewVideo(file);
+                                                                }}
                                                                 className="absolute inset-0 m-auto w-12 h-12 rounded-full bg-nexo-lime text-black flex items-center justify-center shadow-lg hover:scale-110 hover:bg-[#b3ff00] transition-all duration-300 cursor-pointer"
                                                                 title="Reproducir video"
                                                             >
@@ -695,7 +776,12 @@ const StorageDelivery: React.FC = () => {
                                                             <h4
                                                                 className={`font-bold text-xs sm:text-sm text-white group-hover:text-nexo-lime transition-colors line-clamp-2 leading-snug ${folder ? 'cursor-pointer' : ''}`}
                                                                 title={file.name}
-                                                                onClick={() => folder && handleOpenFolder(file)}
+                                                                onClick={(e) => {
+                                                                    if (folder) {
+                                                                        e.stopPropagation();
+                                                                        handleOpenFolder(file);
+                                                                    }
+                                                                }}
                                                             >
                                                                 {file.name}
                                                             </h4>
@@ -712,7 +798,7 @@ const StorageDelivery: React.FC = () => {
                                                         </div>
 
                                                         {/* Acciones */}
-                                                        <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+                                                        <div className="flex items-center gap-2 pt-2 border-t border-white/5" onClick={(e) => e.stopPropagation()}>
                                                             {folder ? (
                                                                 <button
                                                                     type="button"
@@ -736,15 +822,25 @@ const StorageDelivery: React.FC = () => {
                                                                     <button
                                                                         type="button"
                                                                         onClick={(e) => handleDownloadSingle(file, e)}
+                                                                        disabled={downloadingSingleId === file.id}
                                                                         className={`flex-1 ${
                                                                             video
                                                                                 ? 'bg-nexo-lime hover:bg-[#b3ff00] text-black'
                                                                                 : 'bg-nexo-lime hover:bg-[#b3ff00] text-black w-full'
-                                                                        } font-extrabold text-[10px] uppercase tracking-wider py-2.5 rounded-lg transition-all text-center flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(204,255,0,0.15)] cursor-pointer`}
+                                                                        } font-extrabold text-[10px] uppercase tracking-wider py-2.5 rounded-lg transition-all text-center flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(204,255,0,0.15)] cursor-pointer disabled:opacity-75`}
                                                                         title="Descargar archivo directamente"
                                                                     >
-                                                                        <span>⬇</span>
-                                                                        <span>Descargar</span>
+                                                                        {downloadingSingleId === file.id ? (
+                                                                            <>
+                                                                                <div className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                                                                                <span>Iniciando...</span>
+                                                                            </>
+                                                                        ) : (
+                                                                            <>
+                                                                                <span>⬇</span>
+                                                                                <span>Descargar</span>
+                                                                            </>
+                                                                        )}
                                                                     </button>
                                                                 </>
                                                             )}

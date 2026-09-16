@@ -238,11 +238,14 @@ const ClientPortal: React.FC = () => {
     const [storageSortBy, setStorageSortBy] = useState<'name' | 'default'>('default');
     const [driveFolderHistory, setDriveFolderHistory] = useState<{ id: string | null; name: string }[]>([]);
     const [selectedDriveIds, setSelectedDriveIds] = useState<string[]>([]);
+    const [lastSelectedDriveId, setLastSelectedDriveId] = useState<string | null>(null);
+    const [downloadingDriveSingleId, setDownloadingDriveSingleId] = useState<string | null>(null);
     const [isDownloadingDriveBatch, setIsDownloadingDriveBatch] = useState(false);
     const [driveBatchProgress, setDriveBatchProgress] = useState<{ current: number; total: number } | null>(null);
 
     useEffect(() => {
         setSelectedDriveIds([]);
+        setLastSelectedDriveId(null);
     }, [driveFolderHistory]);
 
     // Encuesta de Satisfacción (Sprint 2)
@@ -660,21 +663,36 @@ const ClientPortal: React.FC = () => {
         return null;
     };
 
-    const getDirectDriveDownloadUrl = (file: DriveFile) => {
-        return `https://drive.usercontent.google.com/download?id=${file.id}&export=download&confirm=t`;
-    };
+    const triggerDirectDriveDownload = async (file: DriveFile) => {
+        let downloadUrl = `https://drive.usercontent.google.com/download?id=${file.id}&export=download&confirm=t`;
+        try {
+            const res = await fetch(`/api/storage-download?fileId=${encodeURIComponent(file.id)}&json=true`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.downloadUrl) {
+                    downloadUrl = data.downloadUrl;
+                }
+            }
+        } catch (err) {
+            console.error('Error resolviendo bypass en portal:', err);
+        }
 
-    const handleDownloadDriveSingle = (file: DriveFile, e?: React.MouseEvent) => {
-        if (e) e.stopPropagation();
-        const url = getDirectDriveDownloadUrl(file);
         const link = document.createElement('a');
-        link.href = url;
+        link.href = downloadUrl;
         link.download = file.name;
-        link.setAttribute('target', '_blank');
-        link.setAttribute('rel', 'noopener noreferrer');
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    };
+
+    const handleDownloadDriveSingle = async (file: DriveFile, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        setDownloadingDriveSingleId(file.id);
+        try {
+            await triggerDirectDriveDownload(file);
+        } finally {
+            setTimeout(() => setDownloadingDriveSingleId(null), 1000);
+        }
     };
 
     const toggleSelectDriveFile = (fileId: string, e?: React.MouseEvent) => {
@@ -682,6 +700,43 @@ const ClientPortal: React.FC = () => {
         setSelectedDriveIds(prev =>
             prev.includes(fileId) ? prev.filter(id => id !== fileId) : [...prev, fileId]
         );
+        setLastSelectedDriveId(fileId);
+    };
+
+    const handleItemDriveClick = (file: DriveFile, e: React.MouseEvent, currentSortedList: DriveFile[]) => {
+        if (isDriveFolder(file)) return;
+
+        const isCtrl = e.ctrlKey || e.metaKey;
+        const isShift = e.shiftKey;
+        const selectables = currentSortedList.filter(f => !isDriveFolder(f));
+
+        if (isShift && lastSelectedDriveId) {
+            e.preventDefault();
+            const lastIdx = selectables.findIndex(f => f.id === lastSelectedDriveId);
+            const currIdx = selectables.findIndex(f => f.id === file.id);
+
+            if (lastIdx !== -1 && currIdx !== -1) {
+                const start = Math.min(lastIdx, currIdx);
+                const end = Math.max(lastIdx, currIdx);
+                const rangeIds = selectables.slice(start, end + 1).map(f => f.id);
+                setSelectedDriveIds(prev => Array.from(new Set([...prev, ...rangeIds])));
+                return;
+            }
+        }
+
+        if (isCtrl) {
+            setSelectedDriveIds(prev =>
+                prev.includes(file.id) ? prev.filter(id => id !== file.id) : [...prev, file.id]
+            );
+            setLastSelectedDriveId(file.id);
+            return;
+        }
+
+        // Clic normal: alternar selección
+        setSelectedDriveIds(prev =>
+            prev.includes(file.id) ? prev.filter(id => id !== file.id) : [...prev, file.id]
+        );
+        setLastSelectedDriveId(file.id);
     };
 
     const selectableDriveFiles = driveFiles.filter(f => !isDriveFolder(f));
@@ -690,13 +745,18 @@ const ClientPortal: React.FC = () => {
     const handleSelectAllDrive = () => {
         if (isAllDriveSelected) {
             setSelectedDriveIds([]);
+            setLastSelectedDriveId(null);
         } else {
             setSelectedDriveIds(selectableDriveFiles.map(f => f.id));
+            if (selectableDriveFiles.length > 0) {
+                setLastSelectedDriveId(selectableDriveFiles[selectableDriveFiles.length - 1].id);
+            }
         }
     };
 
     const handleClearDriveSelection = () => {
         setSelectedDriveIds([]);
+        setLastSelectedDriveId(null);
     };
 
     const handleDownloadDriveBatch = async () => {
@@ -707,17 +767,9 @@ const ClientPortal: React.FC = () => {
         for (let i = 0; i < toDownload.length; i++) {
             setDriveBatchProgress({ current: i + 1, total: toDownload.length });
             const file = toDownload[i];
-            const url = getDirectDriveDownloadUrl(file);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = file.name;
-            link.setAttribute('target', '_blank');
-            link.setAttribute('rel', 'noopener noreferrer');
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            await triggerDirectDriveDownload(file);
             if (i < toDownload.length - 1) {
-                await new Promise(r => setTimeout(r, 750));
+                await new Promise(r => setTimeout(r, 800));
             }
         }
         setIsDownloadingDriveBatch(false);
@@ -2924,23 +2976,28 @@ const ClientPortal: React.FC = () => {
                                                 {/* Controles de Vista y Orden */}
                                                 <div className="flex items-center gap-2">
                                                     {selectableDriveFiles.length > 0 && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={handleSelectAllDrive}
-                                                            className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                                                                isAllDriveSelected
-                                                                    ? 'bg-nexo-lime/20 border-nexo-lime text-nexo-lime'
-                                                                    : 'bg-black/50 border-white/10 text-zinc-400 hover:text-white'
-                                                            }`}
-                                                            title={isAllDriveSelected ? "Deseleccionar todos" : "Seleccionar todos los archivos"}
-                                                        >
-                                                            <span className={`w-3 h-3 rounded border flex items-center justify-center text-[9px] ${
-                                                                isAllDriveSelected ? 'bg-nexo-lime border-nexo-lime text-black' : 'border-zinc-500'
-                                                            }`}>
-                                                                {isAllDriveSelected && '✓'}
+                                                        <>
+                                                            <button
+                                                                type="button"
+                                                                onClick={handleSelectAllDrive}
+                                                                className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                                    isAllDriveSelected
+                                                                        ? 'bg-nexo-lime/20 border-nexo-lime text-nexo-lime'
+                                                                        : 'bg-black/50 border-white/10 text-zinc-400 hover:text-white'
+                                                                }`}
+                                                                title={isAllDriveSelected ? "Deseleccionar todos" : "Seleccionar todos los archivos"}
+                                                            >
+                                                                <span className={`w-3 h-3 rounded border flex items-center justify-center text-[9px] ${
+                                                                    isAllDriveSelected ? 'bg-nexo-lime border-nexo-lime text-black' : 'border-zinc-500'
+                                                                }`}>
+                                                                    {isAllDriveSelected && '✓'}
+                                                                </span>
+                                                                <span>{isAllDriveSelected ? 'Todos' : 'Seleccionar todos'}</span>
+                                                            </button>
+                                                            <span className="hidden lg:inline text-[10px] text-zinc-400 font-mono bg-white/5 border border-white/10 px-2 py-0.5 rounded">
+                                                                Shift + Clic: Rango | Ctrl + Clic: Salteados
                                                             </span>
-                                                            <span>{isAllDriveSelected ? 'Todos' : 'Seleccionar todos'}</span>
-                                                        </button>
+                                                        </>
                                                     )}
 
                                                     <div className="flex items-center bg-black/50 border border-white/10 rounded-lg p-0.5">
@@ -3076,7 +3133,10 @@ const ClientPortal: React.FC = () => {
                                                                     <div
                                                                         key={file.id}
                                                                         onDoubleClick={folder ? () => handleOpenDriveFolder(file) : undefined}
-                                                                        className={`p-3 sm:p-4 flex items-center justify-between gap-4 transition-colors ${
+                                                                        onClick={(e) => !folder && handleItemDriveClick(file, e, sorted)}
+                                                                        className={`p-3 sm:p-4 flex items-center justify-between gap-4 transition-colors select-none ${
+                                                                            folder ? '' : 'cursor-pointer'
+                                                                        } ${
                                                                             isSelected
                                                                                 ? 'bg-nexo-lime/[0.08] border-l-2 border-nexo-lime'
                                                                                 : 'hover:bg-white/[0.02]'
@@ -3093,14 +3153,19 @@ const ClientPortal: React.FC = () => {
                                                                                             ? 'bg-nexo-lime border-nexo-lime text-black font-extrabold text-[10px] shadow-[0_0_6px_rgba(204,255,0,0.3)]'
                                                                                             : 'border-white/20 bg-black/40 hover:border-white/50 text-transparent'
                                                                                     }`}
-                                                                                    title={isSelected ? "Deseleccionar" : "Seleccionar para descargar"}
+                                                                                    title={isSelected ? "Deseleccionar" : "Seleccionar (Ctrl+Clic o Shift+Clic)"}
                                                                                 >
                                                                                     ✓
                                                                                 </button>
                                                                             )}
 
                                                                             <div
-                                                                                onClick={folder ? () => handleOpenDriveFolder(file) : undefined}
+                                                                                onClick={(e) => {
+                                                                                    if (folder) {
+                                                                                        e.stopPropagation();
+                                                                                        handleOpenDriveFolder(file);
+                                                                                    }
+                                                                                }}
                                                                                 className={`flex items-center gap-3 min-w-0 flex-1 ${folder ? 'cursor-pointer' : ''}`}
                                                                             >
                                                                                 <span className="text-xl flex-shrink-0">{folder ? '📁' : isVid ? '🎬' : '📦'}</span>
@@ -3123,7 +3188,7 @@ const ClientPortal: React.FC = () => {
                                                                                 </div>
                                                                             </div>
                                                                         </div>
-                                                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                                                        <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                                                                             {folder ? (
                                                                                 <button
                                                                                     type="button"
@@ -3146,10 +3211,18 @@ const ClientPortal: React.FC = () => {
                                                                                     <button
                                                                                         type="button"
                                                                                         onClick={(e) => handleDownloadDriveSingle(file, e)}
-                                                                                        className="bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase px-3.5 py-1.5 rounded transition-all cursor-pointer"
+                                                                                        disabled={downloadingDriveSingleId === file.id}
+                                                                                        className="bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase px-3.5 py-1.5 rounded transition-all cursor-pointer disabled:opacity-75 flex items-center gap-1"
                                                                                         title="Descargar archivo directamente"
                                                                                     >
-                                                                                        Descargar
+                                                                                        {downloadingDriveSingleId === file.id ? (
+                                                                                            <>
+                                                                                                <div className="w-2.5 h-2.5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                                                                                                <span>Iniciando...</span>
+                                                                                            </>
+                                                                                        ) : (
+                                                                                            <span>Descargar</span>
+                                                                                        )}
                                                                                     </button>
                                                                                 </>
                                                                             )}
@@ -3206,13 +3279,24 @@ const ClientPortal: React.FC = () => {
                                                             return (
                                                                 <div
                                                                     key={file.id}
-                                                                    className={`bg-black/40 rounded-xl overflow-hidden transition-all flex flex-col group relative ${
+                                                                    onClick={(e) => !folder && handleItemDriveClick(file, e, sorted)}
+                                                                    className={`bg-black/40 rounded-xl overflow-hidden transition-all flex flex-col group relative select-none ${
+                                                                        folder ? '' : 'cursor-pointer'
+                                                                    } ${
                                                                         isSelected
                                                                             ? 'border-2 border-nexo-lime shadow-[0_0_20px_rgba(204,255,0,0.2)] ring-1 ring-nexo-lime/50'
                                                                             : 'border border-white/10 hover:border-nexo-lime/40'
                                                                     }`}
                                                                 >
-                                                                    <div className="relative aspect-video bg-gradient-to-br from-zinc-900 via-black to-zinc-950 flex items-center justify-center overflow-hidden border-b border-white/5">
+                                                                    <div
+                                                                        className="relative aspect-video bg-gradient-to-br from-zinc-900 via-black to-zinc-950 flex items-center justify-center overflow-hidden border-b border-white/5"
+                                                                        onClick={(e) => {
+                                                                            if (folder) {
+                                                                                e.stopPropagation();
+                                                                                handleOpenDriveFolder(file);
+                                                                            }
+                                                                        }}
+                                                                    >
                                                                         {file.thumbnailLink ? (
                                                                             <img
                                                                                 src={file.thumbnailLink.includes('=w') || file.thumbnailLink.includes('=s') ? file.thumbnailLink : `https://lh3.googleusercontent.com/d/${file.id}=w640`}
@@ -3246,14 +3330,18 @@ const ClientPortal: React.FC = () => {
                                                                                     ? 'bg-nexo-lime border-nexo-lime text-black font-extrabold text-xs shadow-[0_0_8px_rgba(204,255,0,0.4)]'
                                                                                     : 'bg-black/60 backdrop-blur-md border-white/20 hover:border-white text-transparent opacity-80 group-hover:opacity-100'
                                                                             }`}
-                                                                            title={isSelected ? "Deseleccionar" : "Seleccionar"}
+                                                                            title={isSelected ? "Deseleccionar" : "Seleccionar (Ctrl+Clic o Shift+Clic)"}
                                                                         >
                                                                             ✓
                                                                         </button>
 
                                                                         {isVid && (
                                                                             <button
-                                                                                onClick={() => setPreviewDriveVideo(file)}
+                                                                                type="button"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setPreviewDriveVideo(file);
+                                                                                }}
                                                                                 className="absolute inset-0 m-auto w-11 h-11 rounded-full bg-nexo-lime text-black flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer"
                                                                                 title="Previsualizar video"
                                                                             >
@@ -3263,7 +3351,16 @@ const ClientPortal: React.FC = () => {
                                                                     </div>
                                                                     <div className="p-3.5 flex-1 flex flex-col justify-between space-y-3">
                                                                         <div className="space-y-1">
-                                                                            <h5 className="font-bold text-xs text-white truncate" title={file.name}>
+                                                                            <h5
+                                                                                className={`font-bold text-xs text-white truncate ${folder ? 'cursor-pointer' : ''}`}
+                                                                                title={file.name}
+                                                                                onClick={(e) => {
+                                                                                    if (folder) {
+                                                                                        e.stopPropagation();
+                                                                                        handleOpenDriveFolder(file);
+                                                                                    }
+                                                                                }}
+                                                                            >
                                                                                 {file.name}
                                                                             </h5>
                                                                             {formatFileSize(file.size) && (
@@ -3273,9 +3370,10 @@ const ClientPortal: React.FC = () => {
                                                                                 </div>
                                                                             )}
                                                                         </div>
-                                                                        <div className="flex items-center gap-2">
+                                                                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                                                                             {isVid && (
                                                                                 <button
+                                                                                    type="button"
                                                                                     onClick={() => setPreviewDriveVideo(file)}
                                                                                     className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-[10px] uppercase tracking-wider py-1.5 rounded transition-all text-center cursor-pointer"
                                                                                 >
@@ -3285,10 +3383,18 @@ const ClientPortal: React.FC = () => {
                                                                             <button
                                                                                 type="button"
                                                                                 onClick={(e) => handleDownloadDriveSingle(file, e)}
-                                                                                className="flex-1 bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase tracking-wider py-1.5 rounded transition-all text-center cursor-pointer"
+                                                                                disabled={downloadingDriveSingleId === file.id}
+                                                                                className="flex-1 bg-nexo-lime hover:bg-[#b3ff00] text-black font-extrabold text-[10px] uppercase tracking-wider py-1.5 rounded transition-all text-center cursor-pointer disabled:opacity-75 flex items-center justify-center gap-1"
                                                                                 title="Descargar archivo directamente"
                                                                             >
-                                                                                Descargar
+                                                                                {downloadingDriveSingleId === file.id ? (
+                                                                                    <>
+                                                                                        <div className="w-2.5 h-2.5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                                                                                        <span>Iniciando...</span>
+                                                                                    </>
+                                                                                ) : (
+                                                                                    <span>Descargar</span>
+                                                                                )}
                                                                             </button>
                                                                         </div>
                                                                     </div>
