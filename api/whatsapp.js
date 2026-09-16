@@ -519,11 +519,17 @@ Te recordamos que además de coberturas, hacemos:
                  instruccionSaludo = `1. **CLIENTE RECONOCIDO**: Ya sabes que es ${firstName}.\n2. **PRESENTACIÓN**: Saludalo EXACTAMENTE con esta frase: "${currentGreeting}" e incluye inmediatamente el tag $$SHOW_MENU$$. NO agregues '¿en qué te puedo ayudar?' porque el menú con botones ya se lo ofrece automáticamente.`;
             }
         } else {
-            instruccionSaludo = `1. **NUEVO CONTACTO**: No sabes su nombre. En el primer mensaje EXACTAMENTE decí esto: "¡Bienvenido a NexoFilm, un placer atenderte! ¿Me podrías decir tu nombre por favor?".\n2. IMPORTANTE: NO MANDES EL MENU TODAVÍA. Esperá a que te diga su nombre.`;
+            const welcomeMessages = {
+                es: `¡Hola! Muchas gracias por contactarnos a NexoFilm 🎬. Es un placer saludarte. ¿Me podrías decir tu nombre, por favor?`,
+                en: `Hello! Thank you for contacting NexoFilm 🎬. Great to connect with you. May I know your name, please?`,
+                pt: `Olá! Muito obrigado por entrar em contato com a NexoFilm 🎬. É um prazer falar com você. Poderia me dizer seu nome, por favor?`
+            };
+            const welcomeText = welcomeMessages[lang] || welcomeMessages.es;
+            instruccionSaludo = `1. **NUEVO CONTACTO**: No sabés su nombre todavía.\n2. **PRESENTACIÓN CORDIAL Y AGRADECIDA**: Decí EXACTAMENTE esta frase amable y cálida: "${welcomeText}".\n3. PROHIBIDO: NO agregues el tag $$SHOW_MENU$$ ni envíes el menú de botones todavía. Primero esperá a que el cliente te responda su nombre.`;
         }
     } else {
         const knownName = (leadData?.name && leadData.name !== 'Sin nombre') ? leadData.name.trim().split(/[\s,.-]+/)[0] : "";
-        instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName || "el cliente"}. Si te acaba de decir su nombre por primera vez, saludalo cálidamente por su nombre e INCLUYE el tag $$SHOW_MENU$$ (sin agregar '¿en qué te puedo ayudar?' porque el menú ya lo tiene). Si ya le habías dado el menú, respondé cálidamente a sus respuestas valorando su idea, pero avanzá con la siguiente pregunta. NO repitas su nombre en cada mensaje.`;
+        instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName || "el cliente"}. Si te acaba de decir su nombre por primera vez, saludalo cálidamente por su nombre (ej: "¡Un gusto ${knownName || 'saludarte'}! ¿En qué te podemos ayudar hoy?") e INCLUYE el tag $$SHOW_MENU$$. Si ya seleccionó una opción o están en medio del flujo de presupuesto, respondé con calidez validando su proyecto y avanzá con la siguiente pregunta. NO repitas su nombre en cada mensaje.`;
     }
 
     let confirmacionEmail = `      - Pedile el correo de forma cálida y natural. Ejemplo: "Para prepararte la propuesta, ¿me pasás tu mail?".\n      - Si el cliente no quiere dar el mail o dice que lo tiene lleno, NO insistás. En cambio, respondé algo como: "No hay problema, un asesor te va a contactar directamente por acá o por teléfono." y a continuación emite el HANDOFF_JSON igual, poniendo email como null.\n      - NUNCA presiones ni repitás la misma frase varias veces. Siempre hay una salida amable.`;
@@ -727,6 +733,11 @@ Te recordamos que además de coberturas, hacemos:
         if (!showMenu && keywords.some(k => final.toLowerCase().includes(k))) {
             showMenu = true;
             console.log("[FAIL-SAFE] Menú activado por palabras clave.");
+        }
+
+        // Si es el primer mensaje de un usuario nuevo sin nombre en base de datos, NUNCA enviar menú de botones todavía
+        if (isFirstMessage && (!leadData?.name || leadData.name === 'Sin nombre')) {
+            showMenu = false;
         }
 
         if (final && final.trim().length > 0) {
