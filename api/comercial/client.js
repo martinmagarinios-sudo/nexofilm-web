@@ -586,6 +586,54 @@ export default async function handler(req, res) {
                 }
             }
 
+            // Consulta oficial a Google Drive API v3 usando GOOGLE_API_KEY
+            // Permite paginación completa (1000 por página) para carpetas grandes de 200-800+ archivos
+            async function fetchDriveFilesWithApiKey(driveFolderId, apiKey) {
+                if (!driveFolderId || !apiKey) return [];
+                try {
+                    const qApiKey = `'${driveFolderId}' in parents and trashed = false`;
+                    const fieldsApiKey = 'nextPageToken,files(id,name,mimeType,webViewLink,thumbnailLink,webContentLink,size,createdTime)';
+                    const allApiFiles = [];
+                    let apiPageToken = null;
+
+                    do {
+                        const pageParam = apiPageToken ? `&pageToken=${encodeURIComponent(apiPageToken)}` : '';
+                        const apiUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(qApiKey)}&fields=${encodeURIComponent(fieldsApiKey)}&pageSize=1000&key=${apiKey}${pageParam}`;
+
+                        const apiRes = await fetch(apiUrl);
+                        const apiData = await apiRes.json();
+
+                        if (!apiRes.ok || apiData.error) {
+                            console.error('[Drive API Key error]:', apiData.error?.message || apiRes.status);
+                            break;
+                        }
+
+                        if (Array.isArray(apiData.files)) {
+                            for (const f of apiData.files) {
+                                const isF = f.mimeType === 'application/vnd.google-apps.folder';
+                                allApiFiles.push({
+                                    id: f.id,
+                                    name: f.name,
+                                    mimeType: f.mimeType,
+                                    isFolder: isF,
+                                    size: isF ? null : (f.size || null),
+                                    createdTime: f.createdTime,
+                                    webViewLink: f.webViewLink || (isF ? `https://drive.google.com/drive/folders/${f.id}` : `https://drive.google.com/file/d/${f.id}/view?usp=sharing`),
+                                    thumbnailLink: isF ? null : (f.thumbnailLink || `https://lh3.googleusercontent.com/d/${f.id}=w640`),
+                                    webContentLink: isF ? null : (f.webContentLink || `https://drive.usercontent.google.com/download?id=${f.id}&export=download&confirm=t`)
+                                });
+                            }
+                        }
+                        apiPageToken = apiData.nextPageToken || null;
+                    } while (apiPageToken);
+
+                    return allApiFiles;
+                } catch (err) {
+                    console.error('[fetchDriveFilesWithApiKey error]:', err.message);
+                    return [];
+                }
+            }
+
             // GET Acción: Listar archivos para Nexo Storage (Público y aislado de finanzas)
             if (action === 'storage') {
                 const requestedFolderId = req.query.folderId ? extractDriveFolderId(req.query.folderId) : null;
@@ -600,51 +648,24 @@ export default async function handler(req, res) {
                     status: project.status
                 };
 
-                // 1. Si no hay credenciales Service Account, intentar con API Key pública primero
+                // 1. Si no hay credenciales Service Account, intentar con API Key de Google
                 if (!clientEmail || !privateKey) {
                     const apiKey = process.env.GOOGLE_API_KEY;
 
-                    // ── Opción A: Drive API v3 con API Key pública (para carpetas compartidas) ──
-                    // Soporta paginación completa — sin límite de 50 del scraping HTML.
+                    // Opción A: API oficial de Drive v3 con API Key (soporta hasta miles de archivos y paginación)
                     if (driveFolderId && apiKey) {
-                        try {
-                            const qApiKey = `'${driveFolderId}' in parents and trashed = false`;
-                            const fieldsApiKey = 'nextPageToken,files(id,name,mimeType,webViewLink,thumbnailLink,webContentLink,size,createdTime)';
-                            const allApiFiles = [];
-                            let apiPageToken = null;
-
-                            do {
-                                const pageParam = apiPageToken ? `&pageToken=${encodeURIComponent(apiPageToken)}` : '';
-                                const apiUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(qApiKey)}&fields=${encodeURIComponent(fieldsApiKey)}&pageSize=1000&key=${apiKey}${pageParam}`;
-
-                                const apiRes = await fetch(apiUrl);
-                                const apiData = await apiRes.json();
-
-                                if (!apiRes.ok || apiData.error) {
-                                    console.error('[storage] API Key Drive error:', apiData.error?.message || apiRes.status);
-                                    break;
-                                }
-
-                                if (Array.isArray(apiData.files)) {
-                                    allApiFiles.push(...apiData.files);
-                                }
-                                apiPageToken = apiData.nextPageToken || null;
-                            } while (apiPageToken);
-
-                            if (allApiFiles.length > 0) {
-                                return res.status(200).json({
-                                    success: true,
-                                    isMock: false,
-                                    project: projectPublicInfo,
-                                    files: allApiFiles
-                                });
-                            }
-                        } catch (apiKeyErr) {
-                            console.error('[storage] Error usando GOOGLE_API_KEY, intentando scraping:', apiKeyErr.message);
+                        const apiFiles = await fetchDriveFilesWithApiKey(driveFolderId, apiKey);
+                        if (apiFiles.length > 0) {
+                            return res.status(200).json({
+                                success: true,
+                                isMock: false,
+                                project: projectPublicInfo,
+                                files: apiFiles
+                            });
                         }
                     }
 
-                    // ── Opción B: Scraping HTML (fallback, máx ~50 archivos) ──
+                    // Opción B: Scraping HTML (fallback limitado a ~50 archivos)
                     if (driveFolderId) {
                         const publicFiles = await fetchPublicDriveFolderFiles(driveFolderId);
                         if (publicFiles.length > 0) {
@@ -656,6 +677,7 @@ export default async function handler(req, res) {
                             });
                         }
                     }
+
 
                     // Fallback solo si la carpeta no es accesible
                     const mockFiles = [
@@ -751,6 +773,18 @@ export default async function handler(req, res) {
                 const privateKey = process.env.GOOGLE_PRIVATE_KEY;
 
                 if (!driveFolderId || !clientEmail || !privateKey) {
+                    const apiKey = process.env.GOOGLE_API_KEY;
+                    if (driveFolderId && apiKey) {
+                        const apiFiles = await fetchDriveFilesWithApiKey(driveFolderId, apiKey);
+                        if (apiFiles.length > 0) {
+                            return res.status(200).json({
+                                success: true,
+                                isMock: false,
+                                files: apiFiles
+                            });
+                        }
+                    }
+
                     if (driveFolderId) {
                         const publicFiles = await fetchPublicDriveFolderFiles(driveFolderId);
                         if (publicFiles.length > 0) {
@@ -761,6 +795,7 @@ export default async function handler(req, res) {
                             });
                         }
                     }
+
                     // MOCK Fallback
                     const mockFiles = [
                         {
