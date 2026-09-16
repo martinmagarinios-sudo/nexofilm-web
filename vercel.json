@@ -27,6 +27,9 @@
         "api/storage-og.js": {
             "includeFiles": "dist/index.html",
             "maxDuration": 30
+        },
+        "api/storage-zip.js": {
+            "maxDuration": 60
         }
 
     },

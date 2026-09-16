@@ -247,22 +247,62 @@ const StorageDelivery: React.FC = () => {
         setLastSelectedId(null);
     };
 
+    // Descarga múltiples archivos como un único ZIP desde el servidor.
+    // Evita los popups de confirmación del navegador por cada archivo.
     const handleDownloadBatch = async () => {
         const toDownload = files.filter(f => selectedIds.includes(f.id) && !isFolder(f));
         if (toDownload.length === 0) return;
 
-        setIsDownloadingBatch(true);
-        for (let i = 0; i < toDownload.length; i++) {
-            setBatchProgress({ current: i + 1, total: toDownload.length });
-            triggerDirectDownload(toDownload[i]);
-            if (i < toDownload.length - 1) {
-                // Pequeño delay entre descargas para no saturar el navegador
-                await new Promise(r => setTimeout(r, 800));
-            }
+        // Si es solo 1 archivo, descargar directo sin ZIP
+        if (toDownload.length === 1) {
+            handleDownloadSingle(toDownload[0]);
+            return;
         }
-        setIsDownloadingBatch(false);
-        setBatchProgress(null);
+
+        setIsDownloadingBatch(true);
+        setBatchProgress({ current: 0, total: toDownload.length });
+
+        try {
+            const projectName = data?.project?.name || 'NexoFilm_Storage';
+            const safeProject = projectName.replace(/[^\w\s\-áéíóúÁÉÍÓÚñÑ]/g, '_');
+            const zipName = `NexoFilm_${safeProject}_${toDownload.length}_archivos.zip`;
+
+            const res = await fetch('/api/storage-zip', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    files: toDownload.map(f => ({ id: f.id, name: f.name })),
+                    zipName
+                })
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ error: 'Error desconocido' }));
+                throw new Error(err.error || `HTTP ${res.status}`);
+            }
+
+            // Recibir el ZIP y disparar la descarga
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = zipName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            setBatchProgress({ current: toDownload.length, total: toDownload.length });
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Error desconocido';
+            console.error('[StorageDelivery] Error descargando ZIP:', msg);
+            alert(`No se pudo generar el ZIP: ${msg}`);
+        } finally {
+            setIsDownloadingBatch(false);
+            setBatchProgress(null);
+        }
     };
+
 
 
     // Cerrar modal con ESC
