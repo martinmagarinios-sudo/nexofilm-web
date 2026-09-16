@@ -132,7 +132,7 @@ const renderDescription = (text: string, forPrint = false) => {
                 <div key={i} style={{
                     fontWeight: '700',
                     fontSize: forPrint ? '11px' : '13px',
-                    color: '#ffffff',
+                    color: forPrint ? '#111827' : '#ffffff',
                     marginBottom: forPrint ? '5px' : '6px',
                     fontFamily: "'Noto Sans JP', -apple-system, BlinkMacSystemFont, Arial, sans-serif",
                     letterSpacing: forPrint ? '0px' : '0.01em',
@@ -146,12 +146,12 @@ const renderDescription = (text: string, forPrint = false) => {
                     alignItems: 'flex-start',
                     gap: forPrint ? '6px' : '7px',
                     fontSize: forPrint ? '9.5px' : '11.5px',
-                    color: forPrint ? '#d0d0d0' : '#c4c4c4',
-                    lineHeight: forPrint ? '1.45' : '1.6',
+                    color: forPrint ? '#374151' : '#c4c4c4',
+                    lineHeight: forPrint ? '1.5' : '1.6',
                     marginBottom: forPrint ? '3px' : '3px',
                     fontFamily: "'Noto Sans JP', -apple-system, BlinkMacSystemFont, Arial, sans-serif",
                 }}>
-                    <span style={{ color: '#bfe023', fontSize: forPrint ? '9px' : '10px', marginTop: forPrint ? '1px' : '3px', flexShrink: 0, fontWeight: '900' }}>○</span>
+                    <span style={{ color: forPrint ? '#65a30d' : '#bfe023', fontSize: forPrint ? '9px' : '10px', marginTop: forPrint ? '1px' : '3px', flexShrink: 0, fontWeight: '900' }}>○</span>
                     <span>{content}</span>
                 </div>
             );
@@ -159,8 +159,8 @@ const renderDescription = (text: string, forPrint = false) => {
             result.push(
                 <div key={i} style={{
                     fontSize: forPrint ? '9.5px' : '11.5px',
-                    color: forPrint ? '#c0c0c0' : '#b0b0b0',
-                    lineHeight: forPrint ? '1.45' : '1.6',
+                    color: forPrint ? '#4b5563' : '#b0b0b0',
+                    lineHeight: forPrint ? '1.5' : '1.6',
                     marginBottom: forPrint ? '3px' : '3px',
                     fontFamily: "'Noto Sans JP', -apple-system, BlinkMacSystemFont, Arial, sans-serif",
                 }}>{content}</div>
@@ -3843,20 +3843,20 @@ const ClientPortal: React.FC = () => {
                 const shouldBreakBeforeOptionals = extraItems.length > 0 && (baseLines > 6 || totalLines > 10 || extraItems.length >= 2);
 
                 return (
-                    <div id="print-proposal" style={{ fontFamily: "'Noto Sans JP', -apple-system, BlinkMacSystemFont, Arial, sans-serif", backgroundColor: '#000000', color: '#ffffff', padding: 0, boxSizing: 'border-box', width: '100%', margin: '0 auto' }}>
+                    <div id="print-proposal" style={{ fontFamily: "'Noto Sans JP', -apple-system, BlinkMacSystemFont, Arial, sans-serif", backgroundColor: '#ffffff', color: '#111827', padding: 0, boxSizing: 'border-box', width: '100%', margin: '0 auto' }}>
                         
-                        {/* ── MEMBRETE CON AIRE ELEGANTE ── */}
+                        {/* ── MEMBRETE BLANCO CORPORATIVO ── */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '2px solid #bfe023', paddingTop: '4px', paddingBottom: '14px', marginBottom: '16px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', justifyItems: 'flex-end' }}>
-                                <img src="/img/logo.png" alt="NexoFilm" style={{ height: '36px', width: 'auto', filter: 'brightness(0) invert(1)', objectFit: 'contain', objectPosition: 'left bottom' }} />
-                                <p style={{ fontSize: '8.5px', color: '#888888', fontWeight: '700', margin: '6px 0 0 0', textTransform: 'uppercase', letterSpacing: '2.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Productora Audiovisual</p>
+                                <img src="/img/logo-dark.png" alt="NexoFilm" style={{ height: '38px', width: 'auto', objectFit: 'contain', objectPosition: 'left bottom' }} />
+                                <p style={{ fontSize: '8.5px', color: '#6b7280', fontWeight: '700', margin: '6px 0 0 0', textTransform: 'uppercase', letterSpacing: '2.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Productora Audiovisual</p>
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                                <div style={{ display: 'inline-block', background: 'rgba(191, 224, 35, 0.1)', border: '1px solid rgba(191, 224, 35, 0.3)', borderRadius: '4px', padding: '2px 8px', marginBottom: '5px' }}>
-                                    <span style={{ fontSize: '8px', color: '#bfe023', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Documento Oficial</span>
+                                <div style={{ display: 'inline-block', background: '#f4fce3', border: '1px solid #d9f99d', borderRadius: '4px', padding: '2px 8px', marginBottom: '5px' }}>
+                                    <span style={{ fontSize: '8px', color: '#4d7c0f', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Documento Oficial</span>
                                 </div>
-                                <h2 style={{ fontSize: '18px', fontWeight: '900', color: '#bfe023', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.8px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Propuesta Comercial</h2>
-                                <p style={{ fontSize: '9.5px', color: '#a0a0a0', margin: 0, fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>
+                                <h2 style={{ fontSize: '18px', fontWeight: '900', color: '#111827', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.8px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Propuesta Comercial</h2>
+                                <p style={{ fontSize: '9.5px', color: '#6b7280', margin: 0, fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>
                                     Fecha: {new Date().toLocaleDateString('es-AR')} &nbsp;|&nbsp; Ref: #{project.id.slice(0, 8).toUpperCase()}
                                 </p>
                             </div>
@@ -3864,25 +3864,25 @@ const ClientPortal: React.FC = () => {
 
                         {/* ── CLIENTE + PROYECTO ── */}
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                            <div style={{ background: '#0d0d0d', border: '1px solid #222222', padding: '11px 14px', borderRadius: '6px' }}>
-                                <h3 style={{ fontSize: '8.5px', fontWeight: '800', color: '#bfe023', textTransform: 'uppercase', letterSpacing: '1.2px', borderBottom: '1px solid #1f1f1f', paddingBottom: '5px', margin: '0 0 8px 0', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Datos del Cliente</h3>
+                            <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', padding: '11px 14px', borderRadius: '6px' }}>
+                                <h3 style={{ fontSize: '8.5px', fontWeight: '800', color: '#4d7c0f', textTransform: 'uppercase', letterSpacing: '1.2px', borderBottom: '1px solid #e5e7eb', paddingBottom: '5px', margin: '0 0 8px 0', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Datos del Cliente</h3>
                                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                     <tbody>
-                                        <tr><td style={{ fontSize: '9.5px', color: '#777777', paddingBottom: '4px', width: '70px', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Contacto</td><td style={{ fontSize: '9.5px', color: '#ffffff', paddingBottom: '4px', fontWeight: '700', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{project.contact_name}</td></tr>
-                                        {project.company_name && <tr><td style={{ fontSize: '9.5px', color: '#777777', paddingBottom: '4px', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Empresa</td><td style={{ fontSize: '9.5px', color: '#ffffff', paddingBottom: '4px', fontWeight: '700', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{project.company_name}</td></tr>}
-                                        <tr><td style={{ fontSize: '9.5px', color: '#777777', paddingBottom: '4px', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Email</td><td style={{ fontSize: '9.5px', color: '#aaaaaa', paddingBottom: '4px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{project.client_email}</td></tr>
-                                        {project.client_phone && <tr><td style={{ fontSize: '9.5px', color: '#777777', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>WhatsApp</td><td style={{ fontSize: '9.5px', color: '#aaaaaa', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>+{project.client_phone.replace(/^\++/, '')}</td></tr>}
+                                        <tr><td style={{ fontSize: '9.5px', color: '#6b7280', paddingBottom: '4px', width: '70px', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Contacto</td><td style={{ fontSize: '9.5px', color: '#111827', paddingBottom: '4px', fontWeight: '700', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{project.contact_name}</td></tr>
+                                        {project.company_name && <tr><td style={{ fontSize: '9.5px', color: '#6b7280', paddingBottom: '4px', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Empresa</td><td style={{ fontSize: '9.5px', color: '#111827', paddingBottom: '4px', fontWeight: '700', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{project.company_name}</td></tr>}
+                                        <tr><td style={{ fontSize: '9.5px', color: '#6b7280', paddingBottom: '4px', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Email</td><td style={{ fontSize: '9.5px', color: '#374151', paddingBottom: '4px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{project.client_email}</td></tr>
+                                        {project.client_phone && <tr><td style={{ fontSize: '9.5px', color: '#6b7280', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>WhatsApp</td><td style={{ fontSize: '9.5px', color: '#374151', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>+{project.client_phone.replace(/^\++/, '')}</td></tr>}
                                     </tbody>
                                 </table>
                             </div>
-                            <div style={{ background: '#0d0d0d', border: '1px solid #222222', padding: '11px 14px', borderRadius: '6px' }}>
-                                <h3 style={{ fontSize: '8.5px', fontWeight: '800', color: '#bfe023', textTransform: 'uppercase', letterSpacing: '1.2px', borderBottom: '1px solid #1f1f1f', paddingBottom: '5px', margin: '0 0 8px 0', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Detalles de Propuesta</h3>
+                            <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', padding: '11px 14px', borderRadius: '6px' }}>
+                                <h3 style={{ fontSize: '8.5px', fontWeight: '800', color: '#4d7c0f', textTransform: 'uppercase', letterSpacing: '1.2px', borderBottom: '1px solid #e5e7eb', paddingBottom: '5px', margin: '0 0 8px 0', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Detalles de Propuesta</h3>
                                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                     <tbody>
-                                        <tr><td style={{ fontSize: '9.5px', color: '#777777', paddingBottom: '4px', width: '75px', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Proyecto</td><td style={{ fontSize: '9.5px', color: '#ffffff', paddingBottom: '4px', fontWeight: '700', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{project.title}</td></tr>
-                                        <tr><td style={{ fontSize: '9.5px', color: '#777777', paddingBottom: '4px', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Estado</td><td style={{ fontSize: '9.5px', color: '#bfe023', paddingBottom: '4px', fontWeight: '700', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{project.status === 'approved' ? 'Aprobado' : project.status === 'production' ? 'En Producción' : project.status === 'delivered' ? 'Entregado' : 'Pendiente de Aprobación'}</td></tr>
-                                        <tr><td style={{ fontSize: '9.5px', color: '#777777', paddingBottom: '4px', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Moneda</td><td style={{ fontSize: '9.5px', color: '#aaaaaa', paddingBottom: '4px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{project.currency || 'ARS'}</td></tr>
-                                        <tr><td style={{ fontSize: '9.5px', color: '#777777', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Validez</td><td style={{ fontSize: '9.5px', color: '#aaaaaa', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>15 días corridos</td></tr>
+                                        <tr><td style={{ fontSize: '9.5px', color: '#6b7280', paddingBottom: '4px', width: '75px', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Proyecto</td><td style={{ fontSize: '9.5px', color: '#111827', paddingBottom: '4px', fontWeight: '700', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{project.title}</td></tr>
+                                        <tr><td style={{ fontSize: '9.5px', color: '#6b7280', paddingBottom: '4px', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Estado</td><td style={{ fontSize: '9.5px', color: '#15803d', paddingBottom: '4px', fontWeight: '700', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{project.status === 'approved' ? 'Aprobado' : project.status === 'production' ? 'En Producción' : project.status === 'delivered' ? 'Entregado' : 'Pendiente de Aprobación'}</td></tr>
+                                        <tr><td style={{ fontSize: '9.5px', color: '#6b7280', paddingBottom: '4px', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Moneda</td><td style={{ fontSize: '9.5px', color: '#374151', paddingBottom: '4px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{project.currency || 'ARS'}</td></tr>
+                                        <tr><td style={{ fontSize: '9.5px', color: '#6b7280', fontFamily: "'Noto Sans JP', Arial, sans-serif", verticalAlign: 'top' }}>Validez</td><td style={{ fontSize: '9.5px', color: '#374151', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>15 días corridos</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -3890,24 +3890,24 @@ const ClientPortal: React.FC = () => {
 
                         {/* ── ESPECIFICACIONES DEL RODAJE ── */}
                         {(project.event_date || project.location || project.coverage_types) && (
-                            <div style={{ background: '#0d0d0d', border: '1px solid #222222', padding: '11px 14px', borderRadius: '6px', marginBottom: '16px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                                <h3 style={{ fontSize: '8.5px', fontWeight: '800', color: '#bfe023', textTransform: 'uppercase', letterSpacing: '1.2px', borderBottom: '1px solid #1f1f1f', paddingBottom: '5px', margin: '0 0 8px 0', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>
+                            <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', padding: '11px 14px', borderRadius: '6px', marginBottom: '16px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                                <h3 style={{ fontSize: '8.5px', fontWeight: '800', color: '#4d7c0f', textTransform: 'uppercase', letterSpacing: '1.2px', borderBottom: '1px solid #e5e7eb', paddingBottom: '5px', margin: '0 0 8px 0', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>
                                     Especificaciones de Rodaje / Cobertura
                                 </h3>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px 14px' }}>
-                                    {project.event_date && <div style={{ fontSize: '9.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}><span style={{ color: '#777' }}>Fecha: </span><strong style={{ color: '#fff' }}>{formatDateAR(project.event_date)}</strong></div>}
-                                    {project.event_time && <div style={{ fontSize: '9.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}><span style={{ color: '#777' }}>Horario: </span><strong style={{ color: '#fff' }}>{project.event_time}{project.event_end_time ? ` a ${project.event_end_time}` : ''}</strong></div>}
-                                    {project.coverage_hours != null && <div style={{ fontSize: '9.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}><span style={{ color: '#777' }}>Jornada: </span><strong style={{ color: '#fff' }}>{project.coverage_hours} hs</strong></div>}
-                                    {project.guests_count != null && <div style={{ fontSize: '9.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}><span style={{ color: '#777' }}>Invitados: </span><strong style={{ color: '#fff' }}>{project.guests_count} pers.</strong></div>}
-                                    {project.location && <div style={{ fontSize: '9.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif", gridColumn: 'span 4', marginTop: '3px' }}><span style={{ color: '#777' }}>Locación: </span><strong style={{ color: '#fff' }}>{project.location}</strong></div>}
-                                    {project.coverage_types && project.coverage_types.length > 0 && <div style={{ fontSize: '9.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif", gridColumn: 'span 4' }}><span style={{ color: '#777' }}>Servicios: </span><strong style={{ color: '#fff', textTransform: 'capitalize' }}>{project.coverage_types.join(', ')}</strong></div>}
+                                    {project.event_date && <div style={{ fontSize: '9.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}><span style={{ color: '#6b7280' }}>Fecha: </span><strong style={{ color: '#111827' }}>{formatDateAR(project.event_date)}</strong></div>}
+                                    {project.event_time && <div style={{ fontSize: '9.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}><span style={{ color: '#6b7280' }}>Horario: </span><strong style={{ color: '#111827' }}>{project.event_time}{project.event_end_time ? ` a ${project.event_end_time}` : ''}</strong></div>}
+                                    {project.coverage_hours != null && <div style={{ fontSize: '9.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}><span style={{ color: '#6b7280' }}>Jornada: </span><strong style={{ color: '#111827' }}>{project.coverage_hours} hs</strong></div>}
+                                    {project.guests_count != null && <div style={{ fontSize: '9.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}><span style={{ color: '#6b7280' }}>Invitados: </span><strong style={{ color: '#111827' }}>{project.guests_count} pers.</strong></div>}
+                                    {project.location && <div style={{ fontSize: '9.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif", gridColumn: 'span 4', marginTop: '3px' }}><span style={{ color: '#6b7280' }}>Locación: </span><strong style={{ color: '#111827' }}>{project.location}</strong></div>}
+                                    {project.coverage_types && project.coverage_types.length > 0 && <div style={{ fontSize: '9.5px', fontFamily: "'Noto Sans JP', Arial, sans-serif", gridColumn: 'span 4' }}><span style={{ color: '#6b7280' }}>Servicios: </span><strong style={{ color: '#111827', textTransform: 'capitalize' }}>{project.coverage_types.join(', ')}</strong></div>}
                                 </div>
                             </div>
                         )}
 
                         {/* ── TABLA DE PRESUPUESTO BASE ── */}
                         <div style={{ marginBottom: '16px' }}>
-                            <h3 style={{ fontSize: '9px', fontWeight: '800', color: '#bfe023', textTransform: 'uppercase', letterSpacing: '1.2px', paddingBottom: '6px', margin: '0 0 8px 0', fontFamily: "'Noto Sans JP', Arial, sans-serif", borderBottom: '1px solid #222222', pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
+                            <h3 style={{ fontSize: '9px', fontWeight: '800', color: '#111827', textTransform: 'uppercase', letterSpacing: '1.2px', paddingBottom: '6px', margin: '0 0 8px 0', fontFamily: "'Noto Sans JP', Arial, sans-serif", borderBottom: '1px solid #e5e7eb', pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
                                 Presupuesto de Servicios (Base)
                             </h3>
 
@@ -3916,7 +3916,7 @@ const ClientPortal: React.FC = () => {
                                 const bi = budget.items[0];
                                 const baseAmt = bi.quantity * bi.unit_price;
                                 return (
-                                    <div style={{ background: 'rgba(191,224,35,0.02)', border: '1px solid rgba(191,224,35,0.15)', borderRadius: '6px', overflow: 'hidden' }}>
+                                    <div style={{ border: '1px solid #e5e7eb', borderRadius: '6px', overflow: 'hidden' }}>
                                         <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
                                             <colgroup>
                                                 <col style={{ width: 'auto' }} />
@@ -3925,11 +3925,11 @@ const ClientPortal: React.FC = () => {
                                                 <col style={{ width: '125px' }} />
                                             </colgroup>
                                             <thead>
-                                                <tr style={{ background: '#111111', borderBottom: '1px solid #222222' }}>
-                                                    <th style={{ fontSize: '8.5px', color: '#888888', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 10px', textAlign: 'left', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Descripción del Concepto Principal</th>
-                                                    <th style={{ fontSize: '8.5px', color: '#888888', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 4px', textAlign: 'center', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Cant.</th>
-                                                    <th style={{ fontSize: '8.5px', color: '#888888', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 10px', textAlign: 'right', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Precio Unit.</th>
-                                                    <th style={{ fontSize: '8.5px', color: '#888888', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 10px', textAlign: 'right', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Subtotal</th>
+                                                <tr style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
+                                                    <th style={{ fontSize: '8.5px', color: '#4b5563', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 10px', textAlign: 'left', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Descripción del Concepto Principal</th>
+                                                    <th style={{ fontSize: '8.5px', color: '#4b5563', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 4px', textAlign: 'center', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Cant.</th>
+                                                    <th style={{ fontSize: '8.5px', color: '#4b5563', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 10px', textAlign: 'right', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Precio Unit.</th>
+                                                    <th style={{ fontSize: '8.5px', color: '#4b5563', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 10px', textAlign: 'right', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Subtotal</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -3937,15 +3937,15 @@ const ClientPortal: React.FC = () => {
                                                     <td style={{ padding: '10px 10px', verticalAlign: 'top', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>
                                                         {renderDescription(bi.description, true)}
                                                     </td>
-                                                    <td style={{ fontSize: '10px', color: '#ffffff', padding: '10px 4px', textAlign: 'center', verticalAlign: 'top', fontFamily: "'Noto Sans JP', Arial, sans-serif", fontWeight: '700' }}>{bi.quantity}</td>
-                                                    <td style={{ fontSize: '10px', color: '#aaaaaa', padding: '10px 10px', textAlign: 'right', verticalAlign: 'top', fontFamily: "'Noto Sans JP', Arial, sans-serif", whiteSpace: 'nowrap' }}>{project.currency || 'ARS'} {bi.unit_price.toLocaleString('es-AR')}</td>
-                                                    <td style={{ fontSize: '12px', color: '#bfe023', padding: '10px 10px', textAlign: 'right', verticalAlign: 'top', fontWeight: '900', fontFamily: "'Noto Sans JP', Arial, sans-serif", whiteSpace: 'nowrap' }}>{project.currency || 'ARS'} {baseAmt.toLocaleString('es-AR')}</td>
+                                                    <td style={{ fontSize: '10px', color: '#111827', padding: '10px 4px', textAlign: 'center', verticalAlign: 'top', fontFamily: "'Noto Sans JP', Arial, sans-serif", fontWeight: '700' }}>{bi.quantity}</td>
+                                                    <td style={{ fontSize: '10px', color: '#4b5563', padding: '10px 10px', textAlign: 'right', verticalAlign: 'top', fontFamily: "'Noto Sans JP', Arial, sans-serif", whiteSpace: 'nowrap' }}>{project.currency || 'ARS'} {bi.unit_price.toLocaleString('es-AR')}</td>
+                                                    <td style={{ fontSize: '12px', color: '#111827', padding: '10px 10px', textAlign: 'right', verticalAlign: 'top', fontWeight: '900', fontFamily: "'Noto Sans JP', Arial, sans-serif", whiteSpace: 'nowrap' }}>{project.currency || 'ARS'} {baseAmt.toLocaleString('es-AR')}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
-                                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', borderTop: '2px solid #bfe023', padding: '9px 12px', gap: '16px', background: 'rgba(191,224,35,0.05)', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                                            <span style={{ fontSize: '9.5px', color: '#cccccc', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.8px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Total Inversión Base:</span>
-                                            <span style={{ fontSize: '15px', color: '#bfe023', fontWeight: '900', fontFamily: "'Noto Sans JP', Arial, sans-serif", whiteSpace: 'nowrap' }}>{project.currency || 'ARS'} {baseAmt.toLocaleString('es-AR')}</span>
+                                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', borderTop: '2px solid #bfe023', padding: '10px 14px', gap: '16px', background: '#f9fafb', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                                            <span style={{ fontSize: '9.5px', color: '#4b5563', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.8px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Total Inversión Base:</span>
+                                            <span style={{ fontSize: '16px', color: '#111827', fontWeight: '900', fontFamily: "'Noto Sans JP', Arial, sans-serif", whiteSpace: 'nowrap' }}>{project.currency || 'ARS'} {baseAmt.toLocaleString('es-AR')}</span>
                                         </div>
                                     </div>
                                 );
@@ -3956,25 +3956,25 @@ const ClientPortal: React.FC = () => {
                         {budget.items.slice(1).length > 0 && (
                             <div style={{ marginTop: '18px', pageBreakBefore: shouldBreakBeforeOptionals ? 'always' : 'auto', breakBefore: shouldBreakBeforeOptionals ? 'page' : 'auto' }}>
                                 {shouldBreakBeforeOptionals && (
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #222222', paddingTop: '4px', paddingBottom: '10px', marginBottom: '16px', pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e5e7eb', paddingTop: '4px', paddingBottom: '10px', marginBottom: '16px', pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <img src="/img/logo.png" alt="NexoFilm" style={{ height: '24px', width: 'auto', filter: 'brightness(0) invert(1)' }} />
-                                            <span style={{ fontSize: '8.5px', color: '#777777', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: '700', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Productora Audiovisual</span>
+                                            <img src="/img/logo-dark.png" alt="NexoFilm" style={{ height: '24px', width: 'auto' }} />
+                                            <span style={{ fontSize: '8px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: '700', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Productora Audiovisual</span>
                                         </div>
                                         <div style={{ textAlign: 'right' }}>
-                                            <span style={{ fontSize: '8.5px', color: '#bfe023', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.8px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Propuesta Comercial · Servicios Opcionales</span>
-                                            <span style={{ fontSize: '8.5px', color: '#666666', marginLeft: '10px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Ref: #{project.id.slice(0, 8).toUpperCase()}</span>
+                                            <span style={{ fontSize: '8.5px', color: '#4d7c0f', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.8px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Propuesta Comercial · Servicios Opcionales</span>
+                                            <span style={{ fontSize: '8px', color: '#9ca3af', marginLeft: '10px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Ref: #{project.id.slice(0, 8).toUpperCase()}</span>
                                         </div>
                                     </div>
                                 )}
 
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
-                                    <div style={{ flex: 1, height: '1px', background: '#222222' }}></div>
-                                    <span style={{ fontSize: '9px', color: '#00e5ff', textTransform: 'uppercase', letterSpacing: '1.2px', fontWeight: '800', fontFamily: "'Noto Sans JP', Arial, sans-serif", whiteSpace: 'nowrap' }}>Adicionales Recomendados / Pedidos (Opcionales)</span>
-                                    <div style={{ flex: 1, height: '1px', background: '#222222' }}></div>
+                                    <div style={{ flex: 1, height: '1px', background: '#e5e7eb' }}></div>
+                                    <span style={{ fontSize: '9px', color: '#0284c7', textTransform: 'uppercase', letterSpacing: '1.2px', fontWeight: '800', fontFamily: "'Noto Sans JP', Arial, sans-serif", whiteSpace: 'nowrap' }}>Adicionales Recomendados / Pedidos (Opcionales)</span>
+                                    <div style={{ flex: 1, height: '1px', background: '#e5e7eb' }}></div>
                                 </div>
 
-                                <div style={{ border: '1px solid #222222', borderRadius: '6px', overflow: 'hidden', marginBottom: '18px' }}>
+                                <div style={{ border: '1px solid #e5e7eb', borderRadius: '6px', overflow: 'hidden', marginBottom: '18px' }}>
                                     <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
                                         <colgroup>
                                             <col style={{ width: 'auto' }} />
@@ -3983,11 +3983,11 @@ const ClientPortal: React.FC = () => {
                                             <col style={{ width: '125px' }} />
                                         </colgroup>
                                         <thead>
-                                            <tr style={{ background: '#111111', borderBottom: '1px solid #222222' }}>
-                                                <th style={{ fontSize: '8.5px', color: '#888888', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 10px', textAlign: 'left', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Servicio Opcional / Add-on</th>
-                                                <th style={{ fontSize: '8.5px', color: '#888888', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 4px', textAlign: 'center', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Cant.</th>
-                                                <th style={{ fontSize: '8.5px', color: '#888888', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 10px', textAlign: 'right', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Precio Unit.</th>
-                                                <th style={{ fontSize: '8.5px', color: '#888888', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 10px', textAlign: 'right', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Subtotal</th>
+                                            <tr style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
+                                                <th style={{ fontSize: '8.5px', color: '#4b5563', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 10px', textAlign: 'left', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Servicio Opcional / Add-on</th>
+                                                <th style={{ fontSize: '8.5px', color: '#4b5563', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 4px', textAlign: 'center', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Cant.</th>
+                                                <th style={{ fontSize: '8.5px', color: '#4b5563', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 10px', textAlign: 'right', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Precio Unit.</th>
+                                                <th style={{ fontSize: '8.5px', color: '#4b5563', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '8px 10px', textAlign: 'right', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>Subtotal</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -3997,13 +3997,13 @@ const ClientPortal: React.FC = () => {
                                                     : item.quantity;
                                                 const sub = qty * item.unit_price;
                                                 return (
-                                                    <tr key={idx} style={{ borderBottom: idx < budget.items.slice(1).length - 1 ? '1px solid #1a1a1a' : 'none', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                                                    <tr key={idx} style={{ borderBottom: idx < budget.items.slice(1).length - 1 ? '1px solid #f3f4f6' : 'none', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                                                         <td style={{ padding: '10px 10px', verticalAlign: 'top', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>
                                                             {renderDescription(item.description, true)}
                                                         </td>
-                                                        <td style={{ fontSize: '10px', color: '#cccccc', padding: '10px 4px', textAlign: 'center', verticalAlign: 'top', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{qty}</td>
-                                                        <td style={{ fontSize: '10px', color: '#aaaaaa', padding: '10px 10px', textAlign: 'right', verticalAlign: 'top', fontFamily: "'Noto Sans JP', Arial, sans-serif", whiteSpace: 'nowrap' }}>{project.currency || 'ARS'} {item.unit_price.toLocaleString('es-AR')}</td>
-                                                        <td style={{ fontSize: '11px', color: '#00e5ff', padding: '10px 10px', textAlign: 'right', verticalAlign: 'top', fontWeight: '800', fontFamily: "'Noto Sans JP', Arial, sans-serif", whiteSpace: 'nowrap' }}>{project.currency || 'ARS'} {sub.toLocaleString('es-AR')}</td>
+                                                        <td style={{ fontSize: '10px', color: '#111827', padding: '10px 4px', textAlign: 'center', verticalAlign: 'top', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>{qty}</td>
+                                                        <td style={{ fontSize: '10px', color: '#4b5563', padding: '10px 10px', textAlign: 'right', verticalAlign: 'top', fontFamily: "'Noto Sans JP', Arial, sans-serif", whiteSpace: 'nowrap' }}>{project.currency || 'ARS'} {item.unit_price.toLocaleString('es-AR')}</td>
+                                                        <td style={{ fontSize: '11px', color: '#0284c7', padding: '10px 10px', textAlign: 'right', verticalAlign: 'top', fontWeight: '800', fontFamily: "'Noto Sans JP', Arial, sans-serif", whiteSpace: 'nowrap' }}>{project.currency || 'ARS'} {sub.toLocaleString('es-AR')}</td>
                                                     </tr>
                                                 );
                                             })}
@@ -4016,26 +4016,26 @@ const ClientPortal: React.FC = () => {
                         {/* ── CONDICIONES DE PAGO ── */}
                         {budget.payment_terms && (
                             <div style={{ marginTop: '16px', marginBottom: '20px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                                <h3 style={{ fontSize: '9px', fontWeight: '800', color: '#bfe023', textTransform: 'uppercase', letterSpacing: '1.2px', borderBottom: '1px solid #222222', paddingBottom: '5px', margin: '0 0 8px 0', fontFamily: "'Noto Sans JP', Arial, sans-serif", pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
+                                <h3 style={{ fontSize: '9px', fontWeight: '800', color: '#111827', textTransform: 'uppercase', letterSpacing: '1.2px', borderBottom: '1px solid #e5e7eb', paddingBottom: '5px', margin: '0 0 8px 0', fontFamily: "'Noto Sans JP', Arial, sans-serif", pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
                                     Términos y Condiciones Comerciales
                                 </h3>
-                                <div style={{ borderLeft: '3px solid #bfe023', backgroundColor: '#0d0d0d', borderTop: '1px solid #1a1a1a', borderRight: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a', padding: '11px 16px', borderRadius: '0 6px 6px 0', fontSize: '9.5px', color: '#d0d0d0', lineHeight: '1.6', whiteSpace: 'pre-line', fontFamily: "'Noto Sans JP', Arial, sans-serif", wordBreak: 'break-word' }}>
+                                <div style={{ borderLeft: '3px solid #bfe023', backgroundColor: '#f9fafb', borderTop: '1px solid #e5e7eb', borderRight: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb', padding: '11px 16px', borderRadius: '0 6px 6px 0', fontSize: '9.5px', color: '#374151', lineHeight: '1.6', whiteSpace: 'pre-line', fontFamily: "'Noto Sans JP', Arial, sans-serif", wordBreak: 'break-word' }}>
                                     {budget.payment_terms}
                                 </div>
                             </div>
                         )}
 
                         {/* ── PIE DE PÁGINA ── */}
-                        <div style={{ marginTop: '28px', borderTop: '1px solid #222222', paddingTop: '16px', paddingBottom: '10px', textAlign: 'center', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '24px', marginBottom: '8px', fontSize: '9.5px', color: '#888888', flexWrap: 'wrap' }}>
+                        <div style={{ marginTop: '28px', borderTop: '1px solid #e5e7eb', paddingTop: '16px', paddingBottom: '10px', textAlign: 'center', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '24px', marginBottom: '8px', fontSize: '9.5px', color: '#4b5563', flexWrap: 'wrap' }}>
                                 <span style={{ fontFamily: "'Noto Sans JP', Arial, sans-serif", fontWeight: '600' }}>🌐 www.nexofilm.com</span>
                                 <span style={{ fontFamily: "'Noto Sans JP', Arial, sans-serif", fontWeight: '600' }}>✉ hola@nexofilm.com</span>
                                 <span style={{ fontFamily: "'Noto Sans JP', Arial, sans-serif", fontWeight: '600' }}>📸 @nexofilm.co</span>
                             </div>
-                            <p style={{ fontSize: '8px', color: '#555555', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '1px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>
+                            <p style={{ fontSize: '8px', color: '#9ca3af', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '1px', fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>
                                 Cotización comercial confidencial · Emitida para uso exclusivo de {project.company_name || project.contact_name}
                             </p>
-                            <p style={{ fontSize: '7.5px', color: '#444444', margin: 0, fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>
+                            <p style={{ fontSize: '7.5px', color: '#9ca3af', margin: 0, fontFamily: "'Noto Sans JP', Arial, sans-serif" }}>
                                 NexoFilm Productora Audiovisual · Buenos Aires, Argentina · Todos los derechos reservados
                             </p>
                         </div>

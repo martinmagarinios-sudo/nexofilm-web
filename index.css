@@ -63,13 +63,13 @@ select {
 @media print {
     @page {
         size: A4 portrait;
-        margin: 15mm 16mm 15mm 16mm;
+        margin: 14mm 16mm 14mm 16mm;
     }
 
     html, body {
-        background-color: #000000 !important;
+        background-color: #ffffff !important;
         background-image: none !important;
-        color: #ffffff !important;
+        color: #111827 !important;
         font-family: 'Noto Sans JP', 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
         margin: 0 !important;
         padding: 0 !important;
@@ -85,8 +85,8 @@ select {
     /* Mostrar el contenedor de impresión ajustado al 100% */
     #print-proposal {
         display: block !important;
-        color: #ffffff !important;
-        background-color: #000000 !important;
+        color: #111827 !important;
+        background-color: #ffffff !important;
         width: 100% !important;
         max-width: 100% !important;
         margin: 0 !important;
