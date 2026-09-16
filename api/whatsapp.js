@@ -813,11 +813,6 @@ Te recordamos que además de coberturas, hacemos:
             console.log("[FAIL-SAFE] Menú activado por palabras clave.");
         }
 
-        // Si es el primer mensaje de un usuario nuevo sin nombre en base de datos, NUNCA enviar menú de botones todavía
-        if (isFirstMessage && (!leadData?.name || leadData.name === 'Sin nombre')) {
-            showMenu = false;
-        }
-
         if (final && final.trim().length > 0) {
             await sendText(phoneNumberId, from, final);
             sendTelegramLog(from, capturedName || leadData?.name, final, 'assistant', history).catch(() => {});
