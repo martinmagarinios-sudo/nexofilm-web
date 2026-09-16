@@ -499,8 +499,13 @@ Te recordamos que además de coberturas, hacemos:
             return res.status(200).send('OK');
         }
 
-        // --- 1. PRIMER MENSAJE DE UN CONTACTO NUEVO (history vacío y sin nombre) ---
-        if (history.length === 0 && (!leadData?.name || leadData.name === 'Sin nombre')) {
+        // Verificación robusta: ¿ya hubo algún mensaje del bot en este historial?
+        const botAlreadyGreeted = history.some(m => m.role === 'assistant');
+        console.log(`[FLOW] from=+${from} | histLen=${history.length} | botGreeted=${botAlreadyGreeted} | name="${leadData?.name || 'null'}"`);
+
+        // --- 1. PRIMER CONTACTO SIN NOMBRE (no hay mensajes del bot previos y no tiene nombre) ---
+        if (!botAlreadyGreeted && (!leadData?.name || leadData.name === 'Sin nombre')) {
+            console.log(`[BIENVENIDA NUEVA] Enviando saludo inicial a +${from}`);
             const welcomeText = {
                 es: `¡Hola! Muchas gracias por contactar a NexoFilm 🎬. Es un placer saludarte. ¿Me podrías decir tu nombre, por favor?`,
                 en: `Hello! Thank you for contacting NexoFilm 🎬. It's a pleasure to connect with you. May I have your name, please?`,
@@ -508,7 +513,6 @@ Te recordamos que además de coberturas, hacemos:
             }[lang] || `¡Hola! Muchas gracias por contactar a NexoFilm 🎬. Es un placer saludarte. ¿Me podrías decir tu nombre, por favor?`;
 
             await sendText(phoneNumberId, from, welcomeText);
-
             const newHistory = [
                 { role: 'user', content: userDisplayContent || text, timestamp: new Date().toISOString() },
                 { role: 'assistant', content: welcomeText, timestamp: new Date().toISOString() }
@@ -518,9 +522,10 @@ Te recordamos que además de coberturas, hacemos:
             return res.status(200).send('OK');
         }
 
-        // --- 2. PRIMER MENSAJE DE UN CLIENTE RECONOCIDO DEL CRM (history vacío pero tiene nombre) ---
-        if (history.length === 0 && leadData?.name && leadData.name !== 'Sin nombre') {
+        // --- 2. CLIENTE RECONOCIDO DEL CRM (no hay mensajes del bot previos pero SÍ tiene nombre) ---
+        if (!botAlreadyGreeted && leadData?.name && leadData.name !== 'Sin nombre') {
             const firstName = leadData.name.trim().split(/[\s,.-]+/)[0];
+            console.log(`[BIENVENIDA VIP] Enviando saludo a ${firstName} (+${from})`);
             const hasRecentSummary = leadData.summary && !leadData.summary.includes("Conversación en curso");
             const daysSinceUpdate = leadData.updated_at ? Math.floor((Date.now() - new Date(leadData.updated_at).getTime()) / (1000 * 60 * 60 * 24)) : 999;
 
@@ -541,7 +546,6 @@ Te recordamos que además de coberturas, hacemos:
 
             await sendText(phoneNumberId, from, vipGreeting);
             await sendMenu(phoneNumberId, from, lang);
-
             const newHistory = [
                 { role: 'user', content: userDisplayContent || text, timestamp: new Date().toISOString() },
                 { role: 'assistant', content: vipGreeting, timestamp: new Date().toISOString() }
@@ -552,7 +556,7 @@ Te recordamos que además de coberturas, hacemos:
             return res.status(200).send('OK');
         }
 
-        // --- 3. RESPUESTA AL PEDIDO DE NOMBRE (si el último mensaje del bot le pedía el nombre) ---
+        // --- 3. EL BOT LE PIDIÓ EL NOMBRE Y EL CLIENTE ESTÁ RESPONDIENDO ---
         const lastAssistantMsg = [...history].reverse().find(m => m.role === 'assistant');
         const askedNameRecently = lastAssistantMsg && (
             lastAssistantMsg.content.includes('nombre') ||
@@ -561,13 +565,13 @@ Te recordamos que además de coberturas, hacemos:
         );
 
         if (askedNameRecently && (!leadData?.name || leadData.name === 'Sin nombre')) {
+            console.log(`[CAPTURA NOMBRE] Procesando nombre de +${from}: "${text}"`);
             let rawName = text.replace(/^(hola|buen dia|buenas|me llamo|soy|mi nombre es|mi nombre)\s+/i, '').trim();
             rawName = rawName.replace(/[.,!?;:]/g, '').trim();
             let cleanName = rawName.split(' ')
                 .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
                 .slice(0, 3)
                 .join(' ');
-            
             if (!cleanName || cleanName.length < 2) cleanName = 'Cliente';
 
             if (supabase) {
@@ -606,7 +610,8 @@ Te recordamos que además de coberturas, hacemos:
             return res.status(200).send('OK');
         }
 
-    // --- CONTINUACIÓN DE CONVERSACIÓN (Groq IA) ---
+    // --- CONTINUACIÓN DE CONVERSACIÓN CON GROQ IA ---
+    console.log(`[GROQ] Procesando con IA: +${from} | histLen=${history.length}`);
     const knownName = (leadData?.name && leadData.name !== 'Sin nombre') ? leadData.name.trim().split(/[\s,.-]+/)[0] : "";
     let instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName || "el cliente"}. Si ya seleccionó una opción o están en medio del flujo de presupuesto, respondé con calidez validando su proyecto y avanzá con la siguiente pregunta. NO repitas su nombre en cada mensaje.`;
 
