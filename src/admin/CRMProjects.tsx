@@ -311,6 +311,7 @@ const CRMProjects: React.FC = () => {
 
     // Inline editing contact info
     const [editingContactProjectId, setEditingContactProjectId] = useState<string | null>(null);
+    const [editingTitle, setEditingTitle] = useState('');
     const [editingContactName, setEditingContactName] = useState('');
     const [editingCompanyName, setEditingCompanyName] = useState('');
     const [editingClientEmail, setEditingClientEmail] = useState('');
@@ -1190,6 +1191,7 @@ const CRMProjects: React.FC = () => {
                 body: JSON.stringify({
                     action: 'updateContact',
                     project_id: projectId,
+                    title: editingTitle,
                     contact_name: editingContactName,
                     company_name: editingCompanyName || null,
                     client_email: editingClientEmail,
@@ -2418,16 +2420,56 @@ const CRMProjects: React.FC = () => {
                                                             <div>
                                                                 <div className="flex items-center gap-3">
                                                                     <h3 className="font-bold text-lg text-white">{project.title}</h3>
+                                                                    {editingContactProjectId !== project.id && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setEditingContactProjectId(project.id);
+                                                                                setEditingTitle(project.title || '');
+                                                                                setEditingContactName(project.contact_name);
+                                                                                setEditingCompanyName(project.company_name || '');
+                                                                                setEditingClientEmail(project.client_email || '');
+                                                                                const parsed = parsePhone(project.client_phone || '');
+                                                                                setEditingPhoneCountryCode(parsed.country);
+                                                                                setEditingPhoneLocalNumber(parsed.local);
+                                                                                setEditingCurrency(project.currency || 'ARS');
+                                                                                setEditingCrewCount(project.crew_count || '');
+                                                                                setEditingAdminNotes(project.admin_notes || '');
+                                                                                setEditingEventDate(project.event_date || '');
+                                                                                setEditingEventTime(project.event_time || '');
+                                                                                setEditingEventEndTime(project.event_end_time || '');
+                                                                                setEditingLocation(project.location || '');
+                                                                                setEditingCoverageHours(project.coverage_hours || '');
+                                                                                setEditingGuestsCount(project.guests_count || '');
+                                                                                setEditingNotificationPreference(project.notification_preference || 'both');
+                                                                                setEditingCoverageTypes(project.coverage_types || []);
+                                                                            }}
+                                                                            className="text-zinc-500 hover:text-nexo-lime text-xs transition-colors p-1"
+                                                                            title="Editar título y datos del proyecto"
+                                                                        >
+                                                                            ✏️
+                                                                        </button>
+                                                                    )}
                                                                     <span className={`inline-block px-2.5 py-0.5 rounded text-xs font-bold border ${statusColors[project.status] || ''}`}>
                                                                         {project.status.toUpperCase()}
                                                                     </span>
                                                                 </div>
                                                                 {editingContactProjectId === project.id ? (
                                                                     <div className="bg-black/40 p-4 md:p-6 rounded-xl border border-white/10 mt-2 space-y-4">
-                                                                        {/* Sección Contacto */}
+                                                                        {/* Sección Contacto y Proyecto */}
                                                                         <div>
-                                                                            <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-2">👤 Datos de Contacto</p>
+                                                                            <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-wider mb-2">👤 Datos del Proyecto y Contacto</p>
                                                                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                                                                                <div className="space-y-1 sm:col-span-2 md:col-span-3">
+                                                                                    <label className="text-[10px] text-nexo-lime font-bold uppercase tracking-wider block">📌 Nombre / Título del Proyecto</label>
+                                                                                    <input 
+                                                                                        type="text" 
+                                                                                        value={editingTitle} 
+                                                                                        onChange={(e) => setEditingTitle(e.target.value)} 
+                                                                                        placeholder="Ej: Cobertura Convención Anual / Video Institucional" 
+                                                                                        className="w-full bg-black border border-nexo-lime/40 rounded px-3 py-2 text-xs font-bold text-white focus:border-nexo-lime focus:outline-none" 
+                                                                                    />
+                                                                                </div>
                                                                                 <div className="space-y-1">
                                                                                     <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Nombre Contacto</label>
                                                                                     <input type="text" value={editingContactName} onChange={(e) => setEditingContactName(e.target.value)} placeholder="Nombre contacto" className="w-full bg-black border border-white/20 rounded px-3 py-2 text-xs text-white focus:border-nexo-lime focus:outline-none" />
@@ -2588,6 +2630,7 @@ const CRMProjects: React.FC = () => {
                                                                         <button
                                                                             onClick={() => {
                                                                                 setEditingContactProjectId(project.id);
+                                                                                setEditingTitle(project.title || '');
                                                                                 setEditingContactName(project.contact_name);
                                                                                 setEditingCompanyName(project.company_name || '');
                                                                                 setEditingClientEmail(project.client_email || '');
@@ -3240,6 +3283,7 @@ const CRMProjects: React.FC = () => {
                                                                                 type="button"
                                                                                 onClick={() => {
                                                                                     setEditingContactProjectId(project.id);
+                                                                                    setEditingTitle(project.title || '');
                                                                                     setEditingContactName(project.contact_name);
                                                                                     setEditingCompanyName(project.company_name || '');
                                                                                     setEditingClientEmail(project.client_email || '');

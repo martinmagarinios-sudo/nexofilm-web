@@ -823,6 +823,7 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                 }
 
                 const {
+                    title,
                     event_date,
                     event_time,
                     event_end_time,
@@ -853,6 +854,10 @@ Generame la propuesta sugerida. Debe tener 1 ítem base principal con el formato
                     notification_preference: notification_preference || 'both',
                     admin_action_required: admin_action_required !== undefined ? admin_action_required : false
                 };
+
+                if (title !== undefined && title.trim() !== '') {
+                    updatePayload.title = title.trim();
+                }
 
                 let { data: updatedProject, error: updateErr } = await supabase
                     .from('projects')
