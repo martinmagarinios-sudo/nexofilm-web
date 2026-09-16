@@ -600,8 +600,51 @@ export default async function handler(req, res) {
                     status: project.status
                 };
 
-                // 1. Si no hay credenciales Service Account, intentar extracción de carpeta compartida
+                // 1. Si no hay credenciales Service Account, intentar con API Key pública primero
                 if (!clientEmail || !privateKey) {
+                    const apiKey = process.env.GOOGLE_API_KEY;
+
+                    // ── Opción A: Drive API v3 con API Key pública (para carpetas compartidas) ──
+                    // Soporta paginación completa — sin límite de 50 del scraping HTML.
+                    if (driveFolderId && apiKey) {
+                        try {
+                            const qApiKey = `'${driveFolderId}' in parents and trashed = false`;
+                            const fieldsApiKey = 'nextPageToken,files(id,name,mimeType,webViewLink,thumbnailLink,webContentLink,size,createdTime)';
+                            const allApiFiles = [];
+                            let apiPageToken = null;
+
+                            do {
+                                const pageParam = apiPageToken ? `&pageToken=${encodeURIComponent(apiPageToken)}` : '';
+                                const apiUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(qApiKey)}&fields=${encodeURIComponent(fieldsApiKey)}&pageSize=1000&key=${apiKey}${pageParam}`;
+
+                                const apiRes = await fetch(apiUrl);
+                                const apiData = await apiRes.json();
+
+                                if (!apiRes.ok || apiData.error) {
+                                    console.error('[storage] API Key Drive error:', apiData.error?.message || apiRes.status);
+                                    break;
+                                }
+
+                                if (Array.isArray(apiData.files)) {
+                                    allApiFiles.push(...apiData.files);
+                                }
+                                apiPageToken = apiData.nextPageToken || null;
+                            } while (apiPageToken);
+
+                            if (allApiFiles.length > 0) {
+                                return res.status(200).json({
+                                    success: true,
+                                    isMock: false,
+                                    project: projectPublicInfo,
+                                    files: allApiFiles
+                                });
+                            }
+                        } catch (apiKeyErr) {
+                            console.error('[storage] Error usando GOOGLE_API_KEY, intentando scraping:', apiKeyErr.message);
+                        }
+                    }
+
+                    // ── Opción B: Scraping HTML (fallback, máx ~50 archivos) ──
                     if (driveFolderId) {
                         const publicFiles = await fetchPublicDriveFolderFiles(driveFolderId);
                         if (publicFiles.length > 0) {

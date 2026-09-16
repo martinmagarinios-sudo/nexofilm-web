@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Logo from '../../components/Logo';
 
 interface DriveFile {
@@ -38,12 +38,42 @@ const StorageDelivery: React.FC = () => {
     const [batchProgress, setBatchProgress] = useState<{ current: number; total: number } | null>(null);
     const [downloadingFolderId, setDownloadingFolderId] = useState<string | null>(null);
 
+    // ── Infinite scroll ──────────────────────────────────────────────────────
+    // Renderiza archivos de a 48 a medida que el usuario scrollea hacia abajo.
+    // Mejora el rendimiento con carpetas de 200-800 fotos.
+    const VISIBLE_STEP = 48;
+    const [visibleCount, setVisibleCount] = useState(VISIBLE_STEP);
+    const sentinelRef = useRef<HTMLDivElement>(null);
+
+    // Resetear la cantidad visible al cambiar de carpeta o al cargar nuevos archivos
+    useEffect(() => {
+        setVisibleCount(VISIBLE_STEP);
+    }, [folderHistory, files]);
+
+    // IntersectionObserver: cuando el sentinel entra al viewport, carga más archivos
+    useEffect(() => {
+        const sentinel = sentinelRef.current;
+        if (!sentinel) return;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    setVisibleCount(prev => prev + VISIBLE_STEP);
+                }
+            },
+            { rootMargin: '300px' } // Carga anticipada 300px antes del borde
+        );
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [files]); // Re-conectar cuando cambia la lista de archivos
+    // ────────────────────────────────────────────────────────────────────────
 
     // Limpiar selección al cambiar de carpeta
     useEffect(() => {
         setSelectedIds([]);
         setLastSelectedId(null);
     }, [folderHistory]);
+
+
 
     // Obtener token de la URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -684,11 +714,15 @@ const StorageDelivery: React.FC = () => {
                                     if (sortBy === 'name') return a.name.localeCompare(b.name);
                                     return 0;
                                 });
+                                // Aplicar infinite scroll: mostrar solo los primeros visibleCount archivos
+                                const visible = sorted.slice(0, visibleCount);
+                                const hasMore = visibleCount < sorted.length;
 
                                 if (viewMode === 'list') {
                                     return (
-                                        <div className="bg-black/40 border border-white/10 rounded-xl divide-y divide-white/5 overflow-hidden">
-                                            {sorted.map((file) => {
+                                        <>
+                                            <div className="bg-black/40 border border-white/10 rounded-xl divide-y divide-white/5 overflow-hidden">
+                                            {visible.map((file) => {
                                                 const folder = isFolder(file);
                                                 const video = isVideo(file);
                                                 const zip = isZip(file);
@@ -823,12 +857,22 @@ const StorageDelivery: React.FC = () => {
                                                 );
                                             })}
                                         </div>
-                                    );
-                                }
+                                        {/* Sentinel para infinite scroll (vista lista) */}
+                                        {hasMore && (
+                                            <div className="py-4 text-center text-zinc-500 text-xs">
+                                                Mostrando {visible.length} de {sorted.length} archivos — scrolleá para ver más
+                                                <div ref={sentinelRef} className="h-1" />
+                                            </div>
+                                        )}
+                                    </>
+                                );
+                            }
 
-                                return (
+                            return (
+                                <>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                                        {sorted.map((file) => {
+                                        {visible.map((file) => {
+
                                             const folder = isFolder(file);
                                             const video = isVideo(file);
                                             const zip = isZip(file);
@@ -1024,8 +1068,17 @@ const StorageDelivery: React.FC = () => {
                                             );
                                         })}
                                     </div>
-                                );
-                            })()}
+                                    {/* Sentinel para infinite scroll (vista grilla) */}
+                                    {hasMore && (
+                                        <div className="py-6 text-center text-zinc-500 text-xs">
+                                            Mostrando {visible.length} de {sorted.length} archivos
+                                            <div ref={sentinelRef} className="h-1" />
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        })()}
+
                         </div>
                     </>
                 )}
