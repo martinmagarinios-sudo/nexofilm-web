@@ -42,6 +42,12 @@ FLUJO DE CONVERSACIÓN:
    f) DESPEDIDA FINAL (ÚLTIMO PASO, cuando ya tenés todos los datos):
       - Decí EXACTAMENTE esta frase y nada más: "¡Bárbaro! Ya le paso todo a producción y un asesor te contactará a la brevedad. 👋"
 
+MANEJO DE DESPEDIDAS Y AGRADECIMIENTOS:
+- Si el usuario dice "gracias", "muchas gracias", "perfecto gracias", "genial gracias" u otro agradecimiento DESPUÉS de que el presupuesto ya fue completado, respondé cálidamente:
+  "¡A vos! Que tengas una excelente semana 🙌. Cualquier duda o consulta que surja, volvé a escribirnos cuando quieras."
+  NO muestres el menú ni hagas más preguntas. Es una despedida, no una continuación.
+- Si el usuario dice "hasta luego", "chau", "bye" etc., respondé: "¡Hasta pronto! Fue un gusto. Ya nos ponemos en contacto a la brevedad. 👋"
+
 REGLAS EXTRA:
 - ANTI-PAVADAS: Si habla de temas ajenos a producción audiovisual, decí: "Sobre eso no te puedo ayudar, pero podemos conectarte con el equipo de NexoFilm." y usá la despedida final.
 - ANTI-INVENCIÓN: Nunca afirmes algo que no sabés. Si no tenés la información, derivá siempre a un productor.
@@ -532,16 +538,16 @@ Te recordamos que además de coberturas, hacemos:
             let vipGreeting;
             if (hasRecentSummary && daysSinceUpdate < 60) {
                 vipGreeting = {
-                    es: `¡Bienvenido de nuevo, ${firstName}! 🎬 Vi que tu consulta anterior fue sobre: "${leadData.summary}". ¿Seguimos con eso o tenés algo nuevo en mente?`,
-                    en: `Welcome back, ${firstName}! 🎬 I see your previous inquiry was about: "${leadData.summary}". Shall we continue or do you have something new in mind?`,
-                    pt: `Bem-vindo de volta, ${firstName}! 🎬 Vi que sua consulta anterior foi sobre: "${leadData.summary}". Continuamos ou tem algo novo em mente?`
-                }[lang] || `¡Bienvenido de nuevo, ${firstName}! 🎬 Vi que tu consulta anterior fue sobre: "${leadData.summary}". ¿Seguimos con eso o tenés algo nuevo en mente?`;
+                    es: `¡Qué bueno tenerte nuevamente por acá, ${firstName}! 🎬 Vi que tu consulta anterior fue sobre: "${leadData.summary}". ¿Seguimos con eso o tenés algo nuevo en mente?`,
+                    en: `Great to have you back, ${firstName}! 🎬 I see your previous inquiry was about: "${leadData.summary}". Shall we continue or do you have something new in mind?`,
+                    pt: `Que bom ter você de volta, ${firstName}! 🎬 Vi que sua consulta anterior foi sobre: "${leadData.summary}". Continuamos ou tem algo novo em mente?`
+                }[lang] || `¡Qué bueno tenerte nuevamente por acá, ${firstName}! 🎬 Vi que tu consulta anterior fue sobre: "${leadData.summary}". ¿Seguimos con eso o tenés algo nuevo en mente?`;
             } else {
                 vipGreeting = {
-                    es: `¡Bienvenido ${firstName} a NexoFilm! 🎬 Un placer atenderte. ¿En qué te podemos ayudar hoy?`,
-                    en: `Welcome ${firstName} to NexoFilm! 🎬 Great to have you here. How can we help you today?`,
-                    pt: `Bem-vindo ${firstName} à NexoFilm! 🎬 É um prazer atendê-lo. Como podemos te ajudar hoje?`
-                }[lang] || `¡Bienvenido ${firstName} a NexoFilm! 🎬 Un placer atenderte. ¿En qué te podemos ayudar hoy?`;
+                    es: `¡Qué bueno tenerte nuevamente por acá, ${firstName}! 🎬 ¿En qué te podemos ayudar hoy?`,
+                    en: `Great to have you back, ${firstName}! 🎬 How can we help you today?`,
+                    pt: `Que bom ter você de volta, ${firstName}! 🎬 Como podemos te ajudar hoje?`
+                }[lang] || `¡Qué bueno tenerte nuevamente por acá, ${firstName}! 🎬 ¿En qué te podemos ayudar hoy?`;
             }
 
             await sendText(phoneNumberId, from, vipGreeting);
@@ -554,17 +560,43 @@ Te recordamos que además de coberturas, hacemos:
             sendTelegramLog(from, firstName, vipGreeting, 'assistant', newHistory).catch(() => {});
             sendTelegramLog(from, firstName, '👇 Opciones de menú enviadas al cliente VIP', 'system', newHistory).catch(() => {});
             return res.status(200).send('OK');
+        }        // --- 3. DETECCIÓN TEMPRANA DE DESPEDIDA / AGRADECIMIENTO (sin Groq, sin menú, sin capturar como nombre) ---
+        const isFarewellUser = /^(mil gracias|much[ií]simas gracias|muchas gracias|ok gracias|genial gracias|perfecto gracias|buen[ií]simo|buenisimo|joya gracias|dale gracias|gracias|thank you|thanks|obrigado|obrigada|chau|adi[oó]s|adios|hasta luego|hasta pronto|bye|saludos|un abrazo|ok todo bien|todo bien)[\w\s.!]*$/i.test(text.trim());
+        const knownName = (leadData?.name && leadData.name !== 'Sin nombre') ? leadData.name.trim().split(/[\s,.-]+/)[0] : "";
+        if (isFarewellUser) {
+            const farewellMsg = {
+                es: knownName
+                    ? `¡A vos, ${knownName}! Fue un gusto atenderte. 🙌 Que tengas una excelente semana. Cualquier duda o consulta que surja, ¡volvé a escribirnos cuando quieras!`
+                    : `¡A vos! Fue un gusto atenderte. 🙌 Que tengas una excelente semana. Cualquier duda o consulta que surja, ¡volvé a escribirnos cuando quieras!`,
+                en: `You're welcome! Have a great week. 🙌 Feel free to reach out anytime!`,
+                pt: `De nada! Tenha uma ótima semana. 🙌 Qualquer dúvida, é só nos escrever!`
+            }[lang] || `¡A vos! Que tengas una excelente semana. 🙌 Cualquier duda o consulta que surja, ¡volvé a escribirnos cuando quieras!`;
+
+            await sendText(phoneNumberId, from, farewellMsg);
+            const fareHist = [
+                ...history,
+                { role: 'user', content: text, timestamp: new Date().toISOString() },
+                { role: 'assistant', content: farewellMsg, timestamp: new Date().toISOString() }
+            ];
+            await persistHistory(from, fareHist);
+            sendTelegramLog(from, knownName || leadData?.name, farewellMsg, 'assistant', fareHist).catch(() => {});
+            return res.status(200).send('OK');
         }
 
-        // --- 3. EL BOT LE PIDIÓ EL NOMBRE Y EL CLIENTE ESTÁ RESPONDIENDO ---
+        // --- 4. EL BOT LE PIDIÓ EL NOMBRE Y EL CLIENTE ESTÁ RESPONDIENDO ---
         const lastAssistantMsg = [...history].reverse().find(m => m.role === 'assistant');
         const askedNameRecently = lastAssistantMsg && (
-            lastAssistantMsg.content.includes('nombre') ||
-            lastAssistantMsg.content.includes('name') ||
-            lastAssistantMsg.content.includes('cham')
+            lastAssistantMsg.content.includes('¿Me podrías decir tu nombre') ||
+            lastAssistantMsg.content.includes('May I have your name') ||
+            lastAssistantMsg.content.includes('Poderia me dizer seu nome') ||
+            lastAssistantMsg.content.includes('tu nombre')
         );
 
-        if (askedNameRecently && (!leadData?.name || leadData.name === 'Sin nombre')) {
+        // Lista de palabras que NO pueden ser nombres propios
+        const nonNameWords = ['gracias', 'hola', 'menu', 'menú', 'si', 'sí', 'no', 'chau', 'presupuesto', 'portfolio', 'info', 'consulta', 'buenas', 'buen dia', 'buenas tardes', 'buenas noches', 'video', 'foto', 'streaming', 'precio', 'costo'];
+        const isNotAName = nonNameWords.some(w => text.trim().toLowerCase() === w || text.trim().toLowerCase().startsWith(w + ' '));
+
+        if (askedNameRecently && !isNotAName && (!leadData?.name || leadData.name === 'Sin nombre')) {
             console.log(`[CAPTURA NOMBRE] Procesando nombre de +${from}: "${text}"`);
             let rawName = text.replace(/^(hola|buen dia|buenas|me llamo|soy|mi nombre es|mi nombre)\s+/i, '').trim();
             rawName = rawName.replace(/[.,!?;:]/g, '').trim();
@@ -579,14 +611,14 @@ Te recordamos que además de coberturas, hacemos:
                 const { data: freshLeads } = await supabase
                     .from('whatsapp_leads').select('id')
                     .like('phone', `%${searchStr}%`)
-                    .order('created_at', { ascending: false })
-                    .limit(1);
-                const freshLead = freshLeads?.[0];
-                if (freshLead) {
-                    await supabase.from('whatsapp_leads').update({
-                        name: cleanName,
-                        updated_at: new Date().toISOString()
-                    }).eq('id', freshLead.id);
+                    .order('created_at', { ascending: false });
+                if (freshLeads && freshLeads.length > 0) {
+                    for (const fl of freshLeads) {
+                        await supabase.from('whatsapp_leads').update({
+                            name: cleanName,
+                            updated_at: new Date().toISOString()
+                        }).eq('id', fl.id);
+                    }
                 }
             }
 
@@ -612,19 +644,21 @@ Te recordamos que además de coberturas, hacemos:
 
     // --- CONTINUACIÓN DE CONVERSACIÓN CON GROQ IA ---
     console.log(`[GROQ] Procesando con IA: +${from} | histLen=${history.length}`);
-    const knownName = (leadData?.name && leadData.name !== 'Sin nombre') ? leadData.name.trim().split(/[\s,.-]+/)[0] : "";
     let instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName || "el cliente"}. Si ya seleccionó una opción o están en medio del flujo de presupuesto, respondé con calidez validando su proyecto y avanzá con la siguiente pregunta. NO repitas su nombre en cada mensaje.`;
 
-    let confirmacionEmail = `      - Pedile el correo de forma cálida y natural. Ejemplo: "Para prepararte la propuesta, ¿me pasás tu mail?".\n      - Si el cliente no quiere dar el mail o dice que lo tiene lleno, NO insistás. En cambio, respondé algo como: "No hay problema, un asesor te va a contactar directamente por acá o por teléfono." y a continuación emite el HANDOFF_JSON igual, poniendo email como null.\n      - NUNCA presiones ni repitás la misma frase varias veces. Siempre hay una salida amable.`;
+    let confirmacionEmail = `      - PRIMER INTENTO: Pedile el mail de forma cálida y profesional: "Para prepararte la propuesta formal y enviarte el presupuesto detallado con todo desglosado, ¿me pasás tu mail? 📧 Así te queda una copia y tenés un seguimiento claro."
+      - Si el cliente duda o dice que no quiere, insistí UNA SOLA VEZ de forma muy suave: "Te entiendo perfectamente. Te lo pedimos solo para enviarte el PDF formal con el detalle técnico y costos para que lo puedas evaluar con tu equipo con total comodidad. ¿Tenés algún correo personal o de trabajo donde prefieras recibirlo?"
+      - Si rechaza por segunda vez, respondé con amabilidad: "¡No hay ningún problema! Un asesor de producción se va a comunicar directamente por acá para coordinar todos los detalles. 👋" y a continuación emitís el HANDOFF_JSON poniendo email como null.
+      - NUNCA presiones más de dos veces. La segunda insistencia debe ser muy suave, no una presión.`;
 
     if (leadData?.name && leadData.name !== 'Sin nombre') {
         const firstName = leadData.name.trim().split(/[\s,.-]+/)[0];
 
         if (leadData.email && leadData.email.includes('@')) {
             const emailQs = {
-                es: `${firstName}, chequeando mis registros veo este mail: ${leadData.email}. ¿Sigue siendo ese o querés que te envíe la propuesta a otro?`,
-                en: `${firstName}, checking my records I see this email: ${leadData.email}. Is it still the same or do you want me to send the proposal to another one?`,
-                pt: `${firstName}, verificando meus registros, vejo este e-mail: ${leadData.email}. Continua sendo esse ou quer que eu envie a proposta para outro?`
+                es: `${firstName}, en nuestros registros tenemos este correo: ${leadData.email}. ¿Sigue siendo ese o preferís que te enviemos la propuesta a otro?`,
+                en: `${firstName}, checking our records I see this email: ${leadData.email}. Is it still the same or would you prefer us to send the proposal to another one?`,
+                pt: `${firstName}, em nossos registros temos este e-mail: ${leadData.email}. Continua sendo esse ou prefere que enviemos a proposta para outro?`
             };
             confirmacionEmail = `      - YA TIENES SU MAIL: Está en base de datos. Debés preguntarle EXACTAMENTE esto: "${emailQs[lang] || emailQs.es}".\n      - NO AVANCES HASTA QUE LO CONFIRME O TE DÉ OTRO.`;
         }
@@ -661,12 +695,24 @@ Te recordamos que además de coberturas, hacemos:
         const groqHistory = history
             .filter(m => m.role === 'user' || m.role === 'assistant')
             .map(m => ({ role: m.role, content: m.content }));
-        const comp = await groq.chat.completions.create({
-            model: 'openai/gpt-oss-120b',
-            messages: [{ role: 'system', content: finalSystemPrompt }, ...groqHistory],
-            temperature: 0.5,
-            max_tokens: 500
-        });
+
+        let comp;
+        try {
+            comp = await groq.chat.completions.create({
+                model: 'openai/gpt-oss-120b',
+                messages: [{ role: 'system', content: finalSystemPrompt }, ...groqHistory],
+                temperature: 0.5,
+                max_tokens: 500
+            });
+        } catch (groqPrimaryErr) {
+            console.warn('[GROQ PRIMARY FAIL] Intentando con llama-3.3-70b-versatile:', groqPrimaryErr.message);
+            comp = await groq.chat.completions.create({
+                model: 'llama-3.3-70b-versatile',
+                messages: [{ role: 'system', content: finalSystemPrompt }, ...groqHistory],
+                temperature: 0.5,
+                max_tokens: 500
+            });
+        }
 
         const aiRes = comp.choices[0].message.content;
         history.push({ role: 'assistant', content: aiRes });
@@ -835,6 +881,9 @@ Te recordamos que además de coberturas, hacemos:
 
     } catch (err) {
         console.error("BOT ERROR:", err.message);
+        try {
+            await sendText(phoneNumberId, from, "¡Disculpas! Tuve una pequeña demora en el sistema. ¿Me podrías repetir tu mensaje o escribir MENU para volver a ver las opciones? 😊");
+        } catch (_) {}
     }
 
     return res.status(200).send('OK');
@@ -912,15 +961,29 @@ Debes responder ÚNICAMENTE con un objeto JSON válido con la siguiente estructu
   ]
 }`;
 
-                const groqComp = await groq.chat.completions.create({
-                    model: 'openai/gpt-oss-120b',
-                    messages: [
-                        { role: 'system', content: extractionPrompt },
-                        { role: 'user', content: `Conversación:\n${JSON.stringify(history)}` }
-                    ],
-                    temperature: 0.2,
-                    response_format: { type: "json_object" }
-                });
+                let groqComp;
+                try {
+                    groqComp = await groq.chat.completions.create({
+                        model: 'openai/gpt-oss-120b',
+                        messages: [
+                            { role: 'system', content: extractionPrompt },
+                            { role: 'user', content: `Conversación:\n${JSON.stringify(history)}` }
+                        ],
+                        temperature: 0.2,
+                        response_format: { type: "json_object" }
+                    });
+                } catch (crmPrimaryErr) {
+                    console.warn('[AUTO-CRM GROQ FAIL] Fallback a llama-3.3-70b-versatile:', crmPrimaryErr.message);
+                    groqComp = await groq.chat.completions.create({
+                        model: 'llama-3.3-70b-versatile',
+                        messages: [
+                            { role: 'system', content: extractionPrompt },
+                            { role: 'user', content: `Conversación:\n${JSON.stringify(history)}` }
+                        ],
+                        temperature: 0.2,
+                        response_format: { type: "json_object" }
+                    });
+                }
 
                 const extracted = JSON.parse(groqComp.choices[0].message.content);
                 console.log(`[AUTO-CRM] Datos extraídos:`, JSON.stringify(extracted));
