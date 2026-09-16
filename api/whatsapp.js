@@ -518,7 +518,41 @@ Te recordamos que además de coberturas, hacemos:
             return res.status(200).send('OK');
         }
 
-        // --- 2. RESPUESTA AL PEDIDO DE NOMBRE (si el último mensaje del bot le pedía el nombre) ---
+        // --- 2. PRIMER MENSAJE DE UN CLIENTE RECONOCIDO DEL CRM (history vacío pero tiene nombre) ---
+        if (history.length === 0 && leadData?.name && leadData.name !== 'Sin nombre') {
+            const firstName = leadData.name.trim().split(/[\s,.-]+/)[0];
+            const hasRecentSummary = leadData.summary && !leadData.summary.includes("Conversación en curso");
+            const daysSinceUpdate = leadData.updated_at ? Math.floor((Date.now() - new Date(leadData.updated_at).getTime()) / (1000 * 60 * 60 * 24)) : 999;
+
+            let vipGreeting;
+            if (hasRecentSummary && daysSinceUpdate < 60) {
+                vipGreeting = {
+                    es: `¡Bienvenido de nuevo, ${firstName}! 🎬 Vi que tu consulta anterior fue sobre: "${leadData.summary}". ¿Seguimos con eso o tenés algo nuevo en mente?`,
+                    en: `Welcome back, ${firstName}! 🎬 I see your previous inquiry was about: "${leadData.summary}". Shall we continue or do you have something new in mind?`,
+                    pt: `Bem-vindo de volta, ${firstName}! 🎬 Vi que sua consulta anterior foi sobre: "${leadData.summary}". Continuamos ou tem algo novo em mente?`
+                }[lang] || `¡Bienvenido de nuevo, ${firstName}! 🎬 Vi que tu consulta anterior fue sobre: "${leadData.summary}". ¿Seguimos con eso o tenés algo nuevo en mente?`;
+            } else {
+                vipGreeting = {
+                    es: `¡Bienvenido ${firstName} a NexoFilm! 🎬 Un placer atenderte. ¿En qué te podemos ayudar hoy?`,
+                    en: `Welcome ${firstName} to NexoFilm! 🎬 Great to have you here. How can we help you today?`,
+                    pt: `Bem-vindo ${firstName} à NexoFilm! 🎬 É um prazer atendê-lo. Como podemos te ajudar hoje?`
+                }[lang] || `¡Bienvenido ${firstName} a NexoFilm! 🎬 Un placer atenderte. ¿En qué te podemos ayudar hoy?`;
+            }
+
+            await sendText(phoneNumberId, from, vipGreeting);
+            await sendMenu(phoneNumberId, from, lang);
+
+            const newHistory = [
+                { role: 'user', content: userDisplayContent || text, timestamp: new Date().toISOString() },
+                { role: 'assistant', content: vipGreeting, timestamp: new Date().toISOString() }
+            ];
+            await persistHistory(from, newHistory);
+            sendTelegramLog(from, firstName, vipGreeting, 'assistant', newHistory).catch(() => {});
+            sendTelegramLog(from, firstName, '👇 Opciones de menú enviadas al cliente VIP', 'system', newHistory).catch(() => {});
+            return res.status(200).send('OK');
+        }
+
+        // --- 3. RESPUESTA AL PEDIDO DE NOMBRE (si el último mensaje del bot le pedía el nombre) ---
         const lastAssistantMsg = [...history].reverse().find(m => m.role === 'assistant');
         const askedNameRecently = lastAssistantMsg && (
             lastAssistantMsg.content.includes('nombre') ||
@@ -572,32 +606,9 @@ Te recordamos que además de coberturas, hacemos:
             return res.status(200).send('OK');
         }
 
-    // --- LÓGICA VIP (Reconocimiento del CRM) DADA 100% DIGERIDA POR JS ---
-    const isFirstMessage = history.length === 0;
-    let instruccionSaludo = "";
-    if (isFirstMessage) {
-        if (leadData?.name && leadData.name !== 'Sin nombre') {
-            const firstName = leadData.name.trim().split(/[\s,.-]+/)[0];
-            const greetings = {
-                es: `¡Bienvenido ${firstName} a NexoFilm, un placer atenderte!`,
-                en: `Welcome ${firstName} to NexoFilm, great to have you here!`,
-                pt: `Bem-vindo ${firstName} à NexoFilm, é um prazer atendê-lo!`
-            };
-            const currentGreeting = greetings[lang] || greetings.es;
-            
-            const hasRecentBudget = leadData.summary && !leadData.summary.includes("Conversación en curso");
-            const daysSinceUpdate = leadData.updated_at ? Math.floor((Date.now() - new Date(leadData.updated_at).getTime()) / (1000 * 60 * 60 * 24)) : 0;
-            
-            if (hasRecentBudget && daysSinceUpdate < 60) {
-                  instruccionSaludo = `1. **CLIENTE RECONOCIDO CON HISTORIAL**: Ya sabes que es ${firstName}. Su última consulta fue sobre: "${leadData.summary}".\n2. **PRESENTACIÓN**: Saludalo cálidamente y mencioná su consulta anterior. Ej: "¡Bienvenido ${firstName} a NexoFilm! Vi que tu consulta anterior fue sobre [proyecto]. ¿Seguímos con eso o tenés algo nuevo en mente?" e incluí el tag $$SHOW_MENU$$. NO le preguntes su nombre. NO termines con '¿en qué te puedo ayudar?' porque el menú ya lo ofrece.`;
-            } else {
-                  instruccionSaludo = `1. **CLIENTE RECONOCIDO**: Ya sabes que es ${firstName}.\n2. **PRESENTACIÓN**: Saludalo EXACTAMENTE con esta frase: "${currentGreeting}" e incluye inmediatamente el tag $$SHOW_MENU$$. NO agregues '¿en qué te puedo ayudar?' porque el menú con botones ya se lo ofrece automáticamente.`;
-            }
-        }
-    } else {
-        const knownName = (leadData?.name && leadData.name !== 'Sin nombre') ? leadData.name.trim().split(/[\s,.-]+/)[0] : "";
-        instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName || "el cliente"}. Si ya seleccionó una opción o están en medio del flujo de presupuesto, respondé con calidez validando su proyecto y avanzá con la siguiente pregunta. NO repitas su nombre en cada mensaje.`;
-    }
+    // --- CONTINUACIÓN DE CONVERSACIÓN (Groq IA) ---
+    const knownName = (leadData?.name && leadData.name !== 'Sin nombre') ? leadData.name.trim().split(/[\s,.-]+/)[0] : "";
+    let instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName || "el cliente"}. Si ya seleccionó una opción o están en medio del flujo de presupuesto, respondé con calidez validando su proyecto y avanzá con la siguiente pregunta. NO repitas su nombre en cada mensaje.`;
 
     let confirmacionEmail = `      - Pedile el correo de forma cálida y natural. Ejemplo: "Para prepararte la propuesta, ¿me pasás tu mail?".\n      - Si el cliente no quiere dar el mail o dice que lo tiene lleno, NO insistás. En cambio, respondé algo como: "No hay problema, un asesor te va a contactar directamente por acá o por teléfono." y a continuación emite el HANDOFF_JSON igual, poniendo email como null.\n      - NUNCA presiones ni repitás la misma frase varias veces. Siempre hay una salida amable.`;
 
