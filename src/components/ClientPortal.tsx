@@ -663,37 +663,27 @@ const ClientPortal: React.FC = () => {
         return null;
     };
 
-    const triggerDirectDriveDownload = async (file: DriveFile) => {
-        let downloadUrl = `https://drive.usercontent.google.com/download?id=${file.id}&export=download&confirm=t`;
-        try {
-            const res = await fetch(`/api/storage-download?fileId=${encodeURIComponent(file.id)}&json=true`);
-            if (res.ok) {
-                const data = await res.json();
-                if (data.downloadUrl) {
-                    downloadUrl = data.downloadUrl;
-                }
-            }
-        } catch (err) {
-            console.error('Error resolviendo bypass en portal:', err);
-        }
 
+    // Descarga directamente desde el proxy de streaming de NexoFilm.
+    // El servidor resuelve el UUID de Google Drive y hace streaming del archivo.
+    // El usuario NUNCA ve una pantalla de Google Drive.
+    const triggerDirectDriveDownload = (file: DriveFile) => {
+        const url = `/api/storage-download?fileId=${encodeURIComponent(file.id)}&name=${encodeURIComponent(file.name)}`;
         const link = document.createElement('a');
-        link.href = downloadUrl;
+        link.href = url;
         link.download = file.name;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     };
 
-    const handleDownloadDriveSingle = async (file: DriveFile, e?: React.MouseEvent) => {
+    const handleDownloadDriveSingle = (file: DriveFile, e?: React.MouseEvent) => {
         if (e) e.stopPropagation();
         setDownloadingDriveSingleId(file.id);
-        try {
-            await triggerDirectDriveDownload(file);
-        } finally {
-            setTimeout(() => setDownloadingDriveSingleId(null), 1000);
-        }
+        triggerDirectDriveDownload(file);
+        setTimeout(() => setDownloadingDriveSingleId(null), 1500);
     };
+
 
     const toggleSelectDriveFile = (fileId: string, e?: React.MouseEvent) => {
         if (e) e.stopPropagation();
@@ -766,15 +756,16 @@ const ClientPortal: React.FC = () => {
         setIsDownloadingDriveBatch(true);
         for (let i = 0; i < toDownload.length; i++) {
             setDriveBatchProgress({ current: i + 1, total: toDownload.length });
-            const file = toDownload[i];
-            await triggerDirectDriveDownload(file);
+            triggerDirectDriveDownload(toDownload[i]);
             if (i < toDownload.length - 1) {
+                // Pequeño delay entre descargas para no saturar el navegador
                 await new Promise(r => setTimeout(r, 800));
             }
         }
         setIsDownloadingDriveBatch(false);
         setDriveBatchProgress(null);
     };
+
 
     // Enviar especificaciones refinadas
     const handleUpdateSpecifications = async (e: React.FormEvent) => {

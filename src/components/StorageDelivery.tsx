@@ -159,37 +159,29 @@ const StorageDelivery: React.FC = () => {
         setTimeout(() => setCopied(false), 2500);
     };
 
-    const triggerDirectDownload = async (file: DriveFile) => {
-        let downloadUrl = `https://drive.usercontent.google.com/download?id=${file.id}&export=download&confirm=t`;
-        try {
-            const res = await fetch(`/api/storage-download?fileId=${encodeURIComponent(file.id)}&json=true`);
-            if (res.ok) {
-                const data = await res.json();
-                if (data.downloadUrl) {
-                    downloadUrl = data.downloadUrl;
-                }
-            }
-        } catch (err) {
-            console.error('Error resolviendo bypass para descarga:', err);
-        }
 
+    // Descarga directamente desde el proxy de streaming de NexoFilm.
+    // El servidor resuelve el UUID de Google Drive y hace streaming del archivo.
+    // El usuario NUNCA ve una pantalla de Google Drive.
+    const triggerDirectDownload = (file: DriveFile) => {
+        const url = `/api/storage-download?fileId=${encodeURIComponent(file.id)}&name=${encodeURIComponent(file.name)}`;
         const link = document.createElement('a');
-        link.href = downloadUrl;
+        link.href = url;
         link.download = file.name;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     };
 
-    const handleDownloadSingle = async (file: DriveFile, e?: React.MouseEvent) => {
+
+
+    const handleDownloadSingle = (file: DriveFile, e?: React.MouseEvent) => {
         if (e) e.stopPropagation();
         setDownloadingSingleId(file.id);
-        try {
-            await triggerDirectDownload(file);
-        } finally {
-            setTimeout(() => setDownloadingSingleId(null), 1000);
-        }
+        triggerDirectDownload(file);
+        setTimeout(() => setDownloadingSingleId(null), 1500);
     };
+
 
     const toggleSelectFile = (fileId: string, e?: React.MouseEvent) => {
         if (e) e.stopPropagation();
@@ -262,15 +254,16 @@ const StorageDelivery: React.FC = () => {
         setIsDownloadingBatch(true);
         for (let i = 0; i < toDownload.length; i++) {
             setBatchProgress({ current: i + 1, total: toDownload.length });
-            const file = toDownload[i];
-            await triggerDirectDownload(file);
+            triggerDirectDownload(toDownload[i]);
             if (i < toDownload.length - 1) {
+                // Pequeño delay entre descargas para no saturar el navegador
                 await new Promise(r => setTimeout(r, 800));
             }
         }
         setIsDownloadingBatch(false);
         setBatchProgress(null);
     };
+
 
     // Cerrar modal con ESC
     useEffect(() => {
