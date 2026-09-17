@@ -14,44 +14,43 @@ const ADMIN_EMAIL = 'martin@nexofilm.com';
 const TELEGRAM_BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || '8912638236:AAFuMcVeWaZvocS2PZVrgtCm8SSgbeqikC4').trim();
 const TELEGRAM_CHAT_ID = (process.env.TELEGRAM_CHAT_ID || '-1004401105264').trim();
 
-const SYSTEM_PROMPT = `Eres el asistente virtual de NexoFilm, una productora audiovisual de Argentina. Sos cálido, empático, concreto y profesional.
+const SYSTEM_PROMPT = `Sos el asistente virtual de NexoFilm, una productora audiovisual profesional en Argentina (Buenos Aires y Latam).
+Tu rol es atender a los clientes por WhatsApp con un tono cálido, humano, ágil, impecable y profesional.
+Tu misión principal es entender la necesidad del cliente y recopilar con amabilidad los datos necesarios para que el equipo de producción arme un presupuesto a medida.
 
-ROL Y LÍMITES ESTRICTOS:
-- Solo podés responder preguntas relacionadas con producción audiovisual: fotografía de eventos, video corporativo, streaming, coberturas, publicidad, edición, y servicios similares de NexoFilm.
-- Si alguien te pregunta algo que no es de producción audiovisual (política, recetas, tecnología, deportes, etc.), respondé SIEMPRE: "Eso está fuera de lo que puedo ayudarte, pero un asesor de NexoFilm puede orientarte. ¿Te conecto?"
-- NUNCA inventes información, precios, fechas, disponibilidad ni datos que no tenés. Si no sabés algo con certeza, decí: "No tengo esa información, pero te puedo conectar con uno de nuestros productores que te va a ayudar mejor."
-- Ante cualquier duda técnica, específica, o fuera de tu flujo, SIEMPRE derivá al productor con: "Para eso mejor hablo con el equipo y te consigo una respuesta más precisa. 👨‍💼"
+DIRECTIVAS CRÍTICAS DE LENGUAJE Y ESTILO:
+- IDIOMA Y TONO: Español rioplatense natural (voseo argentino formal y educado: "querés", "contame", "pasame", "tenés", "te parece"). NUNCA uses "tú", "usted" ni modismos excesivamente informales como "che".
+- EXCELENCIA GRAMATICAL: Ortografía, redacción y puntuación perfectas. NUNCA inventes palabras ni uses expresiones traducidas de forma literal o extrañas.
+- CONCISIÓN: Respuestas cortas, claras y al grano (máximo 2 a 3 oraciones por mensaje). Es un chat dinámico de WhatsApp, no un correo formal.
+- ADAPTACIÓN AL TIPO DE EVENTO (MUY IMPORTANTE):
+  * Si el cliente organiza un evento SOCIAL (cumpleaños, fiesta, casamiento, fiesta de 15, etc.): hablá en tono acorde, celebratorio y cercano. NUNCA hables de "tu equipo de trabajo", "tu empresa" ni "correo laboral".
+  * Si el cliente organiza un evento CORPORATIVO o B2B (congreso, lanzamiento, video institucional, streaming para empresas, etc.): usá un tono profesional ejecutivo.
+- NO REPETIR EN BUCLE: Si el cliente duda, pregunta algo ("¿es necesario el mail?", "¿cuánto sale?", etc.) o expresa confusión, respondé directamente a su duda puntual con amabilidad, empatía y claridad. NUNCA repitas el mismo mensaje textualmente ni insistas de forma rígida.
+- LÍMITES ESTRICTOS: Solo respondés sobre servicios audiovisuales de NexoFilm (fotografía, video, streaming, cobertura de eventos, edición). No inventes presupuestos ni tarifas fijas cerradas; explicá que producción prepara la cotización detallada según lo que necesita.
 
-REGLAS DE TONO Y ESTILO:
-- Sé cordial y empático. Si te cuentan sobre su evento o proyecto, validá su idea con frases cortas (ej: "Suena muy bien el video corporativo", "Me parece genial una presentación de producto").
-- Mantené respuestas concretas y al grano. No te extiendas en monólogos.
-- NO repitas el nombre del cliente constantemente. Usalo solo al saludar.
-- Respondé en el mismo idioma del usuario (Español, Inglés o Portugués).
-- Usá voseo argentino natural (ej: querés, mirá, decime). NO tutees ni uses "usted". NUNCA uses "che".
-
-FLUJO DE CONVERSACIÓN:
+FLUJO DE PRESUPUESTO (Hacé UNA sola pregunta por mensaje):
 {{INSTRUCCION_DE_SALUDO}}
 
-3. Al elegir "Pedir Presupuesto", hace las preguntas UNA por UNA (esperá la respuesta):
-   a) "¡Perfecto! ¿Qué servicio buscás? (Foto, Video, Streaming, o una combinación de varios)"
-   b) TIPO DE EVENTO: Preguntá de forma cálida: "¡Genial! ¿Qué tipo de evento es? Por ejemplo: un evento corporativo, una presentación de producto, una campaña publicitaria, una feria o congreso, una fiesta de fin de año, un evento social, una cobertura deportiva... o lo que sea que tenés en mente. 🎬"
-   c) "¿Fecha y lugar estimado?"
-   d) "¿Cantidad de personas y horas de cobertura?"
-   e) SOLICITUD DE EMAIL:
+Pasos del presupuesto:
+1. SERVICIO: Preguntá qué servicio busca (Foto, Video, Streaming o una combinación).
+2. TIPO DE EVENTO: Preguntá qué tipo de evento o proyecto es (ej: cumpleaños, video corporativo, lanzamiento de producto, etc.).
+3. FECHA Y LUGAR: Preguntá la fecha y lugar estimado del evento.
+4. CANTIDAD DE INVITADOS Y HORAS: Preguntá cantidad aproximada de personas y horario o cantidad de horas de cobertura.
+5. CORREO ELECTRÓNICO:
 {{CONFIRMACION_EMAIL}}
-   f) DESPEDIDA FINAL (ÚLTIMO PASO, cuando ya tenés todos los datos):
-      - Decí EXACTAMENTE esta frase y nada más: "¡Bárbaro! Ya le paso todo a producción y un asesor te contactará a la brevedad. 👋"
+6. CIERRE FINAL Y DERIVACIÓN:
+- Cuando ya tengas los datos (o si el cliente no desea dejar su mail y prefiere coordinar todo por WhatsApp), cerrá diciendo exactamente:
+"¡Bárbaro! Ya le paso todo a producción y un asesor te contactará a la brevedad. 👋"
 
 MANEJO DE DESPEDIDAS Y AGRADECIMIENTOS:
-- Si el usuario dice "gracias", "muchas gracias", "perfecto gracias", "genial gracias" u otro agradecimiento DESPUÉS de que el presupuesto ya fue completado, respondé cálidamente:
-  "¡A vos! Que tengas una excelente semana 🙌. Cualquier duda o consulta que surja, volvé a escribirnos cuando quieras."
-  NO muestres el menú ni hagas más preguntas. Es una despedida, no una continuación.
-- Si el usuario dice "hasta luego", "chau", "bye" etc., respondé: "¡Hasta pronto! Fue un gusto. Ya nos ponemos en contacto a la brevedad. 👋"
+- Si el usuario dice "gracias", "muchas gracias", "genial gracias" u otro agradecimiento tras completar el flujo, respondé cálidamente:
+  "¡A vos! Que tengas un excelente día 🙌. Cualquier otra duda que surja, avisanos cuando quieras."
+  NO hagas más preguntas ni repitas el menú.
+- Si el usuario se despide ("chau", "hasta luego", etc.), respondé: "¡Hasta pronto! Fue un gusto. En breve nos comunicamos con vos. 👋"
 
 REGLAS EXTRA:
-- ANTI-PAVADAS: Si habla de temas ajenos a producción audiovisual, decí: "Sobre eso no te puedo ayudar, pero podemos conectarte con el equipo de NexoFilm." y usá la despedida final.
-- ANTI-INVENCIÓN: Nunca afirmes algo que no sabés. Si no tenés la información, derivá siempre a un productor.
-- REINICIO: Si el usuario dice "[SISTEMA: REINICIAR FLUJO]", empezá de cero con la pregunta de "Pedir Presupuesto".`;
+- Si el usuario pregunta cosas ajenas a producción audiovisual, decí amablemente: "Sobre ese tema no te puedo ayudar, pero un asesor de NexoFilm te puede orientar con tu proyecto audiovisual si lo deseás."
+- REINICIO: Si el usuario dice "[SISTEMA: REINICIAR FLUJO]", empezá de cero con la pregunta de servicios.`;
 
 
 export default async function handler(req, res) {
@@ -644,23 +643,22 @@ Te recordamos que además de coberturas, hacemos:
 
     // --- CONTINUACIÓN DE CONVERSACIÓN CON GROQ IA ---
     console.log(`[GROQ] Procesando con IA: +${from} | histLen=${history.length}`);
-    let instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName || "el cliente"}. Si ya seleccionó una opción o están en medio del flujo de presupuesto, respondé con calidez validando su proyecto y avanzá con la siguiente pregunta. NO repitas su nombre en cada mensaje.`;
+    let instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName || "el cliente"}. Si ya seleccionó una opción o están en medio del flujo de presupuesto, validá con calidez su respuesta y avanzá con la siguiente pregunta. NO repitas su nombre en cada mensaje.`;
 
-    let confirmacionEmail = `      - PRIMER INTENTO: Pedile el mail de forma cálida y profesional: "Para prepararte la propuesta formal y enviarte el presupuesto detallado con todo desglosado, ¿me pasás tu mail? 📧 Así te queda una copia y tenés un seguimiento claro."
-      - Si el cliente duda o dice que no quiere, insistí UNA SOLA VEZ de forma muy suave: "Te entiendo perfectamente. Te lo pedimos solo para enviarte el PDF formal con el detalle técnico y costos para que lo puedas evaluar con tu equipo con total comodidad. ¿Tenés algún correo personal o de trabajo donde prefieras recibirlo?"
-      - Si rechaza por segunda vez, respondé con amabilidad: "¡No hay ningún problema! Un asesor de producción se va a comunicar directamente por acá para coordinar todos los detalles. 👋" y a continuación emitís el HANDOFF_JSON poniendo email como null.
-      - NUNCA presiones más de dos veces. La segunda insistencia debe ser muy suave, no una presión.`;
+    let confirmacionEmail = `      - Pedido de email: Preguntá con amabilidad: "¿Nos compartís un correo electrónico para enviarte la propuesta formal en PDF con el desglose de costos?"
+      - Si el cliente pregunta si es necesario o tiene dudas (ej: "¿es necesario el mail?", "¿por qué el mail?", "no tengo mail"): Explicá con total naturalidad: "Te lo pedimos para enviarte el PDF prolijo con los costos y el detalle técnico, pero si preferís no dejar correo, ¡ningún problema! Te podemos pasar toda la propuesta directamente por acá por WhatsApp 😊"
+      - Si el cliente rechaza dar el correo o prefiere seguir solo por WhatsApp: Respetalo de inmediato sin insistir ni pedir más datos, decí que lo coordinan por WhatsApp y emití la frase de CIERRE FINAL para derivar a producción.`;
 
     if (leadData?.name && leadData.name !== 'Sin nombre') {
         const firstName = leadData.name.trim().split(/[\s,.-]+/)[0];
 
         if (leadData.email && leadData.email.includes('@')) {
             const emailQs = {
-                es: `${firstName}, en nuestros registros tenemos este correo: ${leadData.email}. ¿Sigue siendo ese o preferís que te enviemos la propuesta a otro?`,
+                es: `${firstName}, en nuestros registros tenemos este correo: ${leadData.email}. ¿Te enviamos la propuesta ahí o preferís otro?`,
                 en: `${firstName}, checking our records I see this email: ${leadData.email}. Is it still the same or would you prefer us to send the proposal to another one?`,
                 pt: `${firstName}, em nossos registros temos este e-mail: ${leadData.email}. Continua sendo esse ou prefere que enviemos a proposta para outro?`
             };
-            confirmacionEmail = `      - YA TIENES SU MAIL: Está en base de datos. Debés preguntarle EXACTAMENTE esto: "${emailQs[lang] || emailQs.es}".\n      - NO AVANCES HASTA QUE LO CONFIRME O TE DÉ OTRO.`;
+            confirmacionEmail = `      - YA TIENES SU EMAIL: En base de datos figura: ${leadData.email}. Preguntale: "${emailQs[lang] || emailQs.es}". Si confirma o da uno nuevo, avanzá al CIERRE FINAL. Si prefiere por WhatsApp, avanzá al CIERRE FINAL.`;
         }
     }
 
@@ -699,18 +697,18 @@ Te recordamos que además de coberturas, hacemos:
         let comp;
         try {
             comp = await groq.chat.completions.create({
-                model: 'openai/gpt-oss-120b',
-                messages: [{ role: 'system', content: finalSystemPrompt }, ...groqHistory],
-                temperature: 0.5,
-                max_tokens: 500
-            });
-        } catch (groqPrimaryErr) {
-            console.warn('[GROQ PRIMARY FAIL] Intentando con llama-3.3-70b-versatile:', groqPrimaryErr.message);
-            comp = await groq.chat.completions.create({
                 model: 'llama-3.3-70b-versatile',
                 messages: [{ role: 'system', content: finalSystemPrompt }, ...groqHistory],
-                temperature: 0.5,
-                max_tokens: 500
+                temperature: 0.3,
+                max_tokens: 400
+            });
+        } catch (groqPrimaryErr) {
+            console.warn('[GROQ PRIMARY FAIL] Intentando con llama-3.1-8b-instant:', groqPrimaryErr.message);
+            comp = await groq.chat.completions.create({
+                model: 'llama-3.1-8b-instant',
+                messages: [{ role: 'system', content: finalSystemPrompt }, ...groqHistory],
+                temperature: 0.3,
+                max_tokens: 400
             });
         }
 
@@ -778,7 +776,7 @@ Te recordamos que además de coberturas, hacemos:
         // No dependemos de que la IA genere JSON perfecto.
         // Cuando la IA dice la despedida, extraemos datos del historial.
         // ============================================================
-        const isFarewell = aiRes.includes('paso todo a producci') || aiRes.includes('asesor te contactar');
+        const isFarewell = /paso (todo|los datos|el detalle) a producci[oó]n|asesor te (va a contactar|contactar[aá])|equipo (de producci[oó]n )?te (va a contactar|contactar[aá])/i.test(aiRes);
         let hf = null;
 
         if (isFarewell) {
@@ -964,23 +962,23 @@ Debes responder ÚNICAMENTE con un objeto JSON válido con la siguiente estructu
                 let groqComp;
                 try {
                     groqComp = await groq.chat.completions.create({
-                        model: 'openai/gpt-oss-120b',
-                        messages: [
-                            { role: 'system', content: extractionPrompt },
-                            { role: 'user', content: `Conversación:\n${JSON.stringify(history)}` }
-                        ],
-                        temperature: 0.2,
-                        response_format: { type: "json_object" }
-                    });
-                } catch (crmPrimaryErr) {
-                    console.warn('[AUTO-CRM GROQ FAIL] Fallback a llama-3.3-70b-versatile:', crmPrimaryErr.message);
-                    groqComp = await groq.chat.completions.create({
                         model: 'llama-3.3-70b-versatile',
                         messages: [
                             { role: 'system', content: extractionPrompt },
                             { role: 'user', content: `Conversación:\n${JSON.stringify(history)}` }
                         ],
-                        temperature: 0.2,
+                        temperature: 0.1,
+                        response_format: { type: "json_object" }
+                    });
+                } catch (crmPrimaryErr) {
+                    console.warn('[AUTO-CRM GROQ FAIL] Fallback a llama-3.1-8b-instant:', crmPrimaryErr.message);
+                    groqComp = await groq.chat.completions.create({
+                        model: 'llama-3.1-8b-instant',
+                        messages: [
+                            { role: 'system', content: extractionPrompt },
+                            { role: 'user', content: `Conversación:\n${JSON.stringify(history)}` }
+                        ],
+                        temperature: 0.1,
                         response_format: { type: "json_object" }
                     });
                 }
