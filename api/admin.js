@@ -23,8 +23,8 @@ export default async function handler(req, res) {
     try {
         switch (action) {
             case 'getLeads': {
-                // 1. Obtener todas las sesiones activas
-                const { data: allSessions, error: sErr } = await supabase.from('whatsapp_sessions').select('phone');
+                // 1. Obtener todas las sesiones activas (excluyendo registros de sistema)
+                const { data: allSessions, error: sErr } = await supabase.from('whatsapp_sessions').select('phone').not('phone', 'like', '__%');
                 if (sErr) throw sErr;
 
                 // 2. Por cada sesión, traer su registro de CRM
@@ -60,10 +60,11 @@ export default async function handler(req, res) {
             }
 
             case 'getSessions': {
-                // 1. Traer sesiones
+                // 1. Traer sesiones (excluyendo registros de sistema)
                 const { data: sessData, error: sessErr } = await supabase
                     .from('whatsapp_sessions')
                     .select('*')
+                    .not('phone', 'like', '__%')
                     .order('updated_at', { ascending: false });
                 if (sessErr) throw sessErr;
 

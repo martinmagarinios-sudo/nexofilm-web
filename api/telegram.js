@@ -1,4 +1,4 @@
-﻿import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
 const TELEGRAM_BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || '8912638236:AAFuMcVeWaZvocS2PZVrgtCm8SSgbeqikC4').trim();
 const TELEGRAM_CHAT_ID = (process.env.TELEGRAM_CHAT_ID || '-1004401105264').trim();
@@ -41,26 +41,45 @@ export default async function handler(req, res) {
     }
 
     try {
-        // 1. Buscar en whatsapp_sessions cuál teléfono tiene este thread_id en su historial
-        const { data: sessions, error: sessErr } = await supabase
+        // 1. Buscar en __telegram_topics__ qué teléfono tiene este thread_id
+        let phone = null;
+        const { data: topicsRecord } = await supabase
             .from('whatsapp_sessions')
-            .select('phone, history');
+            .select('history')
+            .eq('phone', '__telegram_topics__')
+            .maybeSingle();
 
-        if (sessErr) {
-            console.error('[TELEGRAM] Error buscando sesión:', sessErr.message);
-            return res.status(200).send('OK');
+        if (topicsRecord && typeof topicsRecord.history === 'object' && !Array.isArray(topicsRecord.history)) {
+            for (const [p, tid] of Object.entries(topicsRecord.history)) {
+                if (Number(tid) === Number(threadId)) {
+                    phone = p;
+                    break;
+                }
+            }
         }
 
-        const matchedSession = sessions?.find(s => 
-            Array.isArray(s.history) && s.history.some(m => m.role === 'system' && m.type === 'telegram_topic' && Number(m.thread_id) === Number(threadId))
-        );
+        // Fallback: Buscar en historiales de sesiones
+        if (!phone) {
+            const { data: sessions, error: sessErr } = await supabase
+                .from('whatsapp_sessions')
+                .select('phone, history')
+                .not('phone', 'like', '__%');
 
-        if (!matchedSession || !matchedSession.phone) {
+            if (sessErr) {
+                console.error('[TELEGRAM] Error buscando sesión:', sessErr.message);
+                return res.status(200).send('OK');
+            }
+
+            const matchedSession = sessions?.find(s => 
+                Array.isArray(s.history) && s.history.some(m => m.type === 'telegram_topic' && Number(m.thread_id) === Number(threadId))
+            );
+            phone = matchedSession?.phone;
+        }
+
+        if (!phone) {
             console.log(`[TELEGRAM] No se encontró cliente de WhatsApp asociado al tema ${threadId}`);
             return res.status(200).send('OK');
         }
-
-        const phone = matchedSession.phone;
         const token = process.env.WHATSAPP_TOKEN?.trim();
         const phoneNumberId = process.env.WHATSAPP_PHONE_ID?.trim();
 
@@ -103,7 +122,8 @@ export default async function handler(req, res) {
         }
 
         // 3. Guardar en el historial de Supabase con role 'admin'
-        let currentHistory = matchedSession.history || [];
+        const { data: sessionInfo } = await supabase.from('whatsapp_sessions').select('history').eq('phone', phone).maybeSingle();
+        let currentHistory = Array.isArray(sessionInfo?.history) ? sessionInfo.history : [];
         currentHistory.push({
             role: 'admin',
             content: textToSend,
@@ -117,6 +137,12 @@ export default async function handler(req, res) {
                 history: currentHistory,
                 updated_at: new Date().toISOString() 
             });
+
+        // Actualizar updated_at en whatsapp_leads para que el CRM lo suba arriba
+        const searchStr = phone.slice(-8);
+        await supabase.from('whatsapp_leads')
+            .update({ updated_at: new Date().toISOString() })
+            .like('phone', `%${searchStr}%`);
 
         console.log(`[TELEGRAM] Mensaje enviado exitosamente a WhatsApp +${phone}`);
 

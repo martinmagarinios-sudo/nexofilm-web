@@ -1092,7 +1092,7 @@ Debes responder ÚNICAMENTE con un objeto JSON válido con la siguiente estructu
 
 // HELPERS
 async function loadHistory(phone) {
-    if (!supabase) return { history: [], updated_at: null };
+    if (!supabase || !phone || phone.startsWith('__')) return { history: [], updated_at: null };
     const { data } = await supabase.from('whatsapp_sessions').select('history, updated_at').eq('phone', phone).maybeSingle();
     return { 
         history: Array.isArray(data?.history) ? data.history : [], 
@@ -1101,7 +1101,7 @@ async function loadHistory(phone) {
 }
 
 async function persistHistory(phone, history) {
-    if (!supabase) return;
+    if (!supabase || !phone || phone.startsWith('__')) return;
     await supabase.from('whatsapp_sessions').upsert({ phone, history, updated_at: new Date().toISOString() }, { onConflict: 'phone' });
 }
 
@@ -1272,62 +1272,160 @@ async function sendDualEmail(subject, htmlContent) {
     }
 }
 
-// --- TELEGRAM INTEGRATION HELPERS ---
-async function getOrCreateTelegramTopic(phone, name, history = []) {
-    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return null;
-    
-    // 1. Buscar si ya existe en el historial
-    const existing = history?.find(m => m.role === 'system' && m.type === 'telegram_topic' && m.thread_id);
-    if (existing) return existing.thread_id;
+// --- TELEGRAM INTEGRATION HELPERS & TOPIC REGISTRY ---
+let cachedTopicsMap = null;
+let lastTopicsFetch = 0;
+const topicCreationLocks = new Map();
 
+async function getTelegramTopicsMap() {
+    const now = Date.now();
+    if (cachedTopicsMap && (now - lastTopicsFetch < 60000)) {
+        return cachedTopicsMap;
+    }
+    if (!supabase) return cachedTopicsMap || {};
     try {
-        const displayName = (name && name !== 'Sin nombre') ? name : `Cliente (+${phone})`;
-        const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/createForumTopic`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: TELEGRAM_CHAT_ID,
-                name: `👤 ${displayName}`
-            })
-        });
-        const data = await res.json();
-        if (data.ok && data.result?.message_thread_id) {
-            const threadId = data.result.message_thread_id;
-            history.unshift({
-                role: 'system',
-                type: 'telegram_topic',
-                thread_id: threadId,
-                timestamp: new Date().toISOString()
-            });
-            await persistHistory(phone, history);
-            return threadId;
+        const { data } = await supabase.from('whatsapp_sessions').select('history').eq('phone', '__telegram_topics__').maybeSingle();
+        if (data && typeof data.history === 'object' && !Array.isArray(data.history)) {
+            cachedTopicsMap = data.history || {};
+        } else {
+            cachedTopicsMap = {};
+        }
+        lastTopicsFetch = now;
+        return cachedTopicsMap;
+    } catch (e) {
+        console.error('[TELEGRAM] Error leyendo topics map:', e.message);
+        return cachedTopicsMap || {};
+    }
+}
+
+async function saveTelegramTopic(rawPhone, threadId) {
+    const phone = normalizePhone(rawPhone);
+    if (!phone || !threadId) return;
+    try {
+        const currentMap = await getTelegramTopicsMap();
+        currentMap[phone] = Number(threadId);
+        cachedTopicsMap = { ...currentMap };
+        lastTopicsFetch = Date.now();
+        if (supabase) {
+            await supabase.from('whatsapp_sessions').upsert({
+                phone: '__telegram_topics__',
+                history: currentMap,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'phone' });
         }
     } catch (e) {
-        console.error('[TELEGRAM TOPIC ERROR]', e.message);
+        console.error('[TELEGRAM] Error guardando topic en map:', e.message);
+    }
+}
+
+async function deleteTelegramTopicFromMap(rawPhone) {
+    const phone = normalizePhone(rawPhone);
+    if (!phone) return;
+    try {
+        const currentMap = await getTelegramTopicsMap();
+        delete currentMap[phone];
+        cachedTopicsMap = { ...currentMap };
+        if (supabase) {
+            await supabase.from('whatsapp_sessions').upsert({
+                phone: '__telegram_topics__',
+                history: currentMap,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'phone' });
+        }
+    } catch (e) {}
+}
+
+async function findPhoneByTelegramThreadId(threadId) {
+    if (!threadId) return null;
+    const numThreadId = Number(threadId);
+    const topicsMap = await getTelegramTopicsMap();
+    for (const [phone, tid] of Object.entries(topicsMap)) {
+        if (Number(tid) === numThreadId) {
+            return phone;
+        }
     }
     return null;
 }
 
-async function updateTelegramTopicName(phone, newName, history = []) {
-    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !newName) return;
-    try {
-        const threadId = history?.find(m => m.role === 'system' && m.type === 'telegram_topic' && m.thread_id)?.thread_id;
-        if (!threadId) return;
+async function getOrCreateTelegramTopic(rawPhone, name, history = []) {
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !rawPhone) return null;
+    const phone = normalizePhone(rawPhone);
+    if (!phone) return null;
 
+    if (topicCreationLocks.has(phone)) {
+        return await topicCreationLocks.get(phone);
+    }
+
+    const creationPromise = (async () => {
+        try {
+            const topicsMap = await getTelegramTopicsMap();
+            let threadId = topicsMap[phone];
+
+            if (!threadId && Array.isArray(history)) {
+                const foundInHist = history.find(m => m.type === 'telegram_topic' && m.thread_id);
+                if (foundInHist) {
+                    threadId = Number(foundInHist.thread_id);
+                    await saveTelegramTopic(phone, threadId);
+                }
+            }
+
+            if (threadId) {
+                if (name && name !== 'Sin nombre' && !name.includes('+')) {
+                    updateTelegramTopicName(phone, name, threadId).catch(() => {});
+                }
+                return threadId;
+            }
+
+            // Crear nuevo tema único en el grupo de Telegram
+            const displayName = (name && name !== 'Sin nombre') ? `${name} (+${phone})` : `Cliente (+${phone})`;
+            console.log(`[TELEGRAM] Creando tema único para ${displayName}`);
+            const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/createForumTopic`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: TELEGRAM_CHAT_ID,
+                    name: `👤 ${displayName}`
+                })
+            });
+            const data = await res.json();
+            if (data.ok && data.result?.message_thread_id) {
+                const newThreadId = Number(data.result.message_thread_id);
+                await saveTelegramTopic(phone, newThreadId);
+                return newThreadId;
+            } else {
+                console.error('[TELEGRAM CREATE TOPIC ERROR]', data);
+            }
+        } catch (e) {
+            console.error('[TELEGRAM GET/CREATE TOPIC ERROR]', e.message);
+        } finally {
+            topicCreationLocks.delete(phone);
+        }
+        return null;
+    })();
+
+    topicCreationLocks.set(phone, creationPromise);
+    return await creationPromise;
+}
+
+async function updateTelegramTopicName(rawPhone, newName, threadId) {
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !newName || !threadId) return;
+    const phone = normalizePhone(rawPhone);
+    try {
         await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/editForumTopic`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 chat_id: TELEGRAM_CHAT_ID,
-                message_thread_id: threadId,
+                message_thread_id: Number(threadId),
                 name: `👤 ${newName} (+${phone})`
             })
         });
     } catch (e) {}
 }
 
-async function sendTelegramLog(phone, name, text, role = 'user', history = []) {
-    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !text) return;
+async function sendTelegramLog(rawPhone, name, text, role = 'user', history = []) {
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID || !text || !rawPhone) return;
+    const phone = normalizePhone(rawPhone);
     try {
         const threadId = await getOrCreateTelegramTopic(phone, name, history);
         if (!threadId) return;
@@ -1338,15 +1436,33 @@ async function sendTelegramLog(phone, name, text, role = 'user', history = []) {
         else if (role === 'admin') prefix = `👨‍💼 *Martín (Humano)*: `;
         else if (role === 'system') prefix = `🔔 `;
 
-        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        const sendRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 chat_id: TELEGRAM_CHAT_ID,
-                message_thread_id: threadId,
+                message_thread_id: Number(threadId),
                 text: `${prefix}${text}`
             })
         });
+
+        const sendData = await sendRes.json();
+        if (!sendData.ok && (sendData.description?.includes('thread not found') || sendData.description?.includes('TOPIC_CLOSED') || sendData.description?.includes('message thread not found'))) {
+            console.warn(`[TELEGRAM] Tema ${threadId} inválido para +${phone}. Recreando...`);
+            await deleteTelegramTopicFromMap(phone);
+            const freshThreadId = await getOrCreateTelegramTopic(phone, name, history);
+            if (freshThreadId) {
+                await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: TELEGRAM_CHAT_ID,
+                        message_thread_id: Number(freshThreadId),
+                        text: `${prefix}${text}`
+                    })
+                });
+            }
+        }
     } catch (e) {
         console.error("[TELEGRAM SEND ERROR]", e.message);
     }
@@ -1365,17 +1481,24 @@ async function handleTelegramWebhook(req, res, body) {
     if (!textToSend || !supabase) return res.status(200).send('OK');
 
     try {
-        const { data: sessions } = await supabase.from('whatsapp_sessions').select('phone, history');
-        const matchedSession = sessions?.find(s => 
-            Array.isArray(s.history) && s.history.some(m => m.role === 'system' && m.type === 'telegram_topic' && Number(m.thread_id) === Number(threadId))
-        );
+        let phone = await findPhoneByTelegramThreadId(threadId);
 
-        if (!matchedSession || !matchedSession.phone) {
+        if (!phone) {
+            const { data: sessions } = await supabase.from('whatsapp_sessions').select('phone, history');
+            const matchedSession = sessions?.find(s => 
+                !s.phone.startsWith('__') && Array.isArray(s.history) && s.history.some(m => m.type === 'telegram_topic' && Number(m.thread_id) === Number(threadId))
+            );
+            phone = matchedSession?.phone;
+            if (phone) {
+                await saveTelegramTopic(phone, threadId);
+            }
+        }
+
+        if (!phone) {
             console.log(`[TELEGRAM] No se encontró cliente de WhatsApp asociado al tema ${threadId}`);
             return res.status(200).send('OK');
         }
 
-        const phone = matchedSession.phone;
         const token = process.env.WHATSAPP_TOKEN?.trim();
         const phoneNumberId = process.env.WHATSAPP_PHONE_ID?.trim();
 
@@ -1408,14 +1531,15 @@ async function handleTelegramWebhook(req, res, body) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     chat_id: TELEGRAM_CHAT_ID,
-                    message_thread_id: threadId,
+                    message_thread_id: Number(threadId),
                     text: `⚠️ *No se pudo enviar a WhatsApp:*\nMeta respondió: "${result.error.message || 'Error desconocido'}".\nRecordá que deben haber pasado menos de 24hs desde el último mensaje del cliente.`
                 })
             });
             return res.status(200).send('OK');
         }
 
-        let currentHistory = matchedSession.history || [];
+        let { data: sessionInfo } = await supabase.from('whatsapp_sessions').select('history').eq('phone', phone).maybeSingle();
+        let currentHistory = Array.isArray(sessionInfo?.history) ? sessionInfo.history : [];
         currentHistory.push({
             role: 'admin',
             content: textToSend,
@@ -1429,6 +1553,12 @@ async function handleTelegramWebhook(req, res, body) {
                 history: currentHistory,
                 updated_at: new Date().toISOString() 
             });
+
+        // Actualizar updated_at en whatsapp_leads para que el CRM lo suba arriba
+        const searchStr = phone.slice(-8);
+        await supabase.from('whatsapp_leads')
+            .update({ updated_at: new Date().toISOString() })
+            .like('phone', `%${searchStr}%`);
 
         console.log(`[TELEGRAM] Mensaje enviado exitosamente a WhatsApp +${phone}`);
     } catch (err) {
