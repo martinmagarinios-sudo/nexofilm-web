@@ -646,8 +646,8 @@ Te recordamos que además de coberturas, hacemos:
     let instruccionSaludo = `1. **CONTINUACIÓN**: Estás hablando con ${knownName || "el cliente"}. Si ya seleccionó una opción o están en medio del flujo de presupuesto, validá con calidez su respuesta y avanzá con la siguiente pregunta. NO repitas su nombre en cada mensaje.`;
 
     let confirmacionEmail = `      - Pedido de email: Preguntá con amabilidad: "¿Nos compartís un correo electrónico para enviarte la propuesta formal en PDF con el desglose de costos?"
-      - Si el cliente pregunta si es necesario o tiene dudas (ej: "¿es necesario el mail?", "¿por qué el mail?", "no tengo mail"): Explicá con total naturalidad: "Te lo pedimos para enviarte el PDF prolijo con los costos y el detalle técnico, pero si preferís no dejar correo, ¡ningún problema! Te podemos pasar toda la propuesta directamente por acá por WhatsApp 😊"
-      - Si el cliente rechaza dar el correo o prefiere seguir solo por WhatsApp: Respetalo de inmediato sin insistir ni pedir más datos, decí que lo coordinan por WhatsApp y emití la frase de CIERRE FINAL para derivar a producción.`;
+      - Si el cliente pregunta si es necesario o tiene dudas (ej: "¿es necesario el mail?", "¿por qué el mail?", "no tengo mail"): Explicá con amabilidad: "Te lo pedimos para poder enviarte el presupuesto formal en PDF con el detalle técnico y los costos desglosados."
+      - Si el cliente rechaza dar el correo o no tiene: Decí con amabilidad: "¡No te preocupes! Un productor se va a comunicar directamente por acá para asesorarte." y emití la frase de CIERRE FINAL para derivar a producción.`;
 
     if (leadData?.name && leadData.name !== 'Sin nombre') {
         const firstName = leadData.name.trim().split(/[\s,.-]+/)[0];
@@ -658,7 +658,7 @@ Te recordamos que además de coberturas, hacemos:
                 en: `${firstName}, checking our records I see this email: ${leadData.email}. Is it still the same or would you prefer us to send the proposal to another one?`,
                 pt: `${firstName}, em nossos registros temos este e-mail: ${leadData.email}. Continua sendo esse ou prefere que enviemos a proposta para outro?`
             };
-            confirmacionEmail = `      - YA TIENES SU EMAIL: En base de datos figura: ${leadData.email}. Preguntale: "${emailQs[lang] || emailQs.es}". Si confirma o da uno nuevo, avanzá al CIERRE FINAL. Si prefiere por WhatsApp, avanzá al CIERRE FINAL.`;
+            confirmacionEmail = `      - YA TIENES SU EMAIL: En base de datos figura: ${leadData.email}. Preguntale: "${emailQs[lang] || emailQs.es}". Si confirma o da uno nuevo, avanzá al CIERRE FINAL. Si prefiere no usar email, avanzá al CIERRE FINAL.`;
         }
     }
 
