@@ -11,8 +11,8 @@ const resend = new Resend((process.env.RESEND_API_KEY || '').trim());
 const ADMIN_NUMBER = '541151191964';
 const ADMIN_EMAIL = 'martin@nexofilm.com';
 
-const TELEGRAM_BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || '8912638236:AAFuMcVeWaZvocS2PZVrgtCm8SSgbeqikC4').trim();
-const TELEGRAM_CHAT_ID = (process.env.TELEGRAM_CHAT_ID || '-1004401105264').trim();
+const TELEGRAM_BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || '').trim();
+const TELEGRAM_CHAT_ID = (process.env.TELEGRAM_CHAT_ID || '').trim();
 
 const SYSTEM_PROMPT = `Sos el asistente virtual de NexoFilm, una productora audiovisual profesional en Argentina (Buenos Aires y Latam).
 Tu rol es atender a los clientes por WhatsApp con un tono cálido, humano, ágil, impecable y profesional.

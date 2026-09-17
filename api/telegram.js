@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const TELEGRAM_BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || '8912638236:AAFuMcVeWaZvocS2PZVrgtCm8SSgbeqikC4').trim();
-const TELEGRAM_CHAT_ID = (process.env.TELEGRAM_CHAT_ID || '-1004401105264').trim();
+const TELEGRAM_BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN || '').trim();
+const TELEGRAM_CHAT_ID = (process.env.TELEGRAM_CHAT_ID || '').trim();
 
 const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').trim();
 const supabaseKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.VITE_SUPABASE_KEY || '').trim();
