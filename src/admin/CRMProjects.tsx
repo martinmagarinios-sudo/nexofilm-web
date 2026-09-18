@@ -4772,7 +4772,7 @@ const CRMProjects: React.FC = () => {
                                             const mapsPart = mapsLink ? `📍 *Ver en mapa:*\n${mapsLink}\n\n` : '';
                                             const calPart = calLink ? `🗓️ *Agregar a tu Calendar (iPhone / Samsung / Google):*\n${calLink}\n\n` : '';
                                             const waMsg = `🎬 *NEXOFILM* — _Confirmación de Jornada_
-🌐 *Portal:* https://nexofilm.com/?v=4&ref=crew
+🌐 *Portal:* https://nexofilm.com/?v=5&ref=crew
 ─────────────────────
 Hola ${firstName}, ¡quedaste confirmado/a!
 
@@ -4857,7 +4857,7 @@ Cualquier consulta, respondé este mensaje.
                                     <p className="text-[10px] text-nexo-lime font-bold uppercase tracking-wider">Previsualización del Mensaje de WhatsApp</p>
                                     <div className="border border-white/8 rounded-lg p-3 bg-zinc-950/60 font-mono text-[11px] leading-relaxed text-zinc-300 whitespace-pre-line">
                                         {`🎬 *NEXOFILM* — _Confirmación de Jornada_
-🌐 *Portal:* https://nexofilm.com/?v=4&ref=crew
+🌐 *Portal:* https://nexofilm.com/?v=5&ref=crew
 ─────────────────────
 Hola [Nombre], ¡quedaste confirmado/a!
 

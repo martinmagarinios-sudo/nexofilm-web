@@ -1,8 +1,9 @@
 // middleware.js
 // Vercel Edge Middleware que se ejecuta ANTES del sistema de archivos estático.
 // 1. Redirige 301 www.nexofilm.com a nexofilm.com para unificar autoridad y evitar duplicidad.
-// 2. Intercepta las solicitudes con ?lng=en o ?lng=pt para servir el HTML con
-//    los atributos lang y canonical correctos directamente desde el servidor.
+// 2. Intercepta las solicitudes con ref=crew o /crew para servir el Open Graph enriquecido de confirmación de jornada en WhatsApp.
+// 3. Intercepta las solicitudes con ?lng=en o ?lng=pt para servir el HTML con los atributos lang y canonical correctos.
+// 4. Intercepta /storage para Open Graph enriquecido de Nexo Storage.
 
 export default async function middleware(request) {
   const url = new URL(request.url);
@@ -13,14 +14,21 @@ export default async function middleware(request) {
     return Response.redirect(url.toString(), 301);
   }
 
-  // 2. Intercepción de idiomas para crawlers y SEO internacional
+  // 2. Intercepción de Crew para Open Graph enriquecido en WhatsApp
+  const ref = url.searchParams.get('ref');
+  if (ref === 'crew' || url.pathname === '/crew') {
+    const apiUrl = new URL(`/api/lang-serve?ref=crew`, request.url);
+    return fetch(apiUrl);
+  }
+
+  // 3. Intercepción de idiomas para crawlers y SEO internacional
   const lng = url.searchParams.get('lng');
   if ((url.pathname === '/' || url.pathname === '/index.html') && (lng === 'en' || lng === 'pt')) {
     const apiUrl = new URL(`/api/lang-serve?lng=${lng}`, request.url);
     return fetch(apiUrl);
   }
 
-  // 3. Intercepción de Nexo Storage para Open Graph enriquecido en WhatsApp
+  // 4. Intercepción de Nexo Storage para Open Graph enriquecido en WhatsApp
   if (url.pathname === '/storage') {
     const token = url.searchParams.get('token') || '';
     const apiUrl = new URL(`/api/storage-og?token=${encodeURIComponent(token)}`, request.url);

@@ -45,11 +45,17 @@
         { "source": "/portal/login", "destination": "/index.html" },
         { "source": "/portal", "destination": "/api/comercial/client?action=render" },
         { "source": "/storage", "destination": "/api/storage-og" },
+        { "source": "/crew", "destination": "/api/lang-serve?ref=crew" },
         { "source": "/presupuesto", "destination": "/api/presupuesto" },
         { "source": "/network", "destination": "/api/network" },
         { "source": "/portfolio/:id", "destination": "/api/portfolio" },
         { "source": "/politica-de-privacidad", "destination": "/api/privacy" },
         { "source": "/api/(.*)", "destination": "/api/$1" },
+        {
+            "source": "/",
+            "has": [{ "type": "query", "key": "ref", "value": "crew" }],
+            "destination": "/api/lang-serve?ref=crew"
+        },
         {
             "source": "/",
             "has": [{ "type": "query", "key": "lng", "value": "en" }],
