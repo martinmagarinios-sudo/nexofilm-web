@@ -13,6 +13,7 @@ import CrewDirectory, { CrewMember, CREW_ROLES, ROLE_ICONS } from './CrewDirecto
 import NetworkDirectory from './NetworkDirectory';
 import FinanceDashboard from './FinanceDashboard';
 import WhatsAppSelectorModal, { getWAPreferredApp, buildWAUrl, WATargetApp, isMobileDevice } from './WhatsAppSelectorModal';
+import WhatsAppGatewayModal from './WhatsAppGatewayModal';
 
 interface Budget {
     id: string;
@@ -413,6 +414,8 @@ const CRMProjects: React.FC = () => {
     const [savingCrewAssign, setSavingCrewAssign] = useState(false);
     const [notifyingProjectId, setNotifyingProjectId] = useState<string | null>(null);
     const [sendingCrewNotifications, setSendingCrewNotifications] = useState(false);
+    const [isGatewayModalOpen, setIsGatewayModalOpen] = useState(false);
+    const [sendingSingleCrewWAId, setSendingSingleCrewWAId] = useState<string | null>(null);
     const [extraExpensesDraft, setExtraExpensesDraft] = useState<{ description: string; amount: number; currency: 'USD' | 'ARS' }[]>([]);
     const [newExtraExpenseDesc, setNewExtraExpenseDesc] = useState('');
     const [newExtraExpenseAmount, setNewExtraExpenseAmount] = useState('');
@@ -4672,6 +4675,33 @@ const CRMProjects: React.FC = () => {
                     }
                 };
 
+                const handleNotifyCrewSingleWhatsApp = async (phone: string, waMsg: string, crewMemberId: string, memberName: string) => {
+                    setSendingSingleCrewWAId(crewMemberId);
+                    try {
+                        const res = await fetch('/api/gateway', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                action: 'send',
+                                to: phone,
+                                message: waMsg,
+                                password
+                            })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            handleMarkAsNotifiedLocal(crewMemberId);
+                            return;
+                        }
+                        // Si el gateway no está conectado o falla, abrir por WhatsApp Web / App como fallback seguro
+                        handleOpenWhatsApp(phone, waMsg, memberName, () => handleMarkAsNotifiedLocal(crewMemberId));
+                    } catch (err) {
+                        handleOpenWhatsApp(phone, waMsg, memberName, () => handleMarkAsNotifiedLocal(crewMemberId));
+                    } finally {
+                        setSendingSingleCrewWAId(null);
+                    }
+                };
+
                 const handleNotifyCrewSingleEmail = async (projectId: string, crewMemberId: string) => {
                     setSendingSingleCrewEmailId(crewMemberId);
                     try {
@@ -4701,10 +4731,20 @@ const CRMProjects: React.FC = () => {
                         <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
                             {/* Header */}
                             <div className="bg-zinc-950 px-6 py-4 border-b border-white/5 flex items-center justify-between">
-                                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                                    <span>✉️ Notificar Equipo (Seguro y Branded)</span>
-                                    <span className="text-[10px] bg-nexo-lime/15 text-nexo-lime px-2 py-0.5 rounded font-black uppercase tracking-wider">Confirmado</span>
-                                </h3>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                                        <span>✉️ Notificar Equipo (Seguro y Branded)</span>
+                                        <span className="text-[10px] bg-nexo-lime/15 text-nexo-lime px-2 py-0.5 rounded font-black uppercase tracking-wider">Confirmado</span>
+                                    </h3>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsGatewayModalOpen(true)}
+                                        className="text-[10px] bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-bold transition flex items-center gap-1"
+                                        title="Conectar WhatsApp Business con código QR para envíos 100% automáticos"
+                                    >
+                                        ⚡ Conectar WhatsApp QR
+                                    </button>
+                                </div>
                                 <button
                                     onClick={() => setNotifyingProjectId(null)}
                                     className="text-zinc-500 hover:text-white transition-colors text-lg"
@@ -4816,11 +4856,12 @@ Cualquier consulta, respondé este mensaje.
                                                             <div className="flex items-center">
                                                                 <button
                                                                     type="button"
-                                                                    onClick={() => handleOpenWhatsApp(phone, waMsg, a.name, () => handleMarkAsNotifiedLocal(a.crew_member_id))}
-                                                                    className="text-[10px] bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/20 px-2.5 py-1.5 rounded-l transition-all font-bold flex items-center gap-0.5"
-                                                                    title="Notificar por WhatsApp"
+                                                                    onClick={() => handleNotifyCrewSingleWhatsApp(phone, waMsg, a.crew_member_id, a.name)}
+                                                                    disabled={sendingSingleCrewWAId === a.crew_member_id}
+                                                                    className="text-[10px] bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/20 px-2.5 py-1.5 rounded-l transition-all font-bold flex items-center gap-0.5 disabled:opacity-50"
+                                                                    title="Notificar por WhatsApp (Intenta 100% automático en background vía Gateway, o abre WhatsApp Web)"
                                                                 >
-                                                                    {waNotified ? '💬 Reenviar WA' : '💬 WA'}
+                                                                    {sendingSingleCrewWAId === a.crew_member_id ? '⏳ ...' : (waNotified ? '💬 Reenviar WA' : '💬 WA')}
                                                                 </button>
                                                                 <button
                                                                     type="button"
@@ -4954,6 +4995,13 @@ Cualquier consulta, respondé este mensaje.
                 message={waModalConfig.message}
                 recipientName={waModalConfig.recipientName}
                 onSent={waModalConfig.onSent}
+            />
+
+            {/* Modal de Conexión QR de WhatsApp Business Gateway */}
+            <WhatsAppGatewayModal
+                isOpen={isGatewayModalOpen}
+                onClose={() => setIsGatewayModalOpen(false)}
+                password={password}
             />
         </div>
     );

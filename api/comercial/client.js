@@ -32,6 +32,30 @@ const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_
 
 const ADMIN_NUMBER = '5491151191964'; // +54 9 11 5119 1964 (WhatsApp móvil Argentina requiere el 9)
 
+async function sendAdminWhatsAppGatewayAlert(messageText) {
+    const GATEWAY_URL = (process.env.WHATSAPP_GATEWAY_URL || 'http://localhost:3001').replace(/\/$/, '');
+    const GATEWAY_KEY = (process.env.WHATSAPP_GATEWAY_KEY || process.env.GATEWAY_API_KEY || 'nexofilm_gw_secret_2026').trim();
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3500);
+        await fetch(`${GATEWAY_URL}/api/send`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': GATEWAY_KEY
+            },
+            body: JSON.stringify({
+                to: ADMIN_NUMBER,
+                message: messageText
+            }),
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+    } catch (e) {
+        // Silencioso si el gateway no está levantado
+    }
+}
+
 // Helpers de encriptación para Drive
 function base64url(str) {
     return Buffer.from(str)
@@ -445,6 +469,10 @@ export default async function handler(req, res) {
                     }
                 });
                 console.log(`[EMAIL] Notificación de nuevo lead completada para: ${newLead.contact_name}`);
+
+                // Notificación por WhatsApp Gateway
+                const waLeadAlert = `🎬 *NEXOFILM CRM — Nueva Solicitud de Presupuesto*\n\n👤 *Cliente:* ${newLead.contact_name}\n📌 *Proyecto:* ${newLead.title}\n📧 *Email:* ${newLead.client_email}\n📱 *Teléfono:* ${newLead.client_phone || 'No indicado'}\n📅 *Fecha:* ${newLead.event_date || 'A coordinar'}\n📍 *Lugar:* ${newLead.location || 'A coordinar'}\n🎥 *Cobertura:* ${coverageLabel}\n\n🔗 *Ver en CRM:* ${crmUrl}`;
+                await sendAdminWhatsAppGatewayAlert(waLeadAlert).catch(() => {});
             } catch (emailErr) {
                 // El error de email nunca debe romper la respuesta al cliente
                 console.error('[EMAIL] Error al enviar notificación de lead:', emailErr.message);
@@ -1513,6 +1541,10 @@ export default async function handler(req, res) {
 
 // Helpers para notificar al administrador
 async function notifyMartinWhatsApp(text) {
+    // 1. Intentar por WhatsApp Gateway (100% en segundo plano sin ventana de 24hs)
+    await sendAdminWhatsAppGatewayAlert(text).catch(() => {});
+
+    // 2. Fallback por Meta Cloud API si está configurado
     const token = process.env.WHATSAPP_TOKEN?.trim();
     const phoneNumberId = process.env.WHATSAPP_PHONE_ID?.trim();
     if (!token || !phoneNumberId) return;
