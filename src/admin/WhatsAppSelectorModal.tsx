@@ -24,7 +24,12 @@ export const buildWAUrl = (phone: string, text: string, targetApp: 'personal' | 
     const encodedText = encodeURIComponent(text);
 
     if (targetApp === 'personal') {
-        // whatsapp:// URI scheme forces opening standard WhatsApp app on mobile (iOS/Android)
+        // En PC/Escritorio, el protocolo whatsapp:// abre una pestaña 'about:blank' vacía si no está la app de Windows.
+        // En PC redirigimos directamente a WhatsApp Web para que nunca quede la pantalla en negro.
+        if (!isMobileDevice()) {
+            return `https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodedText}`;
+        }
+        // En móviles (iOS/Android) abre la app nativa de WhatsApp
         return `whatsapp://send?phone=${cleanPhone}&text=${encodedText}`;
     }
     if (targetApp === 'web') {
