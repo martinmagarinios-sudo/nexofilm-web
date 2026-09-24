@@ -9,7 +9,8 @@ import { fileURLToPath } from 'url';
 import makeWASocket, {
     useMultiFileAuthState,
     DisconnectReason,
-    fetchLatestBaileysVersion
+    fetchLatestBaileysVersion,
+    getUrlInfo
 } from '@whiskeysockets/baileys';
 
 dotenv.config();
@@ -213,8 +214,27 @@ app.post('/api/send', checkAuth, async (req, res) => {
                 caption: caption || message || ''
             });
         } else {
+            // Extraer primera URL para generar vista previa rica con logo y descripción (OpenGraph)
+            let previewOpts = {};
+            const urlMatch = message.match(/https?:\/\/[^\s]+/i);
+            if (urlMatch) {
+                try {
+                    const info = await getUrlInfo(urlMatch[0], {
+                        thumbnailWidth: 192,
+                        fetchOpts: { timeout: 4000 }
+                    });
+                    if (info) {
+                        previewOpts = info;
+                        console.log(`🖼️ [Gateway] Vista previa enriquecida generada para: ${urlMatch[0]}`);
+                    }
+                } catch (e) {
+                    console.warn('Advertencia generando link preview:', e.message);
+                }
+            }
+
             sentMsg = await sock.sendMessage(jid, {
-                text: message
+                text: message,
+                ...previewOpts
             });
         }
 
