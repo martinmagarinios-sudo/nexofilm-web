@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-    const GATEWAY_URL = (process.env.WHATSAPP_GATEWAY_URL || 'http://localhost:3001').replace(/\/$/, '');
+    const GATEWAY_URL = (process.env.WHATSAPP_GATEWAY_URL || 'https://nexofilm-whatsapp-gateway.onrender.com').replace(/\/$/, '');
     const GATEWAY_KEY = (process.env.WHATSAPP_GATEWAY_KEY || process.env.GATEWAY_API_KEY || 'nexofilm_gw_secret_2026').trim();
 
     // 1. Consultar estado del Gateway (GET)

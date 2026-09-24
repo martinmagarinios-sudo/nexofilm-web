@@ -33,7 +33,7 @@ const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_
 const ADMIN_NUMBER = '5491151191964'; // +54 9 11 5119 1964 (WhatsApp móvil Argentina requiere el 9)
 
 async function sendAdminWhatsAppGatewayAlert(messageText) {
-    const GATEWAY_URL = (process.env.WHATSAPP_GATEWAY_URL || 'http://localhost:3001').replace(/\/$/, '');
+    const GATEWAY_URL = (process.env.WHATSAPP_GATEWAY_URL || 'https://nexofilm-whatsapp-gateway.onrender.com').replace(/\/$/, '');
     const GATEWAY_KEY = (process.env.WHATSAPP_GATEWAY_KEY || process.env.GATEWAY_API_KEY || 'nexofilm_gw_secret_2026').trim();
     try {
         const controller = new AbortController();
