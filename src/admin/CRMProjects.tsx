@@ -1829,6 +1829,14 @@ const CRMProjects: React.FC = () => {
                                 <span>📊</span>
                                 <span className="hidden sm:inline">Finanzas</span>
                             </button>
+                            <button
+                                onClick={() => setIsGatewayModalOpen(true)}
+                                className="text-xs bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 px-2 sm:px-3 py-1.5 rounded font-bold transition-all flex items-center gap-1.5 shrink-0"
+                                title="Conectar WhatsApp Business (Código QR para envíos automáticos)"
+                            >
+                                <span>⚡</span>
+                                <span>WhatsApp QR</span>
+                            </button>
                         </div>
                         <a href="/admin" className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 px-2 sm:px-3 py-1.5 rounded transition-colors flex items-center gap-1 shrink-0" title="Volver a Leads">
                             <span className="text-sm">←</span>
