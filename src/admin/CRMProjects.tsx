@@ -4723,6 +4723,7 @@ const CRMProjects: React.FC = () => {
 
                 const handleNotifyCrewSingleWhatsApp = async (phone: string, waMsg: string, crewMemberId: string, memberName: string) => {
                     setSendingSingleCrewWAId(crewMemberId);
+                    setError('');
                     try {
                         const res = await fetch('/api/gateway', {
                             method: 'POST',
@@ -4737,12 +4738,16 @@ const CRMProjects: React.FC = () => {
                         const data = await res.json();
                         if (res.ok && data.success) {
                             handleMarkAsNotifiedLocal(crewMemberId);
+                            setSuccessMsg(`💬 WhatsApp enviado exitosamente a ${memberName}.`);
                             return;
                         }
-                        // Si el gateway no está conectado o falla, abrir por WhatsApp Web / App como fallback seguro
-                        handleOpenWhatsApp(phone, waMsg, memberName, () => handleMarkAsNotifiedLocal(crewMemberId));
-                    } catch (err) {
-                        handleOpenWhatsApp(phone, waMsg, memberName, () => handleMarkAsNotifiedLocal(crewMemberId));
+                        
+                        // Si el gateway no está conectado, mostrar modal de QR
+                        setError(data.error || 'WhatsApp Gateway desconectado. Escaneá el código QR para enviar mensajes automáticamente.');
+                        setIsGatewayModalOpen(true);
+                    } catch (err: any) {
+                        setError('Error al comunicar con WhatsApp Gateway: ' + err.message);
+                        setIsGatewayModalOpen(true);
                     } finally {
                         setSendingSingleCrewWAId(null);
                     }

@@ -144,6 +144,40 @@ function formatPhoneToJid(rawPhone) {
     return `${clean}@s.whatsapp.net`;
 }
 
+// Resolver y validar JID real registrado en WhatsApp (soporta 549 vs 54)
+async function resolveWhatsAppJid(sockInstance, rawPhone) {
+    let clean = (rawPhone || '').replace(/\D/g, '');
+    if (!clean) return null;
+
+    const candidates = [];
+    if (clean.startsWith('549')) {
+        candidates.push(`${clean}@s.whatsapp.net`);
+        candidates.push(`54${clean.slice(3)}@s.whatsapp.net`);
+    } else if (clean.startsWith('54')) {
+        candidates.push(`549${clean.slice(2)}@s.whatsapp.net`);
+        candidates.push(`${clean}@s.whatsapp.net`);
+    } else if (clean.length === 10) {
+        candidates.push(`549${clean}@s.whatsapp.net`);
+        candidates.push(`54${clean}@s.whatsapp.net`);
+    } else {
+        candidates.push(`${clean}@s.whatsapp.net`);
+    }
+
+    try {
+        for (const candidate of candidates) {
+            const results = await sockInstance.onWhatsApp(candidate);
+            if (results && results.length > 0 && results[0].exists) {
+                console.log(`🔍 [Gateway] JID validado en WhatsApp: ${results[0].jid}`);
+                return results[0].jid;
+            }
+        }
+    } catch (e) {
+        console.warn('Advertencia en onWhatsApp check:', e.message);
+    }
+
+    return formatPhoneToJid(rawPhone);
+}
+
 // Rutas API
 app.get('/api/status', (req, res) => {
     res.json({
@@ -170,7 +204,7 @@ app.post('/api/send', checkAuth, async (req, res) => {
     }
 
     try {
-        const jid = formatPhoneToJid(to);
+        const jid = await resolveWhatsAppJid(sock, to);
 
         let sentMsg;
         if (mediaUrl) {
