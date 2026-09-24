@@ -258,13 +258,38 @@ const ClientPortal: React.FC = () => {
     const [surveyEventType, setSurveyEventType] = useState('');
     const [surveySuccess, setSurveySuccess] = useState(false);
 
-    // Ingesta de Documentos (IA)
     const [uploadingDoc, setUploadingDoc] = useState(false);
     const [uploadError, setUploadError] = useState('');
     const [uploadSuccess, setUploadSuccess] = useState('');
     const [dragActive, setDragActive] = useState(false);
     const [otherProjects, setOtherProjects] = useState<any[]>([]);
     const [viewMode, setViewMode] = useState<'dashboard' | 'detail'>('dashboard');
+    const [updatingNotificationPref, setUpdatingNotificationPref] = useState(false);
+
+    const handleUpdateNotificationPreference = async (newPref: 'email' | 'whatsapp' | 'both') => {
+        if (!token) return;
+        setUpdatingNotificationPref(true);
+        try {
+            const res = await fetch('/api/comercial/client', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token,
+                    action: 'update_notification_preference',
+                    preference: newPref
+                })
+            });
+            const data = await res.json();
+            if (res.ok && data.project) {
+                setProject(data.project);
+                setNotificationPref(newPref);
+            }
+        } catch (err) {
+            console.error('Error updating notification preference:', err);
+        } finally {
+            setUpdatingNotificationPref(false);
+        }
+    };
 
     // Extraer token de la URL
     useEffect(() => {
@@ -2062,11 +2087,52 @@ const ClientPortal: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Notificaciones activas */}
+                    {/* Notificaciones activas con selector interactivo */}
                     {project.status !== 'draft' && project.status !== 'review' && (
-                        <div className="border-t border-white/5 pt-4 text-[10px] text-zinc-500 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 no-print">
-                            <span>🔔 Notificaciones activas vía: <strong className="text-nexo-lime font-bold uppercase">{project.notification_preference === 'both' ? 'WhatsApp y Email' : project.notification_preference === 'whatsapp' ? 'WhatsApp' : 'Email'}</strong></span>
-                            <span>Contacto: <strong className="text-zinc-300">+{project.client_phone?.replace(/^\++/, '')} · {project.client_email}</strong></span>
+                        <div className="border-t border-white/5 pt-4 text-[11px] text-zinc-400 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 no-print bg-zinc-950/40 p-3 rounded-lg mt-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                <span className="text-zinc-400 font-semibold flex items-center gap-1.5">
+                                    <span>🔔</span> Recibir novedades vía:
+                                </span>
+                                <div className="inline-flex rounded-lg bg-zinc-900 border border-white/10 p-0.5 shadow-inner">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleUpdateNotificationPreference('both')}
+                                        className={`px-2.5 py-1 text-[10px] font-bold rounded transition-all flex items-center gap-1 ${
+                                            (project.notification_preference || 'both') === 'both'
+                                                ? 'bg-nexo-lime text-black shadow'
+                                                : 'text-zinc-400 hover:text-white'
+                                        }`}
+                                    >
+                                        🚀 Ambos
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleUpdateNotificationPreference('whatsapp')}
+                                        className={`px-2.5 py-1 text-[10px] font-bold rounded transition-all flex items-center gap-1 ${
+                                            project.notification_preference === 'whatsapp'
+                                                ? 'bg-emerald-500 text-black shadow font-black'
+                                                : 'text-zinc-400 hover:text-white'
+                                        }`}
+                                    >
+                                        💬 WhatsApp
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleUpdateNotificationPreference('email')}
+                                        className={`px-2.5 py-1 text-[10px] font-bold rounded transition-all flex items-center gap-1 ${
+                                            project.notification_preference === 'email'
+                                                ? 'bg-sky-500 text-white shadow font-black'
+                                                : 'text-zinc-400 hover:text-white'
+                                        }`}
+                                    >
+                                        ✉️ Email
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="text-[10px] text-zinc-500">
+                                Contacto: <strong className="text-zinc-300">+{project.client_phone?.replace(/^\++/, '')} · {project.client_email}</strong>
+                            </div>
                         </div>
                     )}
                 </div>

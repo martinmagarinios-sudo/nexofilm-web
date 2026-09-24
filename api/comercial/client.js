@@ -1516,6 +1516,19 @@ export default async function handler(req, res) {
                     success: true,
                     project: updatedProj
                 });
+            } else if (action === 'update_notification_preference') {
+                const { preference } = req.body;
+                if (!['email', 'whatsapp', 'both'].includes(preference)) {
+                    return res.status(400).json({ error: 'Preferencia no válida' });
+                }
+                const { data: updatedProj, error: updateErr } = await supabase
+                    .from('projects')
+                    .update({ notification_preference: preference })
+                    .eq('id', project.id)
+                    .select()
+                    .single();
+                if (updateErr) throw updateErr;
+                return res.status(200).json({ success: true, project: updatedProj });
             } else {
                 return res.status(400).json({ error: 'Acción no soportada.' });
             }

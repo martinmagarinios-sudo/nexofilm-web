@@ -4772,6 +4772,16 @@ const CRMProjects: React.FC = () => {
                     }
                 };
 
+                const handleNotifyCrewSingleBoth = async (phone: string, waMsg: string, crewMemberId: string, memberName: string, projectId: string) => {
+                    if (phone) {
+                        handleNotifyCrewSingleWhatsApp(phone, waMsg, crewMemberId, memberName);
+                    }
+                    const member = crewMembers.find(cm => cm.id === crewMemberId);
+                    if (member?.email) {
+                        handleNotifyCrewSingleEmail(projectId, crewMemberId);
+                    }
+                };
+
                 return (
                     <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                         <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
@@ -4898,6 +4908,18 @@ Cualquier consulta, respondé este mensaje.
                                                     </div>
                                                     
                                                     <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+                                                        {phone && email && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleNotifyCrewSingleBoth(phone, waMsg, a.crew_member_id, a.name, proj.id)}
+                                                                disabled={sendingSingleCrewWAId === a.crew_member_id || sendingSingleCrewEmailId === a.crew_member_id}
+                                                                className="text-[10px] bg-gradient-to-r from-nexo-lime to-emerald-400 text-black font-black px-2.5 py-1.5 rounded transition-all hover:opacity-90 flex items-center gap-0.5 shadow-sm disabled:opacity-50"
+                                                                title="Enviar notificación por Email y WhatsApp simultáneamente"
+                                                            >
+                                                                {sendingSingleCrewWAId === a.crew_member_id || sendingSingleCrewEmailId === a.crew_member_id ? '⏳ ...' : '🚀 Ambos'}
+                                                            </button>
+                                                        )}
+
                                                         {phone ? (
                                                             <div className="flex items-center">
                                                                 <button
@@ -4974,73 +4996,109 @@ Cualquier consulta, respondé este mensaje.
                 );
             })()}
             {/* Modal de Notificación de Cambio de Estado */}
-            {statusNotifyModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5">
-                        <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                            <h3 className="text-base font-bold text-white flex items-center gap-2">
-                                📢 Notificar Estado al Cliente
-                            </h3>
-                            <button
-                                onClick={() => setStatusNotifyModal(null)}
-                                className="text-zinc-500 hover:text-white text-lg font-bold"
-                            >
-                                ✕
-                            </button>
-                        </div>
+            {statusNotifyModal && (() => {
+                const pref = statusNotifyModal.project.notification_preference || 'both';
+                const hasEmail = Boolean(statusNotifyModal.project.client_email);
+                const hasPhone = Boolean(statusNotifyModal.project.client_phone);
 
-                        <div className="space-y-3 text-sm text-zinc-300">
-                            <p>El proyecto <strong className="text-white">"{statusNotifyModal.project.title}"</strong> se encuentra en:</p>
-                            <div className="inline-block px-3 py-1 bg-nexo-lime/10 border border-nexo-lime/30 text-nexo-lime font-black rounded text-xs uppercase tracking-wider">
-                                {statusNotifyModal.newStatus === 'production' ? '🎬 EN PRODUCCIÓN' : statusNotifyModal.newStatus === 'delivered' ? '📦 ENTREGADO' : statusNotifyModal.newStatus === 'approved' ? '✅ APROBADO' : statusNotifyModal.newStatus.toUpperCase()}
+                return (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+                        <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5">
+                            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                                    📢 Notificar Estado al Cliente
+                                </h3>
+                                <button
+                                    onClick={() => setStatusNotifyModal(null)}
+                                    className="text-zinc-500 hover:text-white text-lg font-bold"
+                                >
+                                    ✕
+                                </button>
                             </div>
-                            <p className="text-xs text-zinc-400">
-                                Seleccioná la vía por la que querés enviar el mensaje de actualización a <strong>{statusNotifyModal.project.contact_name}</strong>:
-                            </p>
-                        </div>
 
-                        <div className="flex flex-col gap-2.5 pt-2">
-                            {statusNotifyModal.project.client_email && statusNotifyModal.project.client_phone && (
+                            <div className="space-y-3 text-sm text-zinc-300">
+                                <p>El proyecto <strong className="text-white">"{statusNotifyModal.project.title}"</strong> se encuentra en:</p>
+                                <div className="inline-block px-3 py-1 bg-nexo-lime/10 border border-nexo-lime/30 text-nexo-lime font-black rounded text-xs uppercase tracking-wider">
+                                    {statusNotifyModal.newStatus === 'production' ? '🎬 EN PRODUCCIÓN' : statusNotifyModal.newStatus === 'delivered' ? '📦 ENTREGADO' : statusNotifyModal.newStatus === 'approved' ? '✅ APROBADO' : statusNotifyModal.newStatus.toUpperCase()}
+                                </div>
+                                <div className="bg-zinc-950/60 border border-white/5 p-2.5 rounded-lg flex items-center justify-between text-xs">
+                                    <span className="text-zinc-400">Canal elegido por cliente:</span>
+                                    <span className="font-bold text-nexo-lime uppercase">
+                                        {pref === 'both' ? '🚀 Ambos (Mail + WA)' : pref === 'whatsapp' ? '💬 Solo WhatsApp' : '✉️ Solo Email'}
+                                    </span>
+                                </div>
+                                <p className="text-xs text-zinc-400">
+                                    Seleccioná la vía por la que querés notificar a <strong>{statusNotifyModal.project.contact_name}</strong>:
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col gap-2.5 pt-2">
+                                {pref === 'both' && hasEmail && hasPhone && (
+                                    <button
+                                        onClick={() => handleSendStatusNotification(statusNotifyModal.project, statusNotifyModal.newStatus, 'both')}
+                                        className="w-full bg-gradient-to-r from-nexo-lime to-emerald-400 text-black font-black py-3 px-4 rounded-xl hover:opacity-95 transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(204,255,0,0.3)] text-xs uppercase tracking-wider"
+                                    >
+                                        🚀 Enviar por Ambos (Recomendado)
+                                    </button>
+                                )}
+
+                                {pref === 'whatsapp' && hasPhone && (
+                                    <button
+                                        onClick={() => handleSendStatusNotification(statusNotifyModal.project, statusNotifyModal.newStatus, 'whatsapp')}
+                                        className="w-full bg-gradient-to-r from-emerald-500 to-green-400 text-black font-black py-3 px-4 rounded-xl hover:opacity-95 transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] text-xs uppercase tracking-wider"
+                                    >
+                                        💬 Enviar por WhatsApp (Preferencia del Cliente)
+                                    </button>
+                                )}
+
+                                {pref === 'email' && hasEmail && (
+                                    <button
+                                        onClick={() => handleSendStatusNotification(statusNotifyModal.project, statusNotifyModal.newStatus, 'email')}
+                                        className="w-full bg-gradient-to-r from-sky-400 to-blue-500 text-black font-black py-3 px-4 rounded-xl hover:opacity-95 transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(56,189,248,0.3)] text-xs uppercase tracking-wider"
+                                    >
+                                        ✉️ Enviar por Mail (Preferencia del Cliente)
+                                    </button>
+                                )}
+
+                                {/* Opciones secundarias si se desea enviar por otro canal */}
+                                {pref !== 'both' && hasEmail && hasPhone && (
+                                    <button
+                                        onClick={() => handleSendStatusNotification(statusNotifyModal.project, statusNotifyModal.newStatus, 'both')}
+                                        className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 text-xs"
+                                    >
+                                        🚀 Enviar por Ambos de todos modos
+                                    </button>
+                                )}
+
+                                {pref !== 'email' && hasEmail && (
+                                    <button
+                                        onClick={() => handleSendStatusNotification(statusNotifyModal.project, statusNotifyModal.newStatus, 'email')}
+                                        className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold py-2 px-4 rounded-xl transition-all flex items-center justify-center gap-2 text-xs"
+                                    >
+                                        ✉️ Solo por Mail
+                                    </button>
+                                )}
+
+                                {pref !== 'whatsapp' && hasPhone && (
+                                    <button
+                                        onClick={() => handleSendStatusNotification(statusNotifyModal.project, statusNotifyModal.newStatus, 'whatsapp')}
+                                        className="w-full bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/20 text-emerald-300 font-bold py-2 px-4 rounded-xl transition-all flex items-center justify-center gap-2 text-xs"
+                                    >
+                                        💬 Solo por WhatsApp
+                                    </button>
+                                )}
+
                                 <button
-                                    onClick={() => handleSendStatusNotification(statusNotifyModal.project, statusNotifyModal.newStatus, 'both')}
-                                    className="w-full bg-gradient-to-r from-nexo-lime to-emerald-400 text-black font-black py-2.5 px-4 rounded-xl hover:opacity-95 transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(204,255,0,0.3)] text-xs uppercase tracking-wider"
+                                    onClick={() => setStatusNotifyModal(null)}
+                                    className="w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-500 hover:text-white font-medium py-2 px-4 rounded-xl transition-all text-xs mt-1"
                                 >
-                                    🚀 Enviar por Ambos (Mail + WhatsApp)
+                                    No notificar por ahora
                                 </button>
-                            )}
-
-                            {statusNotifyModal.project.client_email ? (
-                                <button
-                                    onClick={() => handleSendStatusNotification(statusNotifyModal.project, statusNotifyModal.newStatus, 'email')}
-                                    className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 text-xs"
-                                >
-                                    ✉️ Solo por Mail
-                                </button>
-                            ) : (
-                                <div className="text-[11px] text-zinc-500 italic text-center">Sin email registrado para este cliente</div>
-                            )}
-
-                            {statusNotifyModal.project.client_phone ? (
-                                <button
-                                    onClick={() => handleSendStatusNotification(statusNotifyModal.project, statusNotifyModal.newStatus, 'whatsapp')}
-                                    className="w-full bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-500/30 text-emerald-300 font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 text-xs"
-                                >
-                                    💬 Solo por WhatsApp
-                                </button>
-                            ) : (
-                                <div className="text-[11px] text-zinc-500 italic text-center">Sin teléfono registrado para este cliente</div>
-                            )}
-
-                            <button
-                                onClick={() => setStatusNotifyModal(null)}
-                                className="w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-500 hover:text-white font-medium py-2 px-4 rounded-xl transition-all text-xs"
-                            >
-                                No notificar por ahora
-                            </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                );
+            })()}
 
             {/* Modal Selector de App de WhatsApp */}
             <WhatsAppSelectorModal
