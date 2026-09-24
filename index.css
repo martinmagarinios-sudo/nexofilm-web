@@ -23,6 +23,36 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/* Ocultar barra de desplazamiento manteniendo el scroll funcional */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Estilizar scrollbars para que sean oscuras, delgadas y elegantes sin flechas */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #27272a;
+    border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #3f3f46;
+}
+::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
 select {
     background-color: #0a0a0a;
 }

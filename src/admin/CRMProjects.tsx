@@ -1794,12 +1794,12 @@ const CRMProjects: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                         {/* Navegacion de vistas CRM */}
-                        <div className="flex items-center gap-0.5 sm:gap-1 bg-black/40 border border-white/10 rounded-lg p-0.5 max-w-full overflow-x-auto no-scrollbar">
+                        <div className="flex items-center gap-0.5 sm:gap-1 bg-black/40 border border-white/10 rounded-lg p-0.5 max-w-full overflow-x-auto no-scrollbar scroll-smooth">
                             <button
                                 onClick={() => setCrmView('pipeline')}
-                                className={`text-xs px-2 sm:px-3 py-1.5 rounded font-bold transition-all shrink-0 flex items-center gap-1 ${
+                                className={`text-xs px-2 sm:px-2.5 md:px-3 py-1.5 rounded font-bold transition-all shrink-0 flex items-center gap-1 ${
                                     crmView === 'pipeline'
-                                        ? 'bg-nexo-lime text-black'
+                                        ? 'bg-nexo-lime text-black shadow'
                                         : 'text-zinc-400 hover:text-white'
                                 }`}
                                 title="Pipeline de Proyectos"
@@ -1809,9 +1809,9 @@ const CRMProjects: React.FC = () => {
                             </button>
                             <button
                                 onClick={() => { setCrmView('calendar'); if (crewMembers.length === 0) fetchCrewMembers(); }}
-                                className={`text-xs px-2 sm:px-3 py-1.5 rounded font-bold transition-all shrink-0 flex items-center gap-1 ${
+                                className={`text-xs px-2 sm:px-2.5 md:px-3 py-1.5 rounded font-bold transition-all shrink-0 flex items-center gap-1 ${
                                     crmView === 'calendar'
-                                        ? 'bg-nexo-lime text-black'
+                                        ? 'bg-nexo-lime text-black shadow'
                                         : 'text-zinc-400 hover:text-white'
                                 }`}
                                 title="Calendario de Eventos"
@@ -1821,9 +1821,9 @@ const CRMProjects: React.FC = () => {
                             </button>
                             <button
                                 onClick={() => { setCrmView('crew'); if (crewMembers.length === 0) fetchCrewMembers(); }}
-                                className={`text-xs px-2 sm:px-3 py-1.5 rounded font-bold transition-all shrink-0 flex items-center gap-1 ${
+                                className={`text-xs px-2 sm:px-2.5 md:px-3 py-1.5 rounded font-bold transition-all shrink-0 flex items-center gap-1 ${
                                     crmView === 'crew'
-                                        ? 'bg-nexo-lime text-black'
+                                        ? 'bg-nexo-lime text-black shadow'
                                         : 'text-zinc-400 hover:text-white'
                                 }`}
                                 title="Directorio de Crew"
@@ -1833,9 +1833,9 @@ const CRMProjects: React.FC = () => {
                             </button>
                             <button
                                 onClick={() => setCrmView('network')}
-                                className={`text-xs px-2 sm:px-3 py-1.5 rounded font-bold transition-all shrink-0 flex items-center gap-1 ${
+                                className={`text-xs px-2 sm:px-2.5 md:px-3 py-1.5 rounded font-bold transition-all shrink-0 flex items-center gap-1 ${
                                     crmView === 'network'
-                                        ? 'bg-nexo-lime text-black'
+                                        ? 'bg-nexo-lime text-black shadow'
                                         : 'text-zinc-400 hover:text-white'
                                 }`}
                                 title="Red NexoFilm Network"
@@ -1845,9 +1845,9 @@ const CRMProjects: React.FC = () => {
                             </button>
                             <button
                                 onClick={() => { setCrmView('reviews'); if (reviews.length === 0) fetchReviews(); }}
-                                className={`text-xs px-2 sm:px-3 py-1.5 rounded font-bold transition-all shrink-0 flex items-center gap-1 ${
+                                className={`text-xs px-2 sm:px-2.5 md:px-3 py-1.5 rounded font-bold transition-all shrink-0 flex items-center gap-1 ${
                                     crmView === 'reviews'
-                                        ? 'bg-nexo-lime text-black'
+                                        ? 'bg-nexo-lime text-black shadow'
                                         : 'text-zinc-400 hover:text-white'
                                 }`}
                                 title="Dashboard de Reviews"
@@ -1857,9 +1857,9 @@ const CRMProjects: React.FC = () => {
                             </button>
                             <button
                                 onClick={() => { setCrmView('finance'); if (crewMembers.length === 0) fetchCrewMembers(); }}
-                                className={`text-xs px-2 sm:px-3 py-1.5 rounded font-bold transition-all shrink-0 flex items-center gap-1 ${
+                                className={`text-xs px-2 sm:px-2.5 md:px-3 py-1.5 rounded font-bold transition-all shrink-0 flex items-center gap-1 ${
                                     crmView === 'finance'
-                                        ? 'bg-nexo-lime text-black'
+                                        ? 'bg-nexo-lime text-black shadow'
                                         : 'text-zinc-400 hover:text-white'
                                 }`}
                                 title="Dashboard Financiero"
@@ -1869,11 +1869,11 @@ const CRMProjects: React.FC = () => {
                             </button>
                             <button
                                 onClick={() => setIsGatewayModalOpen(true)}
-                                className="text-xs bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 px-2 sm:px-3 py-1.5 rounded font-bold transition-all flex items-center gap-1.5 shrink-0"
+                                className="text-xs bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 px-2 sm:px-2.5 md:px-3 py-1.5 rounded font-bold transition-all flex items-center gap-1.5 shrink-0"
                                 title="Conectar WhatsApp Business (Código QR para envíos automáticos)"
                             >
                                 <span>⚡</span>
-                                <span>WhatsApp QR</span>
+                                <span className="hidden sm:inline">WhatsApp QR</span>
                             </button>
                         </div>
                         <a href="/admin" className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 px-2 sm:px-3 py-1.5 rounded transition-colors flex items-center gap-1 shrink-0" title="Volver a Leads">
@@ -4787,56 +4787,30 @@ const CRMProjects: React.FC = () => {
                         <div className="bg-zinc-900 border border-white/10 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
                             {/* Header */}
                             <div className="bg-zinc-950 px-6 py-4 border-b border-white/5 flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                                        <span>✉️ Notificar Equipo (Seguro y Branded)</span>
-                                        <span className="text-[10px] bg-nexo-lime/15 text-nexo-lime px-2 py-0.5 rounded font-black uppercase tracking-wider">Confirmado</span>
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <h3 className="text-sm font-bold text-white flex items-center gap-2 truncate">
+                                        <span>👥 Notificar Equipo / Crew</span>
+                                        <span className="text-[10px] bg-nexo-lime/15 text-nexo-lime px-2 py-0.5 rounded font-black uppercase tracking-wider truncate">{proj.title}</span>
                                     </h3>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
                                     <button
                                         type="button"
                                         onClick={() => setIsGatewayModalOpen(true)}
-                                        className="text-[10px] bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-bold transition flex items-center gap-1"
-                                        title="Conectar WhatsApp Business con código QR para envíos 100% automáticos"
+                                        className="text-[10px] bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 px-2 py-1 rounded font-bold transition flex items-center gap-1"
+                                        title="Estado de WhatsApp Business Gateway"
                                     >
-                                        ⚡ Conectar WhatsApp QR
+                                        ⚡ WhatsApp QR
                                     </button>
+                                    <button
+                                        onClick={() => setNotifyingProjectId(null)}
+                                        className="text-zinc-500 hover:text-white transition-colors text-lg font-bold"
+                                    >&times;</button>
                                 </div>
-                                <button
-                                    onClick={() => setNotifyingProjectId(null)}
-                                    className="text-zinc-500 hover:text-white transition-colors text-lg"
-                                >&times;</button>
                             </div>
                             
                             {/* Body */}
                             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-                                {/* Selector de App de WhatsApp */}
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-zinc-950/80 p-3 rounded-xl border border-white/10 gap-2">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-base">{isMobileDevice() ? '📱' : '💻'}</span>
-                                        <div>
-                                            <div className="text-xs font-bold text-white">App de WhatsApp por defecto</div>
-                                            <div className="text-[10px] text-zinc-400">
-                                                {isMobileDevice() ? '📱 Modo Celular: Elegí entre tu WhatsApp Personal o Business' : '💻 Modo PC: Abre WhatsApp Web directamente sin preguntar'}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-1 shrink-0 self-end sm:self-auto">
-                                        <select
-                                            value={getWAPreferredApp()}
-                                            onChange={(e) => {
-                                                const val = e.target.value as WATargetApp;
-                                                localStorage.setItem('nexo_crm_wa_app', val);
-                                                setCrewNotificationNote(prev => prev);
-                                            }}
-                                            className="bg-zinc-900 border border-white/20 rounded-lg px-2.5 py-1.5 text-xs font-bold text-nexo-lime focus:outline-none cursor-pointer"
-                                        >
-                                            <option value="web">🌐 WhatsApp Web (Directo en PC)</option>
-                                            <option value="personal">📱 WhatsApp Personal (whatsapp://)</option>
-                                            <option value="business">💼 WhatsApp Business (wa.me)</option>
-                                            <option value="ask">❓ Preguntar siempre (Ideal Celular)</option>
-                                        </select>
-                                    </div>
-                                </div>
 
                                 {/* Nota Personalizada */}
                                 <div className="space-y-1.5 bg-black/30 p-3 rounded-lg border border-white/5">
