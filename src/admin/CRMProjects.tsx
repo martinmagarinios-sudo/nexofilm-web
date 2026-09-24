@@ -387,8 +387,34 @@ const CRMProjects: React.FC = () => {
         message: ''
     });
 
-    const handleOpenWhatsApp = (phone: string, message: string, recipientName?: string, onSent?: () => void, forceModal: boolean = false) => {
+    const handleOpenWhatsApp = async (phone: string, message: string, recipientName?: string, onSent?: () => void, forceModal: boolean = false) => {
         if (!phone) return;
+
+        // 1. Si no se fuerza modal, intentar SIEMPRE enviar automáticamente por WhatsApp Gateway en segundo plano
+        if (!forceModal) {
+            try {
+                const res = await fetch('/api/gateway', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'send',
+                        to: phone,
+                        message,
+                        password
+                    })
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    setSuccessMsg(`💬 WhatsApp enviado automáticamente a ${recipientName || phone}.`);
+                    if (onSent) onSent();
+                    return;
+                }
+            } catch (err) {
+                // Silencioso, pasa a fallback
+            }
+        }
+
+        // 2. Fallback si el gateway está apagado o se fuerza modal
         const preferred = getWAPreferredApp();
         if (!forceModal && preferred !== 'ask') {
             const url = buildWAUrl(phone, message, preferred);
@@ -1271,31 +1297,29 @@ const CRMProjects: React.FC = () => {
         }
     };
 
-    // Enviar notificación de estado por Mail o WhatsApp
-    const handleSendStatusNotification = async (project: Project, targetStatus: string, channel: 'email' | 'whatsapp') => {
-        if (channel === 'email') {
-            try {
-                const res = await fetch('/api/comercial/admin', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'sendStatusNotification',
-                        project_id: project.id,
-                        status: targetStatus,
-                        channel: 'email',
-                        password
-                    })
-                });
-                if (!res.ok) {
-                    const data = await res.json();
-                    throw new Error(data.error || 'Error al enviar notificación');
-                }
-                setSuccessMsg(`Notificación por Mail enviada al cliente (${targetStatus.toUpperCase()}).`);
-                setStatusNotifyModal(null);
-            } catch (err: any) {
-                setError(err.message);
+    // Enviar notificación de estado por Mail o WhatsApp o Ambos
+    const handleSendStatusNotification = async (project: Project, targetStatus: string, channel: 'email' | 'whatsapp' | 'both') => {
+        const sendEmail = async () => {
+            if (!project.client_email) return;
+            const res = await fetch('/api/comercial/admin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'sendStatusNotification',
+                    project_id: project.id,
+                    status: targetStatus,
+                    channel: 'email',
+                    password
+                })
+            });
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Error al enviar notificación por mail');
             }
-        } else if (channel === 'whatsapp' && project.client_phone) {
+        };
+
+        const sendWA = async () => {
+            if (!project.client_phone) return;
             const statusLabels: Record<string, string> = {
                 draft: 'Borrador',
                 sent: 'Propuesta Enviada',
@@ -1327,8 +1351,22 @@ const CRMProjects: React.FC = () => {
 
             const waMsg = `${emoji} *NexoFilm - Actualización de Proyecto*\n\n¡Hola ${project.contact_name}! Te informamos que tu proyecto "*${project.title}*" pasó al estado de *${title}*.\n\n${desc}\n\nPodés ingresar a tu portal seguro para más detalles:\n👉 ${window.location.origin}/portal?token=${project.access_token}&st=${targetStatus}`;
 
-            handleOpenWhatsApp(project.client_phone, waMsg, project.contact_name);
+            await handleOpenWhatsApp(project.client_phone, waMsg, project.contact_name);
+        };
+
+        try {
+            if (channel === 'email') {
+                await sendEmail();
+                setSuccessMsg(`Notificación por Mail enviada al cliente (${targetStatus.toUpperCase()}).`);
+            } else if (channel === 'whatsapp') {
+                await sendWA();
+            } else if (channel === 'both') {
+                await Promise.allSettled([sendEmail(), sendWA()]);
+                setSuccessMsg(`Notificación enviada por Mail y WhatsApp (${targetStatus.toUpperCase()}).`);
+            }
             setStatusNotifyModal(null);
+        } catch (err: any) {
+            setError(err.message);
         }
     };
 
@@ -4962,12 +5000,21 @@ Cualquier consulta, respondé este mensaje.
                         </div>
 
                         <div className="flex flex-col gap-2.5 pt-2">
+                            {statusNotifyModal.project.client_email && statusNotifyModal.project.client_phone && (
+                                <button
+                                    onClick={() => handleSendStatusNotification(statusNotifyModal.project, statusNotifyModal.newStatus, 'both')}
+                                    className="w-full bg-gradient-to-r from-nexo-lime to-emerald-400 text-black font-black py-2.5 px-4 rounded-xl hover:opacity-95 transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(204,255,0,0.3)] text-xs uppercase tracking-wider"
+                                >
+                                    🚀 Enviar por Ambos (Mail + WhatsApp)
+                                </button>
+                            )}
+
                             {statusNotifyModal.project.client_email ? (
                                 <button
                                     onClick={() => handleSendStatusNotification(statusNotifyModal.project, statusNotifyModal.newStatus, 'email')}
-                                    className="w-full bg-nexo-lime text-black font-black py-2.5 px-4 rounded-xl hover:bg-white transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(204,255,0,0.2)] text-xs uppercase tracking-wider"
+                                    className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 text-xs"
                                 >
-                                    ✉️ Enviar Notificación por Mail
+                                    ✉️ Solo por Mail
                                 </button>
                             ) : (
                                 <div className="text-[11px] text-zinc-500 italic text-center">Sin email registrado para este cliente</div>
@@ -4976,9 +5023,9 @@ Cualquier consulta, respondé este mensaje.
                             {statusNotifyModal.project.client_phone ? (
                                 <button
                                     onClick={() => handleSendStatusNotification(statusNotifyModal.project, statusNotifyModal.newStatus, 'whatsapp')}
-                                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.2)] text-xs uppercase tracking-wider"
+                                    className="w-full bg-emerald-950/60 hover:bg-emerald-900/80 border border-emerald-500/30 text-emerald-300 font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 text-xs"
                                 >
-                                    💬 Enviar por WhatsApp
+                                    💬 Solo por WhatsApp
                                 </button>
                             ) : (
                                 <div className="text-[11px] text-zinc-500 italic text-center">Sin teléfono registrado para este cliente</div>
@@ -4986,7 +5033,7 @@ Cualquier consulta, respondé este mensaje.
 
                             <button
                                 onClick={() => setStatusNotifyModal(null)}
-                                className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 font-bold py-2 px-4 rounded-xl transition-all text-xs"
+                                className="w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-500 hover:text-white font-medium py-2 px-4 rounded-xl transition-all text-xs"
                             >
                                 No notificar por ahora
                             </button>
