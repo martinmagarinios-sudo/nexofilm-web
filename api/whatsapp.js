@@ -139,7 +139,7 @@ export default async function handler(req, res) {
                         updated_at: new Date().toISOString() 
                     });
 
-                sendTelegramLog(phone, null, adminMsg, 'admin', currentHistory).catch(() => {});
+                await sendTelegramLog(phone, null, adminMsg, 'admin', currentHistory).catch(() => {});
 
                 return res.status(200).json({ success: true, messageId: result.messages?.[0]?.id });
 
@@ -293,7 +293,7 @@ Te recordamos que además de coberturas, hacemos:
         const isWebStart = text.includes("estoy navegando en tu web") && text.includes("consulta");
 
         // Registrar mensaje entrante en Telegram en tiempo real
-        sendTelegramLog(from, leadData?.name, userDisplayContent, 'user', history).catch(() => {});
+        await sendTelegramLog(from, leadData?.name, userDisplayContent, 'user', history).catch(() => {});
 
         // --- ALERTA TEMPRANA POR NUEVO CHAT (HISTORY VACÍO) ---
         // Si el cliente envía su primer mensaje (ya sea extraño total o alguien importado en la "agenda"),
@@ -498,8 +498,8 @@ Te recordamos que además de coberturas, hacemos:
                 history.push({ role: 'assistant', content: qr });
                 await persistHistory(from, history);
                 await sendText(phoneNumberId, from, qr);
-                sendTelegramLog(from, leadData?.name, `🔘 Seleccionó: "${btnTitle}"`, 'user', history).catch(() => {});
-                sendTelegramLog(from, leadData?.name, qr, 'assistant', history).catch(() => {});
+                await sendTelegramLog(from, leadData?.name, `🔘 Seleccionó: "${btnTitle}"`, 'user', history).catch(() => {});
+                await sendTelegramLog(from, leadData?.name, qr, 'assistant', history).catch(() => {});
             }
             return res.status(200).send('OK');
         }
@@ -523,7 +523,7 @@ Te recordamos que además de coberturas, hacemos:
                 { role: 'assistant', content: welcomeText, timestamp: new Date().toISOString() }
             ];
             await persistHistory(from, newHistory);
-            sendTelegramLog(from, null, welcomeText, 'assistant', newHistory).catch(() => {});
+            await sendTelegramLog(from, null, welcomeText, 'assistant', newHistory).catch(() => {});
             return res.status(200).send('OK');
         }
 
@@ -556,8 +556,8 @@ Te recordamos que además de coberturas, hacemos:
                 { role: 'assistant', content: vipGreeting, timestamp: new Date().toISOString() }
             ];
             await persistHistory(from, newHistory);
-            sendTelegramLog(from, firstName, vipGreeting, 'assistant', newHistory).catch(() => {});
-            sendTelegramLog(from, firstName, '👇 Opciones de menú enviadas al cliente VIP', 'system', newHistory).catch(() => {});
+            await sendTelegramLog(from, firstName, vipGreeting, 'assistant', newHistory).catch(() => {});
+            await sendTelegramLog(from, firstName, '👇 Opciones de menú enviadas al cliente VIP', 'system', newHistory).catch(() => {});
             return res.status(200).send('OK');
         }        // --- 3. DETECCIÓN TEMPRANA DE DESPEDIDA / AGRADECIMIENTO (sin Groq, sin menú, sin capturar como nombre) ---
         const isFarewellUser = /^(mil gracias|much[ií]simas gracias|muchas gracias|ok gracias|genial gracias|perfecto gracias|buen[ií]simo|buenisimo|joya gracias|dale gracias|gracias|thank you|thanks|obrigado|obrigada|chau|adi[oó]s|adios|hasta luego|hasta pronto|bye|saludos|un abrazo|ok todo bien|todo bien)[\w\s.!]*$/i.test(text.trim());
@@ -578,7 +578,7 @@ Te recordamos que además de coberturas, hacemos:
                 { role: 'assistant', content: farewellMsg, timestamp: new Date().toISOString() }
             ];
             await persistHistory(from, fareHist);
-            sendTelegramLog(from, knownName || leadData?.name, farewellMsg, 'assistant', fareHist).catch(() => {});
+            await sendTelegramLog(from, knownName || leadData?.name, farewellMsg, 'assistant', fareHist).catch(() => {});
             return res.status(200).send('OK');
         }
 
@@ -636,8 +636,8 @@ Te recordamos que además de coberturas, hacemos:
                 { role: 'assistant', content: greetingWithName, timestamp: new Date().toISOString() }
             ];
             await persistHistory(from, newHistory);
-            sendTelegramLog(from, cleanName, greetingWithName, 'assistant', newHistory).catch(() => {});
-            sendTelegramLog(from, cleanName, '👇 Opciones de menú enviadas al cliente', 'system', newHistory).catch(() => {});
+            await sendTelegramLog(from, cleanName, greetingWithName, 'assistant', newHistory).catch(() => {});
+            await sendTelegramLog(from, cleanName, '👇 Opciones de menú enviadas al cliente', 'system', newHistory).catch(() => {});
             return res.status(200).send('OK');
         }
 
@@ -765,7 +765,7 @@ Te recordamos que además de coberturas, hacemos:
                     if (nameErr) console.error('[NAME SAVE ERROR]', nameErr.message);
                     else {
                         console.log(`[NAME SAVED] ${capturedName}`);
-                        updateTelegramTopicName(from, capturedName, history).catch(() => {});
+                        await updateTelegramTopicName(from, capturedName, history).catch(() => {});
                     }
                 }
             }
@@ -866,14 +866,14 @@ Te recordamos que además de coberturas, hacemos:
 
         if (final && final.trim().length > 0) {
             await sendText(phoneNumberId, from, final);
-            sendTelegramLog(from, capturedName || leadData?.name, final, 'assistant', history).catch(() => {});
+            await sendTelegramLog(from, capturedName || leadData?.name, final, 'assistant', history).catch(() => {});
         }
         if (showMenu) {
             await sendMenu(phoneNumberId, from, lang);
-            sendTelegramLog(from, capturedName || leadData?.name, '👇 Opciones de menú enviadas al cliente', 'system', history).catch(() => {});
+            await sendTelegramLog(from, capturedName || leadData?.name, '👇 Opciones de menú enviadas al cliente', 'system', history).catch(() => {});
         }
         if (hf?.handoff) {
-            sendTelegramLog(from, hf.name, `🎉 *PRESUPUESTO SOLICITADO / HANDOFF CRM*\n👤 ${hf.name}\n📧 ${hf.email || 'No proporcionado'}\n📝 Resumen: ${hf.summary}`, 'system', history).catch(() => {});
+            await sendTelegramLog(from, hf.name, `🎉 *PRESUPUESTO SOLICITADO / HANDOFF CRM*\n👤 ${hf.name}\n📧 ${hf.email || 'No proporcionado'}\n📝 Resumen: ${hf.summary}`, 'system', history).catch(() => {});
             await handleHandoff(targetPhone, leadData?.id, hf, history);
         }
 
